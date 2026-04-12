@@ -919,14 +919,14 @@ func (m *mockPlaybook) Run(cfg config.Config) playbook.Result {
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
-				Message: "Mock playbook failed",
-				Error:   err,
+				Message: fmt.Sprintf("Playbook '%s' failed", m.name),
+				Error:   fmt.Errorf("playbook '%s': %w", m.name, err),
 			}
 		}
 	}
 	return playbook.Result{
 		Changed: true,
-		Message: "Mock playbook executed",
+		Message: fmt.Sprintf("Playbook '%s' executed", m.name),
 	}
 }
 

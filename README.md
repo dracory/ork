@@ -180,27 +180,7 @@ cfg := node.GetConfig()
 
 ### Custom Playbooks
 
-Extend Ork with custom automation tasks:
-
-```go
-import (
-    "github.com/dracory/ork/playbook"
-    "github.com/dracory/ork/config"
-)
-
-// Create a custom playbook
-customPlaybook := playbook.NewSimplePlaybook(
-    "custom-task",
-    "Performs a custom automation task",
-    func(cfg config.Config) error {
-        // Your custom logic here
-        return nil
-    },
-)
-
-// Register it in the playbook registry
-// (access via the playbook package)
-```
+Extend Ork with custom automation tasks by implementing the `Playbook` interface:
 
 #### Custom Playbooks with Full Idempotency
 
