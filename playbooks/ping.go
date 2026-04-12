@@ -26,12 +26,6 @@ func (p *Ping) Description() string {
 	return "Check SSH connectivity and show server uptime/load"
 }
 
-// Run executes the ping playbook.
-func (p *Ping) Run(cfg config.Config) error {
-	result := p.RunWithResult(cfg)
-	return result.Error
-}
-
 // Check always returns false for ping since it doesn't modify the system.
 // It verifies connectivity by attempting to run a command.
 func (p *Ping) Check(cfg config.Config) (bool, error) {
@@ -44,9 +38,9 @@ func (p *Ping) Check(cfg config.Config) (bool, error) {
 	return false, nil
 }
 
-// RunWithResult executes the ping playbook and returns detailed result.
+// Run executes the ping playbook and returns detailed result.
 // Changed is always false since ping doesn't modify the system.
-func (p *Ping) RunWithResult(cfg config.Config) playbook.Result {
+func (p *Ping) Run(cfg config.Config) playbook.Result {
 	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "uptime")
 	if err != nil {
 		return playbook.Result{

@@ -154,12 +154,10 @@ result := playbook.Execute(playbooks.NewAptUpgrade(), cfg)
 
 // Or check before running
 pb := playbooks.NewSwapCreate()
-if checkable, ok := pb.(playbook.CheckablePlaybook); ok {
-    needsChange, _ := checkable.Check(cfg)
-    if !needsChange {
-        log.Println("Swap already exists, skipping...")
-        return
-    }
+needsChange, _ := pb.Check(cfg)
+if !needsChange {
+    log.Println("Swap already exists, skipping...")
+    return
 }
 ```
 
@@ -204,21 +202,15 @@ customPlaybook := playbook.NewSimplePlaybook(
 // (access via the playbook package)
 ```
 
-#### Custom Playbooks with Idempotency (Optional)
+#### Custom Playbooks with Full Idempotency
 
-For better idempotency support, implement `CheckablePlaybook`:
+For full idempotency support, implement all methods:
 
 ```go
 type MyCustomPlaybook struct{}
 
 func (p *MyCustomPlaybook) Name() string { return "my-task" }
 func (p *MyCustomPlaybook) Description() string { return "Does something" }
-
-// Standard Run() method - required
-func (p *MyCustomPlaybook) Run(cfg config.Config) error {
-    result := p.RunWithResult(cfg)
-    return result.Error
-}
 
 // Check() - returns true if changes needed
 func (p *MyCustomPlaybook) Check(cfg config.Config) (bool, error) {
@@ -227,8 +219,8 @@ func (p *MyCustomPlaybook) Check(cfg config.Config) (bool, error) {
     return !strings.Contains(output, "configured"), nil
 }
 
-// RunWithResult() - execute and return Result
-func (p *MyCustomPlaybook) RunWithResult(cfg config.Config) playbook.Result {
+// Run() - execute and return Result
+func (p *MyCustomPlaybook) Run(cfg config.Config) playbook.Result {
     needsChange, _ := p.Check(cfg)
     if !needsChange {
         return playbook.Result{
@@ -249,8 +241,6 @@ func (p *MyCustomPlaybook) RunWithResult(cfg config.Config) playbook.Result {
     }
 }
 ```
-
-**Note:** If you don't implement `CheckablePlaybook`, `playbook.Execute()` will still work but will assume `Changed: true`.
 
 ## Internal Packages
 

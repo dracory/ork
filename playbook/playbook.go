@@ -51,19 +51,6 @@ const (
 	NameUserStatus = "user-status"
 )
 
-// Playbook is the interface that all playbooks must implement.
-// A playbook is a self-contained automation task that runs on a remote server.
-type Playbook interface {
-	// Name returns the unique identifier for this playbook (e.g., "apt-update")
-	Name() string
-
-	// Description returns a short description of what the playbook does
-	Description() string
-
-	// Run executes the playbook with the given configuration
-	Run(config config.Config) error
-}
-
 // Result represents the outcome of a playbook execution.
 // It indicates whether any changes were made and provides details about the execution.
 type Result struct {
@@ -84,19 +71,24 @@ type Result struct {
 	Error error
 }
 
-// CheckablePlaybook is an interface for playbooks that support idempotency checks.
-// Playbooks implementing this interface can check if changes are needed before applying them.
-type CheckablePlaybook interface {
-	Playbook
+// Playbook is the interface that all playbooks must implement.
+// A playbook is a self-contained automation task that runs on a remote server.
+// All playbooks support idempotency through the Check() method and Result return value.
+type Playbook interface {
+	// Name returns the unique identifier for this playbook (e.g., "apt-update")
+	Name() string
+
+	// Description returns a short description of what the playbook does
+	Description() string
 
 	// Check determines if the playbook needs to make any changes.
 	// Returns true if changes are needed, false if the system is already in the desired state.
 	// Returns an error if the check itself fails.
 	Check(config config.Config) (bool, error)
 
-	// RunWithResult executes the playbook and returns a detailed result.
-	// This method provides idempotency information that Run() cannot.
-	RunWithResult(config config.Config) Result
+	// Run executes the playbook and returns a detailed result.
+	// The Result.Changed field indicates whether any changes were made.
+	Run(config config.Config) Result
 }
 
 // SimplePlaybook is a function-based playbook implementation.
@@ -126,9 +118,26 @@ func (p *SimplePlaybook) Description() string {
 	return p.description
 }
 
-// Run executes the playbook.
-func (p *SimplePlaybook) Run(cfg config.Config) error {
-	return p.runFn(cfg)
+// Check always returns true for simple playbooks.
+// Override this behavior by creating a custom playbook struct.
+func (p *SimplePlaybook) Check(cfg config.Config) (bool, error) {
+	return true, nil
+}
+
+// Run executes the playbook and returns a Result.
+func (p *SimplePlaybook) Run(cfg config.Config) Result {
+	err := p.runFn(cfg)
+	if err != nil {
+		return Result{
+			Changed: false,
+			Message: "Playbook execution failed",
+			Error:   err,
+		}
+	}
+	return Result{
+		Changed: true,
+		Message: "Playbook executed successfully",
+	}
 }
 
 // Registry holds a collection of playbooks.
@@ -205,18 +214,7 @@ func EnsureState(client *ssh.Client, checkCmd, applyCmd string) (bool, error) {
 }
 
 // Execute runs a playbook and returns a Result.
-// If the playbook implements CheckablePlaybook, it uses RunWithResult.
-// Otherwise, it wraps the standard Run() method with a Result that assumes changes were made.
+// This is a convenience wrapper that calls pb.Run(cfg).
 func Execute(pb Playbook, cfg config.Config) Result {
-	if checkable, ok := pb.(CheckablePlaybook); ok {
-		return checkable.RunWithResult(cfg)
-	}
-
-	// Fallback for playbooks that don't implement CheckablePlaybook
-	err := pb.Run(cfg)
-	return Result{
-		Changed: true, // Assume changed if using legacy interface
-		Message: "Executed playbook (idempotency not available)",
-		Error:   err,
-	}
+	return pb.Run(cfg)
 }

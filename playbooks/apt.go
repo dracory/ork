@@ -23,20 +23,14 @@ func (a *AptUpdate) Description() string {
 	return "Refresh package database (apt-get update)"
 }
 
-// Run executes apt-get update.
-func (a *AptUpdate) Run(cfg config.Config) error {
-	result := a.RunWithResult(cfg)
-	return result.Error
-}
-
 // Check always returns true for apt-update since cache refresh is always beneficial.
 // The cost of checking if update is needed is similar to just running it.
 func (a *AptUpdate) Check(cfg config.Config) (bool, error) {
 	return true, nil // Always run apt update
 }
 
-// RunWithResult executes apt-get update and returns the result.
-func (a *AptUpdate) RunWithResult(cfg config.Config) playbook.Result {
+// Run executes apt-get update and returns the result.
+func (a *AptUpdate) Run(cfg config.Config) playbook.Result {
 	log.Println("Running apt update...")
 
 	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "apt-get update -y")
@@ -76,12 +70,6 @@ func (a *AptUpgrade) Description() string {
 	return "Install available package updates (apt-get upgrade)"
 }
 
-// Run executes apt-get upgrade.
-func (a *AptUpgrade) Run(cfg config.Config) error {
-	result := a.RunWithResult(cfg)
-	return result.Error
-}
-
 // Check determines if there are packages that need upgrading.
 // Returns true if upgrades are available, false if system is up to date.
 func (a *AptUpgrade) Check(cfg config.Config) (bool, error) {
@@ -102,8 +90,8 @@ func (a *AptUpgrade) Check(cfg config.Config) (bool, error) {
 	return count != "0" && count != "", nil
 }
 
-// RunWithResult executes apt-get upgrade and returns detailed result.
-func (a *AptUpgrade) RunWithResult(cfg config.Config) playbook.Result {
+// Run executes apt-get upgrade and returns detailed result.
+func (a *AptUpgrade) Run(cfg config.Config) playbook.Result {
 	// Check if upgrades are needed
 	needsUpgrade, err := a.Check(cfg)
 	if err != nil {
@@ -160,19 +148,13 @@ func (a *AptStatus) Description() string {
 	return "Show available package updates (read-only)"
 }
 
-// Run checks for available updates.
-func (a *AptStatus) Run(cfg config.Config) error {
-	result := a.RunWithResult(cfg)
-	return result.Error
-}
-
 // Check always returns false since AptStatus is read-only.
 func (a *AptStatus) Check(cfg config.Config) (bool, error) {
 	return false, nil
 }
 
-// RunWithResult executes apt status check and returns detailed result.
-func (a *AptStatus) RunWithResult(cfg config.Config) playbook.Result {
+// Run executes apt status check and returns detailed result.
+func (a *AptStatus) Run(cfg config.Config) playbook.Result {
 	log.Println("Checking for available updates...")
 
 	// First update package lists

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/playbook"
 )
 
 // TestNodeStruct verifies that the nodeImplementation struct has the correct fields.
@@ -892,8 +893,9 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 
 // mockPlaybook is a mock implementation of playbook.Playbook for testing.
 type mockPlaybook struct {
-	name    string
-	runFunc func(config.Config) error
+	name      string
+	runFunc   func(config.Config) error
+	checkFunc func(config.Config) (bool, error)
 }
 
 func (m *mockPlaybook) Name() string {
@@ -904,11 +906,28 @@ func (m *mockPlaybook) Description() string {
 	return "Mock playbook for testing"
 }
 
-func (m *mockPlaybook) Run(cfg config.Config) error {
-	if m.runFunc != nil {
-		return m.runFunc(cfg)
+func (m *mockPlaybook) Check(cfg config.Config) (bool, error) {
+	if m.checkFunc != nil {
+		return m.checkFunc(cfg)
 	}
-	return nil
+	return true, nil
+}
+
+func (m *mockPlaybook) Run(cfg config.Config) playbook.Result {
+	if m.runFunc != nil {
+		err := m.runFunc(cfg)
+		if err != nil {
+			return playbook.Result{
+				Changed: false,
+				Message: "Mock playbook failed",
+				Error:   err,
+			}
+		}
+	}
+	return playbook.Result{
+		Changed: true,
+		Message: "Mock playbook executed",
+	}
 }
 
 // contains checks if a string contains a substring.

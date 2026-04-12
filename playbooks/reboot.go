@@ -28,20 +28,14 @@ func (r *Reboot) Description() string {
 	return "Reboot the remote server"
 }
 
-// Run executes the reboot.
-func (r *Reboot) Run(cfg config.Config) error {
-	result := r.RunWithResult(cfg)
-	return result.Error
-}
-
 // Check always returns true for reboot since it's an explicit action.
 // Reboot is always "needed" because the user explicitly requested it.
 func (r *Reboot) Check(cfg config.Config) (bool, error) {
 	return true, nil // Always reboot when requested
 }
 
-// RunWithResult executes the reboot and returns detailed result.
-func (r *Reboot) RunWithResult(cfg config.Config) playbook.Result {
+// Run executes the reboot and returns detailed result.
+func (r *Reboot) Run(cfg config.Config) playbook.Result {
 	log.Printf("Rebooting %s...", cfg.SSHHost)
 
 	// Trigger reboot (non-blocking, command returns immediately)

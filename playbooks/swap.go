@@ -25,12 +25,6 @@ func (s *SwapCreate) Description() string {
 	return "Create a swap file (size in GB via args['size'], default 1GB)"
 }
 
-// Run creates the swap file.
-func (s *SwapCreate) Run(cfg config.Config) error {
-	result := s.RunWithResult(cfg)
-	return result.Error
-}
-
 // Check determines if swap needs to be created.
 // Returns true if no swap exists, false if swap already exists.
 func (s *SwapCreate) Check(cfg config.Config) (bool, error) {
@@ -42,8 +36,8 @@ func (s *SwapCreate) Check(cfg config.Config) (bool, error) {
 	return strings.TrimSpace(output) == "", nil
 }
 
-// RunWithResult creates the swap file and returns detailed result.
-func (s *SwapCreate) RunWithResult(cfg config.Config) playbook.Result {
+// Run creates the swap file and returns detailed result.
+func (s *SwapCreate) Run(cfg config.Config) playbook.Result {
 	sizeStr := cfg.GetArgOr("size", "1")
 	size, err := strconv.Atoi(sizeStr)
 	if err != nil || size < 1 {
@@ -122,12 +116,6 @@ func (s *SwapDelete) Description() string {
 	return "Remove the swap file"
 }
 
-// Run removes the swap file.
-func (s *SwapDelete) Run(cfg config.Config) error {
-	result := s.RunWithResult(cfg)
-	return result.Error
-}
-
 // Check determines if swap needs to be removed.
 // Returns true if swap exists, false if no swap exists.
 func (s *SwapDelete) Check(cfg config.Config) (bool, error) {
@@ -139,8 +127,8 @@ func (s *SwapDelete) Check(cfg config.Config) (bool, error) {
 	return strings.TrimSpace(output) != "", nil
 }
 
-// RunWithResult removes the swap file and returns detailed result.
-func (s *SwapDelete) RunWithResult(cfg config.Config) playbook.Result {
+// Run removes the swap file and returns detailed result.
+func (s *SwapDelete) Run(cfg config.Config) playbook.Result {
 	// Check if swap exists
 	needsDelete, err := s.Check(cfg)
 	if err != nil {
@@ -204,19 +192,13 @@ func (s *SwapStatus) Description() string {
 	return "Show swap status and usage"
 }
 
-// Run displays swap status.
-func (s *SwapStatus) Run(cfg config.Config) error {
-	result := s.RunWithResult(cfg)
-	return result.Error
-}
-
 // Check always returns false since SwapStatus is read-only.
 func (s *SwapStatus) Check(cfg config.Config) (bool, error) {
 	return false, nil
 }
 
-// RunWithResult displays swap status and returns detailed result.
-func (s *SwapStatus) RunWithResult(cfg config.Config) playbook.Result {
+// Run displays swap status and returns detailed result.
+func (s *SwapStatus) Run(cfg config.Config) playbook.Result {
 	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "swapon --show")
 	if err != nil {
 		return playbook.Result{
