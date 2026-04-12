@@ -28,7 +28,7 @@ func main() {
     node := ork.NewNodeForHost("server.example.com")
     
     // Option 2: From config (useful for complex setups)
-    cfg := config.Config{
+    cfg := config.NodeConfig{
         SSHHost: "server.example.com",
         SSHPort: "22",
     }
@@ -198,14 +198,14 @@ func (p *MyCustomPlaybook) GetID() string { return "my-task" }
 func (p *MyCustomPlaybook) Description() string { return "Does something" }
 
 // Check() - returns true if changes needed
-func (p *MyCustomPlaybook) Check(cfg config.Config) (bool, error) {
+func (p *MyCustomPlaybook) Check(cfg config.NodeConfig) (bool, error) {
     // Check if already configured
     output, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "cat /etc/my-config")
     return !strings.Contains(output, "configured"), nil
 }
 
 // Run() - execute and return Result
-func (p *MyCustomPlaybook) Run(cfg config.Config) playbook.Result {
+func (p *MyCustomPlaybook) Run(cfg config.NodeConfig) playbook.Result {
     needsChange, _ := p.Check(cfg)
     if !needsChange {
         return playbook.Result{
@@ -249,7 +249,7 @@ import (
 )
 
 func main() {
-    cfg := config.Config{
+    cfg := config.NodeConfig{
         SSHHost:  "db3.sinevia.com",
         SSHPort:  "40022",
         SSHKey:   "2024_sinevia.prv",
