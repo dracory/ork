@@ -249,45 +249,33 @@ type NodeInterface interface {
 	//	output, err := node.RunCommand("uptime")  // Creates one-time connection
 	RunCommand(cmd string) (string, error)
 
-	// RunPlaybook executes a playbook by ID and returns detailed result information.
+	// RunPlaybook executes a playbook instance directly and returns detailed result information.
 	// This is the preferred method for executing playbooks as it provides idempotency support
 	// through the Result.Changed field, indicating whether any changes were actually made.
 	//
-	// The playbook is retrieved from the global registry and the current node configuration
-	// (including arguments set via SetArg/SetArgs) is passed to the playbook.
+	// This method allows running custom or programmatically created playbooks without registry lookup.
+	//
+	// Example:
+	//
+	//	pb := playbooks.NewAptUpgrade()
+	//	result := node.RunPlaybook(pb)
+	//	if result.Error != nil {
+	//	    log.Fatalf("Playbook failed: %v", result.Error)
+	//	}
+	//	if result.Changed {
+	//	    log.Printf("Changes made: %s", result.Message)
+	//	}
+	RunPlaybook(pb playbook.PlaybookInterface) playbook.Result
+
+	// RunPlaybookByID executes a playbook by ID from the registry.
+	// Deprecated: Use RunPlaybook() instead. Run playbooks by creating the playbook
+	// instance directly (e.g., playbooks.NewPing()) and passing it to RunPlaybook().
+	// This provides better type safety and IDE autocomplete support.
 	//
 	// Optional PlaybookOptions can be provided to override node-level arguments for this
 	// specific execution. This allows per-playbook variable scoping without affecting
 	// the node's state.
-	//
-	// Returns a Result containing:
-	//   - Changed: true if the playbook made changes, false if system was already in desired state
-	//   - Message: human-readable description of what happened
-	//   - Details: additional information (e.g., command output)
-	//   - Error: non-nil if execution failed
-	//
-	// Example:
-	//
-	//	node := ork.NewNode("server.example.com")
-	//
-	//	// Without options - uses node-level arguments
-	//	result := node.RunPlaybook("ping")
-	//
-	//	// With options - per-playbook arguments override node-level
-	//	result := node.RunPlaybook("swap-create", playbook.PlaybookOptions{
-	//	    Args: map[string]string{"size": "2"},
-	//	})
-	//
-	//	if result.Error != nil {
-	//	    log.Fatalf("Playbook failed: %v", result.Error)
-	//	}
-	//
-	//	if result.Changed {
-	//	    log.Printf("Created swap: %s", result.Message)
-	//	} else {
-	//	    log.Println("Swap already exists - no changes made")
-	//	}
-	RunPlaybook(id string, opts ...playbook.PlaybookOptions) playbook.Result
+	RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) playbook.Result
 }
 
 // NewNode creates a new Node with default configuration values.

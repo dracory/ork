@@ -299,30 +299,23 @@ func (n *nodeImplementation) RunCommand(cmd string) (string, error) {
 	return output, nil
 }
 
-// RunPlaybook executes a playbook by ID on the remote server.
-// The playbook is retrieved from the global registry.
-// The current node configuration (including arguments set via SetArg/SetArgs)
-// is passed to the playbook.
+// RunPlaybook executes a playbook instance directly and returns detailed result information.
+// This is the preferred method for executing playbooks.
+//
+// The playbook is configured with the node's settings and executed immediately.
+// This method allows running custom or programmatically created playbooks without registry lookup.
+func (n *nodeImplementation) RunPlaybook(pb playbook.PlaybookInterface) playbook.Result {
+	// Configure playbook using fluent setters
+	pb.SetConfig(n.cfg)
+	return pb.Run()
+}
+
+// RunPlaybookByID executes a playbook by ID from the registry.
+// This is useful when you want to run playbooks by string identifier.
 //
 // Optional PlaybookOptions can be provided to override node-level arguments for this
 // specific execution. Playbook-level args take precedence over node-level args.
-//
-// Example:
-//
-//	node := ork.NewNode("server.example.com")
-//
-//	// Without options - uses node-level arguments
-//	result := node.RunPlaybook("ping")
-//
-//	// With options - per-playbook arguments override node-level
-//	result := node.RunPlaybook("swap-create", playbook.PlaybookOptions{
-//	    Args: map[string]string{"size": "2"},
-//	})
-//
-// RunPlaybook executes a playbook by ID and returns detailed result information.
-// This is the preferred method for executing playbooks as it provides idempotency support
-// through the Result.Changed field.
-func (n *nodeImplementation) RunPlaybook(id string, opts ...playbook.PlaybookOptions) playbook.Result {
+func (n *nodeImplementation) RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) playbook.Result {
 	pb, ok := defaultRegistry.PlaybookFindByID(id)
 	if !ok {
 		return playbook.Result{

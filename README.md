@@ -85,7 +85,7 @@ node := ork.NewNodeForHost("server.example.com").
     SetArg("username", "alice").
     SetArg("shell", "/bin/bash")
 
-result := node.RunPlaybook(ork.PlaybookUserCreate)
+result := node.RunPlaybook(playbooks.NewUserCreate())
 if result.Error != nil {
     log.Fatalf("Playbook failed: %v", result.Error)
 }
@@ -118,7 +118,7 @@ All playbooks now support idempotent execution. Use `RunPlaybook()` to see wheth
 
 ```go
 // RunPlaybook returns detailed result information
-result := node.RunPlaybook(ork.PlaybookAptUpgrade)
+result := node.RunPlaybook(playbooks.NewAptUpgrade())
 if result.Error != nil {
     log.Fatal(result.Error)
 }
@@ -285,7 +285,7 @@ func main() {
 
 ### Package Overview
 
-- `ork` - Main API: `NodeInterface`, `NewNode()`, `NewNodeForHost()`, `NewNodeFromConfig()`, `RunCommand()`, `RunPlaybook()`
+- `ork` - Main API: `NodeInterface`, `NewNode()`, `NewNodeForHost()`, `NewNodeFromConfig()`, `RunCommand()`, `RunPlaybook()`, `RunPlaybookByID()`
 - `config` - Configuration types
 - `ssh` - SSH client with connection management
 - `playbook` - Playbook interface and registry
