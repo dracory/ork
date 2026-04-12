@@ -187,7 +187,30 @@ cfg := node.GetConfig()
 
 Extend Ork with custom automation tasks by implementing the `Playbook` interface:
 
-#### Custom Playbooks with Full Idempotency
+#### Registering Custom Playbooks
+
+Register your custom playbooks to use them via `node.Playbook("custom-id")`:
+
+```go
+import (
+    "github.com/dracory/ork"
+    "github.com/dracory/ork/playbook"
+)
+
+// Create a custom playbook
+customPb := playbook.NewBasePlaybook()
+customPb.SetID("install-docker")
+customPb.SetDescription("Install Docker on the server")
+
+// Register it globally
+ork.RegisterPlaybook(customPb)
+
+// Now use it like any built-in playbook
+node := ork.NewNodeForHost("server.example.com")
+result := node.RunPlaybookByID("install-docker")
+```
+
+### Custom Playbooks with Full Idempotency
 
 For full idempotency support, implement all methods:
 
@@ -213,13 +236,13 @@ func (p *MyCustomPlaybook) Run(cfg config.NodeConfig) playbook.Result {
             Message: "Already configured",
         }
     }
-    
+
     // Apply changes...
     _, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "setup-command")
     if err != nil {
         return playbook.Result{Changed: false, Error: err}
     }
-    
+
     return playbook.Result{
         Changed: true,
         Message: "Configuration applied",

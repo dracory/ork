@@ -12,6 +12,20 @@ import (
 // The registry is used by Node.Playbook() to look up and execute playbooks.
 var defaultRegistry *playbook.Registry
 
+// RegisterPlaybook registers a custom playbook on the default registry.
+// This allows external packages to add their own playbooks that can then
+// be executed via node.RunPlaybookByID("custom-id").
+// This function is thread-safe and can be called from multiple goroutines.
+func RegisterPlaybook(p playbook.PlaybookInterface) {
+	if defaultRegistry == nil {
+		panic("ork: defaultRegistry not initialized - RegisterPlaybook called before init()")
+	}
+	if p == nil {
+		panic("ork: cannot register nil playbook")
+	}
+	defaultRegistry.PlaybookRegister(p)
+}
+
 func init() {
 	defaultRegistry = playbook.NewRegistry()
 

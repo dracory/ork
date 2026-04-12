@@ -2,6 +2,8 @@ package ork
 
 import (
 	"testing"
+
+	"github.com/dracory/ork/playbook"
 )
 
 func TestDefaultRegistry_Initialized(t *testing.T) {
@@ -84,4 +86,36 @@ func TestDefaultRegistry_PlaybooksHaveDescriptions(t *testing.T) {
 			t.Errorf("playbook '%s' has empty description", pb.GetID())
 		}
 	}
+}
+
+func TestRegisterPlaybook_Success(t *testing.T) {
+	// Create a custom playbook
+	customPb := playbook.NewBasePlaybook()
+	customPb.SetID("test-custom-playbook")
+	customPb.SetDescription("A test custom playbook")
+
+	// Register it
+	RegisterPlaybook(customPb)
+
+	// Verify it can be found
+	foundPb, ok := defaultRegistry.PlaybookFindByID("test-custom-playbook")
+	if !ok {
+		t.Fatal("custom playbook not found after registration")
+	}
+	if foundPb.GetID() != "test-custom-playbook" {
+		t.Errorf("expected ID 'test-custom-playbook', got '%s'", foundPb.GetID())
+	}
+	if foundPb.GetDescription() != "A test custom playbook" {
+		t.Errorf("expected description 'A test custom playbook', got '%s'", foundPb.GetDescription())
+	}
+}
+
+func TestRegisterPlaybook_NilPanics(t *testing.T) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic when registering nil playbook, but none occurred")
+		}
+	}()
+
+	RegisterPlaybook(nil)
 }
