@@ -3,6 +3,7 @@ package ork
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/playbook"
@@ -895,7 +896,9 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 type mockPlaybook struct {
 	name      string
 	cfg       config.Config
-	opts      *playbook.PlaybookOptions
+	args      map[string]string
+	dryRun    bool
+	timeout   time.Duration
 	runFunc   func(config.Config) error
 	checkFunc func(config.Config) (bool, error)
 }
@@ -926,12 +929,42 @@ func (m *mockPlaybook) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	return m
 }
 
-func (m *mockPlaybook) GetOptions() *playbook.PlaybookOptions {
-	return m.opts
+func (m *mockPlaybook) GetArg(key string) string {
+	return m.args[key]
 }
 
-func (m *mockPlaybook) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
-	m.opts = opts
+func (m *mockPlaybook) SetArg(key, value string) playbook.PlaybookInterface {
+	if m.args == nil {
+		m.args = make(map[string]string)
+	}
+	m.args[key] = value
+	return m
+}
+
+func (m *mockPlaybook) GetArgs() map[string]string {
+	return m.args
+}
+
+func (m *mockPlaybook) SetArgs(args map[string]string) playbook.PlaybookInterface {
+	m.args = args
+	return m
+}
+
+func (m *mockPlaybook) IsDryRun() bool {
+	return m.dryRun
+}
+
+func (m *mockPlaybook) SetDryRun(dryRun bool) playbook.PlaybookInterface {
+	m.dryRun = dryRun
+	return m
+}
+
+func (m *mockPlaybook) GetTimeout() time.Duration {
+	return m.timeout
+}
+
+func (m *mockPlaybook) SetTimeout(timeout time.Duration) playbook.PlaybookInterface {
+	m.timeout = timeout
 	return m
 }
 

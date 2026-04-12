@@ -6,64 +6,21 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 )
 
 // SwapCreate creates a swap file of the specified size.
 // Size is in GB, default is 1GB if not specified via Args["size"].
-type SwapCreate struct {
-	cfg  config.Config
-	opts *playbook.PlaybookOptions
-}
-
-// GetID returns the playbook identifier.
-func (s *SwapCreate) GetID() string {
-	return playbook.IDSwapCreate
-}
-
-// SetID sets the playbook identifier.
-func (s *SwapCreate) SetID(id string) playbook.PlaybookInterface {
-	return s
-}
-
-// GetDescription returns what this playbook does.
-func (s *SwapCreate) GetDescription() string {
-	return "Create a swap file (size in GB via args['size'], default 1GB)"
-}
-
-// SetDescription sets the playbook description.
-func (s *SwapCreate) SetDescription(description string) playbook.PlaybookInterface {
-	return s
-}
-
-// GetConfig returns the current node configuration.
-func (s *SwapCreate) GetConfig() config.Config {
-	return s.cfg
-}
-
-// GetOptions returns the current playbook options.
-func (s *SwapCreate) GetOptions() *playbook.PlaybookOptions {
-	return s.opts
-}
-
-// SetConfig sets the node configuration for this playbook.
-func (s *SwapCreate) SetConfig(cfg config.Config) playbook.PlaybookInterface {
-	s.cfg = cfg
-	return s
-}
-
-// SetOptions sets the playbook-specific options.
-func (s *SwapCreate) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
-	s.opts = opts
-	return s
+type swapCreate struct {
+	*playbook.BasePlaybook
 }
 
 // Check determines if swap needs to be created.
 // Returns true if no swap exists, false if swap already exists.
-func (s *SwapCreate) Check() (bool, error) {
-	output, err := ssh.RunOnce(s.cfg.SSHHost, s.cfg.SSHPort, s.cfg.RootUser, s.cfg.SSHKey, "swapon --show=NAME --noheadings")
+func (s *swapCreate) Check() (bool, error) {
+	cfg := s.GetConfig()
+	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "swapon --show=NAME --noheadings")
 	if err != nil {
 		return false, err
 	}
@@ -72,8 +29,9 @@ func (s *SwapCreate) Check() (bool, error) {
 }
 
 // Run creates the swap file and returns detailed result.
-func (s *SwapCreate) Run() playbook.Result {
-	sizeStr := s.cfg.GetArgOr("size", "1")
+func (s *swapCreate) Run() playbook.Result {
+	cfg := s.GetConfig()
+	sizeStr := cfg.GetArgOr("size", "1")
 	size, err := strconv.Atoi(sizeStr)
 	if err != nil || size < 1 {
 		return playbook.Result{
@@ -104,7 +62,7 @@ func (s *SwapCreate) Run() playbook.Result {
 
 	// Create swap file
 	cmd := fmt.Sprintf("fallocate -l %dG /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile", size)
-	output, err := ssh.RunOnce(s.cfg.SSHHost, s.cfg.SSHPort, s.cfg.RootUser, s.cfg.SSHKey, cmd)
+	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -114,9 +72,9 @@ func (s *SwapCreate) Run() playbook.Result {
 	}
 
 	// Add to fstab if not already there
-	output, _ = ssh.RunOnce(s.cfg.SSHHost, s.cfg.SSHPort, s.cfg.RootUser, s.cfg.SSHKey, "grep -q '/swapfile' /etc/fstab && echo 'exists' || echo 'missing'")
+	output, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "grep -q '/swapfile' /etc/fstab && echo 'exists' || echo 'missing'")
 	if strings.TrimSpace(output) == "missing" {
-		_, err = ssh.RunOnce(s.cfg.SSHHost, s.cfg.SSHPort, s.cfg.RootUser, s.cfg.SSHKey, "echo '/swapfile none swap sw 0 0' >> /etc/fstab")
+		_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "echo '/swapfile none swap sw 0 0' >> /etc/fstab")
 		if err != nil {
 			log.Printf("Warning: failed to add swap to fstab: %v", err)
 		}
@@ -134,62 +92,23 @@ func (s *SwapCreate) Run() playbook.Result {
 }
 
 // NewSwapCreate creates a new swap-create playbook.
-func NewSwapCreate() *SwapCreate {
-	return &SwapCreate{}
+func NewSwapCreate() *swapCreate {
+	pb := playbook.NewBasePlaybook()
+	pb.SetID(playbook.IDSwapCreate)
+	pb.SetDescription("Create a swap file (size in GB via args['size'], default 1GB)")
+	return &swapCreate{BasePlaybook: pb}
 }
 
 // SwapDelete removes the swap file.
-type SwapDelete struct {
-	cfg  config.Config
-	opts *playbook.PlaybookOptions
-}
-
-// GetID returns the playbook identifier.
-func (s *SwapDelete) GetID() string {
-	return playbook.IDSwapDelete
-}
-
-// SetID sets the playbook identifier.
-func (s *SwapDelete) SetID(id string) playbook.PlaybookInterface {
-	return s
-}
-
-// GetDescription returns what this playbook does.
-func (s *SwapDelete) GetDescription() string {
-	return "Remove the swap file"
-}
-
-// SetDescription sets the playbook description.
-func (s *SwapDelete) SetDescription(description string) playbook.PlaybookInterface {
-	return s
-}
-
-// GetConfig returns the current node configuration.
-func (s *SwapDelete) GetConfig() config.Config {
-	return s.cfg
-}
-
-// GetOptions returns the current playbook options.
-func (s *SwapDelete) GetOptions() *playbook.PlaybookOptions {
-	return s.opts
-}
-
-// SetConfig sets the node configuration for this playbook.
-func (s *SwapDelete) SetConfig(cfg config.Config) playbook.PlaybookInterface {
-	s.cfg = cfg
-	return s
-}
-
-// SetOptions sets the playbook-specific options.
-func (s *SwapDelete) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
-	s.opts = opts
-	return s
+type swapDelete struct {
+	*playbook.BasePlaybook
 }
 
 // Check determines if swap needs to be removed.
 // Returns true if swap exists, false if no swap exists.
-func (s *SwapDelete) Check() (bool, error) {
-	output, err := ssh.RunOnce(s.cfg.SSHHost, s.cfg.SSHPort, s.cfg.RootUser, s.cfg.SSHKey, "swapon --show=NAME --noheadings")
+func (s *swapDelete) Check() (bool, error) {
+	cfg := s.GetConfig()
+	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "swapon --show=NAME --noheadings")
 	if err != nil {
 		return false, err
 	}
@@ -198,7 +117,8 @@ func (s *SwapDelete) Check() (bool, error) {
 }
 
 // Run removes the swap file and returns detailed result.
-func (s *SwapDelete) Run() playbook.Result {
+func (s *swapDelete) Run() playbook.Result {
+	cfg := s.GetConfig()
 	// Check if swap exists
 	needsDelete, err := s.Check()
 	if err != nil {
@@ -219,13 +139,13 @@ func (s *SwapDelete) Run() playbook.Result {
 	log.Println("Removing swap file...")
 
 	// Turn off swap
-	_, _ = ssh.RunOnce(s.cfg.SSHHost, s.cfg.SSHPort, s.cfg.RootUser, s.cfg.SSHKey, "swapoff /swapfile 2>/dev/null || true")
+	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "swapoff /swapfile 2>/dev/null || true")
 
 	// Remove from fstab
-	_, _ = ssh.RunOnce(s.cfg.SSHHost, s.cfg.SSHPort, s.cfg.RootUser, s.cfg.SSHKey, `sed -i '/\/swapfile/d' /etc/fstab`)
+	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `sed -i '/\/swapfile/d' /etc/fstab`)
 
 	// Delete file
-	_, err = ssh.RunOnce(s.cfg.SSHHost, s.cfg.SSHPort, s.cfg.RootUser, s.cfg.SSHKey, "rm -f /swapfile")
+	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "rm -f /swapfile")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -245,66 +165,27 @@ func (s *SwapDelete) Run() playbook.Result {
 }
 
 // NewSwapDelete creates a new swap-delete playbook.
-func NewSwapDelete() *SwapDelete {
-	return &SwapDelete{}
+func NewSwapDelete() *swapDelete {
+	pb := playbook.NewBasePlaybook()
+	pb.SetID(playbook.IDSwapDelete)
+	pb.SetDescription("Remove the swap file")
+	return &swapDelete{BasePlaybook: pb}
 }
 
 // SwapStatus shows current swap usage.
-type SwapStatus struct {
-	cfg  config.Config
-	opts *playbook.PlaybookOptions
-}
-
-// GetID returns the playbook identifier.
-func (s *SwapStatus) GetID() string {
-	return playbook.IDSwapStatus
-}
-
-// SetID sets the playbook identifier.
-func (s *SwapStatus) SetID(id string) playbook.PlaybookInterface {
-	return s
-}
-
-// GetDescription returns what this playbook does.
-func (s *SwapStatus) GetDescription() string {
-	return "Show swap status and usage"
-}
-
-// SetDescription sets the playbook description.
-func (s *SwapStatus) SetDescription(description string) playbook.PlaybookInterface {
-	return s
-}
-
-// GetConfig returns the current node configuration.
-func (s *SwapStatus) GetConfig() config.Config {
-	return s.cfg
-}
-
-// GetOptions returns the current playbook options.
-func (s *SwapStatus) GetOptions() *playbook.PlaybookOptions {
-	return s.opts
-}
-
-// SetConfig sets the node configuration for this playbook.
-func (s *SwapStatus) SetConfig(cfg config.Config) playbook.PlaybookInterface {
-	s.cfg = cfg
-	return s
-}
-
-// SetOptions sets the playbook-specific options.
-func (s *SwapStatus) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
-	s.opts = opts
-	return s
+type swapStatus struct {
+	*playbook.BasePlaybook
 }
 
 // Check always returns false since SwapStatus is read-only.
-func (s *SwapStatus) Check() (bool, error) {
+func (s *swapStatus) Check() (bool, error) {
 	return false, nil
 }
 
 // Run displays swap status and returns detailed result.
-func (s *SwapStatus) Run() playbook.Result {
-	output, err := ssh.RunOnce(s.cfg.SSHHost, s.cfg.SSHPort, s.cfg.RootUser, s.cfg.SSHKey, "swapon --show")
+func (s *swapStatus) Run() playbook.Result {
+	cfg := s.GetConfig()
+	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "swapon --show")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -336,6 +217,9 @@ func (s *SwapStatus) Run() playbook.Result {
 }
 
 // NewSwapStatus creates a new swap-status playbook.
-func NewSwapStatus() *SwapStatus {
-	return &SwapStatus{}
+func NewSwapStatus() *swapStatus {
+	pb := playbook.NewBasePlaybook()
+	pb.SetID(playbook.IDSwapStatus)
+	pb.SetDescription("Show swap status and usage")
+	return &swapStatus{BasePlaybook: pb}
 }

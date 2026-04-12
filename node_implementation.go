@@ -2,7 +2,6 @@ package ork
 
 import (
 	"fmt"
-	"maps"
 
 	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/playbook"
@@ -333,27 +332,12 @@ func (n *nodeImplementation) RunPlaybook(name string, opts ...playbook.PlaybookO
 		}
 	}
 
-	// Start with node-level config
-	cfg := n.cfg
-
-	// If PlaybookOptions provided, merge playbook-level args with node-level args
-	// Playbook-level args take precedence
-	if len(opts) > 0 {
-		mergedArgs := make(map[string]string)
-
-		// Copy node-level args first
-		maps.Copy(mergedArgs, n.cfg.Args)
-
-		// Override with playbook-level args
-		maps.Copy(mergedArgs, opts[0].Args)
-
-		cfg.Args = mergedArgs
-	}
-
 	// Configure playbook using fluent setters
-	pb.SetConfig(cfg)
+	pb.SetConfig(n.cfg)
 	if len(opts) > 0 {
-		pb.SetOptions(&opts[0])
+		pb.SetArgs(opts[0].Args)
+		pb.SetDryRun(opts[0].DryRun)
+		pb.SetTimeout(opts[0].Timeout)
 	}
 	return pb.Run()
 }

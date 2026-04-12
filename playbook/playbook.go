@@ -76,12 +76,33 @@ type PlaybookInterface interface {
 	// Returns the PlaybookInterface for fluent method chaining.
 	SetConfig(cfg config.Config) PlaybookInterface
 
-	// GetOptions returns the current playbook-specific options.
-	GetOptions() *PlaybookOptions
+	// GetArg retrieves a single argument value by key.
+	GetArg(key string) string
 
-	// SetOptions sets the playbook-specific options for this execution.
+	// SetArg sets a single argument value.
 	// Returns the PlaybookInterface for fluent method chaining.
-	SetOptions(opts *PlaybookOptions) PlaybookInterface
+	SetArg(key, value string) PlaybookInterface
+
+	// GetArgs returns the entire arguments map.
+	GetArgs() map[string]string
+
+	// SetArgs replaces the entire arguments map.
+	// Returns the PlaybookInterface for fluent method chaining.
+	SetArgs(args map[string]string) PlaybookInterface
+
+	// IsDryRun returns true if this is a dry-run execution.
+	IsDryRun() bool
+
+	// SetDryRun sets whether to simulate execution without making changes.
+	// Returns the PlaybookInterface for fluent method chaining.
+	SetDryRun(dryRun bool) PlaybookInterface
+
+	// GetTimeout returns the maximum duration for playbook execution.
+	GetTimeout() time.Duration
+
+	// SetTimeout sets the maximum duration for playbook execution.
+	// Returns the PlaybookInterface for fluent method chaining.
+	SetTimeout(timeout time.Duration) PlaybookInterface
 
 	// Check determines if the playbook needs to make any changes.
 	// Uses the config and options set via SetConfig/SetOptions.
