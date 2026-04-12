@@ -12,33 +12,25 @@ import (
 // The registry is used by Node.Playbook() to look up and execute playbooks.
 var defaultRegistry *playbook.Registry
 
-// RegisterPlaybook registers a custom playbook on the default registry.
-// This allows external packages to add their own playbooks that can then
-// be executed via node.RunPlaybookByID("custom-id").
-// This function is thread-safe and can be called from multiple goroutines.
-func RegisterPlaybook(p playbook.PlaybookInterface) {
-	if defaultRegistry == nil {
-		panic("ork: defaultRegistry not initialized - RegisterPlaybook called before init()")
-	}
-	if p == nil {
-		panic("ork: cannot register nil playbook")
-	}
-	defaultRegistry.PlaybookRegister(p)
+// GetDefaultRegistry returns the global default playbook registry.
+// This allows external packages to query and register playbooks.
+func GetDefaultRegistry() *playbook.Registry {
+	return defaultRegistry
 }
 
 func init() {
 	defaultRegistry = playbook.NewRegistry()
 
 	// Register all 11 built-in playbooks
-	defaultRegistry.PlaybookRegister(playbooks.NewPing())
-	defaultRegistry.PlaybookRegister(playbooks.NewAptUpdate())
-	defaultRegistry.PlaybookRegister(playbooks.NewAptUpgrade())
-	defaultRegistry.PlaybookRegister(playbooks.NewAptStatus())
-	defaultRegistry.PlaybookRegister(playbooks.NewReboot())
-	defaultRegistry.PlaybookRegister(playbooks.NewSwapCreate())
-	defaultRegistry.PlaybookRegister(playbooks.NewSwapDelete())
-	defaultRegistry.PlaybookRegister(playbooks.NewSwapStatus())
-	defaultRegistry.PlaybookRegister(playbooks.NewUserCreate())
-	defaultRegistry.PlaybookRegister(playbooks.NewUserDelete())
-	defaultRegistry.PlaybookRegister(playbooks.NewUserStatus())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewPing())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewAptUpdate())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewAptUpgrade())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewAptStatus())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewReboot())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewSwapCreate())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewSwapDelete())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewSwapStatus())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewUserCreate())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewUserDelete())
+	_ = defaultRegistry.PlaybookRegister(playbooks.NewUserStatus())
 }

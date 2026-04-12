@@ -88,34 +88,28 @@ func TestDefaultRegistry_PlaybooksHaveDescriptions(t *testing.T) {
 	}
 }
 
-func TestRegisterPlaybook_Success(t *testing.T) {
-	// Create a custom playbook
-	customPb := playbook.NewBasePlaybook()
-	customPb.SetID("test-custom-playbook")
-	customPb.SetDescription("A test custom playbook")
+func TestGetDefaultRegistry(t *testing.T) {
+	reg := GetDefaultRegistry()
+	if reg == nil {
+		t.Fatal("GetDefaultRegistry() returned nil")
+	}
 
-	// Register it
-	RegisterPlaybook(customPb)
+	// Test that we can use it to register a playbook
+	customPb := playbook.NewBasePlaybook()
+	customPb.SetID("test-get-registry-playbook")
+	customPb.SetDescription("Test playbook via GetDefaultRegistry")
+
+	err := reg.PlaybookRegister(customPb)
+	if err != nil {
+		t.Fatalf("failed to register playbook: %v", err)
+	}
 
 	// Verify it can be found
-	foundPb, ok := defaultRegistry.PlaybookFindByID("test-custom-playbook")
+	foundPb, ok := reg.PlaybookFindByID("test-get-registry-playbook")
 	if !ok {
-		t.Fatal("custom playbook not found after registration")
+		t.Fatal("custom playbook not found after registration via GetDefaultRegistry")
 	}
-	if foundPb.GetID() != "test-custom-playbook" {
-		t.Errorf("expected ID 'test-custom-playbook', got '%s'", foundPb.GetID())
+	if foundPb.GetID() != "test-get-registry-playbook" {
+		t.Errorf("expected ID 'test-get-registry-playbook', got '%s'", foundPb.GetID())
 	}
-	if foundPb.GetDescription() != "A test custom playbook" {
-		t.Errorf("expected description 'A test custom playbook', got '%s'", foundPb.GetDescription())
-	}
-}
-
-func TestRegisterPlaybook_NilPanics(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Fatal("expected panic when registering nil playbook, but none occurred")
-		}
-	}()
-
-	RegisterPlaybook(nil)
 }

@@ -189,7 +189,7 @@ Extend Ork with custom automation tasks by implementing the `Playbook` interface
 
 #### Registering Custom Playbooks
 
-Register your custom playbooks to use them via `node.Playbook("custom-id")`:
+Register your custom playbooks to use them via `node.RunPlaybookByID("custom-id")`:
 
 ```go
 import (
@@ -203,7 +203,9 @@ customPb.SetID("install-docker")
 customPb.SetDescription("Install Docker on the server")
 
 // Register it globally
-ork.RegisterPlaybook(customPb)
+if err := ork.GetDefaultRegistry().PlaybookRegister(customPb); err != nil {
+    log.Fatalf("Failed to register playbook: %v", err)
+}
 
 // Now use it like any built-in playbook
 node := ork.NewNodeForHost("server.example.com")

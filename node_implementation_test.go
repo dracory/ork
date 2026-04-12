@@ -780,7 +780,7 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 	}
 
 	// Register mock playbook
-	defaultRegistry.PlaybookRegister(mockPlaybook)
+	_ = defaultRegistry.PlaybookRegister(mockPlaybook)
 	defer func() {
 		// Clean up: remove mock playbook from registry
 		// Note: Registry doesn't have Remove method, so we'll just leave it
@@ -866,7 +866,7 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 	}
 
 	// Register mock playbook
-	defaultRegistry.PlaybookRegister(mockPlaybook)
+	_ = defaultRegistry.PlaybookRegister(mockPlaybook)
 
 	n := &nodeImplementation{
 		cfg: config.NodeConfig{

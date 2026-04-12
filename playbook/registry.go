@@ -1,6 +1,9 @@
 package playbook
 
-import "sync"
+import (
+	"errors"
+	"sync"
+)
 
 // Registry holds a collection of playbooks.
 type Registry struct {
@@ -16,10 +19,22 @@ func NewRegistry() *Registry {
 }
 
 // PlaybookRegister adds a playbook to the registry.
-func (r *Registry) PlaybookRegister(p PlaybookInterface) {
+// Returns an error if the playbook is nil or if a playbook with the same ID already exists.
+func (r *Registry) PlaybookRegister(p PlaybookInterface) error {
+	if p == nil {
+		return errors.New("playbook.Registry: cannot register nil playbook")
+	}
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.playbooks[p.GetID()] = p
+
+	id := p.GetID()
+	if _, exists := r.playbooks[id]; exists {
+		return errors.New("playbook.Registry: playbook with ID '" + id + "' already exists")
+	}
+
+	r.playbooks[id] = p
+	return nil
 }
 
 // PlaybookFindByID retrieves a playbook by ID.
