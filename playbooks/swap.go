@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 )
 
@@ -16,7 +17,7 @@ type SwapCreate struct{}
 
 // Name returns the playbook identifier.
 func (s *SwapCreate) Name() string {
-	return "swap-create"
+	return playbook.NameSwapCreate
 }
 
 // Description returns what this playbook does.
@@ -70,7 +71,7 @@ type SwapDelete struct{}
 
 // Name returns the playbook identifier.
 func (s *SwapDelete) Name() string {
-	return "swap-delete"
+	return playbook.NameSwapDelete
 }
 
 // Description returns what this playbook does.
@@ -108,7 +109,7 @@ type SwapStatus struct{}
 
 // Name returns the playbook identifier.
 func (s *SwapStatus) Name() string {
-	return "swap-status"
+	return playbook.NameSwapStatus
 }
 
 // Description returns what this playbook does.

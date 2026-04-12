@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 )
 
@@ -13,7 +14,7 @@ type UserCreate struct{}
 
 // Name returns the playbook identifier.
 func (u *UserCreate) Name() string {
-	return "user-create"
+	return playbook.NameUserCreate
 }
 
 // Description returns what this playbook does.
@@ -54,7 +55,7 @@ type UserDelete struct{}
 
 // Name returns the playbook identifier.
 func (u *UserDelete) Name() string {
-	return "user-delete"
+	return playbook.NameUserDelete
 }
 
 // Description returns what this playbook does.
@@ -91,7 +92,7 @@ type UserStatus struct{}
 
 // Name returns the playbook identifier.
 func (u *UserStatus) Name() string {
-	return "user-status"
+	return playbook.NameUserStatus
 }
 
 // Description returns what this playbook does.

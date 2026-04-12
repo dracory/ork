@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 )
 
@@ -17,7 +18,7 @@ type Ping struct{}
 
 // Name returns the playbook identifier.
 func (p *Ping) Name() string {
-	return "ping"
+	return playbook.NamePing
 }
 
 // Description returns what this playbook does.

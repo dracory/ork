@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 )
 
@@ -19,7 +20,7 @@ type Reboot struct {
 
 // Name returns the playbook identifier.
 func (r *Reboot) Name() string {
-	return "reboot"
+	return playbook.NameReboot
 }
 
 // Description returns what this playbook does.

@@ -83,24 +83,24 @@ node := ork.NewNodeForHost("server.example.com").
     SetArg("username", "alice").
     SetArg("shell", "/bin/bash")
 
-err := node.RunPlaybook("user-create")
+err := node.RunPlaybook(ork.PlaybookUserCreate)
 ```
 
 ### Available Playbooks
 
-| Playbook | Args | Description |
-|----------|------|-------------|
-| `ping` | - | Check SSH connectivity |
-| `apt-update` | - | Refresh package database |
-| `apt-upgrade` | - | Install available updates |
-| `apt-status` | - | Show available updates |
-| `reboot` | - | Reboot server |
-| `swap-create` | `size` (GB) | Create swap file |
-| `swap-delete` | - | Remove swap file |
-| `swap-status` | - | Show swap status |
-| `user-create` | `username` | Create user with sudo |
-| `user-delete` | `username` | Delete user |
-| `user-status` | `username` (opt) | Show user info |
+| `ork` Package | `playbook` Package | String | Args | Description |
+|---------------|-------------------|--------|------|-------------|
+| `PlaybookPing` | `NamePing` | `ping` | - | Check SSH connectivity |
+| `PlaybookAptUpdate` | `NameAptUpdate` | `apt-update` | - | Refresh package database |
+| `PlaybookAptUpgrade` | `NameAptUpgrade` | `apt-upgrade` | - | Install available updates |
+| `PlaybookAptStatus` | `NameAptStatus` | `apt-status` | - | Show available updates |
+| `PlaybookReboot` | `NameReboot` | `reboot` | - | Reboot server |
+| `PlaybookSwapCreate` | `NameSwapCreate` | `swap-create` | `size` (GB) | Create swap file |
+| `PlaybookSwapDelete` | `NameSwapDelete` | `swap-delete` | - | Remove swap file |
+| `PlaybookSwapStatus` | `NameSwapStatus` | `swap-status` | - | Show swap status |
+| `PlaybookUserCreate` | `NameUserCreate` | `user-create` | `username` | Create user with sudo |
+| `PlaybookUserDelete` | `NameUserDelete` | `user-delete` | `username` | Delete user |
+| `PlaybookUserStatus` | `NameUserStatus` | `user-status` | `username` (opt) | Show user info |
 
 ## Advanced Usage
 

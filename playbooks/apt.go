@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 )
 
@@ -14,7 +15,7 @@ type AptUpdate struct{}
 
 // Name returns the playbook identifier.
 func (a *AptUpdate) Name() string {
-	return "apt-update"
+	return playbook.NameAptUpdate
 }
 
 // Description returns what this playbook does.
@@ -45,7 +46,7 @@ type AptUpgrade struct{}
 
 // Name returns the playbook identifier.
 func (a *AptUpgrade) Name() string {
-	return "apt-upgrade"
+	return playbook.NameAptUpgrade
 }
 
 // Description returns what this playbook does.
@@ -76,7 +77,7 @@ type AptStatus struct{}
 
 // Name returns the playbook identifier.
 func (a *AptStatus) Name() string {
-	return "apt-status"
+	return playbook.NameAptStatus
 }
 
 // Description returns what this playbook does.
