@@ -350,5 +350,10 @@ func (n *nodeImplementation) RunPlaybook(name string, opts ...playbook.PlaybookO
 		cfg.Args = mergedArgs
 	}
 
-	return pb.Run(cfg)
+	// Configure playbook using fluent setters
+	pb.SetConfig(cfg)
+	if len(opts) > 0 {
+		pb.SetOptions(&opts[0])
+	}
+	return pb.Run()
 }

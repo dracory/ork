@@ -31,8 +31,8 @@ func TestDefaultRegistry_AllBuiltInPlaybooksRegistered(t *testing.T) {
 			t.Errorf("expected playbook '%s' to be registered, but it was not found", name)
 			continue
 		}
-		if pb.Name() != name {
-			t.Errorf("playbook name mismatch: expected '%s', got '%s'", name, pb.Name())
+		if pb.GetID() != name {
+			t.Errorf("playbook ID mismatch: expected '%s', got '%s'", name, pb.GetID())
 		}
 	}
 }
@@ -80,8 +80,8 @@ func TestDefaultRegistry_PlaybooksHaveDescriptions(t *testing.T) {
 	playbooks := defaultRegistry.List()
 
 	for _, pb := range playbooks {
-		if pb.Description() == "" {
-			t.Errorf("playbook '%s' has empty description", pb.Name())
+		if pb.GetDescription() == "" {
+			t.Errorf("playbook '%s' has empty description", pb.GetID())
 		}
 	}
 }

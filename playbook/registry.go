@@ -14,7 +14,7 @@ func NewRegistry() *Registry {
 
 // Register adds a playbook to the registry.
 func (r *Registry) Register(p Playbook) {
-	r.playbooks[p.Name()] = p
+	r.playbooks[p.GetID()] = p
 }
 
 // Get retrieves a playbook by name.

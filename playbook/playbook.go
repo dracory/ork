@@ -47,19 +47,50 @@ type Result struct {
 // Playbook is the interface that all playbooks must implement.
 // A playbook is a self-contained automation task that runs on a remote server.
 // All playbooks support idempotency through the Check() method and Result return value.
+//
+// Usage:
+//
+//	pb := playbooks.NewUserCreate().
+//	    SetConfig(cfg).
+//	    SetOptions(&playbook.PlaybookOptions{Args: map[string]string{"username": "alice"}})
+//
+//	needsRun, _ := pb.Check()
+//	result := pb.Run()
 type Playbook interface {
-	// Name returns the unique identifier for this playbook (e.g., "apt-update")
-	Name() string
+	// GetID returns the unique identifier for this playbook (e.g., "apt-update")
+	GetID() string
 
-	// Description returns a short description of what the playbook does
-	Description() string
+	// SetID sets the unique identifier for this playbook.
+	SetID(id string) Playbook
+
+	// GetDescription returns a short description of what the playbook does
+	GetDescription() string
+
+	// SetDescription sets a short description of what the playbook does.
+	SetDescription(description string) Playbook
+
+	// GetConfig returns the current node configuration for this playbook.
+	GetConfig() config.Config
+
+	// SetConfig sets the node configuration for this playbook execution.
+	// Returns the Playbook for fluent method chaining.
+	SetConfig(cfg config.Config) Playbook
+
+	// GetOptions returns the current playbook-specific options.
+	GetOptions() *PlaybookOptions
+
+	// SetOptions sets the playbook-specific options for this execution.
+	// Returns the Playbook for fluent method chaining.
+	SetOptions(opts *PlaybookOptions) Playbook
 
 	// Check determines if the playbook needs to make any changes.
+	// Uses the config and options set via SetConfig/SetOptions.
 	// Returns true if changes are needed, false if the system is already in the desired state.
 	// Returns an error if the check itself fails.
-	Check(config config.Config) (bool, error)
+	Check() (bool, error)
 
 	// Run executes the playbook and returns a detailed result.
+	// Uses the config and options set via SetConfig/SetOptions.
 	// The Result.Changed field indicates whether any changes were made.
-	Run(config config.Config) Result
+	Run() Result
 }

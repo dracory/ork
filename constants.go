@@ -2,8 +2,8 @@ package ork
 
 import "github.com/dracory/ork/playbook"
 
-// Playbook name constants for use with RunPlaybook.
-// These constants provide compile-time safety and IDE autocomplete for playbook names.
+// Playbook ID constants for use with RunPlaybook.
+// These constants provide compile-time safety and IDE autocomplete for playbook IDs.
 // They are aliases to the constants in the playbook package.
 //
 // Example:
@@ -12,35 +12,35 @@ import "github.com/dracory/ork/playbook"
 //	err := node.RunPlaybook(ork.PlaybookPing)
 const (
 	// PlaybookPing checks SSH connectivity
-	PlaybookPing = playbook.NamePing
+	PlaybookPing = playbook.IDPing
 
 	// PlaybookAptUpdate refreshes the package database
-	PlaybookAptUpdate = playbook.NameAptUpdate
+	PlaybookAptUpdate = playbook.IDAptUpdate
 
 	// PlaybookAptUpgrade installs available updates
-	PlaybookAptUpgrade = playbook.NameAptUpgrade
+	PlaybookAptUpgrade = playbook.IDAptUpgrade
 
 	// PlaybookAptStatus shows available updates
-	PlaybookAptStatus = playbook.NameAptStatus
+	PlaybookAptStatus = playbook.IDAptStatus
 
 	// PlaybookReboot reboots the server
-	PlaybookReboot = playbook.NameReboot
+	PlaybookReboot = playbook.IDReboot
 
 	// PlaybookSwapCreate creates a swap file (requires "size" arg in GB)
-	PlaybookSwapCreate = playbook.NameSwapCreate
+	PlaybookSwapCreate = playbook.IDSwapCreate
 
 	// PlaybookSwapDelete removes the swap file
-	PlaybookSwapDelete = playbook.NameSwapDelete
+	PlaybookSwapDelete = playbook.IDSwapDelete
 
 	// PlaybookSwapStatus shows swap status
-	PlaybookSwapStatus = playbook.NameSwapStatus
+	PlaybookSwapStatus = playbook.IDSwapStatus
 
 	// PlaybookUserCreate creates a user with sudo (requires "username" arg)
-	PlaybookUserCreate = playbook.NameUserCreate
+	PlaybookUserCreate = playbook.IDUserCreate
 
 	// PlaybookUserDelete deletes a user (requires "username" arg)
-	PlaybookUserDelete = playbook.NameUserDelete
+	PlaybookUserDelete = playbook.IDUserDelete
 
 	// PlaybookUserStatus shows user info (accepts optional "username" arg)
-	PlaybookUserStatus = playbook.NameUserStatus
+	PlaybookUserStatus = playbook.IDUserStatus
 )

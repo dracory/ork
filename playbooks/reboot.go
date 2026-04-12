@@ -16,30 +16,65 @@ type Reboot struct {
 	WaitForReconnect bool
 	// MaxWaitTime is the maximum time to wait for reconnection
 	MaxWaitTime time.Duration
+
+	cfg  config.Config
+	opts *playbook.PlaybookOptions
 }
 
-// Name returns the playbook identifier.
-func (r *Reboot) Name() string {
-	return playbook.NameReboot
+// GetID returns the playbook identifier.
+func (r *Reboot) GetID() string {
+	return playbook.IDReboot
 }
 
-// Description returns what this playbook does.
-func (r *Reboot) Description() string {
+// SetID sets the playbook identifier.
+func (r *Reboot) SetID(id string) playbook.Playbook {
+	return r
+}
+
+// GetDescription returns what this playbook does.
+func (r *Reboot) GetDescription() string {
 	return "Reboot the remote server"
+}
+
+// SetDescription sets the playbook description.
+func (r *Reboot) SetDescription(description string) playbook.Playbook {
+	return r
+}
+
+// GetConfig returns the current node configuration.
+func (r *Reboot) GetConfig() config.Config {
+	return r.cfg
+}
+
+// GetOptions returns the current playbook options.
+func (r *Reboot) GetOptions() *playbook.PlaybookOptions {
+	return r.opts
+}
+
+// SetConfig sets the node configuration for this playbook.
+func (r *Reboot) SetConfig(cfg config.Config) playbook.Playbook {
+	r.cfg = cfg
+	return r
+}
+
+// SetOptions sets the playbook-specific options.
+func (r *Reboot) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+	r.opts = opts
+	return r
 }
 
 // Check always returns true for reboot since it's an explicit action.
 // Reboot is always "needed" because the user explicitly requested it.
-func (r *Reboot) Check(cfg config.Config) (bool, error) {
+func (r *Reboot) Check() (bool, error) {
 	return true, nil // Always reboot when requested
 }
 
 // Run executes the reboot and returns detailed result.
-func (r *Reboot) Run(cfg config.Config) playbook.Result {
-	log.Printf("Rebooting %s...", cfg.SSHHost)
+func (r *Reboot) Run() playbook.Result {
+	log.Printf("Rebooting %s...", r.cfg.SSHHost)
 
 	// Trigger reboot (non-blocking, command returns immediately)
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "reboot")
+	_, err := ssh.RunOnce(r.cfg.SSHHost, r.cfg.SSHPort, r.cfg.RootUser, r.cfg.SSHKey, "reboot")
 	if err != nil {
 		// reboot command often returns connection error since it kills the SSH session
 		log.Printf("Reboot command sent (connection error expected): %v", err)
@@ -49,7 +84,7 @@ func (r *Reboot) Run(cfg config.Config) playbook.Result {
 		log.Println("Reboot initiated. Not waiting for server to come back online.")
 		return playbook.Result{
 			Changed: true, // Reboot was initiated
-			Message: fmt.Sprintf("Reboot initiated on %s", cfg.SSHHost),
+			Message: fmt.Sprintf("Reboot initiated on %s", r.cfg.SSHHost),
 			Details: map[string]string{
 				"wait_for_reconnect": "false",
 			},
@@ -69,12 +104,12 @@ func (r *Reboot) Run(cfg config.Config) playbook.Result {
 	for time.Now().Before(deadline) {
 		time.Sleep(5 * time.Second)
 
-		_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "uptime")
+		_, err := ssh.RunOnce(r.cfg.SSHHost, r.cfg.SSHPort, r.cfg.RootUser, r.cfg.SSHKey, "uptime")
 		if err == nil {
 			log.Println("Server is back online!")
 			return playbook.Result{
 				Changed: true,
-				Message: fmt.Sprintf("Reboot completed on %s, server is back online", cfg.SSHHost),
+				Message: fmt.Sprintf("Reboot completed on %s, server is back online", r.cfg.SSHHost),
 				Details: map[string]string{
 					"wait_for_reconnect": "true",
 					"max_wait":           maxWait.String(),
@@ -85,7 +120,7 @@ func (r *Reboot) Run(cfg config.Config) playbook.Result {
 
 	return playbook.Result{
 		Changed: true, // Reboot was initiated even if we timed out waiting
-		Message: fmt.Sprintf("Reboot initiated on %s, but timeout waiting for reconnect", cfg.SSHHost),
+		Message: fmt.Sprintf("Reboot initiated on %s, but timeout waiting for reconnect", r.cfg.SSHHost),
 		Error:   fmt.Errorf("timeout waiting for server to come back online after %v", maxWait),
 		Details: map[string]string{
 			"wait_for_reconnect": "true",

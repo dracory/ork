@@ -1,43 +1,43 @@
 package playbook
 
-// Playbook name constants for use with RunPlaybook.
-// These constants provide compile-time safety and IDE autocomplete for playbook names.
+// Playbook ID constants for use with RunPlaybook.
+// These constants provide compile-time safety and IDE autocomplete for playbook IDs.
 //
 // Example:
 //
 //	node := ork.NewNodeForHost("server.example.com")
-//	err := node.RunPlaybook(playbook.NamePing)
+//	err := node.RunPlaybook(playbook.IDPing)
 const (
-	// NamePing checks SSH connectivity
-	NamePing = "ping"
+	// IDPing checks SSH connectivity
+	IDPing = "ping"
 
-	// NameAptUpdate refreshes the package database
-	NameAptUpdate = "apt-update"
+	// IDAptUpdate refreshes the package database
+	IDAptUpdate = "apt-update"
 
-	// NameAptUpgrade installs available updates
-	NameAptUpgrade = "apt-upgrade"
+	// IDAptUpgrade installs available updates
+	IDAptUpgrade = "apt-upgrade"
 
-	// NameAptStatus shows available updates
-	NameAptStatus = "apt-status"
+	// IDAptStatus shows available updates
+	IDAptStatus = "apt-status"
 
-	// NameReboot reboots the server
-	NameReboot = "reboot"
+	// IDReboot reboots the server
+	IDReboot = "reboot"
 
-	// NameSwapCreate creates a swap file (requires "size" arg in GB)
-	NameSwapCreate = "swap-create"
+	// IDSwapCreate creates a swap file (requires "size" arg in GB)
+	IDSwapCreate = "swap-create"
 
-	// NameSwapDelete removes the swap file
-	NameSwapDelete = "swap-delete"
+	// IDSwapDelete removes the swap file
+	IDSwapDelete = "swap-delete"
 
-	// NameSwapStatus shows swap status
-	NameSwapStatus = "swap-status"
+	// IDSwapStatus shows swap status
+	IDSwapStatus = "swap-status"
 
-	// NameUserCreate creates a user with sudo (requires "username" arg)
-	NameUserCreate = "user-create"
+	// IDUserCreate creates a user with sudo (requires "username" arg)
+	IDUserCreate = "user-create"
 
-	// NameUserDelete deletes a user (requires "username" arg)
-	NameUserDelete = "user-delete"
+	// IDUserDelete deletes a user (requires "username" arg)
+	IDUserDelete = "user-delete"
 
-	// NameUserStatus shows user info (accepts optional "username" arg)
-	NameUserStatus = "user-status"
+	// IDUserStatus shows user info (accepts optional "username" arg)
+	IDUserStatus = "user-status"
 )

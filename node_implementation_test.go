@@ -894,28 +894,57 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 // mockPlaybook is a mock implementation of playbook.Playbook for testing.
 type mockPlaybook struct {
 	name      string
+	cfg       config.Config
+	opts      *playbook.PlaybookOptions
 	runFunc   func(config.Config) error
 	checkFunc func(config.Config) (bool, error)
 }
 
-func (m *mockPlaybook) Name() string {
+func (m *mockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *mockPlaybook) Description() string {
+func (m *mockPlaybook) SetID(id string) playbook.Playbook {
+	m.name = id
+	return m
+}
+
+func (m *mockPlaybook) GetDescription() string {
 	return "Mock playbook for testing"
 }
 
-func (m *mockPlaybook) Check(cfg config.Config) (bool, error) {
+func (m *mockPlaybook) SetDescription(description string) playbook.Playbook {
+	return m
+}
+
+func (m *mockPlaybook) GetConfig() config.Config {
+	return m.cfg
+}
+
+func (m *mockPlaybook) SetConfig(cfg config.Config) playbook.Playbook {
+	m.cfg = cfg
+	return m
+}
+
+func (m *mockPlaybook) GetOptions() *playbook.PlaybookOptions {
+	return m.opts
+}
+
+func (m *mockPlaybook) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+	m.opts = opts
+	return m
+}
+
+func (m *mockPlaybook) Check() (bool, error) {
 	if m.checkFunc != nil {
-		return m.checkFunc(cfg)
+		return m.checkFunc(m.cfg)
 	}
 	return true, nil
 }
 
-func (m *mockPlaybook) Run(cfg config.Config) playbook.Result {
+func (m *mockPlaybook) Run() playbook.Result {
 	if m.runFunc != nil {
-		err := m.runFunc(cfg)
+		err := m.runFunc(m.cfg)
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
