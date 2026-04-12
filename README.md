@@ -192,6 +192,54 @@ customPlaybook := playbook.NewSimplePlaybook(
 // (access via the playbook package)
 ```
 
+#### Custom Playbooks with Idempotency (Optional)
+
+For better idempotency support, implement `CheckablePlaybook`:
+
+```go
+type MyCustomPlaybook struct{}
+
+func (p *MyCustomPlaybook) Name() string { return "my-task" }
+func (p *MyCustomPlaybook) Description() string { return "Does something" }
+
+// Standard Run() method - required
+func (p *MyCustomPlaybook) Run(cfg config.Config) error {
+    result := p.RunWithResult(cfg)
+    return result.Error
+}
+
+// Check() - returns true if changes needed
+func (p *MyCustomPlaybook) Check(cfg config.Config) (bool, error) {
+    // Check if already configured
+    output, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "cat /etc/my-config")
+    return !strings.Contains(output, "configured"), nil
+}
+
+// RunWithResult() - execute and return Result
+func (p *MyCustomPlaybook) RunWithResult(cfg config.Config) playbook.Result {
+    needsChange, _ := p.Check(cfg)
+    if !needsChange {
+        return playbook.Result{
+            Changed: false,
+            Message: "Already configured",
+        }
+    }
+    
+    // Apply changes...
+    _, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "setup-command")
+    if err != nil {
+        return playbook.Result{Changed: false, Error: err}
+    }
+    
+    return playbook.Result{
+        Changed: true,
+        Message: "Configuration applied",
+    }
+}
+```
+
+**Note:** If you don't implement `CheckablePlaybook`, `playbook.Execute()` will still work but will assume `Changed: true`.
+
 ## Internal Packages
 
 For advanced use cases or when you need fine-grained control, you can use the internal packages directly:
