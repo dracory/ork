@@ -1,6 +1,6 @@
 # Ork
 
-Ork is a Go package for SSH-based server automation playbooks. It provides common utilities for connecting to remote servers via SSH and running automation tasks.
+Ork is a Go package for SSH-based server automation. Think of it like Ansible, but in Go - you define **Nodes** (remote servers) and run commands or playbooks against them.
 
 ## Installation
 
@@ -8,13 +8,9 @@ Ork is a Go package for SSH-based server automation playbooks. It provides commo
 go get github.com/dracory/ork
 ```
 
-## Simplified API (Recommended)
+## Quick Start
 
-Ork provides a clean, intuitive top-level API that requires only a single import for common operations. This is the recommended way to use Ork for most use cases.
-
-### Simple SSH Command Execution
-
-Execute commands on remote servers with minimal code:
+The core concept is the **Node** - a representation of a remote server:
 
 ```go
 package main
@@ -25,8 +21,11 @@ import (
 )
 
 func main() {
-    // Execute a command with default settings (port 22, user root, key id_rsa)
-    output, err := ork.RunSSH("server.example.com", "uptime")
+    // Create a node (remote server)
+    node := ork.NewNode("server.example.com")
+    
+    // Run a command
+    output, err := node.Run("uptime")
     if err != nil {
         log.Fatal(err)
     }
@@ -34,82 +33,69 @@ func main() {
 }
 ```
 
-### Simple SSH with Custom Configuration
+## Configuration
 
-Use functional options for flexible configuration:
-
-```go
-output, err := ork.RunSSH("server.example.com", "uptime",
-    ork.WithPort("2222"),
-    ork.WithUser("deploy"),
-    ork.WithKey("production.prv"),
-)
-```
-
-### Simple Playbook Execution
-
-Run pre-registered automation tasks by name:
+Use the fluent API to configure connection settings:
 
 ```go
-// Update package database
-err := ork.RunPlaybook("apt-update", "server.example.com")
-if err != nil {
-    log.Fatal(err)
-}
-
-// Create a user with arguments
-err = ork.RunPlaybook("user-create", "server.example.com",
-    ork.WithArg("username", "alice"),
-    ork.WithArg("shell", "/bin/bash"),
-)
-```
-
-### Fluent Node API
-
-Use the fluent builder pattern for readable, chainable configuration:
-
-```go
-// Create and configure a node
 node := ork.NewNode("server.example.com").
     SetPort("2222").
     SetUser("deploy").
     SetKey("production.prv")
 
-// Execute commands
 output, err := node.Run("uptime")
-if err != nil {
-    log.Fatal(err)
-}
-log.Println(output)
-
-// Execute playbooks
-err = node.SetArg("username", "alice").Playbook("user-create")
 ```
 
-### Persistent Connections
+## Persistent Connections
 
-Maintain persistent SSH connections for multiple operations:
+For multiple operations, establish a persistent connection:
 
 ```go
 node := ork.NewNode("server.example.com").
     SetPort("2222").
     SetUser("deploy")
 
-// Establish persistent connection
 if err := node.Connect(); err != nil {
     log.Fatal(err)
 }
 defer node.Close()
 
-// Multiple operations reuse the same connection (more efficient)
+// These commands reuse the same SSH connection
 output1, _ := node.Run("uptime")
 output2, _ := node.Run("df -h")
-node.Playbook("apt-status")
 ```
 
-### Inspecting Configuration
+## Playbooks
 
-Use getter methods to inspect node configuration:
+Run pre-built automation tasks (playbooks) against a node:
+
+```go
+node := ork.NewNode("server.example.com").
+    SetArg("username", "alice").
+    SetArg("shell", "/bin/bash")
+
+err := node.Playbook("user-create")
+```
+
+### Available Playbooks
+
+| Playbook | Args | Description |
+|----------|------|-------------|
+| `ping` | - | Check SSH connectivity |
+| `apt-update` | - | Refresh package database |
+| `apt-upgrade` | - | Install available updates |
+| `apt-status` | - | Show available updates |
+| `reboot` | - | Reboot server |
+| `swap-create` | `size` (GB) | Create swap file |
+| `swap-delete` | - | Remove swap file |
+| `swap-status` | - | Show swap status |
+| `user-create` | `username` | Create user with sudo |
+| `user-delete` | `username` | Delete user |
+| `user-status` | `username` (opt) | Show user info |
+
+## Advanced Usage
+
+### Inspecting Configuration
 
 ```go
 node := ork.NewNode("server.example.com").
@@ -124,43 +110,12 @@ fmt.Printf("User: %s\n", node.GetUser())
 cfg := node.GetConfig()
 ```
 
-### Code Comparison: Simplified API vs Internal Packages
-
-**Before (Internal Packages):**
-```go
-import (
-    "github.com/dracory/ork/config"
-    "github.com/dracory/ork/ssh"
-    "github.com/dracory/ork/playbooks"
-)
-
-cfg := config.Config{
-    SSHHost:  "server.example.com",
-    SSHPort:  "2222",
-    RootUser: "deploy",
-    SSHKey:   "production.prv",
-}
-output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "uptime")
-```
-
-**After (Simplified API):**
-```go
-import "github.com/dracory/ork"
-
-output, err := ork.RunSSH("server.example.com", "uptime",
-    ork.WithPort("2222"),
-    ork.WithUser("deploy"),
-    ork.WithKey("production.prv"),
-)
-```
-
 ### Custom Playbooks
 
 Extend Ork with custom automation tasks:
 
 ```go
 import (
-    "github.com/dracory/ork"
     "github.com/dracory/ork/playbook"
     "github.com/dracory/ork/config"
 )
@@ -170,56 +125,16 @@ customPlaybook := playbook.NewSimplePlaybook(
     "custom-task",
     "Performs a custom automation task",
     func(cfg config.Config) error {
-        // Your custom automation logic here
+        // Your custom logic here
         return nil
     },
 )
 
-// Register it globally
-ork.RegisterPlaybook(customPlaybook)
-
-// Now use it like any built-in playbook
-err := ork.RunPlaybook("custom-task", "server.example.com")
+// Register it in the playbook registry
+// (access via the playbook package)
 ```
 
-### Implementing Custom NodeInterface
-
-For advanced use cases, implement the `NodeInterface` for custom behavior:
-
-```go
-type MyCustomNode struct {
-    // Your custom fields
-}
-
-func (n *MyCustomNode) SetPort(port string) ork.NodeInterface {
-    // Your custom implementation
-    return n
-}
-
-// Implement all other NodeInterface methods...
-```
-
-### Discovering Available Playbooks
-
-```go
-// List all registered playbooks
-names := ork.ListPlaybooks()
-for _, name := range names {
-    fmt.Println(name)
-}
-
-// Get a specific playbook
-pb, ok := ork.GetPlaybook("apt-update")
-if ok {
-    fmt.Printf("%s: %s\n", pb.Name(), pb.Description())
-}
-```
-
-### Backward Compatibility
-
-The simplified API is fully backward compatible. All internal packages (`config`, `ssh`, `playbook`, `playbooks`) remain accessible and unchanged. You can use both APIs in the same codebase and migrate gradually.
-
-## Internal Packages (Advanced)
+## Internal Packages
 
 For advanced use cases or when you need fine-grained control, you can use the internal packages directly:
 
@@ -228,37 +143,7 @@ For advanced use cases or when you need fine-grained control, you can use the in
 - `playbook` - Base interfaces and registry for organizing playbooks
 - `playbooks` - Reusable playbook implementations (ping, apt, reboot, swap, user)
 
-## Quick Start (Internal Packages)
-
-```go
-package main
-
-import (
-    "log"
-    
-    "github.com/dracory/ork/config"
-    "github.com/dracory/ork/ssh"
-)
-
-func main() {
-    // Create config
-    cfg := config.Config{
-        SSHHost:  "db3.sinevia.com",
-        SSHPort:  "40022",
-        SSHKey:   "2024_sinevia.prv",
-        RootUser: "root",
-    }
-    
-    // Run a command
-    output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "uptime")
-    if err != nil {
-        log.Fatal(err)
-    }
-    log.Println(output)
-}
-```
-
-## Using Reusable Playbooks
+For advanced use cases, use the internal packages directly:
 
 ```go
 package main
@@ -299,21 +184,13 @@ func main() {
 }
 ```
 
-### Available Playbooks
+### Package Overview
 
-| Playbook | Description | Args |
-|----------|-------------|------|
-| `ping` | Check SSH connectivity | - |
-| `apt-update` | Refresh package database | - |
-| `apt-upgrade` | Install available updates | - |
-| `apt-status` | Show available updates | - |
-| `reboot` | Reboot server | - |
-| `swap-create` | Create swap file | `size` (GB, default 1) |
-| `swap-delete` | Remove swap file | - |
-| `swap-status` | Show swap status | - |
-| `user-create` | Create user with sudo | `username` |
-| `user-delete` | Delete user | `username` |
-| `user-status` | Show user info | `username` (optional) |
+- `ork` - Main API: `NodeInterface` and `NewNode()`
+- `config` - Configuration types
+- `ssh` - SSH client with connection management
+- `playbook` - Playbook interface and registry
+- `playbooks` - Built-in playbook implementations
 
 ## License
 
