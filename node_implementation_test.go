@@ -462,6 +462,11 @@ func TestNodeImplementation_GetConfig_DeepCopy(t *testing.T) {
 	cfg.Args["username"] = "modified"
 	cfg.Args["newkey"] = "newvalue"
 
+	// Verify the modifications exist in the returned copy
+	if cfg.SSHHost != "modified.example.com" || cfg.SSHPort != "9999" || cfg.RootUser != "modified" || cfg.SSHKey != "modified.prv" {
+		t.Error("config copy should reflect modifications")
+	}
+
 	// Verify the node's internal config is unchanged
 	if n.cfg.SSHHost != "server.example.com" {
 		t.Errorf("Expected internal SSHHost unchanged, got %q", n.cfg.SSHHost)
@@ -775,7 +780,7 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 	}
 
 	// Register mock playbook
-	defaultRegistry.Register(mockPlaybook)
+	defaultRegistry.PlaybookRegister(mockPlaybook)
 	defer func() {
 		// Clean up: remove mock playbook from registry
 		// Note: Registry doesn't have Remove method, so we'll just leave it
@@ -861,7 +866,7 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 	}
 
 	// Register mock playbook
-	defaultRegistry.Register(mockPlaybook)
+	defaultRegistry.PlaybookRegister(mockPlaybook)
 
 	n := &nodeImplementation{
 		cfg: config.Config{

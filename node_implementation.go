@@ -299,7 +299,7 @@ func (n *nodeImplementation) RunCommand(cmd string) (string, error) {
 	return output, nil
 }
 
-// RunPlaybook executes a named playbook on the remote server.
+// RunPlaybook executes a playbook by ID on the remote server.
 // The playbook is retrieved from the global registry.
 // The current node configuration (including arguments set via SetArg/SetArgs)
 // is passed to the playbook.
@@ -319,16 +319,16 @@ func (n *nodeImplementation) RunCommand(cmd string) (string, error) {
 //	    Args: map[string]string{"size": "2"},
 //	})
 //
-// RunPlaybook executes a named playbook and returns detailed result information.
+// RunPlaybook executes a playbook by ID and returns detailed result information.
 // This is the preferred method for executing playbooks as it provides idempotency support
 // through the Result.Changed field.
-func (n *nodeImplementation) RunPlaybook(name string, opts ...playbook.PlaybookOptions) playbook.Result {
-	pb, ok := defaultRegistry.Get(name)
+func (n *nodeImplementation) RunPlaybook(id string, opts ...playbook.PlaybookOptions) playbook.Result {
+	pb, ok := defaultRegistry.PlaybookFindByID(id)
 	if !ok {
 		return playbook.Result{
 			Changed: false,
-			Message: fmt.Sprintf("playbook '%s' not found in registry", name),
-			Error:   fmt.Errorf("playbook '%s' not found in registry", name),
+			Message: fmt.Sprintf("playbook '%s' not found in registry", id),
+			Error:   fmt.Errorf("playbook '%s' not found in registry", id),
 		}
 	}
 

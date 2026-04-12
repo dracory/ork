@@ -25,25 +25,25 @@ func TestDefaultRegistry_AllBuiltInPlaybooksRegistered(t *testing.T) {
 		"user-status",
 	}
 
-	for _, name := range expectedPlaybooks {
-		pb, ok := defaultRegistry.Get(name)
+	for _, id := range expectedPlaybooks {
+		pb, ok := defaultRegistry.PlaybookFindByID(id)
 		if !ok {
-			t.Errorf("expected playbook '%s' to be registered, but it was not found", name)
+			t.Errorf("expected playbook '%s' to be registered, but it was not found", id)
 			continue
 		}
-		if pb.GetID() != name {
-			t.Errorf("playbook ID mismatch: expected '%s', got '%s'", name, pb.GetID())
+		if pb.GetID() != id {
+			t.Errorf("playbook ID mismatch: expected '%s', got '%s'", id, pb.GetID())
 		}
 	}
 }
 
-func TestDefaultRegistry_ContainsExpectedPlaybookNames(t *testing.T) {
-	names := defaultRegistry.Names()
+func TestDefaultRegistry_ContainsExpectedPlaybookIDs(t *testing.T) {
+	ids := defaultRegistry.GetPlaybookIDs()
 
-	// Verify all expected built-in playbook names are present
+	// Verify all expected built-in playbook IDs are present
 	// Note: The registry may contain additional test playbooks from other tests,
 	// so we only verify that the built-in playbooks exist, not the exact count.
-	expectedNames := []string{
+	expectedIDs := []string{
 		"ping",
 		"apt-update",
 		"apt-upgrade",
@@ -57,27 +57,27 @@ func TestDefaultRegistry_ContainsExpectedPlaybookNames(t *testing.T) {
 		"user-status",
 	}
 
-	// Create a map of actual names for quick lookup
-	actualNames := make(map[string]bool)
-	for _, name := range names {
-		actualNames[name] = true
+	// Create a map of actual IDs for quick lookup
+	actualIDs := make(map[string]bool)
+	for _, id := range ids {
+		actualIDs[id] = true
 	}
 
-	// Check that all expected names are present
-	for _, name := range expectedNames {
-		if !actualNames[name] {
-			t.Errorf("expected built-in playbook '%s' not found in registry", name)
+	// Check that all expected IDs are present
+	for _, id := range expectedIDs {
+		if !actualIDs[id] {
+			t.Errorf("expected built-in playbook '%s' not found in registry", id)
 		}
 	}
 
 	// Verify we have at least the expected number of built-in playbooks
-	if len(names) < len(expectedNames) {
-		t.Errorf("expected at least %d playbooks, got %d", len(expectedNames), len(names))
+	if len(ids) < len(expectedIDs) {
+		t.Errorf("expected at least %d playbooks, got %d", len(expectedIDs), len(ids))
 	}
 }
 
 func TestDefaultRegistry_PlaybooksHaveDescriptions(t *testing.T) {
-	playbooks := defaultRegistry.List()
+	playbooks := defaultRegistry.PlaybookList()
 
 	for _, pb := range playbooks {
 		if pb.GetDescription() == "" {

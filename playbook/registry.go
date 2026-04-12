@@ -12,19 +12,19 @@ func NewRegistry() *Registry {
 	}
 }
 
-// Register adds a playbook to the registry.
-func (r *Registry) Register(p PlaybookInterface) {
+// PlaybookRegister adds a playbook to the registry.
+func (r *Registry) PlaybookRegister(p PlaybookInterface) {
 	r.playbooks[p.GetID()] = p
 }
 
-// Get retrieves a playbook by name.
-func (r *Registry) Get(name string) (PlaybookInterface, bool) {
-	p, ok := r.playbooks[name]
+// PlaybookFindByID retrieves a playbook by ID.
+func (r *Registry) PlaybookFindByID(id string) (PlaybookInterface, bool) {
+	p, ok := r.playbooks[id]
 	return p, ok
 }
 
-// List returns all registered playbooks.
-func (r *Registry) List() []PlaybookInterface {
+// PlaybookList returns all registered playbooks.
+func (r *Registry) PlaybookList() []PlaybookInterface {
 	list := make([]PlaybookInterface, 0, len(r.playbooks))
 	for _, p := range r.playbooks {
 		list = append(list, p)
@@ -32,11 +32,11 @@ func (r *Registry) List() []PlaybookInterface {
 	return list
 }
 
-// Names returns all registered playbook names.
-func (r *Registry) Names() []string {
-	names := make([]string, 0, len(r.playbooks))
-	for name := range r.playbooks {
-		names = append(names, name)
+// GetPlaybookIDs returns all registered playbook IDs.
+func (r *Registry) GetPlaybookIDs() []string {
+	ids := make([]string, 0, len(r.playbooks))
+	for id := range r.playbooks {
+		ids = append(ids, id)
 	}
-	return names
+	return ids
 }

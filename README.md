@@ -18,6 +18,7 @@ package main
 import (
     "log"
     "github.com/dracory/ork"
+    "github.com/dracory/ork/config"
 )
 
 func main() {
@@ -26,10 +27,11 @@ func main() {
     // Option 1: From host (most common)
     node := ork.NewNodeForHost("server.example.com")
     
-    // Option 2: Empty node, configure later
-    node := ork.NewNode().SetHost("server.example.com")
-    
-    // Option 3: From existing config
+    // Option 2: From config (useful for complex setups)
+    cfg := config.Config{
+        SSHHost: "server.example.com",
+        SSHPort: "22",
+    }
     node := ork.NewNodeFromConfig(cfg)
     
     // Run a command
@@ -98,17 +100,17 @@ if result.Changed {
 
 | `ork` Package | `playbook` Package | String | Args | Description |
 |---------------|-------------------|--------|------|-------------|
-| `PlaybookPing` | `NamePing` | `ping` | - | Check SSH connectivity |
-| `PlaybookAptUpdate` | `NameAptUpdate` | `apt-update` | - | Refresh package database |
-| `PlaybookAptUpgrade` | `NameAptUpgrade` | `apt-upgrade` | - | Install available updates |
-| `PlaybookAptStatus` | `NameAptStatus` | `apt-status` | - | Show available updates |
-| `PlaybookReboot` | `NameReboot` | `reboot` | - | Reboot server |
-| `PlaybookSwapCreate` | `NameSwapCreate` | `swap-create` | `size` (GB) | Create swap file |
-| `PlaybookSwapDelete` | `NameSwapDelete` | `swap-delete` | - | Remove swap file |
-| `PlaybookSwapStatus` | `NameSwapStatus` | `swap-status` | - | Show swap status |
-| `PlaybookUserCreate` | `NameUserCreate` | `user-create` | `username` | Create user with sudo |
-| `PlaybookUserDelete` | `NameUserDelete` | `user-delete` | `username` | Delete user |
-| `PlaybookUserStatus` | `NameUserStatus` | `user-status` | `username` (opt) | Show user info |
+| `PlaybookPing` | `IDPing` | `ping` | - | Check SSH connectivity |
+| `PlaybookAptUpdate` | `IDAptUpdate` | `apt-update` | - | Refresh package database |
+| `PlaybookAptUpgrade` | `IDAptUpgrade` | `apt-upgrade` | - | Install available updates |
+| `PlaybookAptStatus` | `IDAptStatus` | `apt-status` | - | Show available updates |
+| `PlaybookReboot` | `IDReboot` | `reboot` | - | Reboot server |
+| `PlaybookSwapCreate` | `IDSwapCreate` | `swap-create` | `size` (GB) | Create swap file |
+| `PlaybookSwapDelete` | `IDSwapDelete` | `swap-delete` | - | Remove swap file |
+| `PlaybookSwapStatus` | `IDSwapStatus` | `swap-status` | - | Show swap status |
+| `PlaybookUserCreate` | `IDUserCreate` | `user-create` | `username` | Create user with sudo |
+| `PlaybookUserDelete` | `IDUserDelete` | `user-delete` | `username` | Delete user |
+| `PlaybookUserStatus` | `IDUserStatus` | `user-status` | `username` (opt) | Show user info |
 
 ## Idempotency
 
@@ -149,12 +151,15 @@ import (
     "github.com/dracory/ork/playbooks"
 )
 
-// Execute with helper function
-result := playbook.Execute(playbooks.NewAptUpgrade(), cfg)
+// Execute directly with config
+aptUpgrade := playbooks.NewAptUpgrade()
+aptUpgrade.SetConfig(cfg)
+result := aptUpgrade.Run()
 
 // Or check before running
 pb := playbooks.NewSwapCreate()
-needsChange, _ := pb.Check(cfg)
+pb.SetConfig(cfg)
+needsChange, _ := pb.Check()
 if !needsChange {
     log.Println("Swap already exists, skipping...")
     return
@@ -170,9 +175,9 @@ node := ork.NewNodeForHost("server.example.com").
     SetPort("2222").
     SetUser("deploy")
 
-fmt.Printf("Host: %s\n", node.GetHost())
-fmt.Printf("Port: %s\n", node.GetPort())
-fmt.Printf("User: %s\n", node.GetUser())
+fmt.Printf("Host: %s\n", node.GetConfig().SSHHost)
+fmt.Printf("Port: %s\n", node.GetConfig().SSHPort)
+fmt.Printf("User: %s\n", node.GetConfig().RootUser)
 
 // Get full config for integration with internal packages
 cfg := node.GetConfig()
@@ -189,7 +194,7 @@ For full idempotency support, implement all methods:
 ```go
 type MyCustomPlaybook struct{}
 
-func (p *MyCustomPlaybook) Name() string { return "my-task" }
+func (p *MyCustomPlaybook) GetID() string { return "my-task" }
 func (p *MyCustomPlaybook) Description() string { return "Does something" }
 
 // Check() - returns true if changes needed
@@ -253,28 +258,34 @@ func main() {
 
     // Ping server to check connectivity
     ping := playbooks.NewPing()
-    if err := ping.Run(cfg); err != nil {
-        log.Fatal(err)
+    ping.SetConfig(cfg)
+    result := ping.Run()
+    if result.Error != nil {
+        log.Fatal(result.Error)
     }
 
     // Update packages
     aptUpdate := playbooks.NewAptUpdate()
-    if err := aptUpdate.Run(cfg); err != nil {
-        log.Fatal(err)
+    aptUpdate.SetConfig(cfg)
+    result = aptUpdate.Run()
+    if result.Error != nil {
+        log.Fatal(result.Error)
     }
 
     // Create a 2GB swap file
     cfg.Args = map[string]string{"size": "2"}
     swapCreate := playbooks.NewSwapCreate()
-    if err := swapCreate.Run(cfg); err != nil {
-        log.Fatal(err)
+    swapCreate.SetConfig(cfg)
+    result = swapCreate.Run()
+    if result.Error != nil {
+        log.Fatal(result.Error)
     }
 }
 ```
 
 ### Package Overview
 
-- `ork` - Main API: `NodeInterface`, `NewNode()`, `NewNodeForHost()`, `NewNodeFromConfig()`
+- `ork` - Main API: `NodeInterface`, `NewNode()`, `NewNodeForHost()`, `NewNodeFromConfig()`, `RunCommand()`, `RunPlaybook()`
 - `config` - Configuration types
 - `ssh` - SSH client with connection management
 - `playbook` - Playbook interface and registry

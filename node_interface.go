@@ -249,7 +249,7 @@ type NodeInterface interface {
 	//	output, err := node.RunCommand("uptime")  // Creates one-time connection
 	RunCommand(cmd string) (string, error)
 
-	// RunPlaybook executes a named playbook and returns detailed result information.
+	// RunPlaybook executes a playbook by ID and returns detailed result information.
 	// This is the preferred method for executing playbooks as it provides idempotency support
 	// through the Result.Changed field, indicating whether any changes were actually made.
 	//
@@ -287,7 +287,7 @@ type NodeInterface interface {
 	//	} else {
 	//	    log.Println("Swap already exists - no changes made")
 	//	}
-	RunPlaybook(name string, opts ...playbook.PlaybookOptions) playbook.Result
+	RunPlaybook(id string, opts ...playbook.PlaybookOptions) playbook.Result
 }
 
 // NewNode creates a new Node with default configuration values.
