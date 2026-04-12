@@ -259,9 +259,9 @@ func TestIntegration_Node_Playbook(t *testing.T) {
 	defer node.Close()
 
 	// Test ping playbook
-	err = node.RunPlaybook("ping")
-	if err != nil {
-		t.Fatalf("Playbook('ping') failed: %v", err)
+	result := node.RunPlaybook("ping")
+	if result.Error != nil {
+		t.Fatalf("Playbook('ping') failed: %v", result.Error)
 	}
 }
 
@@ -305,9 +305,9 @@ func TestIntegration_MultipleOperations(t *testing.T) {
 	}
 
 	// Test 4: Execute playbook
-	err = node.RunPlaybook("ping")
-	if err != nil {
-		t.Fatalf("Playbook execution failed: %v", err)
+	result := node.RunPlaybook("ping")
+	if result.Error != nil {
+		t.Fatalf("Playbook execution failed: %v", result.Error)
 	}
 
 	// Test 5: Run final command

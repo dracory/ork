@@ -83,7 +83,15 @@ node := ork.NewNodeForHost("server.example.com").
     SetArg("username", "alice").
     SetArg("shell", "/bin/bash")
 
-err := node.RunPlaybook(ork.PlaybookUserCreate)
+result := node.RunPlaybook(ork.PlaybookUserCreate)
+if result.Error != nil {
+    log.Fatalf("Playbook failed: %v", result.Error)
+}
+if result.Changed {
+    log.Printf("User created: %s", result.Message)
+} else {
+    log.Println("User already exists - no changes made")
+}
 ```
 
 ### Available Playbooks
@@ -104,16 +112,11 @@ err := node.RunPlaybook(ork.PlaybookUserCreate)
 
 ## Idempotency
 
-All playbooks now support idempotent execution. When you run a playbook, it reports whether any changes were actually made:
+All playbooks now support idempotent execution. Use `RunPlaybook()` to see whether any changes were actually made:
 
 ```go
-import (
-    "github.com/dracory/ork/playbook"
-    "github.com/dracory/ork/playbooks"
-)
-
-// Using Execute() - automatically handles idempotency
-result := playbook.Execute(playbooks.NewAptUpgrade(), cfg)
+// RunPlaybook returns detailed result information
+result := node.RunPlaybook(ork.PlaybookAptUpgrade)
 if result.Error != nil {
     log.Fatal(result.Error)
 }
@@ -125,21 +128,6 @@ if result.Changed {
 }
 ```
 
-### Check Before Run
-
-You can check if changes are needed before running:
-
-```go
-pb := playbooks.NewSwapCreate()
-if checkable, ok := pb.(playbook.CheckablePlaybook); ok {
-    needsChange, _ := checkable.Check(cfg)
-    if !needsChange {
-        log.Println("Swap already exists, skipping...")
-        return
-    }
-}
-```
-
 ### Result Structure
 
 ```go
@@ -148,6 +136,30 @@ type Result struct {
     Message string            // Human-readable description
     Details map[string]string // Additional information
     Error   error             // Non-nil if execution failed
+}
+```
+
+### Direct Playbook Access (Advanced)
+
+For programmatic playbook handling, use the `playbook` package directly:
+
+```go
+import (
+    "github.com/dracory/ork/playbook"
+    "github.com/dracory/ork/playbooks"
+)
+
+// Execute with helper function
+result := playbook.Execute(playbooks.NewAptUpgrade(), cfg)
+
+// Or check before running
+pb := playbooks.NewSwapCreate()
+if checkable, ok := pb.(playbook.CheckablePlaybook); ok {
+    needsChange, _ := checkable.Check(cfg)
+    if !needsChange {
+        log.Println("Swap already exists, skipping...")
+        return
+    }
 }
 ```
 

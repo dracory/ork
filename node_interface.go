@@ -2,6 +2,7 @@ package ork
 
 import (
 	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 )
 
@@ -248,24 +249,35 @@ type NodeInterface interface {
 	//	output, err := node.RunCommand("uptime")  // Creates one-time connection
 	RunCommand(cmd string) (string, error)
 
-	// RunPlaybook executes a named playbook on the remote server.
-	// The playbook is retrieved from the global registry.
-	// The current node configuration (including arguments set via SetArg/SetArgs)
-	// is passed to the playbook.
+	// RunPlaybook executes a named playbook and returns detailed result information.
+	// This is the preferred method for executing playbooks as it provides idempotency support
+	// through the Result.Changed field, indicating whether any changes were actually made.
 	//
-	// Returns an error if the playbook is not found in the registry or if
-	// execution fails. The error message includes the playbook name and failure reason.
+	// The playbook is retrieved from the global registry and the current node configuration
+	// (including arguments set via SetArg/SetArgs) is passed to the playbook.
+	//
+	// Returns a Result containing:
+	//   - Changed: true if the playbook made changes, false if system was already in desired state
+	//   - Message: human-readable description of what happened
+	//   - Details: additional information (e.g., command output)
+	//   - Error: non-nil if execution failed
 	//
 	// Example:
 	//
 	//	node := ork.NewNode("server.example.com").
-	//	    SetArg("username", "alice").
-	//	    SetArg("shell", "/bin/bash")
+	//	    SetArg("size", "2")
 	//
-	//	if err := node.RunPlaybook("user-create"); err != nil {
-	//	    log.Fatalf("Playbook failed: %v", err)
+	//	result := node.RunPlaybook("swap-create")
+	//	if result.Error != nil {
+	//	    log.Fatalf("Playbook failed: %v", result.Error)
 	//	}
-	RunPlaybook(name string) error
+	//
+	//	if result.Changed {
+	//	    log.Printf("Created swap: %s", result.Message)
+	//	} else {
+	//	    log.Println("Swap already exists - no changes made")
+	//	}
+	RunPlaybook(name string) playbook.Result
 }
 
 // NewNode creates a new Node with default configuration values.

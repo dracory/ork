@@ -793,9 +793,9 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 		connected: false,
 	}
 
-	err := n.RunPlaybook("test-playbook")
-	if err != nil {
-		t.Errorf("Expected no error, got: %v", err)
+	result := n.RunPlaybook("test-playbook")
+	if result.Error != nil {
+		t.Errorf("Expected no error, got: %v", result.Error)
 	}
 
 	// Verify correct config was passed to playbook
@@ -832,19 +832,19 @@ func TestNodeImplementation_Playbook_NotFound(t *testing.T) {
 		connected: false,
 	}
 
-	err := n.RunPlaybook("nonexistent-playbook")
-	if err == nil {
+	result := n.RunPlaybook("nonexistent-playbook")
+	if result.Error == nil {
 		t.Error("Expected error for nonexistent playbook, got nil")
 	}
 
 	// Verify error message contains playbook name
-	if !contains(err.Error(), "nonexistent-playbook") {
-		t.Errorf("Expected error to contain playbook name, got: %v", err)
+	if !contains(result.Error.Error(), "nonexistent-playbook") {
+		t.Errorf("Expected error to contain playbook name, got: %v", result.Error)
 	}
 
 	// Verify error message indicates not found
-	if !contains(err.Error(), "not found") {
-		t.Errorf("Expected error to contain 'not found', got: %v", err)
+	if !contains(result.Error.Error(), "not found") {
+		t.Errorf("Expected error to contain 'not found', got: %v", result.Error)
 	}
 }
 
@@ -872,19 +872,19 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 		connected: false,
 	}
 
-	err := n.RunPlaybook("failing-playbook")
-	if err == nil {
+	result := n.RunPlaybook("failing-playbook")
+	if result.Error == nil {
 		t.Error("Expected error from failing playbook, got nil")
 	}
 
 	// Verify error message contains playbook name
-	if !contains(err.Error(), "failing-playbook") {
-		t.Errorf("Expected error to contain playbook name, got: %v", err)
+	if !contains(result.Error.Error(), "failing-playbook") {
+		t.Errorf("Expected error to contain playbook name, got: %v", result.Error)
 	}
 
 	// Verify error message contains failure reason
-	if !contains(err.Error(), "playbook execution failed") {
-		t.Errorf("Expected error to contain 'playbook execution failed', got: %v", err)
+	if !contains(result.Error.Error(), "playbook execution failed") {
+		t.Errorf("Expected error to contain 'playbook execution failed', got: %v", result.Error)
 	}
 }
 

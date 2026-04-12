@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 )
 
@@ -315,15 +316,19 @@ func (n *nodeImplementation) RunCommand(cmd string) (string, error) {
 //	if err := node.RunPlaybook("user-create"); err != nil {
 //	    log.Fatalf("Playbook failed: %v", err)
 //	}
-func (n *nodeImplementation) RunPlaybook(name string) error {
+//
+// RunPlaybook executes a named playbook and returns detailed result information.
+// This is the preferred method for executing playbooks as it provides idempotency support
+// through the Result.Changed field.
+func (n *nodeImplementation) RunPlaybook(name string) playbook.Result {
 	pb, ok := defaultRegistry.Get(name)
 	if !ok {
-		return fmt.Errorf("playbook '%s' not found in registry", name)
+		return playbook.Result{
+			Changed: false,
+			Message: fmt.Sprintf("playbook '%s' not found in registry", name),
+			Error:   fmt.Errorf("playbook '%s' not found in registry", name),
+		}
 	}
 
-	if err := pb.Run(n.cfg); err != nil {
-		return fmt.Errorf("playbook '%s' failed: %w", name, err)
-	}
-
-	return nil
+	return playbook.Execute(pb, n.cfg)
 }
