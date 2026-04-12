@@ -2,6 +2,7 @@ package ork
 
 import (
 	"fmt"
+	"maps"
 
 	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/playbook"
@@ -304,23 +305,25 @@ func (n *nodeImplementation) RunCommand(cmd string) (string, error) {
 // The current node configuration (including arguments set via SetArg/SetArgs)
 // is passed to the playbook.
 //
-// Returns an error if the playbook is not found in the registry or if
-// execution fails. The error message includes the playbook name and failure reason.
+// Optional PlaybookOptions can be provided to override node-level arguments for this
+// specific execution. Playbook-level args take precedence over node-level args.
 //
 // Example:
 //
-//	node := ork.NewNode("server.example.com").
-//	    SetArg("username", "alice").
-//	    SetArg("shell", "/bin/bash")
+//	node := ork.NewNode("server.example.com")
 //
-//	if err := node.RunPlaybook("user-create"); err != nil {
-//	    log.Fatalf("Playbook failed: %v", err)
-//	}
+//	// Without options - uses node-level arguments
+//	result := node.RunPlaybook("ping")
+//
+//	// With options - per-playbook arguments override node-level
+//	result := node.RunPlaybook("swap-create", playbook.PlaybookOptions{
+//	    Args: map[string]string{"size": "2"},
+//	})
 //
 // RunPlaybook executes a named playbook and returns detailed result information.
 // This is the preferred method for executing playbooks as it provides idempotency support
 // through the Result.Changed field.
-func (n *nodeImplementation) RunPlaybook(name string) playbook.Result {
+func (n *nodeImplementation) RunPlaybook(name string, opts ...playbook.PlaybookOptions) playbook.Result {
 	pb, ok := defaultRegistry.Get(name)
 	if !ok {
 		return playbook.Result{
@@ -330,5 +333,22 @@ func (n *nodeImplementation) RunPlaybook(name string) playbook.Result {
 		}
 	}
 
-	return playbook.Execute(pb, n.cfg)
+	// Start with node-level config
+	cfg := n.cfg
+
+	// If PlaybookOptions provided, merge playbook-level args with node-level args
+	// Playbook-level args take precedence
+	if len(opts) > 0 {
+		mergedArgs := make(map[string]string)
+
+		// Copy node-level args first
+		maps.Copy(mergedArgs, n.cfg.Args)
+
+		// Override with playbook-level args
+		maps.Copy(mergedArgs, opts[0].Args)
+
+		cfg.Args = mergedArgs
+	}
+
+	return playbook.Execute(pb, cfg)
 }

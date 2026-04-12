@@ -256,6 +256,10 @@ type NodeInterface interface {
 	// The playbook is retrieved from the global registry and the current node configuration
 	// (including arguments set via SetArg/SetArgs) is passed to the playbook.
 	//
+	// Optional PlaybookOptions can be provided to override node-level arguments for this
+	// specific execution. This allows per-playbook variable scoping without affecting
+	// the node's state.
+	//
 	// Returns a Result containing:
 	//   - Changed: true if the playbook made changes, false if system was already in desired state
 	//   - Message: human-readable description of what happened
@@ -264,10 +268,16 @@ type NodeInterface interface {
 	//
 	// Example:
 	//
-	//	node := ork.NewNode("server.example.com").
-	//	    SetArg("size", "2")
+	//	node := ork.NewNode("server.example.com")
 	//
-	//	result := node.RunPlaybook("swap-create")
+	//	// Without options - uses node-level arguments
+	//	result := node.RunPlaybook("ping")
+	//
+	//	// With options - per-playbook arguments override node-level
+	//	result := node.RunPlaybook("swap-create", playbook.PlaybookOptions{
+	//	    Args: map[string]string{"size": "2"},
+	//	})
+	//
 	//	if result.Error != nil {
 	//	    log.Fatalf("Playbook failed: %v", result.Error)
 	//	}
@@ -277,7 +287,7 @@ type NodeInterface interface {
 	//	} else {
 	//	    log.Println("Swap already exists - no changes made")
 	//	}
-	RunPlaybook(name string) playbook.Result
+	RunPlaybook(name string, opts ...playbook.PlaybookOptions) playbook.Result
 }
 
 // NewNode creates a new Node with default configuration values.

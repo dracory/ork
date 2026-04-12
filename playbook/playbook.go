@@ -3,53 +3,26 @@
 package playbook
 
 import (
-	"strings"
+	"time"
 
 	"github.com/dracory/ork/config"
-	"github.com/dracory/ork/ssh"
 )
 
-// Playbook name constants for use with RunPlaybook.
-// These constants provide compile-time safety and IDE autocomplete for playbook names.
-//
-// Example:
-//
-//	node := ork.NewNodeForHost("server.example.com")
-//	err := node.RunPlaybook(playbook.NamePing)
-const (
-	// NamePing checks SSH connectivity
-	NamePing = "ping"
+// PlaybookOptions provides configuration options for playbook execution.
+// This allows per-playbook variable scoping and additional execution controls.
+type PlaybookOptions struct {
+	// Args contains playbook-specific variables that override node-level arguments.
+	// These are merged with node-level args (playbook args take precedence).
+	Args map[string]string
 
-	// NameAptUpdate refreshes the package database
-	NameAptUpdate = "apt-update"
+	// DryRun indicates whether to simulate execution without making changes.
+	// When true, the playbook should preview what would be done.
+	DryRun bool
 
-	// NameAptUpgrade installs available updates
-	NameAptUpgrade = "apt-upgrade"
-
-	// NameAptStatus shows available updates
-	NameAptStatus = "apt-status"
-
-	// NameReboot reboots the server
-	NameReboot = "reboot"
-
-	// NameSwapCreate creates a swap file (requires "size" arg in GB)
-	NameSwapCreate = "swap-create"
-
-	// NameSwapDelete removes the swap file
-	NameSwapDelete = "swap-delete"
-
-	// NameSwapStatus shows swap status
-	NameSwapStatus = "swap-status"
-
-	// NameUserCreate creates a user with sudo (requires "username" arg)
-	NameUserCreate = "user-create"
-
-	// NameUserDelete deletes a user (requires "username" arg)
-	NameUserDelete = "user-delete"
-
-	// NameUserStatus shows user info (accepts optional "username" arg)
-	NameUserStatus = "user-status"
-)
+	// Timeout specifies the maximum duration for playbook execution.
+	// Zero means no timeout.
+	Timeout time.Duration
+}
 
 // Result represents the outcome of a playbook execution.
 // It indicates whether any changes were made and provides details about the execution.
@@ -89,42 +62,4 @@ type Playbook interface {
 	// Run executes the playbook and returns a detailed result.
 	// The Result.Changed field indicates whether any changes were made.
 	Run(config config.Config) Result
-}
-
-// CheckExists runs a check command and returns true if the command succeeds.
-// This is useful for checking if a file exists, a service is running, etc.
-// Returns false if the command fails or produces no output.
-func CheckExists(client *ssh.Client, checkCmd string) bool {
-	output, err := client.Run(checkCmd)
-	if err != nil {
-		return false
-	}
-	return strings.TrimSpace(output) != ""
-}
-
-// EnsureState ensures a desired state by running a check command first.
-// If the check fails, it runs the apply command to achieve the desired state.
-// Returns true if changes were made (apply was run), false if no changes needed.
-// Returns an error if either command fails.
-func EnsureState(client *ssh.Client, checkCmd, applyCmd string) (bool, error) {
-	// Check if already in desired state
-	output, err := client.Run(checkCmd)
-	if err == nil && strings.TrimSpace(output) != "" {
-		// Already in desired state
-		return false, nil
-	}
-
-	// Apply the change
-	_, err = client.Run(applyCmd)
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
-// Execute runs a playbook and returns a Result.
-// This is a convenience wrapper that calls pb.Run(cfg).
-func Execute(pb Playbook, cfg config.Config) Result {
-	return pb.Run(cfg)
 }
