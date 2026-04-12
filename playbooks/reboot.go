@@ -30,6 +30,18 @@ func (r *Reboot) Description() string {
 
 // Run executes the reboot.
 func (r *Reboot) Run(cfg config.Config) error {
+	result := r.RunWithResult(cfg)
+	return result.Error
+}
+
+// Check always returns true for reboot since it's an explicit action.
+// Reboot is always "needed" because the user explicitly requested it.
+func (r *Reboot) Check(cfg config.Config) (bool, error) {
+	return true, nil // Always reboot when requested
+}
+
+// RunWithResult executes the reboot and returns detailed result.
+func (r *Reboot) RunWithResult(cfg config.Config) playbook.Result {
 	log.Printf("Rebooting %s...", cfg.SSHHost)
 
 	// Trigger reboot (non-blocking, command returns immediately)
@@ -41,7 +53,13 @@ func (r *Reboot) Run(cfg config.Config) error {
 
 	if !r.WaitForReconnect {
 		log.Println("Reboot initiated. Not waiting for server to come back online.")
-		return nil
+		return playbook.Result{
+			Changed: true, // Reboot was initiated
+			Message: fmt.Sprintf("Reboot initiated on %s", cfg.SSHHost),
+			Details: map[string]string{
+				"wait_for_reconnect": "false",
+			},
+		}
 	}
 
 	// Wait and poll for server to come back
@@ -60,11 +78,26 @@ func (r *Reboot) Run(cfg config.Config) error {
 		_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "uptime")
 		if err == nil {
 			log.Println("Server is back online!")
-			return nil
+			return playbook.Result{
+				Changed: true,
+				Message: fmt.Sprintf("Reboot completed on %s, server is back online", cfg.SSHHost),
+				Details: map[string]string{
+					"wait_for_reconnect": "true",
+					"max_wait":           maxWait.String(),
+				},
+			}
 		}
 	}
 
-	return fmt.Errorf("timeout waiting for server to come back online after %v", maxWait)
+	return playbook.Result{
+		Changed: true, // Reboot was initiated even if we timed out waiting
+		Message: fmt.Sprintf("Reboot initiated on %s, but timeout waiting for reconnect", cfg.SSHHost),
+		Error:   fmt.Errorf("timeout waiting for server to come back online after %v", maxWait),
+		Details: map[string]string{
+			"wait_for_reconnect": "true",
+			"max_wait":           maxWait.String(),
+		},
+	}
 }
 
 // NewReboot creates a new reboot playbook.

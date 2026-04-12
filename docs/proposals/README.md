@@ -79,6 +79,21 @@ This directory contains proposals for enhancing the Ork infrastructure automatio
 ### Phase 5: Advanced
 9. **Rollback Support** - Transaction management
 
+## Summary
+
+| Proposal | Status | Notes |
+|----------|--------|-------|
+| Connection Pooling | Partially Implemented | Reuse via Node done; true pool remains |
+| Testing Framework | Partially Implemented | Tests exist; mock helpers needed |
+| Idempotency Framework | Not Implemented | Needs Result type, CheckablePlaybook |
+| Structured Logging | Not Implemented | Replace log.Printf with slog |
+| Configuration Management | Not Implemented | Required for CLI |
+| CLI Tool | Not Implemented | Blocked by config management |
+| Dry-Run Mode | Not Implemented | Blocked by idempotency |
+| Parallel Execution | Not Implemented | Blocked by connection pool |
+| Playbook Dependencies | Not Implemented | Blocked by idempotency |
+| Rollback Support | Not Implemented | Low priority |
+
 ## Contributing
 
 To propose a new enhancement:

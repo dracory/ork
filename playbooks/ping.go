@@ -28,15 +28,43 @@ func (p *Ping) Description() string {
 
 // Run executes the ping playbook.
 func (p *Ping) Run(cfg config.Config) error {
-	log.Printf("Pinging %s...", cfg.SSHHost)
+	result := p.RunWithResult(cfg)
+	return result.Error
+}
 
+// Check always returns false for ping since it doesn't modify the system.
+// It verifies connectivity by attempting to run a command.
+func (p *Ping) Check(cfg config.Config) (bool, error) {
+	// Ping never changes the system, so we always return false
+	// The error indicates if the check itself failed (connection issue)
+	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "uptime")
+	if err != nil {
+		return false, err
+	}
+	return false, nil
+}
+
+// RunWithResult executes the ping playbook and returns detailed result.
+// Changed is always false since ping doesn't modify the system.
+func (p *Ping) RunWithResult(cfg config.Config) playbook.Result {
 	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "uptime")
 	if err != nil {
-		return fmt.Errorf("failed to ping %s: %w", cfg.SSHHost, err)
+		return playbook.Result{
+			Changed: false,
+			Message: fmt.Sprintf("Failed to ping %s", cfg.SSHHost),
+			Error:   fmt.Errorf("failed to ping %s: %w", cfg.SSHHost, err),
+		}
 	}
 
 	log.Printf("%s is alive: %s", cfg.SSHHost, strings.TrimSpace(output))
-	return nil
+
+	return playbook.Result{
+		Changed: false, // Ping never changes the system
+		Message: fmt.Sprintf("%s is alive", cfg.SSHHost),
+		Details: map[string]string{
+			"uptime": strings.TrimSpace(output),
+		},
+	}
 }
 
 // NewPing creates a new ping playbook instance.
