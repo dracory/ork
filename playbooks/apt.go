@@ -9,6 +9,14 @@ import (
 	"github.com/dracory/ork/ssh"
 )
 
+// NewAptUpdate creates a new apt-update playbook.
+func NewAptUpdate() *aptUpdate {
+	pb := playbook.NewBasePlaybook()
+	pb.SetID(playbook.IDAptUpdate)
+	pb.SetDescription("Refresh package database (apt-get update)")
+	return &aptUpdate{BasePlaybook: pb}
+}
+
 // AptUpdate refreshes the package database.
 type aptUpdate struct {
 	// Embed the base playbook to get all standard functionality
@@ -45,12 +53,12 @@ func (a *aptUpdate) Run() playbook.Result {
 	}
 }
 
-// NewAptUpdate creates a new apt-update playbook.
-func NewAptUpdate() *aptUpdate {
+// NewAptUpgrade creates a new apt-upgrade playbook.
+func NewAptUpgrade() *aptUpgrade {
 	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDAptUpdate)
-	pb.SetDescription("Refresh package database (apt-get update)")
-	return &aptUpdate{BasePlaybook: pb}
+	pb.SetID(playbook.IDAptUpgrade)
+	pb.SetDescription("Install available package updates (apt-get upgrade)")
+	return &aptUpgrade{BasePlaybook: pb}
 }
 
 // AptUpgrade installs available package updates.
@@ -120,12 +128,12 @@ func (a *aptUpgrade) Run() playbook.Result {
 	}
 }
 
-// NewAptUpgrade creates a new apt-upgrade playbook.
-func NewAptUpgrade() *aptUpgrade {
+// NewAptStatus creates a new apt-status playbook.
+func NewAptStatus() *aptStatus {
 	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDAptUpgrade)
-	pb.SetDescription("Install available package updates (apt-get upgrade)")
-	return &aptUpgrade{BasePlaybook: pb}
+	pb.SetID(playbook.IDAptStatus)
+	pb.SetDescription("Show available package updates (read-only)")
+	return &aptStatus{BasePlaybook: pb}
 }
 
 // AptStatus shows available package updates without installing them.
@@ -184,12 +192,4 @@ func (a *aptStatus) Run() playbook.Result {
 			"packages":         output,
 		},
 	}
-}
-
-// NewAptStatus creates a new apt-status playbook.
-func NewAptStatus() *aptStatus {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDAptStatus)
-	pb.SetDescription("Show available package updates (read-only)")
-	return &aptStatus{BasePlaybook: pb}
 }

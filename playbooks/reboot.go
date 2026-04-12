@@ -9,6 +9,19 @@ import (
 	"github.com/dracory/ork/ssh"
 )
 
+// NewReboot creates a new reboot playbook.
+// By default, it does NOT wait for the server to reconnect.
+func NewReboot() *reboot {
+	pb := playbook.NewBasePlaybook()
+	pb.SetID(playbook.IDReboot)
+	pb.SetDescription("Reboot the remote server")
+	return &reboot{
+		BasePlaybook:     pb,
+		WaitForReconnect: false,
+		MaxWaitTime:      5 * time.Minute,
+	}
+}
+
 // Reboot reboots the remote server and optionally waits for it to come back.
 type reboot struct {
 	*playbook.BasePlaybook
@@ -82,18 +95,5 @@ func (r *reboot) Run() playbook.Result {
 			"wait_for_reconnect": "true",
 			"max_wait":           maxWait.String(),
 		},
-	}
-}
-
-// NewReboot creates a new reboot playbook.
-// By default, it does NOT wait for the server to reconnect.
-func NewReboot() *reboot {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDReboot)
-	pb.SetDescription("Reboot the remote server")
-	return &reboot{
-		BasePlaybook:     pb,
-		WaitForReconnect: false,
-		MaxWaitTime:      5 * time.Minute,
 	}
 }

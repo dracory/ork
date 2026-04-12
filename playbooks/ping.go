@@ -11,6 +11,14 @@ import (
 	"github.com/dracory/ork/ssh"
 )
 
+// NewPing creates a new ping playbook instance.
+func NewPing() *ping {
+	pb := playbook.NewBasePlaybook()
+	pb.SetID(playbook.IDPing)
+	pb.SetDescription("Check SSH connectivity and show server uptime/load")
+	return &ping{BasePlaybook: pb}
+}
+
 // Ping checks SSH connectivity and shows basic server info.
 // It runs 'uptime' to verify the connection works and display load.
 type ping struct {
@@ -52,12 +60,4 @@ func (p *ping) Run() playbook.Result {
 			"uptime": strings.TrimSpace(output),
 		},
 	}
-}
-
-// NewPing creates a new ping playbook instance.
-func NewPing() *ping {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDPing)
-	pb.SetDescription("Check SSH connectivity and show server uptime/load")
-	return &ping{BasePlaybook: pb}
 }
