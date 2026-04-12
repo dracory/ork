@@ -350,5 +350,5 @@ func (n *nodeImplementation) RunPlaybook(name string, opts ...playbook.PlaybookO
 		cfg.Args = mergedArgs
 	}
 
-	return playbook.Execute(pb, cfg)
+	return pb.Run(cfg)
 }

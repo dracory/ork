@@ -3,7 +3,6 @@ package playbook
 import (
 	"strings"
 
-	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/ssh"
 )
 
@@ -37,10 +36,4 @@ func EnsureState(client *ssh.Client, checkCmd, applyCmd string) (bool, error) {
 	}
 
 	return true, nil
-}
-
-// Execute runs a playbook and returns a Result.
-// This is a convenience wrapper that calls pb.Run(cfg).
-func Execute(pb Playbook, cfg config.Config) Result {
-	return pb.Run(cfg)
 }
