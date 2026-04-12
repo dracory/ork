@@ -12,7 +12,7 @@ import (
 )
 
 // NewPing creates a new ping playbook instance.
-func NewPing() *ping {
+func NewPing() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDPing)
 	pb.SetDescription("Check SSH connectivity and show server uptime/load")

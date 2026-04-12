@@ -62,7 +62,7 @@ func (u *userCreate) Run() playbook.Result {
 }
 
 // NewUserCreate creates a new user-create playbook.
-func NewUserCreate() *userCreate {
+func NewUserCreate() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDUserCreate)
 	pb.SetDescription("Create a new user with sudo access (username via args['username'])")
@@ -118,7 +118,7 @@ func (u *userDelete) Run() playbook.Result {
 }
 
 // NewUserDelete creates a new user-delete playbook.
-func NewUserDelete() *userDelete {
+func NewUserDelete() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDUserDelete)
 	pb.SetDescription("Delete a user (username via args['username'])")
@@ -176,7 +176,7 @@ func (u *userStatus) Run() playbook.Result {
 }
 
 // NewUserStatus creates a new user-status playbook.
-func NewUserStatus() *userStatus {
+func NewUserStatus() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDUserStatus)
 	pb.SetDescription("Show user information")

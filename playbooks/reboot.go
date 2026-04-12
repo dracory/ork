@@ -11,7 +11,7 @@ import (
 
 // NewReboot creates a new reboot playbook.
 // By default, it does NOT wait for the server to reconnect.
-func NewReboot() *reboot {
+func NewReboot() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDReboot)
 	pb.SetDescription("Reboot the remote server")

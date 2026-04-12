@@ -92,7 +92,7 @@ func (s *swapCreate) Run() playbook.Result {
 }
 
 // NewSwapCreate creates a new swap-create playbook.
-func NewSwapCreate() *swapCreate {
+func NewSwapCreate() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDSwapCreate)
 	pb.SetDescription("Create a swap file (size in GB via args['size'], default 1GB)")
@@ -165,7 +165,7 @@ func (s *swapDelete) Run() playbook.Result {
 }
 
 // NewSwapDelete creates a new swap-delete playbook.
-func NewSwapDelete() *swapDelete {
+func NewSwapDelete() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDSwapDelete)
 	pb.SetDescription("Remove the swap file")
@@ -217,7 +217,7 @@ func (s *swapStatus) Run() playbook.Result {
 }
 
 // NewSwapStatus creates a new swap-status playbook.
-func NewSwapStatus() *swapStatus {
+func NewSwapStatus() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDSwapStatus)
 	pb.SetDescription("Show swap status and usage")

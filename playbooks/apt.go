@@ -10,7 +10,7 @@ import (
 )
 
 // NewAptUpdate creates a new apt-update playbook.
-func NewAptUpdate() *aptUpdate {
+func NewAptUpdate() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDAptUpdate)
 	pb.SetDescription("Refresh package database (apt-get update)")
@@ -54,7 +54,7 @@ func (a *aptUpdate) Run() playbook.Result {
 }
 
 // NewAptUpgrade creates a new apt-upgrade playbook.
-func NewAptUpgrade() *aptUpgrade {
+func NewAptUpgrade() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDAptUpgrade)
 	pb.SetDescription("Install available package updates (apt-get upgrade)")
@@ -129,7 +129,7 @@ func (a *aptUpgrade) Run() playbook.Result {
 }
 
 // NewAptStatus creates a new apt-status playbook.
-func NewAptStatus() *aptStatus {
+func NewAptStatus() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDAptStatus)
 	pb.SetDescription("Show available package updates (read-only)")
