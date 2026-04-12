@@ -33,7 +33,7 @@ Implement a dependency system that:
 ```go
 type DependentPlaybook interface {
     Playbook
-    Dependencies() []string // Returns playbook names
+    Dependencies() []string // Returns playbook IDs
 }
 
 type ConditionalDependency interface {
@@ -108,12 +108,12 @@ func (r *DependencyResolver) buildGraph(graph *DependencyGraph, pb Playbook) err
     
     // Recursively add dependencies
     for _, depName := range deps {
-        depPb, ok := r.registry.Get(depName)
+        depPb, ok := r.registry.PlaybookFindByID(depName)
         if !ok {
             return fmt.Errorf("dependency '%s' not found", depName)
         }
         
-        graph.AddDependency(pb.Name(), depName)
+        graph.AddDependency(pb.GetID(), depName)
         
         if err := r.buildGraph(graph, depPb); err != nil {
             return err
@@ -131,11 +131,11 @@ func (r *DependencyResolver) buildGraph(graph *DependencyGraph, pb Playbook) err
 ```go
 type AptUpgrade struct{}
 
-func (a *AptUpgrade) Name() string {
+func (a *AptUpgrade) GetID() string {
     return "apt-upgrade"
 }
 
-func (a *AptUpgrade) Description() string {
+func (a *AptUpgrade) GetDescription() string {
     return "Install available package updates"
 }
 
@@ -143,16 +143,22 @@ func (a *AptUpgrade) Dependencies() []string {
     return []string{"apt-update"} // Must run apt-update first
 }
 
-func (a *AptUpgrade) Run(cfg config.Config) error {
+func (a *AptUpgrade) Run(cfg config.Config) playbook.Result {
     // apt-update already ran, just do the upgrade
     output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey,
         "apt-get upgrade -y")
     if err != nil {
-        return fmt.Errorf("apt upgrade failed: %w", err)
+        return playbook.Result{
+            Changed: false,
+            Message: "apt upgrade failed",
+            Error:   fmt.Errorf("apt upgrade failed: %w", err),
+        }
     }
     
-    log.Println("Apt upgrade completed successfully")
-    return nil
+    return playbook.Result{
+        Changed: true,
+        Message: "Apt upgrade completed successfully",
+    }
 }
 ```
 
@@ -161,11 +167,11 @@ func (a *AptUpgrade) Run(cfg config.Config) error {
 ```go
 type DeployWebApp struct{}
 
-func (d *DeployWebApp) Name() string {
+func (d *DeployWebApp) GetID() string {
     return "deploy-webapp"
 }
 
-func (d *DeployWebApp) Description() string {
+func (d *DeployWebApp) GetDescription() string {
     return "Deploy web application"
 }
 
@@ -178,11 +184,13 @@ func (d *DeployWebApp) Dependencies() []string {
     }
 }
 
-func (d *DeployWebApp) Run(cfg config.Config) error {
+func (d *DeployWebApp) Run(cfg config.Config) playbook.Result {
     // All dependencies satisfied, deploy app
-    log.Println("Deploying web application...")
     // ... deployment logic ...
-    return nil
+    return playbook.Result{
+        Changed: true,
+        Message: "Web application deployed",
+    }
 }
 ```
 
@@ -191,7 +199,7 @@ func (d *DeployWebApp) Run(cfg config.Config) error {
 ```go
 type InstallDocker struct{}
 
-func (i *InstallDocker) Name() string {
+func (i *InstallDocker) GetID() string {
     return "install-docker"
 }
 
@@ -259,21 +267,21 @@ func RunWithDependencies(pb Playbook, cfg config.Config, registry *playbook.Regi
     // Execute in order
     for _, p := range executionOrder {
         // Check cache
-        if result, cached := resolver.cache[p.Name()]; cached {
+        if result, cached := resolver.cache[p.GetID()]; cached {
             if result.Error == nil {
-                log.Printf("Skipping %s (already completed)", p.Name())
+                log.Printf("Skipping %s (already completed)", p.GetID())
                 continue
             }
         }
         
-        log.Printf("Running %s...", p.Name())
-        err := p.Run(cfg)
+        log.Printf("Running %s...", p.GetID())
+        result := p.Run(cfg)
         
         // Cache result
-        resolver.cache[p.Name()] = Result{Error: err}
+        resolver.cache[p.GetID()] = result
         
-        if err != nil {
-            return fmt.Errorf("dependency '%s' failed: %w", p.Name(), err)
+        if result.Error != nil {
+            return fmt.Errorf("dependency '%s' failed: %w", p.GetID(), result.Error)
         }
     }
     
@@ -305,7 +313,7 @@ ork deps deploy-webapp
 ```go
 func (g *DependencyGraph) PrintTree(root string, indent int) {
     pb := g.nodes[root].Playbook
-    fmt.Printf("%s%s\n", strings.Repeat("  ", indent), pb.Name())
+    fmt.Printf("%s%s\n", strings.Repeat("  ", indent), pb.GetID())
     
     for _, dep := range g.edges[root] {
         g.PrintTree(dep, indent+1)

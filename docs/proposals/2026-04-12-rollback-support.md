@@ -394,9 +394,9 @@ if err := tx.Rollback(); err != nil {
 checkpoint := ctx.CreateCheckpoint("before-upgrade")
 
 // Run risky operations
-err := aptUpgrade.Run(cfg)
+result := aptUpgrade.Run(cfg)
 
-if err != nil {
+if result.Error != nil {
     // Restore to checkpoint
     ctx.RestoreCheckpoint(checkpoint)
 }

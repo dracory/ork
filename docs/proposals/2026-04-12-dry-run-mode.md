@@ -1,10 +1,10 @@
 # Proposal: Dry-Run Mode
 
 **Date:** 2026-04-12  
-**Status:** Not Implemented  
+**Status:** Partially Implemented  
 **Author:** System Review
 
-> **Note:** Requires `DryRun` field in config and `DryRunnable` interface in playbooks.
+> **Note:** `DryRun` field exists in `PlaybookOptions`. Remaining: Playbook implementations to check `IsDryRun()` and skip changes, plus optional `DryRunnable` interface for detailed previews.
 
 ## Problem Statement
 

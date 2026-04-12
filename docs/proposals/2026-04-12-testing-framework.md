@@ -101,9 +101,10 @@ func TestPing_Success(t *testing.T) {
     test.ExpectCommand("uptime", " 10:30:01 up 5 days...")
     
     pb := playbooks.NewPing()
-    err := test.Run(pb)
+    pb.SetConfig(test.Config)
+    result := pb.Run()
     
-    test.AssertNoError(err)
+    test.AssertNoError(result.Error)
     test.AssertCommandRun("uptime")
 }
 ```
@@ -119,10 +120,11 @@ func TestAptUpgrade_WithUpdates(t *testing.T) {
     
     // Run playbook
     pb := playbooks.NewAptUpgrade()
-    err := test.Run(pb)
+    pb.SetConfig(test.Config)
+    result := pb.Run()
     
     // Assertions
-    test.AssertNoError(err)
+    test.AssertNoError(result.Error)
     test.AssertCommandRun("apt-get upgrade -y")
 }
 
@@ -155,10 +157,11 @@ func TestUserCreate_NewUser(t *testing.T) {
     
     // Run playbook
     pb := playbooks.NewUserCreate()
-    err := test.Run(pb)
+    pb.SetConfig(test.Config)
+    result := pb.Run()
     
     // Assertions
-    test.AssertNoError(err)
+    test.AssertNoError(result.Error)
     test.AssertCommandRun("adduser --disabled-password --gecos '' john")
     test.AssertCommandRun("usermod -aG sudo john")
 }
@@ -211,10 +214,11 @@ func TestSwapCreate_Success(t *testing.T) {
     
     // Run playbook
     pb := playbooks.NewSwapCreate()
-    err := test.Run(pb)
+    pb.SetConfig(test.Config)
+    result := pb.Run()
     
     // Assertions
-    test.AssertNoError(err)
+    test.AssertNoError(result.Error)
 }
 
 func TestSwapCreate_AlreadyExists(t *testing.T) {
@@ -303,16 +307,18 @@ func TestAptUpgrade_E2E(t *testing.T) {
     
     // Run apt-update first
     aptUpdate := playbooks.NewAptUpdate()
-    err := aptUpdate.Run(cfg)
-    if err != nil {
-        t.Fatalf("apt-update failed: %v", err)
+    aptUpdate.SetConfig(cfg)
+    result := aptUpdate.Run()
+    if result.Error != nil {
+        t.Fatalf("apt-update failed: %v", result.Error)
     }
     
     // Run apt-upgrade
     aptUpgrade := playbooks.NewAptUpgrade()
-    err = aptUpgrade.Run(cfg)
-    if err != nil {
-        t.Fatalf("apt-upgrade failed: %v", err)
+    aptUpgrade.SetConfig(cfg)
+    result = aptUpgrade.Run()
+    if result.Error != nil {
+        t.Fatalf("apt-upgrade failed: %v", result.Error)
     }
 }
 ```

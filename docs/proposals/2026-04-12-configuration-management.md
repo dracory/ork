@@ -1,7 +1,7 @@
 # Proposal: Configuration Management
 
 **Date:** 2026-04-12  
-**Status:** Not Implemented  
+**Status:** Rejected. Out of scope. Already implemented in Go.  
 **Author:** System Review
 
 > **Note:** Currently only Go struct config. File/env loading needed for CLI tool.
@@ -270,8 +270,10 @@ func main() {
     
     // Run playbook
     playbook := playbooks.NewPing()
-    if err := playbook.Run(cfg); err != nil {
-        log.Fatal(err)
+    playbook.SetConfig(cfg)
+    result := playbook.Run()
+    if result.Error != nil {
+        log.Fatal(result.Error)
     }
 }
 ```

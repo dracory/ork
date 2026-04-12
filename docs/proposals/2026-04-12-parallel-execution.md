@@ -265,15 +265,15 @@ func (e *Executor) executeWithTimeout(ctx context.Context, p playbook.Playbook, 
     defer cancel()
     
     // Run in goroutine
-    done := make(chan error, 1)
+    done := make(chan playbook.Result, 1)
     go func() {
         done <- p.Run(cfg)
     }()
     
     // Wait for completion or timeout
     select {
-    case err := <-done:
-        result.Error = err
+    case runResult := <-done:
+        result = runResult
     case <-timeoutCtx.Done():
         result.Error = fmt.Errorf("timeout after %v", e.Timeout)
     }

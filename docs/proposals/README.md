@@ -2,19 +2,7 @@
 
 This directory contains proposals for enhancing the Ork infrastructure automation tool. Each proposal outlines a specific feature or improvement with implementation details, examples, and considerations.
 
-## Proposals Overview
-
-### Implemented
-
-- **Simplified API** - ✅ **IMPLEMENTED** - Fluent builder pattern via `NodeInterface` (`NewNode`, `SetPort`, `SetUser`, `Connect`, `RunCommand`, etc.)
-
-- **Connection Reuse** - ✅ **IMPLEMENTED** - Persistent SSH connections via `Node.Connect()` / `Node.Close()`
-
-- **Testing Framework** - ✅ **PARTIALLY IMPLEMENTED** - Unit tests exist; mock helpers (`sshtest`, `playbooktest`) remain
-
-- **Idempotency Framework** - ✅ **IMPLEMENTED** - `Result` type, `CheckablePlaybook` interface, all 7 core playbooks migrated
-
-### Not Implemented (Priority Order)
+## Remaining Work (Priority Order)
 
 #### High Priority
 
@@ -55,42 +43,34 @@ This directory contains proposals for enhancing the Ork infrastructure automatio
 
 ## Implementation Roadmap
 
-### Phase 1: Foundation (Complete)
-- ✅ Simplified API - Fluent builder pattern implemented
-- ✅ Connection Reuse - Persistent connections via Node
-- ✅ Testing Framework - Basic tests in place
-
-### Phase 2: Core Features (Next)
+### Phase 1: Core Features
 1. **Structured Logging** - slog integration
-2. ✅ **Idempotency Framework** - Result type and Check interface (COMPLETE)
-3. **Configuration Management** - File/env config for CLI
+2. **Configuration Management** - File/env config for CLI
 
-### Phase 3: CLI & Safety
-4. **CLI Tool** - cobra-based binary
-5. **Dry-Run Mode** - Preview changes
+### Phase 2: CLI & Safety
+3. **CLI Tool** - cobra-based binary (blocked by Configuration Management)
+4. **Dry-Run Mode** - Preview changes
 
-### Phase 4: Scale (Later)
-6. **Connection Pool** - Multi-host resource management
-7. **Parallel Execution** - Fleet operations
-8. **Playbook Dependencies** - Auto-resolution
+### Phase 3: Scale
+5. **Connection Pool** - Multi-host resource management
+6. **Parallel Execution** - Fleet operations (blocked by Connection Pool)
+7. **Playbook Dependencies** - Auto-resolution
 
-### Phase 5: Advanced
-9. **Rollback Support** - Transaction management
+### Phase 4: Advanced
+8. **Rollback Support** - Transaction management
 
 ## Summary
 
-| Proposal | Status | Notes |
-|----------|--------|-------|
-| Connection Pooling | Partially Implemented | Reuse via Node done; true pool remains |
-| Testing Framework | Partially Implemented | Tests exist; mock helpers needed |
-| Idempotency Framework | **Implemented** | All 7 core playbooks migrated |
-| Structured Logging | Not Implemented | Replace log.Printf with slog |
-| Configuration Management | Not Implemented | Required for CLI |
-| CLI Tool | Not Implemented | Blocked by config management |
-| Dry-Run Mode | Not Implemented | Unblocked - ready to implement |
-| Parallel Execution | Not Implemented | Blocked by connection pool |
-| Playbook Dependencies | Not Implemented | Unblocked - ready to implement |
-| Rollback Support | Not Implemented | Low priority |
+| Proposal | Status | Blocked By |
+|----------|--------|------------|
+| Structured Logging | Not Implemented | - |
+| Configuration Management | Not Implemented | - |
+| CLI Tool | Not Implemented | Configuration Management |
+| Dry-Run Mode | Not Implemented | - |
+| Connection Pooling | Partially Implemented | - |
+| Parallel Execution | Not Implemented | Connection Pooling |
+| Playbook Dependencies | Not Implemented | - |
+| Rollback Support | Not Implemented | - |
 
 ## Contributing
 

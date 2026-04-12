@@ -1,31 +1,10 @@
-# Proposal: Connection Pooling and Reuse
+# Proposal: Connection Pooling (Multi-Host)
 
 **Date:** 2026-04-12  
-**Status:** Partially Implemented  
+**Status:** Not Implemented  
 **Author:** System Review
 
-> **Note:** Connection reuse via persistent connections is already implemented through the `Node` API. This proposal covers remaining multi-host connection pooling.
-
-## What's Already Implemented
-
-Persistent connection reuse is available through the `Node` API:
-
-```go
-node := ork.NewNodeForHost("server.example.com")
-if err := node.Connect(); err != nil {
-    log.Fatal(err)
-}
-defer node.Close()
-
-// Reuses same connection
-output1, _ := node.RunCommand("uptime")
-output2, _ := node.RunCommand("df -h")
-```
-
-✅ **Implemented:**
-- `Node.Connect()` / `Node.Close()` for persistent connections
-- `Node.RunCommand()` reuses connection when available
-- `ssh.Client` for low-level connection management
+> **Note:** Single-host connection reuse is already implemented via `Node.Connect()`. This proposal covers multi-host connection pooling for fleet operations.
 
 ## Problem Statement
 
@@ -35,9 +14,7 @@ When managing multiple hosts simultaneously, each `Node` creates its own SSH con
 - Reuse connections across multiple playbook runs
 - Queue operations when connection limit reached
 
-## Remaining Work
-
-### Connection Pool Manager (Multi-Host)
+## Solution
 
 For fleet management scenarios, implement a true connection pool:
 
@@ -64,7 +41,7 @@ func (p *ConnectionPool) CloseAll()
 
 ## Implementation Plan
 
-### Phase 1: Connection Pool Core (Remaining)
+### Phase 1: Connection Pool Core
 - Implement `ConnectionPool` with semaphore-based limiting
 - Add connection health checks (reuse connections < 5 min old)
 - Add timeout and idle connection cleanup
@@ -80,34 +57,20 @@ func (p *ConnectionPool) CloseAll()
 
 ## Example Usage
 
-### Before:
 ```go
-func (a *AptStatus) Run(cfg config.Config) error {
-    _, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "apt-get update -qq")
+pool := NewConnectionPool(10) // Max 10 concurrent connections
+
+// Run playbook on 50 hosts with only 10 concurrent connections
+for _, cfg := range hostConfigs {
+    client, err := pool.Acquire(cfg.SSHHost, cfg)
     if err != nil {
         return err
     }
     
-    output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "apt list --upgradable")
-    return err
-}
-```
-
-### After:
-```go
-func (a *AptStatus) Run(cfg config.Config) error {
-    client := ssh.NewClient(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey)
-    if err := client.Connect(); err != nil {
-        return err
-    }
-    defer client.Close()
+    // Run commands
+    client.Run("uptime")
     
-    if _, err := client.Run("apt-get update -qq"); err != nil {
-        return err
-    }
-    
-    output, err := client.Run("apt list --upgradable")
-    return err
+    pool.Release(cfg.SSHHost)
 }
 ```
 
