@@ -7,55 +7,11 @@ import (
 	"github.com/dracory/ork/config"
 )
 
-// TestNewNode verifies that NewNode initializes with correct default values.
-func TestNewNode(t *testing.T) {
-	host := "server.example.com"
-	node := NewNode(host)
-
-	// Verify the node is not nil
-	if node == nil {
-		t.Fatal("Expected NewNode to return non-nil NodeInterface")
-	}
-
-	// Verify default values using getter methods
-	if node.GetHost() != host {
-		t.Errorf("Expected GetHost()=%q, got %q", host, node.GetHost())
-	}
-
-	if node.GetPort() != "22" {
-		t.Errorf("Expected GetPort()=%q, got %q", "22", node.GetPort())
-	}
-
-	if node.GetUser() != "root" {
-		t.Errorf("Expected GetUser()=%q, got %q", "root", node.GetUser())
-	}
-
-	if node.GetKey() != "id_rsa" {
-		t.Errorf("Expected GetKey()=%q, got %q", "id_rsa", node.GetKey())
-	}
-
-	// Verify Args is initialized
-	cfg := node.GetConfig()
-	if cfg.Args == nil {
-		t.Error("Expected Args to be initialized, got nil")
-	}
-
-	if len(cfg.Args) != 0 {
-		t.Errorf("Expected Args to be empty, got %d items", len(cfg.Args))
-	}
-
-	// Verify not connected initially
-	if node.IsConnected() {
-		t.Error("Expected IsConnected() to return false initially")
-	}
-}
-
-// TestNodeStruct verifies that the Node struct has the correct fields.
-// This test will be expanded once the interface methods are implemented.
+// TestNodeStruct verifies that the nodeImplementation struct has the correct fields.
 func TestNodeStruct(t *testing.T) {
-	// Create a Node directly to test the struct definition
+	// Create a nodeImplementation directly to test the struct definition
 	host := "server.example.com"
-	n := &Node{
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  host,
 			SSHPort:  "22",
@@ -100,13 +56,9 @@ func TestNodeStruct(t *testing.T) {
 	}
 }
 
-// Note: Tests for NewNode() will be added once the NodeInterface methods
-// are implemented in tasks 2.3-2.6. The NewNode function currently cannot
-// be tested because *Node doesn't yet implement NodeInterface.
-
-// TestNode_SetPort verifies that SetPort updates the SSH port configuration.
-func TestNode_SetPort(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_SetPort verifies that SetPort updates the SSH port configuration.
+func TestNodeImplementation_SetPort(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -125,15 +77,14 @@ func TestNode_SetPort(t *testing.T) {
 	}
 
 	// Verify method returns self for chaining
-	// Cast to *Node to compare pointers
-	if resultNode, ok := result.(*Node); !ok || resultNode != n {
+	if resultNode, ok := result.(*nodeImplementation); !ok || resultNode != n {
 		t.Error("Expected SetPort to return self for chaining")
 	}
 }
 
-// TestNode_SetUser verifies that SetUser updates the SSH user configuration.
-func TestNode_SetUser(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_SetUser verifies that SetUser updates the SSH user configuration.
+func TestNodeImplementation_SetUser(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -152,14 +103,14 @@ func TestNode_SetUser(t *testing.T) {
 	}
 
 	// Verify method returns self for chaining
-	if resultNode, ok := result.(*Node); !ok || resultNode != n {
+	if resultNode, ok := result.(*nodeImplementation); !ok || resultNode != n {
 		t.Error("Expected SetUser to return self for chaining")
 	}
 }
 
-// TestNode_SetKey verifies that SetKey updates the SSH key configuration.
-func TestNode_SetKey(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_SetKey verifies that SetKey updates the SSH key configuration.
+func TestNodeImplementation_SetKey(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -178,14 +129,14 @@ func TestNode_SetKey(t *testing.T) {
 	}
 
 	// Verify method returns self for chaining
-	if resultNode, ok := result.(*Node); !ok || resultNode != n {
+	if resultNode, ok := result.(*nodeImplementation); !ok || resultNode != n {
 		t.Error("Expected SetKey to return self for chaining")
 	}
 }
 
-// TestNode_SetArg verifies that SetArg adds individual arguments.
-func TestNode_SetArg(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_SetArg verifies that SetArg adds individual arguments.
+func TestNodeImplementation_SetArg(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -204,7 +155,7 @@ func TestNode_SetArg(t *testing.T) {
 	}
 
 	// Verify method returns self for chaining
-	if resultNode, ok := result1.(*Node); !ok || resultNode != n {
+	if resultNode, ok := result1.(*nodeImplementation); !ok || resultNode != n {
 		t.Error("Expected SetArg to return self for chaining")
 	}
 
@@ -220,7 +171,7 @@ func TestNode_SetArg(t *testing.T) {
 	}
 
 	// Verify method returns self for chaining
-	if resultNode, ok := result2.(*Node); !ok || resultNode != n {
+	if resultNode, ok := result2.(*nodeImplementation); !ok || resultNode != n {
 		t.Error("Expected SetArg to return self for chaining")
 	}
 
@@ -231,9 +182,9 @@ func TestNode_SetArg(t *testing.T) {
 	}
 }
 
-// TestNode_SetArg_NilArgs verifies that SetArg initializes Args if nil.
-func TestNode_SetArg_NilArgs(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_SetArg_NilArgs verifies that SetArg initializes Args if nil.
+func TestNodeImplementation_SetArg_NilArgs(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -255,9 +206,9 @@ func TestNode_SetArg_NilArgs(t *testing.T) {
 	}
 }
 
-// TestNode_SetArgs verifies that SetArgs replaces the entire arguments map.
-func TestNode_SetArgs(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_SetArgs verifies that SetArgs replaces the entire arguments map.
+func TestNodeImplementation_SetArgs(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -288,14 +239,14 @@ func TestNode_SetArgs(t *testing.T) {
 	}
 
 	// Verify method returns self for chaining
-	if resultNode, ok := result.(*Node); !ok || resultNode != n {
+	if resultNode, ok := result.(*nodeImplementation); !ok || resultNode != n {
 		t.Error("Expected SetArgs to return self for chaining")
 	}
 }
 
-// TestNode_SetterChaining verifies that all setter methods can be chained.
-func TestNode_SetterChaining(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_SetterChaining verifies that all setter methods can be chained.
+func TestNodeImplementation_SetterChaining(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -330,14 +281,14 @@ func TestNode_SetterChaining(t *testing.T) {
 	}
 
 	// Verify final result is the same node
-	if resultNode, ok := result.(*Node); !ok || resultNode != n {
+	if resultNode, ok := result.(*nodeImplementation); !ok || resultNode != n {
 		t.Error("Expected chained methods to return self")
 	}
 }
 
-// TestNode_GetHost verifies that GetHost returns the configured SSH host.
-func TestNode_GetHost(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_GetHost verifies that GetHost returns the configured SSH host.
+func TestNodeImplementation_GetHost(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -353,8 +304,8 @@ func TestNode_GetHost(t *testing.T) {
 	}
 }
 
-// TestNode_GetPort verifies that GetPort returns the configured SSH port.
-func TestNode_GetPort(t *testing.T) {
+// TestNodeImplementation_GetPort verifies that GetPort returns the configured SSH port.
+func TestNodeImplementation_GetPort(t *testing.T) {
 	tests := []struct {
 		name     string
 		port     string
@@ -366,7 +317,7 @@ func TestNode_GetPort(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := &Node{
+			n := &nodeImplementation{
 				cfg: config.Config{
 					SSHHost:  "server.example.com",
 					SSHPort:  tt.port,
@@ -384,8 +335,8 @@ func TestNode_GetPort(t *testing.T) {
 	}
 }
 
-// TestNode_GetUser verifies that GetUser returns the configured SSH user.
-func TestNode_GetUser(t *testing.T) {
+// TestNodeImplementation_GetUser verifies that GetUser returns the configured SSH user.
+func TestNodeImplementation_GetUser(t *testing.T) {
 	tests := []struct {
 		name     string
 		user     string
@@ -397,7 +348,7 @@ func TestNode_GetUser(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := &Node{
+			n := &nodeImplementation{
 				cfg: config.Config{
 					SSHHost:  "server.example.com",
 					SSHPort:  "22",
@@ -415,8 +366,8 @@ func TestNode_GetUser(t *testing.T) {
 	}
 }
 
-// TestNode_GetKey verifies that GetKey returns the configured SSH key.
-func TestNode_GetKey(t *testing.T) {
+// TestNodeImplementation_GetKey verifies that GetKey returns the configured SSH key.
+func TestNodeImplementation_GetKey(t *testing.T) {
 	tests := []struct {
 		name     string
 		key      string
@@ -428,7 +379,7 @@ func TestNode_GetKey(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			n := &Node{
+			n := &nodeImplementation{
 				cfg: config.Config{
 					SSHHost:  "server.example.com",
 					SSHPort:  "22",
@@ -446,9 +397,9 @@ func TestNode_GetKey(t *testing.T) {
 	}
 }
 
-// TestNode_GetConfig verifies that GetConfig returns a complete copy of the configuration.
-func TestNode_GetConfig(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_GetConfig verifies that GetConfig returns a complete copy of the configuration.
+func TestNodeImplementation_GetConfig(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "2222",
@@ -484,10 +435,9 @@ func TestNode_GetConfig(t *testing.T) {
 	}
 }
 
-// TestNode_GetConfig_DeepCopy verifies that GetConfig returns a deep copy
-// and modifications to the returned config do not affect the Node's internal state.
-func TestNode_GetConfig_DeepCopy(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_GetConfig_DeepCopy verifies that GetConfig returns a deep copy.
+func TestNodeImplementation_GetConfig_DeepCopy(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -510,7 +460,7 @@ func TestNode_GetConfig_DeepCopy(t *testing.T) {
 	cfg.Args["username"] = "modified"
 	cfg.Args["newkey"] = "newvalue"
 
-	// Verify the Node's internal config is unchanged
+	// Verify the node's internal config is unchanged
 	if n.cfg.SSHHost != "server.example.com" {
 		t.Errorf("Expected internal SSHHost unchanged, got %q", n.cfg.SSHHost)
 	}
@@ -531,9 +481,9 @@ func TestNode_GetConfig_DeepCopy(t *testing.T) {
 	}
 }
 
-// TestNode_GetConfig_NilArgs verifies that GetConfig handles nil Args correctly.
-func TestNode_GetConfig_NilArgs(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_GetConfig_NilArgs verifies that GetConfig handles nil Args correctly.
+func TestNodeImplementation_GetConfig_NilArgs(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -551,9 +501,9 @@ func TestNode_GetConfig_NilArgs(t *testing.T) {
 	}
 }
 
-// TestNode_GetConfig_EmptyArgs verifies that GetConfig handles empty Args correctly.
-func TestNode_GetConfig_EmptyArgs(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_GetConfig_EmptyArgs verifies that GetConfig handles empty Args correctly.
+func TestNodeImplementation_GetConfig_EmptyArgs(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -576,15 +526,15 @@ func TestNode_GetConfig_EmptyArgs(t *testing.T) {
 	// Modify the returned config's Args
 	cfg.Args["test"] = "value"
 
-	// Verify the Node's internal Args is unchanged
+	// Verify the node's internal Args is unchanged
 	if len(n.cfg.Args) != 0 {
 		t.Errorf("Expected internal Args to remain empty, got %d items", len(n.cfg.Args))
 	}
 }
 
-// TestNode_GettersAfterSetters verifies that getters return updated values after setters.
-func TestNode_GettersAfterSetters(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_GettersAfterSetters verifies that getters return updated values after setters.
+func TestNodeImplementation_GettersAfterSetters(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -630,9 +580,9 @@ func TestNode_GettersAfterSetters(t *testing.T) {
 	}
 }
 
-// TestNode_IsConnected_Initial verifies that IsConnected returns false initially.
-func TestNode_IsConnected_Initial(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_IsConnected_Initial verifies that IsConnected returns false initially.
+func TestNodeImplementation_IsConnected_Initial(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -648,9 +598,9 @@ func TestNode_IsConnected_Initial(t *testing.T) {
 	}
 }
 
-// TestNode_Close_NotConnected verifies that Close is safe to call when not connected.
-func TestNode_Close_NotConnected(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_Close_NotConnected verifies that Close is safe to call when not connected.
+func TestNodeImplementation_Close_NotConnected(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -677,9 +627,9 @@ func TestNode_Close_NotConnected(t *testing.T) {
 	}
 }
 
-// TestNode_Close_MultipleCalls verifies that Close can be called multiple times safely.
-func TestNode_Close_MultipleCalls(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_Close_MultipleCalls verifies that Close can be called multiple times safely.
+func TestNodeImplementation_Close_MultipleCalls(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -713,15 +663,8 @@ func TestNode_Close_MultipleCalls(t *testing.T) {
 	}
 }
 
-// TestNode_Run_WithPersistentConnection verifies that Run uses persistent connection when available.
-// Note: This test cannot fully verify the behavior without integration testing,
-// but it verifies the code path logic.
-func TestNode_Run_WithPersistentConnection(t *testing.T) {
-	t.Skip("Skipping test that requires real SSH connection - will be covered by integration tests")
-}
-
-// TestNode_Run_WithoutPersistentConnection verifies that Run creates one-time connection when not connected.
-func TestNode_Run_WithoutPersistentConnection(t *testing.T) {
+// TestNodeImplementation_Run_WithoutPersistentConnection verifies that Run creates one-time connection when not connected.
+func TestNodeImplementation_Run_WithoutPersistentConnection(t *testing.T) {
 	// Save original ssh.RunOnce
 	originalRunOnce := sshRunOnce
 	defer func() { sshRunOnce = originalRunOnce }()
@@ -737,7 +680,7 @@ func TestNode_Run_WithoutPersistentConnection(t *testing.T) {
 		return "output from one-time connection", nil
 	}
 
-	n := &Node{
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "2222",
@@ -775,13 +718,8 @@ func TestNode_Run_WithoutPersistentConnection(t *testing.T) {
 	}
 }
 
-// TestNode_Run_PersistentConnectionError verifies error handling with persistent connection.
-func TestNode_Run_PersistentConnectionError(t *testing.T) {
-	t.Skip("Skipping test that requires real SSH connection - will be covered by integration tests")
-}
-
-// TestNode_Run_OneTimeConnectionError verifies error handling with one-time connection.
-func TestNode_Run_OneTimeConnectionError(t *testing.T) {
+// TestNodeImplementation_Run_OneTimeConnectionError verifies error handling with one-time connection.
+func TestNodeImplementation_Run_OneTimeConnectionError(t *testing.T) {
 	// Save original ssh.RunOnce
 	originalRunOnce := sshRunOnce
 	defer func() { sshRunOnce = originalRunOnce }()
@@ -791,7 +729,7 @@ func TestNode_Run_OneTimeConnectionError(t *testing.T) {
 		return "", fmt.Errorf("connection refused")
 	}
 
-	n := &Node{
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -822,8 +760,8 @@ func TestNode_Run_OneTimeConnectionError(t *testing.T) {
 	}
 }
 
-// TestNode_Playbook_Success verifies successful playbook execution.
-func TestNode_Playbook_Success(t *testing.T) {
+// TestNodeImplementation_Playbook_Success verifies successful playbook execution.
+func TestNodeImplementation_Playbook_Success(t *testing.T) {
 	// Create a mock playbook
 	var capturedConfig config.Config
 	mockPlaybook := &mockPlaybook{
@@ -841,7 +779,7 @@ func TestNode_Playbook_Success(t *testing.T) {
 		// Note: Registry doesn't have Remove method, so we'll just leave it
 	}()
 
-	n := &Node{
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "2222",
@@ -881,9 +819,9 @@ func TestNode_Playbook_Success(t *testing.T) {
 	}
 }
 
-// TestNode_Playbook_NotFound verifies error when playbook is not in registry.
-func TestNode_Playbook_NotFound(t *testing.T) {
-	n := &Node{
+// TestNodeImplementation_Playbook_NotFound verifies error when playbook is not in registry.
+func TestNodeImplementation_Playbook_NotFound(t *testing.T) {
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
@@ -910,8 +848,8 @@ func TestNode_Playbook_NotFound(t *testing.T) {
 	}
 }
 
-// TestNode_Playbook_ExecutionError verifies error handling when playbook execution fails.
-func TestNode_Playbook_ExecutionError(t *testing.T) {
+// TestNodeImplementation_Playbook_ExecutionError verifies error handling when playbook execution fails.
+func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 	// Create a mock playbook that fails
 	mockPlaybook := &mockPlaybook{
 		name: "failing-playbook",
@@ -923,7 +861,7 @@ func TestNode_Playbook_ExecutionError(t *testing.T) {
 	// Register mock playbook
 	defaultRegistry.Register(mockPlaybook)
 
-	n := &Node{
+	n := &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
