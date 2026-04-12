@@ -4,93 +4,80 @@ This directory contains proposals for enhancing the Ork infrastructure automatio
 
 ## Proposals Overview
 
-### Core Infrastructure
+### Implemented
 
-1. **[Connection Pooling](2026-04-12-connection-pooling.md)** - Reuse SSH connections for better performance
-   - Status: Draft
-   - Priority: High
-   - Impact: 50-80% performance improvement for multi-command playbooks
+- **Simplified API** - ✅ **IMPLEMENTED** - Fluent builder pattern via `NodeInterface` (`NewNode`, `SetPort`, `SetUser`, `Connect`, `RunCommand`, etc.)
 
-2. **[Configuration Management](2026-04-12-configuration-management.md)** - Load config from files, environment variables, and CLI
-   - Status: Draft
-   - Priority: High
-   - Impact: Essential for production use
+- **Connection Reuse** - ✅ **IMPLEMENTED** - Persistent SSH connections via `Node.Connect()` / `Node.Close()`
 
-3. **[Structured Logging](2026-04-12-structured-logging.md)** - Replace log.Printf with structured logging (slog)
-   - Status: Draft
-   - Priority: Medium
-   - Impact: Better debugging and monitoring
+- **Testing Framework** - ✅ **PARTIALLY IMPLEMENTED** - Unit tests exist; mock helpers (`sshtest`, `playbooktest`) remain
 
-### Playbook Features
+### Not Implemented (Priority Order)
 
-4. **[Dry-Run Mode](2026-04-12-dry-run-mode.md)** - Preview changes before applying
-   - Status: Draft
-   - Priority: High
-   - Impact: Critical for production safety
+#### High Priority
 
-5. **[Idempotency Framework](2026-04-12-idempotency-framework.md)** - Ensure playbooks can run multiple times safely
-   - Status: Draft
-   - Priority: High
-   - Impact: Ansible-like behavior
+1. **[Structured Logging](2026-04-12-structured-logging.md)** - Replace `log.Printf` with `slog`
+   - Status: Not Implemented
+   - Blocked by: None
 
-6. **[Rollback Support](2026-04-12-rollback-support.md)** - Automatically undo changes on failure
-   - Status: Draft
-   - Priority: Medium
-   - Impact: Increased confidence and safety
+2. **[Idempotency Framework](2026-04-12-idempotency-framework.md)** - Standard `Result` type with `Changed` status
+   - Status: Not Implemented
+   - Blocked by: None
 
-7. **[Playbook Dependencies](2026-04-12-playbook-dependencies.md)** - Automatic dependency resolution
-   - Status: Draft
-   - Priority: Medium
-   - Impact: Simplified playbook composition
+3. **[CLI Tool](2026-04-12-cli-tool.md)** - Command-line interface
+   - Status: Not Implemented
+   - Blocked by: Configuration Management
 
-### Scalability
+4. **[Configuration Management](2026-04-12-configuration-management.md)** - File/env config loading
+   - Status: Not Implemented
+   - Blocked by: None
+   - Needed for: CLI Tool
 
-8. **[Parallel Execution](2026-04-12-parallel-execution.md)** - Run playbooks across multiple hosts concurrently
-   - Status: Draft
-   - Priority: High
-   - Impact: Essential for managing fleets
+5. **[Dry-Run Mode](2026-04-12-dry-run-mode.md)** - Preview changes before applying
+   - Status: Not Implemented
+   - Blocked by: Idempotency Framework
 
-### Developer Experience
+#### Medium Priority
 
-9. **[Simplified API](2026-04-12-simplified-api.md)** - User-friendly top-level API (ork.RunSSH instead of ssh.RunOnce)
-   - Status: Draft
-   - Priority: High
-   - Impact: Much better developer experience, easier onboarding
+6. **[Parallel Execution](2026-04-12-parallel-execution.md)** - Multi-host execution
+   - Status: Not Implemented
+   - Blocked by: Connection Pool
 
-10. **[CLI Tool](2026-04-12-cli-tool.md)** - Command-line interface for Ork
-    - Status: Draft
-    - Priority: High
-    - Impact: Lower barrier to entry
+7. **[Connection Pooling](2026-04-12-connection-pooling.md)** - Multi-host connection limiting
+   - Status: Partially Implemented (reuse done, pool remains)
+   - Blocked by: None
 
-11. **[Testing Framework](2026-04-12-testing-framework.md)** - Comprehensive testing infrastructure
-    - Status: Draft
-    - Priority: High
-    - Impact: Code quality and confidence
+8. **[Playbook Dependencies](2026-04-12-playbook-dependencies.md)** - Auto-resolve dependencies
+   - Status: Not Implemented
+   - Blocked by: Idempotency Framework (for caching)
+
+9. **[Rollback Support](2026-04-12-rollback-support.md)** - Undo changes on failure
+   - Status: Not Implemented
+   - Blocked by: Complex; low priority
 
 ## Implementation Roadmap
 
-### Phase 1: Foundation (Weeks 1-4)
-Focus on core infrastructure and developer experience:
-- **Simplified API** (Week 1) - Most important for usability
-- Configuration Management
-- Testing Framework
-- Connection Pooling
+### Phase 1: Foundation (Complete)
+- ✅ Simplified API - Fluent builder pattern implemented
+- ✅ Connection Reuse - Persistent connections via Node
+- ✅ Testing Framework - Basic tests in place
 
-### Phase 2: Safety & Reliability (Weeks 5-8)
-Add safety features:
-- Dry-Run Mode
-- Idempotency Framework
-- Structured Logging
+### Phase 2: Core Features (Next)
+1. **Structured Logging** - slog integration
+2. **Idempotency Framework** - Result type and Check interface
+3. **Configuration Management** - File/env config for CLI
 
-### Phase 3: Scale (Weeks 9-12)
-Enable fleet management:
-- Parallel Execution
-- Playbook Dependencies
+### Phase 3: CLI & Safety
+4. **CLI Tool** - cobra-based binary
+5. **Dry-Run Mode** - Preview changes
 
-### Phase 4: Advanced Features (Weeks 13-16)
-Add sophisticated capabilities:
-- Rollback Support
-- Advanced monitoring and observability
+### Phase 4: Scale (Later)
+6. **Connection Pool** - Multi-host resource management
+7. **Parallel Execution** - Fleet operations
+8. **Playbook Dependencies** - Auto-resolution
+
+### Phase 5: Advanced
+9. **Rollback Support** - Transaction management
 
 ## Contributing
 

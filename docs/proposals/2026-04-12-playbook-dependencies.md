@@ -1,8 +1,10 @@
 # Proposal: Playbook Dependencies
 
 **Date:** 2026-04-12  
-**Status:** Draft  
+**Status:** Not Implemented  
 **Author:** System Review
+
+> **Note:** Allows playbooks to declare dependencies (e.g., apt-upgrade depends on apt-update).
 
 ## Problem Statement
 
@@ -438,24 +440,18 @@ func (g *DependencyGraph) GetLevels() [][]Playbook {
 ## Implementation Plan
 
 ### Phase 1: Core Framework
-- Implement DependentPlaybook interface
-- Create DependencyGraph
-- Add basic dependency resolution
+- Add `DependentPlaybook` interface
+- Create `DependencyGraph` with topological sort
+- Circular dependency detection
 
-### Phase 2: Advanced Features
-- Add conditional dependencies
-- Implement caching
-- Add circular dependency detection
+### Phase 2: Execution
+- Dependency resolution at runtime
+- Caching of completed dependencies
+- Parallel execution of independent playbooks
 
-### Phase 3: Parallel Execution
-- Implement level-based parallelization
-- Add dependency visualization
-- Optimize execution order
-
-### Phase 4: CLI Integration
+### Phase 3: CLI Integration
 - Add `--with-deps` flag
 - Add `deps` command for visualization
-- Add cache management commands
 
 ## Benefits
 

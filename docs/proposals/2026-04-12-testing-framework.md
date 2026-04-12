@@ -1,18 +1,34 @@
 # Proposal: Testing Framework
 
 **Date:** 2026-04-12  
-**Status:** Draft  
+**Status:** Partially Implemented  
 **Author:** System Review
+
+> **Note:** Test files exist throughout the project. This proposal covers remaining mock infrastructure and test helpers.
+
+## What's Already Implemented
+
+Test files exist across the codebase:
+
+```
+ork/
+├── integration_test.go       # Integration tests for Node operations
+├── node_implementation_test.go  # Unit tests for Node implementation
+├── node_interface_test.go    # Tests for NodeInterface
+├── registry_test.go          # Registry tests
+└── ssh/
+    └── ssh_test.go           # SSH client tests
+```
+
+✅ **Implemented:**
+- Unit tests for `Node` methods
+- Registry tests
+- SSH client tests
+- Integration tests
 
 ## Problem Statement
 
-Currently, there are no visible test files in the project. This creates several risks:
-
-- No automated verification of playbook behavior
-- Difficult to refactor with confidence
-- No regression testing
-- Hard to validate SSH connection logic
-- Manual testing is time-consuming and error-prone
+While basic tests exist, we lack standardized mock infrastructure for testing playbooks in isolation without SSH connections.
 
 ## Proposed Solution
 
@@ -23,80 +39,37 @@ Implement a comprehensive testing framework with:
 3. **End-to-end tests** with Docker containers
 4. **Test helpers** for common patterns
 
-## Testing Architecture
+## Remaining Work
 
-### 1. Mock SSH Client
+### 1. Mock SSH Client Package
+
+Create `internal/sshtest` package:
 
 ```go
 package sshtest
 
 type MockClient struct {
-    Commands []string
-    Outputs  map[string]string
-    Errors   map[string]error
+    Commands  []string
+    Outputs   map[string]string
+    Errors    map[string]error
     Connected bool
 }
 
-func NewMockClient() *MockClient {
-    return &MockClient{
-        Commands: []string{},
-        Outputs:  make(map[string]string),
-        Errors:   make(map[string]error),
-    }
-}
-
-func (m *MockClient) Connect() error {
-    m.Connected = true
-    return nil
-}
-
-func (m *MockClient) Run(cmd string) (string, error) {
-    m.Commands = append(m.Commands, cmd)
-    
-    if err, ok := m.Errors[cmd]; ok {
-        return "", err
-    }
-    
-    if output, ok := m.Outputs[cmd]; ok {
-        return output, nil
-    }
-    
-    return "", nil
-}
-
-func (m *MockClient) Close() error {
-    m.Connected = false
-    return nil
-}
-
-func (m *MockClient) ExpectCommand(cmd, output string) {
-    m.Outputs[cmd] = output
-}
-
-func (m *MockClient) ExpectError(cmd string, err error) {
-    m.Errors[cmd] = err
-}
-
-func (m *MockClient) AssertCommandRun(t *testing.T, cmd string) {
-    for _, c := range m.Commands {
-        if c == cmd {
-            return
-        }
-    }
-    t.Errorf("Expected command '%s' was not run", cmd)
-}
+func NewMockClient() *MockClient
+func (m *MockClient) Connect() error
+func (m *MockClient) Run(cmd string) (string, error)
+func (m *MockClient) Close() error
+func (m *MockClient) ExpectCommand(cmd, output string)
+func (m *MockClient) ExpectError(cmd string, err error)
+func (m *MockClient) AssertCommandRun(t *testing.T, cmd string)
 ```
 
 ### 2. Playbook Test Helpers
 
+Create `internal/playbooktest` package:
+
 ```go
 package playbooktest
-
-import (
-    "testing"
-    "github.com/dracory/ork/config"
-    "github.com/dracory/ork/playbook"
-)
 
 type PlaybookTest struct {
     t          *testing.T
@@ -104,54 +77,14 @@ type PlaybookTest struct {
     config     config.Config
 }
 
-func New(t *testing.T) *PlaybookTest {
-    return &PlaybookTest{
-        t:          t,
-        mockClient: sshtest.NewMockClient(),
-        config: config.Config{
-            SSHHost:  "test.example.com",
-            SSHPort:  "22",
-            RootUser: "root",
-            SSHKey:   "test_key",
-        },
-    }
-}
-
-func (pt *PlaybookTest) ExpectCommand(cmd, output string) *PlaybookTest {
-    pt.mockClient.ExpectCommand(cmd, output)
-    return pt
-}
-
-func (pt *PlaybookTest) ExpectError(cmd string, err error) *PlaybookTest {
-    pt.mockClient.ExpectError(cmd, err)
-    return pt
-}
-
-func (pt *PlaybookTest) Run(pb playbook.Playbook) error {
-    // Inject mock client
-    return pb.Run(pt.config)
-}
-
-func (pt *PlaybookTest) AssertCommandRun(cmd string) {
-    pt.mockClient.AssertCommandRun(pt.t, cmd)
-}
-
-func (pt *PlaybookTest) AssertNoError(err error) {
-    if err != nil {
-        pt.t.Fatalf("Expected no error, got: %v", err)
-    }
-}
-
-func (pt *PlaybookTest) AssertError(err error) {
-    if err == nil {
-        pt.t.Fatal("Expected error, got nil")
-    }
-}
+func New(t *testing.T) *PlaybookTest
+func (pt *PlaybookTest) ExpectCommand(cmd, output string) *PlaybookTest
+func (pt *PlaybookTest) Run(pb playbook.Playbook) error
+func (pt *PlaybookTest) AssertCommandRun(cmd string)
+func (pt *PlaybookTest) AssertNoError(err error)
 ```
 
-## Test Examples
-
-### Unit Test: Ping Playbook
+## Example Usage (After Implementation)
 
 ```go
 package playbooks_test
@@ -165,30 +98,13 @@ import (
 func TestPing_Success(t *testing.T) {
     test := playbooktest.New(t)
     
-    // Setup expectations
-    test.ExpectCommand("uptime", " 10:30:01 up 5 days, 2:15, 1 user, load average: 0.5, 0.3, 0.2")
+    test.ExpectCommand("uptime", " 10:30:01 up 5 days...")
     
-    // Run playbook
     pb := playbooks.NewPing()
     err := test.Run(pb)
     
-    // Assertions
     test.AssertNoError(err)
     test.AssertCommandRun("uptime")
-}
-
-func TestPing_ConnectionFailure(t *testing.T) {
-    test := playbooktest.New(t)
-    
-    // Setup expectations
-    test.ExpectError("uptime", fmt.Errorf("connection refused"))
-    
-    // Run playbook
-    pb := playbooks.NewPing()
-    err := test.Run(pb)
-    
-    // Assertions
-    test.AssertError(err)
 }
 ```
 
@@ -490,25 +406,18 @@ jobs:
 
 ## Implementation Plan
 
-### Phase 1: Test Infrastructure
-- Create mock SSH client
-- Create playbook test helpers
-- Set up test organization
+### Phase 1: Mock Infrastructure (Remaining)
+- Create `internal/sshtest` package
+- Create `internal/playbooktest` package
+- Add `sshRunOnce` override mechanism for tests
 
-### Phase 2: Unit Tests
-- Write tests for all existing playbooks
+### Phase 2: Playbook Tests
+- Rewrite playbook tests using new mocks
 - Achieve >80% code coverage
-- Add table-driven tests
 
-### Phase 3: Integration & E2E
-- Create mock SSH server
-- Set up Docker test containers
-- Write end-to-end tests
-
-### Phase 4: CI/CD
-- Set up GitHub Actions
-- Add coverage reporting
-- Add test badges to README
+### Phase 3: Integration Tests
+- Set up Docker test containers for E2E tests
+- Add GitHub Actions workflow
 
 ## Benefits
 

@@ -1,8 +1,10 @@
 # Proposal: Configuration Management
 
 **Date:** 2026-04-12  
-**Status:** Draft  
+**Status:** Not Implemented  
 **Author:** System Review
+
+> **Note:** Currently only Go struct config. File/env loading needed for CLI tool.
 
 ## Problem Statement
 
@@ -387,19 +389,18 @@ ork run ping --profile production --host db1
 ## Implementation Plan
 
 ### Phase 1: Basic Config Loading
-- Implement config file loading (YAML, JSON, TOML)
-- Add environment variable support
-- Implement precedence rules
+- Add `config.Manager` with viper
+- Support YAML/JSON config files
+- Environment variable support (`ORK_SSH_HOST`, etc.)
 
 ### Phase 2: Advanced Features
-- Add host definitions
-- Implement validation
-- Add profile support
+- Host definitions in config
+- Profile support (dev/prod)
+- Config validation
 
 ### Phase 3: Secrets Management
-- Add vault integration
-- Implement encrypted config files
-- Add secret templating
+- Vault integration
+- Encrypted config files
 
 ## Benefits
 

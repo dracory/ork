@@ -1,8 +1,10 @@
 # Proposal: Parallel Execution
 
 **Date:** 2026-04-12  
-**Status:** Draft  
+**Status:** Not Implemented  
 **Author:** System Review
+
+> **Note:** For managing multiple hosts concurrently. Depends on Connection Pool for resource management.
 
 ## Problem Statement
 
@@ -332,19 +334,17 @@ groups:
 ## Implementation Plan
 
 ### Phase 1: Core Executor
-- Implement `Executor` with goroutine pool
-- Add progress tracking
-- Add timeout handling
+- Implement `Executor` in `executor` package
+- Goroutine pool with semaphore limiting
+- Progress tracking callbacks
 
 ### Phase 2: Inventory Management
-- Design inventory format
-- Implement inventory loader (JSON/YAML)
-- Add group filtering
+- `Inventory` struct with host groups
+- JSON/YAML inventory loader
 
 ### Phase 3: Advanced Features
-- Add rolling updates (update N hosts at a time)
-- Add failure threshold (stop if X% fail)
-- Add retry logic
+- Rolling updates
+- Failure threshold handling
 
 ## Benefits
 

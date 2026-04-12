@@ -1,8 +1,10 @@
 # Proposal: Dry-Run Mode
 
 **Date:** 2026-04-12  
-**Status:** Draft  
+**Status:** Not Implemented  
 **Author:** System Review
+
+> **Note:** Requires `DryRun` field in config and `DryRunnable` interface in playbooks.
 
 ## Problem Statement
 
@@ -242,18 +244,16 @@ ork run --host server.example.com --playbook apt-upgrade --dry-run
 ## Implementation Plan
 
 ### Phase 1: Core Framework
-- Add `DryRunnable` interface
+- Add `DryRunnable` interface to `playbook` package
 - Add `Action` type
-- Add `DryRun` flag to Config
+- Add `DryRun` bool field to `config.Config`
 
-### Phase 2: Implement in Playbooks
-- Add `DryRun()` to all existing playbooks
-- Test dry-run accuracy vs actual execution
+### Phase 2: Playbook Implementation
+- Add `DryRun()` to `AptUpgrade`, `SwapCreate`, `UserCreate`
+- Test accuracy vs actual execution
 
-### Phase 3: Enhanced Features
-- Add diff output for file changes
-- Add color-coded output (green=create, yellow=modify, red=delete)
-- Add summary statistics
+### Phase 3: CLI Integration
+- Add `--dry-run` flag to CLI tool
 
 ## Benefits
 

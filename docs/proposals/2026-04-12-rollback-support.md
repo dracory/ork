@@ -1,8 +1,10 @@
 # Proposal: Rollback Support
 
 **Date:** 2026-04-12  
-**Status:** Draft  
+**Status:** Not Implemented  
 **Author:** System Review
+
+> **Note:** Complex feature for undoing playbook changes. Requires `ReversiblePlaybook` interface and transaction management.
 
 ## Problem Statement
 
@@ -460,24 +462,17 @@ tx.RollbackWithContext(ctx)
 ## Implementation Plan
 
 ### Phase 1: Core Framework
-- Implement Operation and Transaction types
-- Add basic rollback support
-- Update 1-2 playbooks as examples
+- Add `ReversiblePlaybook` interface
+- Create `Transaction` and `Operation` types
+- Add `TransactionManager`
 
 ### Phase 2: Snapshot System
-- Implement snapshot capture/restore
-- Add file state tracking
-- Add transaction history storage
+- Snapshot capture/restore for files
+- Transaction history storage
 
-### Phase 3: Advanced Features
-- Add checkpoint system
-- Implement partial rollback
-- Add rollback validation
-
-### Phase 4: CLI Integration
-- Add transaction management commands
-- Add rollback flags
-- Add transaction history viewer
+### Phase 3: CLI Integration
+- Add rollback commands
+- Transaction history viewer
 
 ## Benefits
 

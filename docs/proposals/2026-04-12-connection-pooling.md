@@ -1,92 +1,82 @@
 # Proposal: Connection Pooling and Reuse
 
 **Date:** 2026-04-12  
-**Status:** Draft  
+**Status:** Partially Implemented  
 **Author:** System Review
+
+> **Note:** Connection reuse via persistent connections is already implemented through the `Node` API. This proposal covers remaining multi-host connection pooling.
+
+## What's Already Implemented
+
+Persistent connection reuse is available through the `Node` API:
+
+```go
+node := ork.NewNodeForHost("server.example.com")
+if err := node.Connect(); err != nil {
+    log.Fatal(err)
+}
+defer node.Close()
+
+// Reuses same connection
+output1, _ := node.RunCommand("uptime")
+output2, _ := node.RunCommand("df -h")
+```
+
+✅ **Implemented:**
+- `Node.Connect()` / `Node.Close()` for persistent connections
+- `Node.RunCommand()` reuses connection when available
+- `ssh.Client` for low-level connection management
 
 ## Problem Statement
 
-Currently, every SSH command execution creates a new connection via `ssh.RunOnce()`. For playbooks that execute multiple commands sequentially, this creates unnecessary overhead:
+When managing multiple hosts simultaneously, each `Node` creates its own SSH connection. For operations across fleets (10s or 100s of hosts), this can exhaust local resources (file descriptors, memory). A true connection pool would:
 
-- Multiple TCP handshakes
-- Repeated SSH authentication
-- Increased latency (especially for remote servers)
-- Higher resource usage
+- Limit concurrent connections to a manageable number
+- Reuse connections across multiple playbook runs
+- Queue operations when connection limit reached
 
-Example from `apt-status` playbook:
-```go
-// Two separate connections for related operations
-ssh.RunOnce(..., "apt-get update -qq")
-ssh.RunOnce(..., "apt list --upgradable")
-```
+## Remaining Work
 
-## Proposed Solution
+### Connection Pool Manager (Multi-Host)
 
-### 1. Enhance Playbook Interface (Optional)
-
-Add optional connection lifecycle methods:
-
-```go
-type ConnectionAwarePlaybook interface {
-    Playbook
-    UsePersistentConnection() bool
-}
-```
-
-### 2. Add Connection Context
-
-```go
-type ExecutionContext struct {
-    Config Config
-    Client *ssh.Client // Reusable connection
-}
-
-func (ctx *ExecutionContext) Run(cmd string) (string, error) {
-    if ctx.Client == nil {
-        return "", fmt.Errorf("no active connection")
-    }
-    return ctx.Client.Run(cmd)
-}
-```
-
-### 3. Update Playbook Interface
-
-```go
-type Playbook interface {
-    Name() string
-    Description() string
-    Run(config Config) error
-    RunWithContext(ctx *ExecutionContext) error // New method
-}
-```
-
-### 4. Connection Pool Manager
+For fleet management scenarios, implement a true connection pool:
 
 ```go
 type ConnectionPool struct {
-    connections map[string]*ssh.Client
-    mu          sync.RWMutex
+    maxConnections int
+    connections    map[string]*pooledClient
+    mu             sync.RWMutex
+    semaphore      chan struct{}
 }
 
-func (p *ConnectionPool) Get(cfg Config) (*ssh.Client, error)
-func (p *ConnectionPool) Release(cfg Config)
+type pooledClient struct {
+    client      *ssh.Client
+    lastUsed    time.Time
+    inUse       bool
+}
+
+func NewConnectionPool(maxConnections int) *ConnectionPool
+
+func (p *ConnectionPool) Acquire(host string, cfg Config) (*ssh.Client, error)
+func (p *ConnectionPool) Release(host string)
 func (p *ConnectionPool) CloseAll()
 ```
 
 ## Implementation Plan
 
-### Phase 1: Backward Compatible Enhancement
-- Keep existing `RunOnce` for simple use cases
-- Add `Client.Run()` method for multiple commands
-- Update documentation with examples
+### Phase 1: Connection Pool Core (Remaining)
+- Implement `ConnectionPool` with semaphore-based limiting
+- Add connection health checks (reuse connections < 5 min old)
+- Add timeout and idle connection cleanup
 
-### Phase 2: Playbook Migration
-- Update existing playbooks to use persistent connections where beneficial
-- Add benchmarks showing performance improvements
+### Phase 2: Integration with Parallel Execution
+- Use pool in `Executor` for multi-host operations
+- Queue hosts when pool is at capacity
+- Track connection metrics
 
-### Phase 3: Connection Pool (Optional)
-- Implement connection pooling for multi-host scenarios
-- Add connection timeout and health checks
+### Phase 3: Optimization
+- Connection multiplexing via SSH ControlMaster
+- Benchmark improvements
 
 ## Example Usage
 

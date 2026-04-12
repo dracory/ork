@@ -1,8 +1,10 @@
 # Proposal: Structured Logging
 
 **Date:** 2026-04-12  
-**Status:** Draft  
+**Status:** Not Implemented  
 **Author:** System Review
+
+> **Note:** Current playbooks use `log.Printf()`. Need to migrate to `slog`.
 
 ## Problem Statement
 
@@ -375,19 +377,17 @@ func (h *RedactingHandler) Handle(ctx context.Context, r slog.Record) error {
 ## Implementation Plan
 
 ### Phase 1: Core Logging
-- Implement Logger interface with slog
-- Add ExecutionContext
-- Update 1-2 playbooks as examples
+- Add `logging` package with `Logger` interface
+- Implement `SlogLogger` with `slog`
+- Add `Logger` field to `ExecutionContext`
 
 ### Phase 2: Playbook Migration
-- Update all playbooks to use structured logging
-- Add context propagation
-- Maintain backward compatibility
+- Replace `log.Printf` in playbooks with `ctx.Logger.Info()`
+- Add `RunWithContext(ctx *ExecutionContext)` method
 
 ### Phase 3: Advanced Features
-- Add multiple outputs
-- Implement log rotation
-- Add remote logging support
+- Add multiple output support (console + file)
+- Remote logging support
 
 ## Benefits
 

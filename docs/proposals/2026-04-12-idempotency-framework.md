@@ -1,24 +1,26 @@
 # Proposal: Idempotency Framework
 
 **Date:** 2026-04-12  
-**Status:** Draft  
+**Status:** Not Implemented  
 **Author:** System Review
 
 ## Problem Statement
 
-Some playbooks lack proper idempotency checks, meaning they may perform unnecessary operations or fail when run multiple times:
+Playbooks currently have ad-hoc idempotency checks (e.g., checking if swap exists before creating). We need:
 
-- `AptUpgrade` always runs even if no updates available
-- Operations don't report whether changes were made
-- No standard pattern for "check before change"
+- Standard `Result` type reporting `Changed` status
+- `CheckablePlaybook` interface for pre-flight checks
+- Helper functions for common patterns
 
 Ansible's strength is idempotent operations - running the same playbook multiple times should be safe and only make necessary changes.
 
-## Proposed Solution
+## Implementation
 
 ### 1. Add Result Type
 
 ```go
+package playbook
+
 type Result struct {
     Changed bool              // Whether any changes were made
     Message string            // Human-readable result
@@ -27,39 +29,27 @@ type Result struct {
 }
 ```
 
-### 2. Update Playbook Interface
+### 2. Add CheckablePlaybook Interface
 
 ```go
-type Playbook interface {
-    Name() string
-    Description() string
-    Run(config Config) error
-    RunWithResult(config Config) Result // New method
-}
-
-// Optional interface for check mode
 type CheckablePlaybook interface {
     Playbook
     Check(config Config) (bool, error) // Returns true if changes needed
+    RunWithResult(config Config) Result
 }
 ```
 
-### 3. Standard Idempotency Helpers
+### 3. Idempotency Helpers
 
 ```go
-package playbook
-
 // CheckExists runs a command and returns true if it succeeds
 func CheckExists(client *ssh.Client, checkCmd string) bool
 
 // EnsureState ensures a desired state, returns whether changes were made
 func EnsureState(client *ssh.Client, checkCmd, applyCmd string) (bool, error)
-
-// CompareState checks if current state matches desired state
-func CompareState(current, desired string) bool
 ```
 
-## Implementation Examples
+## Example Implementation
 
 ### AptUpgrade with Idempotency
 
@@ -67,12 +57,8 @@ func CompareState(current, desired string) bool
 func (a *AptUpgrade) Check(cfg config.Config) (bool, error) {
     output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey,
         "apt list --upgradable 2>/dev/null | tail -n +2 | wc -l")
-    if err != nil {
-        return false, err
-    }
-    
     count := strings.TrimSpace(output)
-    return count != "0" && count != "", nil
+    return count != "0" && count != "", err
 }
 
 func (a *AptUpgrade) RunWithResult(cfg config.Config) Result {
@@ -82,23 +68,16 @@ func (a *AptUpgrade) RunWithResult(cfg config.Config) Result {
     }
     
     if !needsUpgrade {
-        return Result{
-            Changed: false,
-            Message: "All packages are up to date",
-        }
+        return Result{Changed: false, Message: "All packages up to date"}
     }
     
     output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey,
         "apt-get upgrade -y")
+    
     if err != nil {
         return Result{Error: err}
     }
-    
-    return Result{
-        Changed: true,
-        Message: "Packages upgraded successfully",
-        Details: map[string]string{"output": output},
-    }
+    return Result{Changed: true, Message: "Packages upgraded", Details: map[string]string{"output": output}}
 }
 ```
 
@@ -176,19 +155,17 @@ func (u *UserCreate) RunWithResult(cfg config.Config) Result {
 ## Implementation Plan
 
 ### Phase 1: Core Types
-- Add `Result` type
+- Add `Result` type to `playbook` package
 - Add `CheckablePlaybook` interface
-- Create helper functions
+- Create `CheckExists()` and `EnsureState()` helpers
 
-### Phase 2: Migrate Existing Playbooks
-- Update all playbooks to implement `RunWithResult`
-- Add idempotency checks where missing
-- Maintain backward compatibility with `Run()`
+### Phase 2: Playbook Migration
+- Update `AptUpgrade`, `SwapCreate`, `UserCreate` to use new interfaces
+- Maintain backward compatibility with existing `Run()`
 
-### Phase 3: Documentation & Testing
+### Phase 3: Documentation
 - Document idempotency patterns
-- Add tests verifying idempotent behavior
-- Create examples
+- Add usage examples
 
 ## Benefits
 
