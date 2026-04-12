@@ -21,8 +21,16 @@ import (
 )
 
 func main() {
-    // Create a node (remote server)
-    node := ork.NewNode("server.example.com")
+    // Create a node (remote server) - multiple ways:
+    
+    // Option 1: From host (most common)
+    node := ork.NewNodeForHost("server.example.com")
+    
+    // Option 2: Empty node, configure later
+    node := ork.NewNode().SetHost("server.example.com")
+    
+    // Option 3: From existing config
+    node := ork.NewNodeFromConfig(cfg)
     
     // Run a command
     output, err := node.RunCommand("uptime")
@@ -38,7 +46,8 @@ func main() {
 Use the fluent API to configure connection settings:
 
 ```go
-node := ork.NewNode("server.example.com").
+// From host
+node := ork.NewNodeForHost("server.example.com").
     SetPort("2222").
     SetUser("deploy").
     SetKey("production.prv")
@@ -51,7 +60,7 @@ output, err := node.RunCommand("uptime")
 For multiple operations, establish a persistent connection:
 
 ```go
-node := ork.NewNode("server.example.com").
+node := ork.NewNodeForHost("server.example.com").
     SetPort("2222").
     SetUser("deploy")
 
@@ -70,7 +79,7 @@ output2, _ := node.RunCommand("df -h")
 Run pre-built automation tasks (playbooks) against a node:
 
 ```go
-node := ork.NewNode("server.example.com").
+node := ork.NewNodeForHost("server.example.com").
     SetArg("username", "alice").
     SetArg("shell", "/bin/bash")
 
@@ -98,7 +107,7 @@ err := node.RunPlaybook("user-create")
 ### Inspecting Configuration
 
 ```go
-node := ork.NewNode("server.example.com").
+node := ork.NewNodeForHost("server.example.com").
     SetPort("2222").
     SetUser("deploy")
 
@@ -186,7 +195,7 @@ func main() {
 
 ### Package Overview
 
-- `ork` - Main API: `NodeInterface` and `NewNode()`
+- `ork` - Main API: `NodeInterface`, `NewNode()`, `NewNodeForHost()`, `NewNodeFromConfig()`
 - `config` - Configuration types
 - `ssh` - SSH client with connection management
 - `playbook` - Playbook interface and registry

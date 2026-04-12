@@ -38,7 +38,11 @@ func NewClient(host, port, user, key string) *Client {
 
 // Connect establishes the SSH connection.
 // Must be called before Run or Close.
+// Returns an error if the host is empty.
 func (c *Client) Connect() error {
+	if c.host == "" {
+		return fmt.Errorf("host cannot be empty")
+	}
 	addr := c.host + ":" + c.port
 	client, err := simplessh.ConnectWithKeyFile(addr, c.user, c.keyPath)
 	if err != nil {

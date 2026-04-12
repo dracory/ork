@@ -314,6 +314,27 @@ func NewNodeForHost(host string) NodeInterface {
 	}
 }
 
+// NewNode creates a new Node with default configuration values.
+// Unlike NewNodeForHost, this function takes no arguments and creates
+// a node with an empty host. Use SetArg or SetArgs to configure the node.
+//
+// Default values:
+//   - Host: "" (empty - must be set before connecting)
+//   - Port: "22"
+//   - User: "root"
+//   - Key: "id_rsa"
+//   - Args: empty map
+//
+// Example:
+//
+//	node := ork.NewNode().
+//	    SetHost("server.example.com").
+//	    SetPort("2222").
+//	    SetUser("deploy")
+//
+//	if err := node.Connect(); err != nil {
+//	    log.Fatal(err)
+//	}
 func NewNode() NodeInterface {
 	return &nodeImplementation{
 		cfg: config.Config{
@@ -322,6 +343,45 @@ func NewNode() NodeInterface {
 			SSHKey:   "id_rsa",
 			Args:     make(map[string]string),
 		},
+		connected: false,
+	}
+}
+
+// NewNodeFromConfig creates a new Node from an existing config.Config.
+// This is useful when you have a pre-built configuration and want to
+// create a Node from it directly.
+//
+// The config is copied internally, so modifications to the original config
+// after calling this function will not affect the Node.
+//
+// Example:
+//
+//	cfg := config.Config{
+//	    SSHHost:  "server.example.com",
+//	    SSHPort:  "2222",
+//	    RootUser: "deploy",
+//	    SSHKey:   "production.prv",
+//	    Args: map[string]string{"env": "production"},
+//	}
+//	node := ork.NewNodeFromConfig(cfg)
+//
+//	if err := node.Connect(); err != nil {
+//	    log.Fatal(err)
+//	}
+func NewNodeFromConfig(cfg config.Config) NodeInterface {
+	// Create a deep copy of the config to prevent external modifications
+	cfgCopy := cfg
+	if cfg.Args != nil {
+		cfgCopy.Args = make(map[string]string, len(cfg.Args))
+		for k, v := range cfg.Args {
+			cfgCopy.Args[k] = v
+		}
+	} else {
+		cfgCopy.Args = make(map[string]string)
+	}
+
+	return &nodeImplementation{
+		cfg:       cfgCopy,
 		connected: false,
 	}
 }
