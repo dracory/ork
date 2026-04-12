@@ -35,7 +35,7 @@ import (
 type BasePlaybook struct {
 	id          string
 	description string
-	cfg         config.Config
+	nodeCfg     config.NodeConfig
 	args        map[string]string
 	dryRun      bool
 	timeout     time.Duration
@@ -75,14 +75,14 @@ func (b *BasePlaybook) SetDescription(description string) PlaybookInterface {
 }
 
 // GetConfig returns the current node configuration for this playbook.
-func (b *BasePlaybook) GetConfig() config.Config {
-	return b.cfg
+func (b *BasePlaybook) GetConfig() config.NodeConfig {
+	return b.nodeCfg
 }
 
 // SetConfig sets the node configuration for this playbook execution.
 // Returns PlaybookInterface for fluent method chaining with embedding types.
-func (b *BasePlaybook) SetConfig(cfg config.Config) PlaybookInterface {
-	b.cfg = cfg
+func (b *BasePlaybook) SetConfig(cfg config.NodeConfig) PlaybookInterface {
+	b.nodeCfg = cfg
 	return b
 }
 

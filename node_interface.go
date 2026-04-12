@@ -78,7 +78,7 @@ type NodeInterface interface {
 	//	fmt.Println(args["username"])  // Output: alice
 	GetArgs() map[string]string
 
-	// GetConfig returns a copy of the underlying config.Config.
+	// GetConfig returns a copy of the underlying config.NodeConfig.
 	// This allows integration with code that uses the config package directly.
 	// The returned configuration includes all accumulated settings (host, port, user, key, args).
 	//
@@ -89,7 +89,7 @@ type NodeInterface interface {
 	//	    SetUser("deploy")
 	//	cfg := node.GetConfig()
 	//	fmt.Printf("Connecting to %s\n", cfg.SSHAddr())
-	GetConfig() config.Config
+	GetConfig() config.NodeConfig
 
 	// GetHost returns the configured SSH host (hostname or IP address).
 	//
@@ -295,7 +295,7 @@ type NodeInterface interface {
 //	node := ork.NewNode("server.example.com")
 //	// Equivalent to:
 //	// Node{
-//	//     cfg: config.Config{
+//	//     cfg: config.NodeConfig{
 //	//         SSHHost: "server.example.com",
 //	//         SSHPort: "22",
 //	//         RootUser: "root",
@@ -313,7 +313,7 @@ type NodeInterface interface {
 //	    SetKey("production.prv")
 func NewNodeForHost(host string) NodeInterface {
 	return &nodeImplementation{
-		cfg: config.Config{
+		cfg: config.NodeConfig{
 			SSHHost:  host,
 			SSHPort:  "22",
 			RootUser: "root",
@@ -347,7 +347,7 @@ func NewNodeForHost(host string) NodeInterface {
 //	}
 func NewNode() NodeInterface {
 	return &nodeImplementation{
-		cfg: config.Config{
+		cfg: config.NodeConfig{
 			SSHPort:  "22",
 			RootUser: "root",
 			SSHKey:   "id_rsa",
@@ -357,7 +357,7 @@ func NewNode() NodeInterface {
 	}
 }
 
-// NewNodeFromConfig creates a new Node from an existing config.Config.
+// NewNodeFromConfig creates a new Node from an existing config.NodeConfig.
 // This is useful when you have a pre-built configuration and want to
 // create a Node from it directly.
 //
@@ -366,7 +366,7 @@ func NewNode() NodeInterface {
 //
 // Example:
 //
-//	cfg := config.Config{
+//	cfg := config.NodeConfig{
 //	    SSHHost:  "server.example.com",
 //	    SSHPort:  "2222",
 //	    RootUser: "deploy",
@@ -378,7 +378,7 @@ func NewNode() NodeInterface {
 //	if err := node.Connect(); err != nil {
 //	    log.Fatal(err)
 //	}
-func NewNodeFromConfig(cfg config.Config) NodeInterface {
+func NewNodeFromConfig(cfg config.NodeConfig) NodeInterface {
 	// Create a deep copy of the config to prevent external modifications
 	cfgCopy := cfg
 	if cfg.Args != nil {

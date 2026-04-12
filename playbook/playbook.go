@@ -70,11 +70,11 @@ type PlaybookInterface interface {
 	SetDescription(description string) PlaybookInterface
 
 	// GetConfig returns the current node configuration for this playbook.
-	GetConfig() config.Config
+	GetConfig() config.NodeConfig
 
 	// SetConfig sets the node configuration for this playbook execution.
 	// Returns the PlaybookInterface for fluent method chaining.
-	SetConfig(cfg config.Config) PlaybookInterface
+	SetConfig(cfg config.NodeConfig) PlaybookInterface
 
 	// GetArg retrieves a single argument value by key.
 	GetArg(key string) string

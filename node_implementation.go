@@ -9,9 +9,9 @@ import (
 )
 
 // nodeImplementation is the default implementation of NodeInterface.
-// It wraps config.Config and optionally maintains a persistent SSH connection.
+// It wraps config.NodeConfig and optionally maintains a persistent SSH connection.
 //
-// The nodeImplementation struct stores all configuration in a config.Config and tracks
+// The nodeImplementation struct stores all configuration in a config.NodeConfig and tracks
 // connection state. When Connect() is called, it establishes a persistent
 // SSH connection that is reused for subsequent operations. When not connected,
 // operations create one-time connections.
@@ -24,7 +24,7 @@ import (
 //	// node.connected is false
 //	// node.sshClient is nil
 type nodeImplementation struct {
-	cfg       config.Config
+	cfg       config.NodeConfig
 	sshClient *ssh.Client
 	connected bool
 }
@@ -174,7 +174,7 @@ func (n *nodeImplementation) GetArgs() map[string]string {
 	return argsCopy
 }
 
-// GetConfig returns a copy of the underlying config.Config.
+// GetConfig returns a copy of the underlying config.NodeConfig.
 // This allows integration with code that uses the config package directly.
 // The returned configuration includes all accumulated settings (host, port, user, key, args).
 //
@@ -188,7 +188,7 @@ func (n *nodeImplementation) GetArgs() map[string]string {
 //	    SetUser("deploy")
 //	cfg := node.GetConfig()
 //	fmt.Printf("Connecting to %s\n", cfg.SSHAddr())
-func (n *nodeImplementation) GetConfig() config.Config {
+func (n *nodeImplementation) GetConfig() config.NodeConfig {
 	cfgCopy := n.cfg
 
 	if n.cfg.Args != nil {
