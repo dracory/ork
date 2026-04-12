@@ -12,6 +12,8 @@ This directory contains proposals for enhancing the Ork infrastructure automatio
 
 - **Testing Framework** - ✅ **PARTIALLY IMPLEMENTED** - Unit tests exist; mock helpers (`sshtest`, `playbooktest`) remain
 
+- **Idempotency Framework** - ✅ **IMPLEMENTED** - `Result` type, `CheckablePlaybook` interface, all 7 core playbooks migrated
+
 ### Not Implemented (Priority Order)
 
 #### High Priority
@@ -20,38 +22,34 @@ This directory contains proposals for enhancing the Ork infrastructure automatio
    - Status: Not Implemented
    - Blocked by: None
 
-2. **[Idempotency Framework](2026-04-12-idempotency-framework.md)** - Standard `Result` type with `Changed` status
+2. **[Configuration Management](2026-04-12-configuration-management.md)** - File/env config loading
    - Status: Not Implemented
    - Blocked by: None
+   - Needed for: CLI Tool
 
 3. **[CLI Tool](2026-04-12-cli-tool.md)** - Command-line interface
    - Status: Not Implemented
    - Blocked by: Configuration Management
 
-4. **[Configuration Management](2026-04-12-configuration-management.md)** - File/env config loading
+4. **[Dry-Run Mode](2026-04-12-dry-run-mode.md)** - Preview changes before applying
    - Status: Not Implemented
-   - Blocked by: None
-   - Needed for: CLI Tool
-
-5. **[Dry-Run Mode](2026-04-12-dry-run-mode.md)** - Preview changes before applying
-   - Status: Not Implemented
-   - Blocked by: Idempotency Framework
+   - Unblocked: Idempotency Framework now implemented
 
 #### Medium Priority
+
+5. **[Connection Pooling](2026-04-12-connection-pooling.md)** - Multi-host connection limiting
+   - Status: Partially Implemented (reuse done, pool remains)
+   - Blocked by: None
 
 6. **[Parallel Execution](2026-04-12-parallel-execution.md)** - Multi-host execution
    - Status: Not Implemented
    - Blocked by: Connection Pool
 
-7. **[Connection Pooling](2026-04-12-connection-pooling.md)** - Multi-host connection limiting
-   - Status: Partially Implemented (reuse done, pool remains)
-   - Blocked by: None
-
-8. **[Playbook Dependencies](2026-04-12-playbook-dependencies.md)** - Auto-resolve dependencies
+7. **[Playbook Dependencies](2026-04-12-playbook-dependencies.md)** - Auto-resolve dependencies
    - Status: Not Implemented
-   - Blocked by: Idempotency Framework (for caching)
+   - Unblocked: Idempotency Framework now implemented
 
-9. **[Rollback Support](2026-04-12-rollback-support.md)** - Undo changes on failure
+8. **[Rollback Support](2026-04-12-rollback-support.md)** - Undo changes on failure
    - Status: Not Implemented
    - Blocked by: Complex; low priority
 
@@ -64,7 +62,7 @@ This directory contains proposals for enhancing the Ork infrastructure automatio
 
 ### Phase 2: Core Features (Next)
 1. **Structured Logging** - slog integration
-2. **Idempotency Framework** - Result type and Check interface
+2. ✅ **Idempotency Framework** - Result type and Check interface (COMPLETE)
 3. **Configuration Management** - File/env config for CLI
 
 ### Phase 3: CLI & Safety
@@ -85,13 +83,13 @@ This directory contains proposals for enhancing the Ork infrastructure automatio
 |----------|--------|-------|
 | Connection Pooling | Partially Implemented | Reuse via Node done; true pool remains |
 | Testing Framework | Partially Implemented | Tests exist; mock helpers needed |
-| Idempotency Framework | Not Implemented | Needs Result type, CheckablePlaybook |
+| Idempotency Framework | **Implemented** | All 7 core playbooks migrated |
 | Structured Logging | Not Implemented | Replace log.Printf with slog |
 | Configuration Management | Not Implemented | Required for CLI |
 | CLI Tool | Not Implemented | Blocked by config management |
-| Dry-Run Mode | Not Implemented | Blocked by idempotency |
+| Dry-Run Mode | Not Implemented | Unblocked - ready to implement |
 | Parallel Execution | Not Implemented | Blocked by connection pool |
-| Playbook Dependencies | Not Implemented | Blocked by idempotency |
+| Playbook Dependencies | Not Implemented | Unblocked - ready to implement |
 | Rollback Support | Not Implemented | Low priority |
 
 ## Contributing

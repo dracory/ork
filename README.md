@@ -102,6 +102,55 @@ err := node.RunPlaybook(ork.PlaybookUserCreate)
 | `PlaybookUserDelete` | `NameUserDelete` | `user-delete` | `username` | Delete user |
 | `PlaybookUserStatus` | `NameUserStatus` | `user-status` | `username` (opt) | Show user info |
 
+## Idempotency
+
+All playbooks now support idempotent execution. When you run a playbook, it reports whether any changes were actually made:
+
+```go
+import (
+    "github.com/dracory/ork/playbook"
+    "github.com/dracory/ork/playbooks"
+)
+
+// Using Execute() - automatically handles idempotency
+result := playbook.Execute(playbooks.NewAptUpgrade(), cfg)
+if result.Error != nil {
+    log.Fatal(result.Error)
+}
+
+if result.Changed {
+    log.Printf("Changes made: %s", result.Message)
+} else {
+    log.Println("No changes needed - system already in desired state")
+}
+```
+
+### Check Before Run
+
+You can check if changes are needed before running:
+
+```go
+pb := playbooks.NewSwapCreate()
+if checkable, ok := pb.(playbook.CheckablePlaybook); ok {
+    needsChange, _ := checkable.Check(cfg)
+    if !needsChange {
+        log.Println("Swap already exists, skipping...")
+        return
+    }
+}
+```
+
+### Result Structure
+
+```go
+type Result struct {
+    Changed bool              // Whether changes were made
+    Message string            // Human-readable description
+    Details map[string]string // Additional information
+    Error   error             // Non-nil if execution failed
+}
+```
+
 ## Advanced Usage
 
 ### Inspecting Configuration

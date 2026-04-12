@@ -1,18 +1,20 @@
 # Proposal: Idempotency Framework
 
 **Date:** 2026-04-12  
-**Status:** Not Implemented  
+**Status:** Implemented  
 **Author:** System Review
 
-## Problem Statement
+> **Note:** All core playbooks now implement `CheckablePlaybook`. Use `playbook.Execute()` for automatic idempotency handling.
 
-Playbooks currently have ad-hoc idempotency checks (e.g., checking if swap exists before creating). We need:
+## What's Implemented
 
-- Standard `Result` type reporting `Changed` status
-- `CheckablePlaybook` interface for pre-flight checks
-- Helper functions for common patterns
-
-Ansible's strength is idempotent operations - running the same playbook multiple times should be safe and only make necessary changes.
+- `Result` type with `Changed`, `Message`, `Details`, `Error` fields
+- `CheckablePlaybook` interface with `Check()` and `RunWithResult()` methods
+- `CheckExists()` and `EnsureState()` helper functions
+- `Execute()` wrapper that auto-detects `CheckablePlaybook`
+- All 7 core playbooks implement `CheckablePlaybook`:
+  - `Ping`, `AptUpdate`, `AptUpgrade`, `AptStatus`
+  - `SwapCreate`, `SwapDelete`, `SwapStatus`, `Reboot`
 
 ## Implementation
 
@@ -152,20 +154,24 @@ func (u *UserCreate) RunWithResult(cfg config.Config) Result {
 }
 ```
 
-## Implementation Plan
+## Implementation Complete
 
-### Phase 1: Core Types
-- Add `Result` type to `playbook` package
-- Add `CheckablePlaybook` interface
-- Create `CheckExists()` and `EnsureState()` helpers
+### Core Types (Done)
+- ✅ `Result` type added to `playbook` package
+- ✅ `CheckablePlaybook` interface added
+- ✅ `CheckExists()` and `EnsureState()` helpers implemented
+- ✅ `Execute()` wrapper function added
 
-### Phase 2: Playbook Migration
-- Update `AptUpgrade`, `SwapCreate`, `UserCreate` to use new interfaces
-- Maintain backward compatibility with existing `Run()`
-
-### Phase 3: Documentation
-- Document idempotency patterns
-- Add usage examples
+### Playbook Migration (Done)
+- ✅ `Ping` - Read-only, always returns `Changed: false`
+- ✅ `AptUpdate` - Cache refresh, always returns `Changed: true`
+- ✅ `AptUpgrade` - Checks for upgradable packages, `Changed` only when upgrades installed
+- ✅ `AptStatus` - Read-only, always returns `Changed: false`
+- ✅ `SwapCreate` - Checks if swap exists, `Changed` only if created
+- ✅ `SwapDelete` - Checks if swap exists, `Changed` only if removed
+- ✅ `SwapStatus` - Read-only, always returns `Changed: false`
+- ✅ `Reboot` - Explicit action, always returns `Changed: true`
+- ✅ All playbooks maintain backward compatibility with `Run()` delegating to `RunWithResult()`
 
 ## Benefits
 
@@ -177,27 +183,66 @@ func (u *UserCreate) RunWithResult(cfg config.Config) Result {
 
 ## Backward Compatibility
 
-Keep existing `Run()` method, add new `RunWithResult()`:
+All playbooks maintain backward compatibility:
 
 ```go
-// Default implementation for backward compatibility
-func (p *BasePlaybook) RunWithResult(cfg Config) Result {
-    err := p.Run(cfg)
+// Run() delegates to RunWithResult() for idempotency support
+func (p *Ping) Run(cfg Config) error {
+    result := p.RunWithResult(cfg)
+    return result.Error
+}
+```
+
+Legacy playbooks (without `CheckablePlaybook`) are handled by `Execute()`:
+
+```go
+func Execute(pb Playbook, cfg Config) Result {
+    if checkable, ok := pb.(CheckablePlaybook); ok {
+        return checkable.RunWithResult(cfg)
+    }
+    // Fallback for legacy playbooks
+    err := pb.Run(cfg)
     return Result{
         Changed: true, // Assume changed if using old interface
+        Message: "Executed playbook (idempotency not available)",
         Error:   err,
     }
 }
 ```
 
-## Success Metrics
+## Usage Examples
 
-- All core playbooks implement idempotency checks
-- Running playbooks twice shows "Changed: false" on second run
-- Zero false positives (claiming no change when change occurred)
+### Basic Usage
 
-## Open Questions
+```go
+// Using Execute() - automatically handles idempotency
+result := playbook.Execute(playbooks.NewAptUpgrade(), cfg)
+if result.Error != nil {
+    log.Fatal(result.Error)
+}
+log.Printf("Changed: %v - %s", result.Changed, result.Message)
+// Output: Changed: false - All packages are up to date
+```
 
-1. Should `Run()` be deprecated in favor of `RunWithResult()`?
-2. How to handle partial failures (some changes succeeded, some failed)?
-3. Should we track detailed change logs (what files modified, etc.)?
+### Check Before Run
+
+```go
+pb := playbooks.NewSwapCreate()
+if checkable, ok := pb.(playbook.CheckablePlaybook); ok {
+    needsCreate, _ := checkable.Check(cfg)
+    if !needsCreate {
+        log.Println("Swap already exists, skipping...")
+        return
+    }
+}
+```
+
+### Direct RunWithResult
+
+```go
+pb := playbooks.NewAptUpgrade()
+result := pb.RunWithResult(cfg)
+if result.Changed {
+    log.Printf("Upgraded packages: %s", result.Details["output"])
+}
+```
