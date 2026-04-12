@@ -22,7 +22,7 @@ func (a *AptUpdate) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (a *AptUpdate) SetID(id string) playbook.Playbook {
+func (a *AptUpdate) SetID(id string) playbook.PlaybookInterface {
 	return a
 }
 
@@ -32,7 +32,7 @@ func (a *AptUpdate) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (a *AptUpdate) SetDescription(description string) playbook.Playbook {
+func (a *AptUpdate) SetDescription(description string) playbook.PlaybookInterface {
 	return a
 }
 
@@ -47,13 +47,13 @@ func (a *AptUpdate) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (a *AptUpdate) SetConfig(cfg config.Config) playbook.Playbook {
+func (a *AptUpdate) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	a.cfg = cfg
 	return a
 }
 
 // SetOptions sets the playbook-specific options.
-func (a *AptUpdate) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (a *AptUpdate) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	a.opts = opts
 	return a
 }
@@ -104,7 +104,7 @@ func (a *AptUpgrade) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (a *AptUpgrade) SetID(id string) playbook.Playbook {
+func (a *AptUpgrade) SetID(id string) playbook.PlaybookInterface {
 	return a
 }
 
@@ -114,7 +114,7 @@ func (a *AptUpgrade) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (a *AptUpgrade) SetDescription(description string) playbook.Playbook {
+func (a *AptUpgrade) SetDescription(description string) playbook.PlaybookInterface {
 	return a
 }
 
@@ -129,13 +129,13 @@ func (a *AptUpgrade) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (a *AptUpgrade) SetConfig(cfg config.Config) playbook.Playbook {
+func (a *AptUpgrade) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	a.cfg = cfg
 	return a
 }
 
 // SetOptions sets the playbook-specific options.
-func (a *AptUpgrade) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (a *AptUpgrade) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	a.opts = opts
 	return a
 }
@@ -217,7 +217,7 @@ func (a *AptStatus) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (a *AptStatus) SetID(id string) playbook.Playbook {
+func (a *AptStatus) SetID(id string) playbook.PlaybookInterface {
 	return a
 }
 
@@ -227,7 +227,7 @@ func (a *AptStatus) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (a *AptStatus) SetDescription(description string) playbook.Playbook {
+func (a *AptStatus) SetDescription(description string) playbook.PlaybookInterface {
 	return a
 }
 
@@ -242,13 +242,13 @@ func (a *AptStatus) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (a *AptStatus) SetConfig(cfg config.Config) playbook.Playbook {
+func (a *AptStatus) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	a.cfg = cfg
 	return a
 }
 
 // SetOptions sets the playbook-specific options.
-func (a *AptStatus) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (a *AptStatus) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	a.opts = opts
 	return a
 }

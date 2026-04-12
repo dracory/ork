@@ -24,7 +24,7 @@ func (s *SwapCreate) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (s *SwapCreate) SetID(id string) playbook.Playbook {
+func (s *SwapCreate) SetID(id string) playbook.PlaybookInterface {
 	return s
 }
 
@@ -34,7 +34,7 @@ func (s *SwapCreate) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (s *SwapCreate) SetDescription(description string) playbook.Playbook {
+func (s *SwapCreate) SetDescription(description string) playbook.PlaybookInterface {
 	return s
 }
 
@@ -49,13 +49,13 @@ func (s *SwapCreate) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (s *SwapCreate) SetConfig(cfg config.Config) playbook.Playbook {
+func (s *SwapCreate) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	s.cfg = cfg
 	return s
 }
 
 // SetOptions sets the playbook-specific options.
-func (s *SwapCreate) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (s *SwapCreate) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	s.opts = opts
 	return s
 }
@@ -150,7 +150,7 @@ func (s *SwapDelete) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (s *SwapDelete) SetID(id string) playbook.Playbook {
+func (s *SwapDelete) SetID(id string) playbook.PlaybookInterface {
 	return s
 }
 
@@ -160,7 +160,7 @@ func (s *SwapDelete) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (s *SwapDelete) SetDescription(description string) playbook.Playbook {
+func (s *SwapDelete) SetDescription(description string) playbook.PlaybookInterface {
 	return s
 }
 
@@ -175,13 +175,13 @@ func (s *SwapDelete) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (s *SwapDelete) SetConfig(cfg config.Config) playbook.Playbook {
+func (s *SwapDelete) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	s.cfg = cfg
 	return s
 }
 
 // SetOptions sets the playbook-specific options.
-func (s *SwapDelete) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (s *SwapDelete) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	s.opts = opts
 	return s
 }
@@ -261,7 +261,7 @@ func (s *SwapStatus) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (s *SwapStatus) SetID(id string) playbook.Playbook {
+func (s *SwapStatus) SetID(id string) playbook.PlaybookInterface {
 	return s
 }
 
@@ -271,7 +271,7 @@ func (s *SwapStatus) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (s *SwapStatus) SetDescription(description string) playbook.Playbook {
+func (s *SwapStatus) SetDescription(description string) playbook.PlaybookInterface {
 	return s
 }
 
@@ -286,13 +286,13 @@ func (s *SwapStatus) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (s *SwapStatus) SetConfig(cfg config.Config) playbook.Playbook {
+func (s *SwapStatus) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	s.cfg = cfg
 	return s
 }
 
 // SetOptions sets the playbook-specific options.
-func (s *SwapStatus) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (s *SwapStatus) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	s.opts = opts
 	return s
 }

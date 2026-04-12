@@ -2,30 +2,30 @@ package playbook
 
 // Registry holds a collection of playbooks.
 type Registry struct {
-	playbooks map[string]Playbook
+	playbooks map[string]PlaybookInterface
 }
 
 // NewRegistry creates a new playbook registry.
 func NewRegistry() *Registry {
 	return &Registry{
-		playbooks: make(map[string]Playbook),
+		playbooks: make(map[string]PlaybookInterface),
 	}
 }
 
 // Register adds a playbook to the registry.
-func (r *Registry) Register(p Playbook) {
+func (r *Registry) Register(p PlaybookInterface) {
 	r.playbooks[p.GetID()] = p
 }
 
 // Get retrieves a playbook by name.
-func (r *Registry) Get(name string) (Playbook, bool) {
+func (r *Registry) Get(name string) (PlaybookInterface, bool) {
 	p, ok := r.playbooks[name]
 	return p, ok
 }
 
 // List returns all registered playbooks.
-func (r *Registry) List() []Playbook {
-	list := make([]Playbook, 0, len(r.playbooks))
+func (r *Registry) List() []PlaybookInterface {
+	list := make([]PlaybookInterface, 0, len(r.playbooks))
 	for _, p := range r.playbooks {
 		list = append(list, p)
 	}

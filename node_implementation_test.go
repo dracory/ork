@@ -904,7 +904,7 @@ func (m *mockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *mockPlaybook) SetID(id string) playbook.Playbook {
+func (m *mockPlaybook) SetID(id string) playbook.PlaybookInterface {
 	m.name = id
 	return m
 }
@@ -913,7 +913,7 @@ func (m *mockPlaybook) GetDescription() string {
 	return "Mock playbook for testing"
 }
 
-func (m *mockPlaybook) SetDescription(description string) playbook.Playbook {
+func (m *mockPlaybook) SetDescription(description string) playbook.PlaybookInterface {
 	return m
 }
 
@@ -921,7 +921,7 @@ func (m *mockPlaybook) GetConfig() config.Config {
 	return m.cfg
 }
 
-func (m *mockPlaybook) SetConfig(cfg config.Config) playbook.Playbook {
+func (m *mockPlaybook) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	m.cfg = cfg
 	return m
 }
@@ -930,7 +930,7 @@ func (m *mockPlaybook) GetOptions() *playbook.PlaybookOptions {
 	return m.opts
 }
 
-func (m *mockPlaybook) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (m *mockPlaybook) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	m.opts = opts
 	return m
 }

@@ -25,7 +25,7 @@ func (p *Ping) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (p *Ping) SetID(id string) playbook.Playbook {
+func (p *Ping) SetID(id string) playbook.PlaybookInterface {
 	return p
 }
 
@@ -35,7 +35,7 @@ func (p *Ping) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (p *Ping) SetDescription(description string) playbook.Playbook {
+func (p *Ping) SetDescription(description string) playbook.PlaybookInterface {
 	return p
 }
 
@@ -50,13 +50,13 @@ func (p *Ping) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (p *Ping) SetConfig(cfg config.Config) playbook.Playbook {
+func (p *Ping) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	p.cfg = cfg
 	return p
 }
 
 // SetOptions sets the playbook-specific options.
-func (p *Ping) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (p *Ping) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	p.opts = opts
 	return p
 }

@@ -27,7 +27,7 @@ func (r *Reboot) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (r *Reboot) SetID(id string) playbook.Playbook {
+func (r *Reboot) SetID(id string) playbook.PlaybookInterface {
 	return r
 }
 
@@ -37,7 +37,7 @@ func (r *Reboot) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (r *Reboot) SetDescription(description string) playbook.Playbook {
+func (r *Reboot) SetDescription(description string) playbook.PlaybookInterface {
 	return r
 }
 
@@ -52,13 +52,13 @@ func (r *Reboot) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (r *Reboot) SetConfig(cfg config.Config) playbook.Playbook {
+func (r *Reboot) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	r.cfg = cfg
 	return r
 }
 
 // SetOptions sets the playbook-specific options.
-func (r *Reboot) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (r *Reboot) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	r.opts = opts
 	return r
 }

@@ -22,7 +22,7 @@ func (u *UserCreate) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (u *UserCreate) SetID(id string) playbook.Playbook {
+func (u *UserCreate) SetID(id string) playbook.PlaybookInterface {
 	return u
 }
 
@@ -32,7 +32,7 @@ func (u *UserCreate) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (u *UserCreate) SetDescription(description string) playbook.Playbook {
+func (u *UserCreate) SetDescription(description string) playbook.PlaybookInterface {
 	return u
 }
 
@@ -42,7 +42,7 @@ func (u *UserCreate) GetConfig() config.Config {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (u *UserCreate) SetConfig(cfg config.Config) playbook.Playbook {
+func (u *UserCreate) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	u.cfg = cfg
 	return u
 }
@@ -53,7 +53,7 @@ func (u *UserCreate) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetOptions sets the playbook-specific options.
-func (u *UserCreate) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (u *UserCreate) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	u.opts = opts
 	return u
 }
@@ -120,7 +120,7 @@ func (u *UserDelete) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (u *UserDelete) SetID(id string) playbook.Playbook {
+func (u *UserDelete) SetID(id string) playbook.PlaybookInterface {
 	return u
 }
 
@@ -130,7 +130,7 @@ func (u *UserDelete) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (u *UserDelete) SetDescription(description string) playbook.Playbook {
+func (u *UserDelete) SetDescription(description string) playbook.PlaybookInterface {
 	return u
 }
 
@@ -140,7 +140,7 @@ func (u *UserDelete) GetConfig() config.Config {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (u *UserDelete) SetConfig(cfg config.Config) playbook.Playbook {
+func (u *UserDelete) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	u.cfg = cfg
 	return u
 }
@@ -151,7 +151,7 @@ func (u *UserDelete) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetOptions sets the playbook-specific options.
-func (u *UserDelete) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (u *UserDelete) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	u.opts = opts
 	return u
 }
@@ -214,7 +214,7 @@ func (u *UserStatus) GetID() string {
 }
 
 // SetID sets the playbook identifier.
-func (u *UserStatus) SetID(id string) playbook.Playbook {
+func (u *UserStatus) SetID(id string) playbook.PlaybookInterface {
 	return u
 }
 
@@ -224,7 +224,7 @@ func (u *UserStatus) GetDescription() string {
 }
 
 // SetDescription sets the playbook description.
-func (u *UserStatus) SetDescription(description string) playbook.Playbook {
+func (u *UserStatus) SetDescription(description string) playbook.PlaybookInterface {
 	return u
 }
 
@@ -234,7 +234,7 @@ func (u *UserStatus) GetConfig() config.Config {
 }
 
 // SetConfig sets the node configuration for this playbook.
-func (u *UserStatus) SetConfig(cfg config.Config) playbook.Playbook {
+func (u *UserStatus) SetConfig(cfg config.Config) playbook.PlaybookInterface {
 	u.cfg = cfg
 	return u
 }
@@ -245,7 +245,7 @@ func (u *UserStatus) GetOptions() *playbook.PlaybookOptions {
 }
 
 // SetOptions sets the playbook-specific options.
-func (u *UserStatus) SetOptions(opts *playbook.PlaybookOptions) playbook.Playbook {
+func (u *UserStatus) SetOptions(opts *playbook.PlaybookOptions) playbook.PlaybookInterface {
 	u.opts = opts
 	return u
 }

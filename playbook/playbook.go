@@ -44,7 +44,7 @@ type Result struct {
 	Error error
 }
 
-// Playbook is the interface that all playbooks must implement.
+// PlaybookInterface is the interface that all playbooks must implement.
 // A playbook is a self-contained automation task that runs on a remote server.
 // All playbooks support idempotency through the Check() method and Result return value.
 //
@@ -56,32 +56,32 @@ type Result struct {
 //
 //	needsRun, _ := pb.Check()
 //	result := pb.Run()
-type Playbook interface {
+type PlaybookInterface interface {
 	// GetID returns the unique identifier for this playbook (e.g., "apt-update")
 	GetID() string
 
 	// SetID sets the unique identifier for this playbook.
-	SetID(id string) Playbook
+	SetID(id string) PlaybookInterface
 
 	// GetDescription returns a short description of what the playbook does
 	GetDescription() string
 
 	// SetDescription sets a short description of what the playbook does.
-	SetDescription(description string) Playbook
+	SetDescription(description string) PlaybookInterface
 
 	// GetConfig returns the current node configuration for this playbook.
 	GetConfig() config.Config
 
 	// SetConfig sets the node configuration for this playbook execution.
-	// Returns the Playbook for fluent method chaining.
-	SetConfig(cfg config.Config) Playbook
+	// Returns the PlaybookInterface for fluent method chaining.
+	SetConfig(cfg config.Config) PlaybookInterface
 
 	// GetOptions returns the current playbook-specific options.
 	GetOptions() *PlaybookOptions
 
 	// SetOptions sets the playbook-specific options for this execution.
-	// Returns the Playbook for fluent method chaining.
-	SetOptions(opts *PlaybookOptions) Playbook
+	// Returns the PlaybookInterface for fluent method chaining.
+	SetOptions(opts *PlaybookOptions) PlaybookInterface
 
 	// Check determines if the playbook needs to make any changes.
 	// Uses the config and options set via SetConfig/SetOptions.
