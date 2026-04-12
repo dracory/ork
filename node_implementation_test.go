@@ -691,7 +691,7 @@ func TestNodeImplementation_Run_WithoutPersistentConnection(t *testing.T) {
 		connected: false,
 	}
 
-	output, err := n.Run("uptime")
+	output, err := n.RunCommand("uptime")
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -740,7 +740,7 @@ func TestNodeImplementation_Run_OneTimeConnectionError(t *testing.T) {
 		connected: false,
 	}
 
-	output, err := n.Run("uptime")
+	output, err := n.RunCommand("uptime")
 	if err == nil {
 		t.Error("Expected error, got nil")
 	}
@@ -793,7 +793,7 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 		connected: false,
 	}
 
-	err := n.Playbook("test-playbook")
+	err := n.RunPlaybook("test-playbook")
 	if err != nil {
 		t.Errorf("Expected no error, got: %v", err)
 	}
@@ -832,7 +832,7 @@ func TestNodeImplementation_Playbook_NotFound(t *testing.T) {
 		connected: false,
 	}
 
-	err := n.Playbook("nonexistent-playbook")
+	err := n.RunPlaybook("nonexistent-playbook")
 	if err == nil {
 		t.Error("Expected error for nonexistent playbook, got nil")
 	}
@@ -872,7 +872,7 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 		connected: false,
 	}
 
-	err := n.Playbook("failing-playbook")
+	err := n.RunPlaybook("failing-playbook")
 	if err == nil {
 		t.Error("Expected error from failing playbook, got nil")
 	}

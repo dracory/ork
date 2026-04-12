@@ -7,7 +7,7 @@ import (
 // TestNewNode verifies that NewNode initializes with correct default values.
 func TestNewNode(t *testing.T) {
 	host := "server.example.com"
-	node := NewNode(host)
+	node := NewNodeForHost(host)
 
 	// Verify the node is not nil
 	if node == nil {

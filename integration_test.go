@@ -132,7 +132,7 @@ func TestIntegration_Node_ConnectRunClose(t *testing.T) {
 
 	t.Skip("Skipping: requires SSH key setup in container")
 
-	node := ork.NewNode(container.host).
+	node := ork.NewNodeForHost(container.host).
 		SetPort(container.port).
 		SetUser(container.user).
 		SetKey("test_key")
@@ -149,8 +149,8 @@ func TestIntegration_Node_ConnectRunClose(t *testing.T) {
 		t.Error("Expected IsConnected() to return true after Connect()")
 	}
 
-	// Test Run with persistent connection
-	output, err := node.Run("echo 'test1'")
+	// Test RunCommand with persistent connection
+	output, err := node.RunCommand("echo 'test1'")
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
@@ -177,7 +177,7 @@ func TestIntegration_Node_PersistentConnectionReuse(t *testing.T) {
 
 	t.Skip("Skipping: requires SSH key setup in container")
 
-	node := ork.NewNode(container.host).
+	node := ork.NewNodeForHost(container.host).
 		SetPort(container.port).
 		SetUser(container.user).
 		SetKey("test_key")
@@ -198,7 +198,7 @@ func TestIntegration_Node_PersistentConnectionReuse(t *testing.T) {
 	}
 
 	for i, cmd := range commands {
-		output, err := node.Run(cmd)
+		output, err := node.RunCommand(cmd)
 		if err != nil {
 			t.Errorf("Run %d failed: %v", i+1, err)
 			continue
@@ -219,13 +219,13 @@ func TestIntegration_Node_WithoutPersistentConnection(t *testing.T) {
 
 	t.Skip("Skipping: requires SSH key setup in container")
 
-	node := ork.NewNode(container.host).
+	node := ork.NewNodeForHost(container.host).
 		SetPort(container.port).
 		SetUser(container.user).
 		SetKey("test_key")
 
 	// Run without calling Connect() - should create one-time connection
-	output, err := node.Run("echo 'one-time'")
+	output, err := node.RunCommand("echo 'one-time'")
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
 	}
@@ -247,7 +247,7 @@ func TestIntegration_Node_Playbook(t *testing.T) {
 
 	t.Skip("Skipping: requires SSH key setup in container")
 
-	node := ork.NewNode(container.host).
+	node := ork.NewNodeForHost(container.host).
 		SetPort(container.port).
 		SetUser(container.user).
 		SetKey("test_key")
@@ -259,7 +259,7 @@ func TestIntegration_Node_Playbook(t *testing.T) {
 	defer node.Close()
 
 	// Test ping playbook
-	err = node.Playbook("ping")
+	err = node.RunPlaybook("ping")
 	if err != nil {
 		t.Fatalf("Playbook('ping') failed: %v", err)
 	}
@@ -272,7 +272,7 @@ func TestIntegration_MultipleOperations(t *testing.T) {
 
 	t.Skip("Skipping: requires SSH key setup in container")
 
-	node := ork.NewNode(container.host).
+	node := ork.NewNodeForHost(container.host).
 		SetPort(container.port).
 		SetUser(container.user).
 		SetKey("test_key")
@@ -284,7 +284,7 @@ func TestIntegration_MultipleOperations(t *testing.T) {
 	defer node.Close()
 
 	// Test 1: Run command
-	output1, err := node.Run("echo 'step1'")
+	output1, err := node.RunCommand("echo 'step1'")
 	if err != nil {
 		t.Fatalf("Step 1 failed: %v", err)
 	}
@@ -296,7 +296,7 @@ func TestIntegration_MultipleOperations(t *testing.T) {
 	node.SetArg("test", "value")
 
 	// Test 3: Run another command
-	output2, err := node.Run("echo 'step2'")
+	output2, err := node.RunCommand("echo 'step2'")
 	if err != nil {
 		t.Fatalf("Step 2 failed: %v", err)
 	}
@@ -305,13 +305,13 @@ func TestIntegration_MultipleOperations(t *testing.T) {
 	}
 
 	// Test 4: Execute playbook
-	err = node.Playbook("ping")
+	err = node.RunPlaybook("ping")
 	if err != nil {
 		t.Fatalf("Playbook execution failed: %v", err)
 	}
 
 	// Test 5: Run final command
-	output3, err := node.Run("whoami")
+	output3, err := node.RunCommand("whoami")
 	if err != nil {
 		t.Fatalf("Step 3 failed: %v", err)
 	}

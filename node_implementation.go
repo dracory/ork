@@ -143,6 +143,36 @@ func (n *nodeImplementation) GetKey() string {
 	return n.cfg.SSHKey
 }
 
+// GetArg retrieves a single argument value by key.
+// Returns empty string if the argument is not set.
+//
+// Example:
+//
+//	node := ork.NewNode("server.example.com").SetArg("username", "alice")
+//	fmt.Println(node.GetArg("username"))  // Output: alice
+func (n *nodeImplementation) GetArg(key string) string {
+	return n.cfg.GetArg(key)
+}
+
+// GetArgs returns a copy of the entire arguments map.
+// Modifying the returned map will not affect the node's internal state.
+//
+// Example:
+//
+//	node := ork.NewNode("server.example.com").SetArg("username", "alice")
+//	args := node.GetArgs()
+//	fmt.Println(args["username"])  // Output: alice
+func (n *nodeImplementation) GetArgs() map[string]string {
+	if n.cfg.Args == nil {
+		return make(map[string]string)
+	}
+	argsCopy := make(map[string]string, len(n.cfg.Args))
+	for k, v := range n.cfg.Args {
+		argsCopy[k] = v
+	}
+	return argsCopy
+}
+
 // GetConfig returns a copy of the underlying config.Config.
 // This allows integration with code that uses the config package directly.
 // The returned configuration includes all accumulated settings (host, port, user, key, args).
@@ -245,14 +275,14 @@ func (n *nodeImplementation) IsConnected() bool {
 //	node.Connect()
 //	defer node.Close()
 //
-//	output1, _ := node.Run("uptime")
-//	output2, _ := node.Run("df -h")  // Reuses same connection
+//	output1, _ := node.RunCommand("uptime")
+//	output2, _ := node.RunCommand("df -h")  // Reuses same connection
 //
 // Example without persistent connection:
 //
 //	node := ork.NewNode("server.example.com")
-//	output, err := node.Run("uptime")  // Creates one-time connection
-func (n *nodeImplementation) Run(cmd string) (string, error) {
+//	output, err := node.RunCommand("uptime")  // Creates one-time connection
+func (n *nodeImplementation) RunCommand(cmd string) (string, error) {
 	if n.sshClient != nil && n.connected {
 		output, err := n.sshClient.Run(cmd)
 		if err != nil {
@@ -268,7 +298,7 @@ func (n *nodeImplementation) Run(cmd string) (string, error) {
 	return output, nil
 }
 
-// Playbook executes a named playbook on the remote server.
+// RunPlaybook executes a named playbook on the remote server.
 // The playbook is retrieved from the global registry.
 // The current node configuration (including arguments set via SetArg/SetArgs)
 // is passed to the playbook.
@@ -282,10 +312,10 @@ func (n *nodeImplementation) Run(cmd string) (string, error) {
 //	    SetArg("username", "alice").
 //	    SetArg("shell", "/bin/bash")
 //
-//	if err := node.Playbook("user-create"); err != nil {
+//	if err := node.RunPlaybook("user-create"); err != nil {
 //	    log.Fatalf("Playbook failed: %v", err)
 //	}
-func (n *nodeImplementation) Playbook(name string) error {
+func (n *nodeImplementation) RunPlaybook(name string) error {
 	pb, ok := defaultRegistry.Get(name)
 	if !ok {
 		return fmt.Errorf("playbook '%s' not found in registry", name)

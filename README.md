@@ -25,7 +25,7 @@ func main() {
     node := ork.NewNode("server.example.com")
     
     // Run a command
-    output, err := node.Run("uptime")
+    output, err := node.RunCommand("uptime")
     if err != nil {
         log.Fatal(err)
     }
@@ -43,7 +43,7 @@ node := ork.NewNode("server.example.com").
     SetUser("deploy").
     SetKey("production.prv")
 
-output, err := node.Run("uptime")
+output, err := node.RunCommand("uptime")
 ```
 
 ## Persistent Connections
@@ -61,8 +61,8 @@ if err := node.Connect(); err != nil {
 defer node.Close()
 
 // These commands reuse the same SSH connection
-output1, _ := node.Run("uptime")
-output2, _ := node.Run("df -h")
+output1, _ := node.RunCommand("uptime")
+output2, _ := node.RunCommand("df -h")
 ```
 
 ## Playbooks
@@ -74,7 +74,7 @@ node := ork.NewNode("server.example.com").
     SetArg("username", "alice").
     SetArg("shell", "/bin/bash")
 
-err := node.Playbook("user-create")
+err := node.RunPlaybook("user-create")
 ```
 
 ### Available Playbooks

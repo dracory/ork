@@ -18,7 +18,7 @@ var sshRunOnce = ssh.RunOnce
 //   - Getter methods: Inspect current configuration state
 //
 // Connection management is explicit, allowing users to control the SSH
-// connection lifecycle. Operations (Run, Playbook) can work with or without
+// connection lifecycle. Operations (RunCommand, RunPlaybook) can work with or without
 // a persistent connection.
 //
 // Example usage with fluent builder pattern:
@@ -33,7 +33,7 @@ var sshRunOnce = ssh.RunOnce
 //	}
 //	defer node.Close()
 //
-//	output, err := node.Run("uptime")
+//	output, err := node.RunCommand("uptime")
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
@@ -42,7 +42,7 @@ var sshRunOnce = ssh.RunOnce
 // Example usage without persistent connection:
 //
 //	node := ork.NewNode("server.example.com")
-//	output, err := node.Run("uptime")  // Creates one-time connection
+//	output, err := node.RunCommand("uptime")  // Creates one-time connection
 //
 // Example usage with playbooks:
 //
@@ -50,13 +50,32 @@ var sshRunOnce = ssh.RunOnce
 //	    SetArg("username", "alice").
 //	    SetArg("shell", "/bin/bash")
 //
-//	if err := node.Playbook("user-create"); err != nil {
+//	if err := node.RunPlaybook("user-create"); err != nil {
 //	    log.Fatal(err)
 //	}
 type NodeInterface interface {
 	// Configuration setters (fluent interface - return self for chaining)
 
 	// Configuration getters
+
+	// GetArg retrieves a single argument value by key.
+	// Returns empty string if the argument is not set.
+	//
+	// Example:
+	//
+	//	node := ork.NewNode("server.example.com").SetArg("username", "alice")
+	//	fmt.Println(node.GetArg("username"))  // Output: alice
+	GetArg(key string) string
+
+	// GetArgs returns a copy of the entire arguments map.
+	// Modifying the returned map will not affect the node's internal state.
+	//
+	// Example:
+	//
+	//	node := ork.NewNode("server.example.com").SetArg("username", "alice")
+	//	args := node.GetArgs()
+	//	fmt.Println(args["username"])  // Output: alice
+	GetArgs() map[string]string
 
 	// GetConfig returns a copy of the underlying config.Config.
 	// This allows integration with code that uses the config package directly.
@@ -164,7 +183,7 @@ type NodeInterface interface {
 
 	// Connect establishes a persistent SSH connection to the remote server.
 	// The connection is maintained until Close() is called.
-	// Subsequent Run() and Playbook() calls will reuse this connection.
+	// Subsequent RunCommand() and RunPlaybook() calls will reuse this connection.
 	//
 	// Returns an error if the connection fails, with a descriptive message
 	// including the host and port.
@@ -206,7 +225,7 @@ type NodeInterface interface {
 
 	// Operations
 
-	// Run executes a shell command on the remote server.
+	// RunCommand executes a shell command on the remote server.
 	// If a persistent connection is active (via Connect()), it is reused.
 	// Otherwise, a one-time connection is created for this command.
 	//
@@ -220,16 +239,16 @@ type NodeInterface interface {
 	//	node.Connect()
 	//	defer node.Close()
 	//
-	//	output1, _ := node.Run("uptime")
-	//	output2, _ := node.Run("df -h")  // Reuses same connection
+	//	output1, _ := node.RunCommand("uptime")
+	//	output2, _ := node.RunCommand("df -h")  // Reuses same connection
 	//
 	// Example without persistent connection:
 	//
 	//	node := ork.NewNode("server.example.com")
-	//	output, err := node.Run("uptime")  // Creates one-time connection
-	Run(cmd string) (string, error)
+	//	output, err := node.RunCommand("uptime")  // Creates one-time connection
+	RunCommand(cmd string) (string, error)
 
-	// Playbook executes a named playbook on the remote server.
+	// RunPlaybook executes a named playbook on the remote server.
 	// The playbook is retrieved from the global registry.
 	// The current node configuration (including arguments set via SetArg/SetArgs)
 	// is passed to the playbook.
@@ -243,10 +262,10 @@ type NodeInterface interface {
 	//	    SetArg("username", "alice").
 	//	    SetArg("shell", "/bin/bash")
 	//
-	//	if err := node.Playbook("user-create"); err != nil {
+	//	if err := node.RunPlaybook("user-create"); err != nil {
 	//	    log.Fatalf("Playbook failed: %v", err)
 	//	}
-	Playbook(name string) error
+	RunPlaybook(name string) error
 }
 
 // NewNode creates a new Node with default configuration values.
@@ -282,10 +301,22 @@ type NodeInterface interface {
 //	    SetPort("2222").
 //	    SetUser("deploy").
 //	    SetKey("production.prv")
-func NewNode(host string) NodeInterface {
+func NewNodeForHost(host string) NodeInterface {
 	return &nodeImplementation{
 		cfg: config.Config{
 			SSHHost:  host,
+			SSHPort:  "22",
+			RootUser: "root",
+			SSHKey:   "id_rsa",
+			Args:     make(map[string]string),
+		},
+		connected: false,
+	}
+}
+
+func NewNode() NodeInterface {
+	return &nodeImplementation{
+		cfg: config.Config{
 			SSHPort:  "22",
 			RootUser: "root",
 			SSHKey:   "id_rsa",
