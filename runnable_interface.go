@@ -1,0 +1,27 @@
+// Package ork provides a framework for remote server automation.
+package ork
+
+import (
+	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/types"
+)
+
+// RunnableInterface defines operations that can be performed on either
+// a single Node or an Inventory of nodes.
+type RunnableInterface interface {
+	// RunCommand executes a shell command and returns the output.
+	// For Inventory, runs concurrently across all nodes.
+	RunCommand(cmd string) types.Results
+
+	// RunPlaybook executes a playbook instance.
+	// For Inventory, runs concurrently across all nodes.
+	RunPlaybook(pb playbook.PlaybookInterface) types.Results
+
+	// RunPlaybookByID executes a playbook by ID from the registry.
+	// Deprecated: Use RunPlaybook() instead.
+	RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results
+
+	// CheckPlaybook runs the playbook's check mode to determine if changes would be made.
+	// Sets Changed=true on result if changes are needed.
+	CheckPlaybook(pb playbook.PlaybookInterface) types.Results
+}

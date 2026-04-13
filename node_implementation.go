@@ -6,6 +6,7 @@ import (
 	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // nodeImplementation is the default implementation of NodeInterface.
@@ -283,20 +284,32 @@ func (n *nodeImplementation) IsConnected() bool {
 //
 //	node := ork.NewNode("server.example.com")
 //	output, err := node.RunCommand("uptime")  // Creates one-time connection
-func (n *nodeImplementation) RunCommand(cmd string) (string, error) {
-	if n.sshClient != nil && n.connected {
-		output, err := n.sshClient.Run(cmd)
-		if err != nil {
-			return "", fmt.Errorf("failed to execute command '%s': %w", cmd, err)
-		}
-		return output, nil
+func (n *nodeImplementation) RunCommand(cmd string) types.Results {
+	results := types.Results{
+		Results: make(map[string]types.Result),
 	}
 
-	output, err := sshRunOnce(n.cfg.SSHHost, n.cfg.SSHPort, n.cfg.RootUser, n.cfg.SSHKey, cmd)
-	if err != nil {
-		return "", fmt.Errorf("failed to execute command '%s': %w", cmd, err)
+	var output string
+	var err error
+
+	if n.sshClient != nil && n.connected {
+		output, err = n.sshClient.Run(cmd)
+		if err != nil {
+			err = fmt.Errorf("failed to execute command '%s': %w", cmd, err)
+		}
+	} else {
+		output, err = sshRunOnce(n.cfg.SSHHost, n.cfg.SSHPort, n.cfg.RootUser, n.cfg.SSHKey, cmd)
+		if err != nil {
+			err = fmt.Errorf("failed to execute command '%s': %w", cmd, err)
+		}
 	}
-	return output, nil
+
+	results.Results[n.GetHost()] = types.Result{
+		Changed: true,
+		Message: output,
+		Error:   err,
+	}
+	return results
 }
 
 // RunPlaybook executes a playbook instance directly and returns detailed result information.
@@ -304,10 +317,21 @@ func (n *nodeImplementation) RunCommand(cmd string) (string, error) {
 //
 // The playbook is configured with the node's settings and executed immediately.
 // This method allows running custom or programmatically created playbooks without registry lookup.
-func (n *nodeImplementation) RunPlaybook(pb playbook.PlaybookInterface) playbook.Result {
-	// Configure playbook using fluent setters
+func (n *nodeImplementation) RunPlaybook(pb playbook.PlaybookInterface) types.Results {
+	results := types.Results{
+		Results: make(map[string]types.Result),
+	}
+
 	pb.SetConfig(n.cfg)
-	return pb.Run()
+	result := pb.Run()
+
+	results.Results[n.GetHost()] = types.Result{
+		Changed: result.Changed,
+		Message: result.Message,
+		Details: result.Details,
+		Error:   result.Error,
+	}
+	return results
 }
 
 // RunPlaybookByID executes a playbook by ID from the registry.
@@ -315,22 +339,51 @@ func (n *nodeImplementation) RunPlaybook(pb playbook.PlaybookInterface) playbook
 //
 // Optional PlaybookOptions can be provided to override node-level arguments for this
 // specific execution. Playbook-level args take precedence over node-level args.
-func (n *nodeImplementation) RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) playbook.Result {
+func (n *nodeImplementation) RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results {
+	results := types.Results{
+		Results: make(map[string]types.Result),
+	}
+
 	pb, ok := defaultRegistry.PlaybookFindByID(id)
 	if !ok {
-		return playbook.Result{
+		results.Results[n.GetHost()] = types.Result{
 			Changed: false,
 			Message: fmt.Sprintf("playbook '%s' not found in registry", id),
 			Error:   fmt.Errorf("playbook '%s' not found in registry", id),
 		}
+		return results
 	}
 
-	// Configure playbook using fluent setters
 	pb.SetConfig(n.cfg)
 	if len(opts) > 0 {
 		pb.SetArgs(opts[0].Args)
 		pb.SetDryRun(opts[0].DryRun)
 		pb.SetTimeout(opts[0].Timeout)
 	}
-	return pb.Run()
+
+	result := pb.Run()
+	results.Results[n.GetHost()] = types.Result{
+		Changed: result.Changed,
+		Message: result.Message,
+		Details: result.Details,
+		Error:   result.Error,
+	}
+	return results
+}
+
+// CheckPlaybook implements RunnableInterface.
+// Runs playbook in dry-run mode to check if changes are needed.
+func (n *nodeImplementation) CheckPlaybook(pb playbook.PlaybookInterface) types.Results {
+	results := types.Results{
+		Results: make(map[string]types.Result),
+	}
+	pb.SetDryRun(true)
+	result := pb.Run()
+	results.Results[n.GetHost()] = types.Result{
+		Changed: result.Changed,
+		Message: result.Message,
+		Details: result.Details,
+		Error:   result.Error,
+	}
+	return results
 }

@@ -1,12 +1,12 @@
 # Ork Enhancement Proposal: Inventory System
 
-**Status:** Draft  
+**Status:** Implemented  
 **Date:** 2026-04-13  
 **Author:** Ork Team
 
 ## Summary
 
-Introduce an **Inventory** system to Ork, allowing users to define and manage groups of nodes (remote servers) similar to Ansible inventory. Both `Node` and `Inventory` will implement a shared `RunnableInterface` enabling operations to run against single nodes or entire inventories uniformly.
+Introduce an **Inventory** system to Ork, allowing users to define and manage groups of nodes (remote servers). `Node`, `Group`, and `Inventory` all implement a shared `RunnableInterface` enabling operations to run against single nodes, groups, or entire inventories uniformly.
 
 ## Motivation
 
@@ -31,97 +31,53 @@ An inventory system would provide:
 - **Group management** - Organize nodes into logical groups (webservers, dbservers)
 - **Group variables** - Define shared configuration per group
 - **Parallel execution** - Run playbooks across multiple nodes concurrently
-- **Unified interface** - Same API for single node or multiple nodes
+- **Unified interface** - Same API for Node, Group, and Inventory
 
 ## Proposal
 
-### 1. RunnableInterface
+### 1. Shared Types (types package)
 
-A shared interface implemented by both `Node` and `Inventory`:
+All shared types live in `github.com/dracory/ork/types`:
 
 ```go
-// RunnableInterface defines operations that can be performed on either
-// a single Node or an Inventory of nodes.
-type RunnableInterface interface {
-    // RunCommand executes a shell command and returns the output.
-    // For Inventory, runs concurrently across all nodes.
-    RunCommand(cmd string) CommandResults
+import "github.com/dracory/ork/types"
 
-    // RunPlaybook executes a playbook instance.
-    // For Inventory, runs concurrently across all nodes.
-    RunPlaybook(pb playbook.PlaybookInterface) PlaybookResults
+// RunnableInterface - implemented by Node and Inventory
+type RunnableInterface = types.RunnableInterface
 
-    // RunPlaybookByID executes a playbook by ID from the registry.
-    // Deprecated: Use RunPlaybook() instead.
-    RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) PlaybookResults
+// Results - unified result collection
+type Results = types.Results
 
-    // Check runs the playbook's check mode to determine if changes would be made.
-    // Returns true if changes are needed, false if already in desired state.
-    Check(pb playbook.PlaybookInterface) CheckResults
+// Summary - aggregated statistics
+type Summary = types.Summary
+```
+
+### 2. Interfaces
+
+```go
+// InventoryInterface for managing collections of nodes
+type InventoryInterface interface {
+    RunnableInterface
+    AddGroup(group GroupInterface) InventoryInterface
+    GetGroupByName(name string) GroupInterface
+    AddNode(node NodeInterface) InventoryInterface
+    GetNodes() []NodeInterface
+    SetMaxConcurrency(max int) InventoryInterface
+}
+
+// GroupInterface for managing groups of nodes
+type GroupInterface interface {
+    RunnableInterface
+    GetName() string
+    AddNode(node NodeInterface) GroupInterface
+    GetNodes() []NodeInterface
+    SetArg(key, value string) GroupInterface
+    GetArg(key string) string
+    GetArgs() map[string]string
 }
 ```
 
-### 2. Result Types
-
-Collections of results from multi-node operations:
-
-```go
-// CommandResults contains results from running a command on multiple targets.
-type CommandResults struct {
-    Results map[string]CommandResult // keyed by node identifier
-    Errors  []error                  // aggregated errors
-}
-
-type CommandResult struct {
-    NodeID string
-    Output string
-    Error  error
-}
-
-// PlaybookResults contains results from running a playbook on multiple targets.
-type PlaybookResults struct {
-    Results map[string]playbook.Result // keyed by node identifier
-    Summary PlaybookSummary
-}
-
-type PlaybookSummary struct {
-    Total    int // total nodes
-    Changed  int // nodes where changes were made
-    Unchanged int // nodes already in desired state
-    Failed   int // nodes with errors
-}
-
-// CheckResults contains check results from multiple targets.
-type CheckResults struct {
-    Results map[string]CheckResult // keyed by node identifier
-}
-
-type CheckResult struct {
-    NodeID       string
-    NeedsChange  bool
-    Error        error
-}
-```
-
-### 3. Inventory Structure
-
-```go
-// Inventory manages a collection of nodes organized into groups.
-type Inventory struct {
-    groups map[string]*Group
-    mu     sync.RWMutex
-}
-
-// Group represents a collection of nodes with shared variables.
-type Group struct {
-    Name     string
-    Nodes    []NodeInterface
-    Vars     map[string]string // group-level variables
-    Children []string          // names of child groups
-}
-```
-
-### 4. Inventory Creation Patterns
+### 3. Inventory Creation Patterns
 
 **Programmatic creation:**
 ```go
@@ -134,58 +90,34 @@ inv.AddNode("web1.example.com").
     SetUser("deploy")
 
 // Or add to groups
-webGroup := inv.AddGroup("webservers")
-webGroup.AddNode("web1.example.com")
-webGroup.AddNode("web2.example.com")
-webGroup.SetVar("env", "production")
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
+webGroup.SetArg("env", "production")
+inv.AddGroup(webGroup)
 
-dbGroup := inv.AddGroup("dbservers")
-dbGroup.AddNode("db1.example.com")
-dbGroup.SetVar("db_role", "primary")
+dbGroup := ork.NewGroup("dbservers")
+dbGroup.AddNode(ork.NewNodeForHost("db1.example.com"))
+dbGroup.SetArg("db_role", "primary")
+inv.AddGroup(dbGroup)
 ```
 
-**From YAML (similar to Ansible):**
-```go
-// Load from YAML file
-inv, err := ork.NewInventoryFromYAML("inventory.yaml")
-if err != nil {
-    log.Fatal(err)
-}
-```
-
-**inventory.yaml format:**
-```yaml
-all:
-  children:
-    webservers:
-      hosts:
-        web1.example.com:
-          ansible_port: 2222
-        web2.example.com:
-      vars:
-        env: production
-        
-    dbservers:
-      hosts:
-        db1.example.com:
-          db_role: primary
-        db2.example.com:
-          db_role: replica
-```
-
-### 5. Running Operations on Inventory
+### 4. Running Operations on Inventory
 
 ```go
 // Run playbook on entire inventory
-inv := ork.NewInventoryFromYAML("inventory.yaml")
+inv := ork.NewInventory()
+webGroup := inv.AddGroup("webservers")
+webGroup.AddNode("web1.example.com")
 
 result := inv.RunPlaybook(playbooks.NewPing())
 
 // Check summary
+summary := result.Summary()
 fmt.Printf("Changed: %d, Unchanged: %d, Failed: %d\n",
-    result.Summary.Changed,
-    result.Summary.Unchanged,
-    result.Summary.Failed)
+    summary.Changed,
+    summary.Unchanged,
+    summary.Failed)
 
 // Check individual results
 for nodeID, nodeResult := range result.Results {
@@ -195,11 +127,11 @@ for nodeID, nodeResult := range result.Results {
 }
 
 // Run on specific group only
-webServers := inv.GetGroup("webservers")
+webServers := inv.GetGroupByName("webservers")
 result := webServers.RunPlaybook(playbooks.NewAptUpgrade())
 ```
 
-### 6. Variable Precedence
+### 5. Variable Precedence
 
 When running playbooks on inventory, variables resolve with this precedence (highest first):
 
@@ -210,7 +142,7 @@ When running playbooks on inventory, variables resolve with this precedence (hig
 5. Inventory-level variables
 6. Node defaults
 
-### 7. Parallel Execution
+### 6. Parallel Execution
 
 Inventory operations run concurrently by default:
 
@@ -225,7 +157,7 @@ defer cancel()
 result := inv.RunPlaybookWithContext(ctx, playbooks.NewAptUpgrade())
 ```
 
-### 8. Node Interface Alignment
+### 7. Node Interface Alignment
 
 Update `NodeInterface` to match `RunnableInterface`:
 
@@ -233,45 +165,43 @@ Update `NodeInterface` to match `RunnableInterface`:
 type NodeInterface interface {
     // ... existing configuration methods ...
 
-    // RunnableInterface methods return single-result collections
-    // for API consistency with Inventory
-    RunCommand(cmd string) CommandResults
-    RunPlaybook(pb playbook.PlaybookInterface) PlaybookResults
-    RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) PlaybookResults
-    Check(pb playbook.PlaybookInterface) CheckResults
+    // RunnableInterface is embedded for unified API
+    RunnableInterface
+
+    // RunPlaybookByID executes a playbook by ID from the registry
+    RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results
+}
+
+// RunnableInterface defines operations for Node, Group, and Inventory
+type RunnableInterface interface {
+    RunCommand(cmd string) types.Results
+    RunPlaybook(pb playbook.PlaybookInterface) types.Results
+    RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results
+    CheckPlaybook(pb playbook.PlaybookInterface) types.Results
 }
 ```
 
 For single nodes, the results collection contains exactly one entry.
 
-## Implementation Phases
+## Implementation Status
 
-### Phase 1: Core Types
-- Define `RunnableInterface`
-- Create result collection types
-- Add to `playbook` package
+**COMPLETED** - All core functionality implemented:
 
-### Phase 2: Inventory Implementation
-- `Inventory` struct
-- `Group` struct
-- Variable resolution logic
+- ✅ `types` package with `Result`, `Results`, `Summary`, `RunnableInterface`
+- ✅ `InventoryInterface` and `inventoryImplementation`
+- ✅ `GroupInterface` and `groupImplementation` 
+- ✅ `RunnableInterface` implemented by Node, Group, and Inventory
+- ✅ All methods return `types.Results` for unified API
+- ✅ Tests updated for new return types
 
-### Phase 3: Node Interface Update
-- Modify `NodeInterface` to return result collections
-- Update `nodeImplementation`
-- Maintain backward compatibility
+## Future Enhancements
 
 ### Phase 4: Parallel Execution
 - Worker pool for concurrent operations
 - Context support for cancellation
 - Error handling strategies
 
-### Phase 5: YAML Loading
-- Inventory YAML parser
-- Ansible-compatible format
-- Validation
-
-### Phase 6: Advanced Features
+### Phase 5: Advanced Features
 - Dynamic inventory plugins
 - Host patterns (e.g., `web*.example.com`)
 - Limit execution to subsets
@@ -286,9 +216,10 @@ For single nodes, the results collection contains exactly one entry.
 
 ## Compatibility
 
-- Existing single-node code continues to work
-- Result type changes are breaking but provide better multi-node support
-- `RunPlaybookByID` remains deprecated across both interfaces
+- **BREAKING CHANGE**: `RunCommand()` now returns `types.Results` instead of `(string, error)`
+- **BREAKING CHANGE**: `RunPlaybook()` now returns `types.Results` instead of `playbook.Result`
+- **BREAKING CHANGE**: `RunPlaybookByID()` now returns `types.Results` instead of `playbook.Result`
+- `RunPlaybookByID` remains deprecated across all interfaces
 
 ## Open Questions
 

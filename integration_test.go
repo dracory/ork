@@ -150,12 +150,13 @@ func TestIntegration_Node_ConnectRunClose(t *testing.T) {
 	}
 
 	// Test RunCommand with persistent connection
-	output, err := node.RunCommand("echo 'test1'")
-	if err != nil {
-		t.Fatalf("Run failed: %v", err)
+	results := node.RunCommand("echo 'test1'")
+	result := results.Results[container.host]
+	if result.Error != nil {
+		t.Fatalf("Run failed: %v", result.Error)
 	}
-	if !strings.Contains(output, "test1") {
-		t.Errorf("Expected output to contain 'test1', got: %s", output)
+	if !strings.Contains(result.Message, "test1") {
+		t.Errorf("Expected output to contain 'test1', got: %s", result.Message)
 	}
 
 	// Test Close
@@ -198,12 +199,13 @@ func TestIntegration_Node_PersistentConnectionReuse(t *testing.T) {
 	}
 
 	for i, cmd := range commands {
-		output, err := node.RunCommand(cmd)
-		if err != nil {
-			t.Errorf("Run %d failed: %v", i+1, err)
+		results := node.RunCommand(cmd)
+		result := results.Results[container.host]
+		if result.Error != nil {
+			t.Errorf("Run %d failed: %v", i+1, result.Error)
 			continue
 		}
-		t.Logf("Command %d output: %s", i+1, output)
+		t.Logf("Command %d output: %s", i+1, result.Message)
 	}
 
 	// Verify still connected after multiple operations
@@ -225,13 +227,14 @@ func TestIntegration_Node_WithoutPersistentConnection(t *testing.T) {
 		SetKey("test_key")
 
 	// Run without calling Connect() - should create one-time connection
-	output, err := node.RunCommand("echo 'one-time'")
-	if err != nil {
-		t.Fatalf("Run failed: %v", err)
+	results := node.RunCommand("echo 'one-time'")
+	result := results.Results[container.host]
+	if result.Error != nil {
+		t.Fatalf("Run failed: %v", result.Error)
 	}
 
-	if !strings.Contains(output, "one-time") {
-		t.Errorf("Expected output to contain 'one-time', got: %s", output)
+	if !strings.Contains(result.Message, "one-time") {
+		t.Errorf("Expected output to contain 'one-time', got: %s", result.Message)
 	}
 
 	// Verify not connected (one-time connection was closed)
@@ -259,7 +262,8 @@ func TestIntegration_Node_Playbook(t *testing.T) {
 	defer node.Close()
 
 	// Test ping playbook
-	result := node.RunPlaybookByID("ping")
+	results := node.RunPlaybookByID("ping")
+	result := results.Results[container.host]
 	if result.Error != nil {
 		t.Fatalf("Playbook('ping') failed: %v", result.Error)
 	}
@@ -284,39 +288,43 @@ func TestIntegration_MultipleOperations(t *testing.T) {
 	defer node.Close()
 
 	// Test 1: Run command
-	output1, err := node.RunCommand("echo 'step1'")
-	if err != nil {
-		t.Fatalf("Step 1 failed: %v", err)
+	results1 := node.RunCommand("echo 'step1'")
+	result1 := results1.Results[container.host]
+	if result1.Error != nil {
+		t.Fatalf("Step 1 failed: %v", result1.Error)
 	}
-	if !strings.Contains(output1, "step1") {
-		t.Errorf("Step 1: expected 'step1' in output, got: %s", output1)
+	if !strings.Contains(result1.Message, "step1") {
+		t.Errorf("Step 1: expected 'step1' in output, got: %s", result1.Message)
 	}
 
 	// Test 2: Update configuration
 	node.SetArg("test", "value")
 
 	// Test 3: Run another command
-	output2, err := node.RunCommand("echo 'step2'")
-	if err != nil {
-		t.Fatalf("Step 2 failed: %v", err)
+	results2 := node.RunCommand("echo 'step2'")
+	result2 := results2.Results[container.host]
+	if result2.Error != nil {
+		t.Fatalf("Step 2 failed: %v", result2.Error)
 	}
-	if !strings.Contains(output2, "step2") {
-		t.Errorf("Step 2: expected 'step2' in output, got: %s", output2)
+	if !strings.Contains(result2.Message, "step2") {
+		t.Errorf("Step 2: expected 'step2' in output, got: %s", result2.Message)
 	}
 
 	// Test 4: Execute playbook
-	result := node.RunPlaybookByID("ping")
-	if result.Error != nil {
-		t.Fatalf("Playbook execution failed: %v", result.Error)
+	results3 := node.RunPlaybookByID("ping")
+	result3 := results3.Results[container.host]
+	if result3.Error != nil {
+		t.Fatalf("Playbook execution failed: %v", result3.Error)
 	}
 
 	// Test 5: Run final command
-	output3, err := node.RunCommand("whoami")
-	if err != nil {
-		t.Fatalf("Step 3 failed: %v", err)
+	results4 := node.RunCommand("whoami")
+	result4 := results4.Results[container.host]
+	if result4.Error != nil {
+		t.Fatalf("Step 3 failed: %v", result4.Error)
 	}
-	if !strings.Contains(output3, container.user) {
-		t.Errorf("Step 3: expected '%s' in output, got: %s", container.user, output3)
+	if !strings.Contains(result4.Message, container.user) {
+		t.Errorf("Step 3: expected '%s' in output, got: %s", container.user, result4.Message)
 	}
 
 	// Verify connection remained active throughout

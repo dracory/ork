@@ -698,13 +698,14 @@ func TestNodeImplementation_Run_WithoutPersistentConnection(t *testing.T) {
 		connected: false,
 	}
 
-	output, err := n.RunCommand("uptime")
-	if err != nil {
-		t.Errorf("Expected no error, got: %v", err)
+	results := n.RunCommand("uptime")
+	result := results.Results["server.example.com"]
+	if result.Error != nil {
+		t.Errorf("Expected no error, got: %v", result.Error)
 	}
 
-	if output != "output from one-time connection" {
-		t.Errorf("Expected output=%q, got %q", "output from one-time connection", output)
+	if result.Message != "output from one-time connection" {
+		t.Errorf("Expected output=%q, got %q", "output from one-time connection", result.Message)
 	}
 
 	// Verify correct parameters were passed to ssh.RunOnce
@@ -747,23 +748,24 @@ func TestNodeImplementation_Run_OneTimeConnectionError(t *testing.T) {
 		connected: false,
 	}
 
-	output, err := n.RunCommand("uptime")
-	if err == nil {
+	results := n.RunCommand("uptime")
+	result := results.Results["server.example.com"]
+	if result.Error == nil {
 		t.Error("Expected error, got nil")
 	}
 
-	if output != "" {
-		t.Errorf("Expected empty output on error, got %q", output)
+	if result.Message != "" {
+		t.Errorf("Expected empty output on error, got %q", result.Message)
 	}
 
 	// Verify error message contains command
-	if !contains(err.Error(), "uptime") {
-		t.Errorf("Expected error to contain command 'uptime', got: %v", err)
+	if !contains(result.Error.Error(), "uptime") {
+		t.Errorf("Expected error to contain command 'uptime', got: %v", result.Error)
 	}
 
 	// Verify error message contains failure reason
-	if !contains(err.Error(), "connection refused") {
-		t.Errorf("Expected error to contain 'connection refused', got: %v", err)
+	if !contains(result.Error.Error(), "connection refused") {
+		t.Errorf("Expected error to contain 'connection refused', got: %v", result.Error)
 	}
 }
 
@@ -800,7 +802,8 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 		connected: false,
 	}
 
-	result := n.RunPlaybookByID("test-playbook")
+	results := n.RunPlaybookByID("test-playbook")
+	result := results.Results["server.example.com"]
 	if result.Error != nil {
 		t.Errorf("Expected no error, got: %v", result.Error)
 	}
@@ -839,7 +842,8 @@ func TestNodeImplementation_Playbook_NotFound(t *testing.T) {
 		connected: false,
 	}
 
-	result := n.RunPlaybookByID("nonexistent-playbook")
+	results := n.RunPlaybookByID("nonexistent-playbook")
+	result := results.Results["server.example.com"]
 	if result.Error == nil {
 		t.Error("Expected error for nonexistent playbook, got nil")
 	}
@@ -879,7 +883,8 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 		connected: false,
 	}
 
-	result := n.RunPlaybookByID("failing-playbook")
+	results := n.RunPlaybookByID("failing-playbook")
+	result := results.Results["server.example.com"]
 	if result.Error == nil {
 		t.Error("Expected error from failing playbook, got nil")
 	}

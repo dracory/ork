@@ -4,6 +4,7 @@ import (
 	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // sshRunOnce is a variable that points to ssh.RunOnce.
@@ -58,6 +59,10 @@ var sshRunOnce = ssh.RunOnce
 //	    log.Fatal(err)
 //	}
 type NodeInterface interface {
+	// RunnableInterface defines operations that can be performed on the node.
+	// NodeInterface embeds RunnableInterface for unified API with Group and Inventory.
+	RunnableInterface
+
 	// Configuration setters (fluent interface - return self for chaining)
 
 	// Configuration getters
@@ -227,49 +232,6 @@ type NodeInterface interface {
 	//	fmt.Println(node.IsConnected())  // Output: false
 	IsConnected() bool
 
-	// Operations
-
-	// RunCommand executes a shell command on the remote server.
-	// If a persistent connection is active (via Connect()), it is reused.
-	// Otherwise, a one-time connection is created for this command.
-	//
-	// Returns the command output as a string and any error that occurred.
-	// If the command execution fails, the error message includes the command
-	// and failure reason.
-	//
-	// Example with persistent connection:
-	//
-	//	node := ork.NewNode("server.example.com")
-	//	node.Connect()
-	//	defer node.Close()
-	//
-	//	output1, _ := node.RunCommand("uptime")
-	//	output2, _ := node.RunCommand("df -h")  // Reuses same connection
-	//
-	// Example without persistent connection:
-	//
-	//	node := ork.NewNode("server.example.com")
-	//	output, err := node.RunCommand("uptime")  // Creates one-time connection
-	RunCommand(cmd string) (string, error)
-
-	// RunPlaybook executes a playbook instance directly and returns detailed result information.
-	// This is the preferred method for executing playbooks as it provides idempotency support
-	// through the Result.Changed field, indicating whether any changes were actually made.
-	//
-	// This method allows running custom or programmatically created playbooks without registry lookup.
-	//
-	// Example:
-	//
-	//	pb := playbooks.NewAptUpgrade()
-	//	result := node.RunPlaybook(pb)
-	//	if result.Error != nil {
-	//	    log.Fatalf("Playbook failed: %v", result.Error)
-	//	}
-	//	if result.Changed {
-	//	    log.Printf("Changes made: %s", result.Message)
-	//	}
-	RunPlaybook(pb playbook.PlaybookInterface) playbook.Result
-
 	// RunPlaybookByID executes a playbook by ID from the registry.
 	// Deprecated: Use RunPlaybook() instead. Run playbooks by creating the playbook
 	// instance directly (e.g., playbooks.NewPing()) and passing it to RunPlaybook().
@@ -278,7 +240,7 @@ type NodeInterface interface {
 	// Optional PlaybookOptions can be provided to override node-level arguments for this
 	// specific execution. This allows per-playbook variable scoping without affecting
 	// the node's state.
-	RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) playbook.Result
+	RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results
 }
 
 // NewNode creates a new Node with default configuration values.
