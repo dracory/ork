@@ -6,6 +6,7 @@ import (
 	"github.com/dracory/ork/playbooks/fail2ban"
 	"github.com/dracory/ork/playbooks/ping"
 	"github.com/dracory/ork/playbooks/reboot"
+	"github.com/dracory/ork/playbooks/security"
 	"github.com/dracory/ork/playbooks/swap"
 	"github.com/dracory/ork/playbooks/ufw"
 	"github.com/dracory/ork/playbooks/user"
@@ -43,4 +44,9 @@ func init() {
 	_ = defaultRegistry.PlaybookRegister(fail2ban.NewFail2banStatus())
 	_ = defaultRegistry.PlaybookRegister(ufw.NewUfwInstall())
 	_ = defaultRegistry.PlaybookRegister(ufw.NewUfwStatus())
+	_ = defaultRegistry.PlaybookRegister(security.NewSshHarden())
+	_ = defaultRegistry.PlaybookRegister(security.NewKernelHarden())
+	_ = defaultRegistry.PlaybookRegister(security.NewAideInstall())
+	_ = defaultRegistry.PlaybookRegister(security.NewAuditdInstall())
+	_ = defaultRegistry.PlaybookRegister(security.NewSshChangePort())
 }

@@ -52,4 +52,19 @@ const (
 
 	// IDUfwStatus shows UFW firewall configuration and status
 	IDUfwStatus = "ufw-status"
+
+	// IDSshHarden applies security hardening to SSH server configuration
+	IDSshHarden = "ssh-harden"
+
+	// IDKernelHarden applies security-focused kernel parameters
+	IDKernelHarden = "kernel-harden"
+
+	// IDAideInstall installs and configures AIDE file integrity monitoring
+	IDAideInstall = "aide-install"
+
+	// IDAuditdInstall installs and configures the Linux Audit Framework
+	IDAuditdInstall = "auditd-install"
+
+	// IDSshChangePort changes the SSH port to reduce automated scanning
+	IDSshChangePort = "ssh-change-port"
 )
