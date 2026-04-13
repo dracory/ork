@@ -2,7 +2,9 @@ package ork
 
 import (
 	"github.com/dracory/ork/playbook"
-	"github.com/dracory/ork/playbooks"
+	"github.com/dracory/ork/playbooks/apt"
+	"github.com/dracory/ork/playbooks/ping"
+	"github.com/dracory/ork/playbooks/reboot"
 	"github.com/dracory/ork/playbooks/swap"
 	"github.com/dracory/ork/playbooks/user"
 )
@@ -24,11 +26,11 @@ func init() {
 	defaultRegistry = playbook.NewRegistry()
 
 	// Register all 11 built-in playbooks
-	_ = defaultRegistry.PlaybookRegister(playbooks.NewPing())
-	_ = defaultRegistry.PlaybookRegister(playbooks.NewAptUpdate())
-	_ = defaultRegistry.PlaybookRegister(playbooks.NewAptUpgrade())
-	_ = defaultRegistry.PlaybookRegister(playbooks.NewAptStatus())
-	_ = defaultRegistry.PlaybookRegister(playbooks.NewReboot())
+	_ = defaultRegistry.PlaybookRegister(ping.NewPing())
+	_ = defaultRegistry.PlaybookRegister(apt.NewAptUpdate())
+	_ = defaultRegistry.PlaybookRegister(apt.NewAptUpgrade())
+	_ = defaultRegistry.PlaybookRegister(apt.NewAptStatus())
+	_ = defaultRegistry.PlaybookRegister(reboot.NewReboot())
 	_ = defaultRegistry.PlaybookRegister(swap.NewSwapCreate())
 	_ = defaultRegistry.PlaybookRegister(swap.NewSwapDelete())
 	_ = defaultRegistry.PlaybookRegister(swap.NewSwapStatus())

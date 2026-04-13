@@ -1,3 +1,6 @@
+// Package user provides playbooks for managing Linux user accounts.
+// It supports creating users with SSH key authentication, deleting users,
+// and querying user status and group membership.
 package user
 
 import (
@@ -9,16 +12,74 @@ import (
 )
 
 // UserStatus shows user information.
+// This is a read-only playbook that queries user account details.
+// It can show information for a specific user (via username argument)
+// or list all non-system users on the system.
+//
+// Usage (specific user):
+//
+//	go run . --playbook=user-status --arg=username=<name>
+//
+// Usage (all users):
+//
+//	go run . --playbook=user-status
+//
+// Arguments:
+//   - username: Specific user to query (optional, omit to list all users)
+//
+// Execution Flow (with username):
+//  1. Runs id <username> to get user info
+//  2. Runs groups <username> to get group membership
+//  3. Reports user info and groups
+//
+// Execution Flow (without username):
+//  1. Parses /etc/passwd to find non-system users (UID >= 1000, < 65534)
+//  2. Reports list of all regular user accounts
+//
+// Expected Output:
+//   - Success (specific user): "User info for '<username>'" with uid/gid info
+//   - Success (all users): "Non-system users listed" with user list
+//   - Failure (user not found): Error indicating user doesn't exist
+//
+// Result Details (specific user):
+//   - info: Output from id command (uid, gid, groups)
+//   - groups: Output from groups command
+//
+// Result Details (all users):
+//   - users: List of usernames (one per line)
+//
+// Use Cases:
+//   - Verify user creation/deletion
+//   - Check group membership for sudo access
+//   - Audit user accounts on system
+//   - Troubleshoot permission issues
+//
+// Idempotency:
+//   - Always reports Changed=false since this is read-only
 type UserStatus struct {
 	*playbook.BasePlaybook
 }
 
 // Check always returns false since UserStatus is read-only.
+// Per the playbook interface convention, the bool return indicates whether
+// the operation would modify system state. Since user-status only queries
+// user information, this always returns false.
 func (u *UserStatus) Check() (bool, error) {
 	return false, nil
 }
 
 // Run displays user status and returns detailed result.
+// Changed is always false since this is a read-only operation.
+//
+// If ArgUsername is provided, returns details for that specific user.
+// If ArgUsername is empty, lists all non-system users (UID >= 1000).
+//
+// Result.Details (specific user) contains:
+//   - info: Output from id command (UID, GID, group membership)
+//   - groups: Output from groups command
+//
+// Result.Details (all users) contains:
+//   - users: List of all non-system usernames (one per line)
 func (u *UserStatus) Run() playbook.Result {
 	cfg := u.GetConfig()
 	username := u.GetArg(ArgUsername)
@@ -83,6 +144,16 @@ func (u *UserStatus) Run() playbook.Result {
 }
 
 // NewUserStatus creates a new user-status playbook.
+//
+// Returns:
+//
+//	A PlaybookInterface implementation configured with IDUserStatus identifier
+//	and description "Show user information".
+//
+// Usage Note:
+//
+//	Pass ArgUsername via --arg=username=<name> to query a specific user.
+//	Omit the username argument to list all non-system users.
 func NewUserStatus() playbook.PlaybookInterface {
 	pb := playbook.NewBasePlaybook()
 	pb.SetID(playbook.IDUserStatus)

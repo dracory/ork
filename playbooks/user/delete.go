@@ -1,5 +1,7 @@
 package user
 
+// Package user documentation is in status.go
+
 import (
 	"fmt"
 	"log"
