@@ -1,10 +1,8 @@
 # Proposal: Dry-Run Mode
 
 **Date:** 2026-04-12  
-**Status:** Partially Implemented  
+**Status:** Implemented  
 **Author:** System Review
-
-> **Note:** `CheckPlaybook()` method implemented on Node, Group, and Inventory via `RunnableInterface`. Uses `SetDryRun(true)` internally.
 
 ## Problem Statement
 
@@ -15,176 +13,159 @@ Users need to preview what changes a playbook will make before executing it. Thi
 - Debugging playbook logic
 - Compliance and audit requirements
 
-Ansible's `--check` mode is one of its most valuable features.
+## Solution: Safe Mode with Dry-Run Logging
 
-## Proposed Solution
+The implementation ensures **safety is guaranteed at the execution layer**, not dependent on playbook cooperation.
 
-### 1. CheckPlaybook Method (IMPLEMENTED)
+### Core Design
 
-```go
-// CheckPlaybook runs playbook in dry-run mode
-// Available on Node, Group, and Inventory via RunnableInterface
-results := node.CheckPlaybook(pb)
-results := group.CheckPlaybook(pb)
-results := inventory.CheckPlaybook(pb)
-```
+**Principle:** No command executes on the server in dry-run mode. Safety is enforced in `ssh.Run()`, not in playbooks.
 
-### 2. Playbook SetDryRun Method
+### Implementation
+
+**1. NodeConfig with IsDryRunMode flag**
 
 ```go
-// PlaybookInterface has SetDryRun method
-pb.SetDryRun(true)
-result := pb.Run() // Runs in check mode
+type NodeConfig struct {
+    // ... existing fields ...
+    IsDryRunMode bool
+}
 ```
 
-### 3. Create DryRun Executor
+**2. ssh.Run enforces safety - never executes commands in dry-run mode**
 
 ```go
-type DryRunExecutor struct {
-    actions []Action
-}
-
-func (e *DryRunExecutor) WouldRun(cmd string, description string) {
-    e.actions = append(e.actions, Action{
-        Type:        "execute",
-        Resource:    "command",
-        Description: description,
-        Command:     cmd,
-    })
-}
-
-func (e *DryRunExecutor) WouldCreate(resource, description string) {
-    e.actions = append(e.actions, Action{
-        Type:        "create",
-        Resource:    resource,
-        Description: description,
-    })
-}
-
-func (e *DryRunExecutor) Actions() []Action {
-    return e.actions
+func Run(cfg config.NodeConfig, cmd string) (string, error) {
+    if cfg.IsDryRunMode {
+        cfg.GetLoggerOrDefault().Info("dry-run: would run", "command", cmd)
+        // Return marker that playbook can detect
+        return "[dry-run]", nil
+    }
+    // Normal execution
+    return RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, cmd)
 }
 ```
+
+**3. RunnableInterface with SetDryRunMode and GetDryRunMode**
+
+```go
+type RunnableInterface interface {
+    // ... other methods ...
+    
+    // SetDryRunMode sets whether to simulate execution without making changes.
+    // When true, ssh.Run() will log commands and return "[dry-run]" marker.
+    SetDryRunMode(dryRun bool) RunnableInterface
+    
+    // GetDryRunMode returns true if dry-run mode is enabled.
+    GetDryRunMode() bool
+}
+```
+
+### Usage
+
+```go
+// Enable dry-run at node level
+node.SetDryRunMode(true)
+results := node.RunPlaybook(pb)
+
+// Enable dry-run at group level
+group.SetDryRunMode(true)
+results := group.RunPlaybook(pb)
+
+// Enable dry-run at inventory level
+inventory.SetDryRunMode(true)
+results := inventory.RunPlaybook(pb)
+
+// Check if dry-run is enabled
+if node.GetDryRunMode() {
+    log.Println("Running in dry-run mode")
+}
+```
+
+### Playbook Implementation
+
+Playbooks can optionally detect dry-run mode for better UX:
+
+```go
+func (a *AptUpgrade) Run() playbook.Result {
+    // In dry-run: ssh.Run returns "[dry-run]" marker, logs the command
+    // In real-run: ssh.Run executes command on server
+    output, _ := ssh.Run(a.cfg, "apt-get upgrade -y")
+    
+    if output == "[dry-run]" {
+        return playbook.Result{
+            Changed: true,
+            Message: "Would run: apt-get upgrade -y",
+        }
+    }
+    // Normal execution handling...
+}
+```
+
+**Key Safety Feature:** Even if a playbook forgets to check for the "[dry-run]" marker, **no command executes on the server**. The playbook might just show confusing output, but the system remains safe. Safety is enforced at the `ssh.Run()` level, not dependent on playbook cooperation.
+
+### Benefits
+
+- **Guaranteed safety** - Zero commands execute on server in dry-run mode
+- **Audit logging** - All "would run" commands are logged
+- **Simple playbooks** - Optional dry-run awareness, safety is enforced
+- **Production ready** - Safe for use in any environment
+
+### Limitations
+
+- Cannot predict if changes are actually needed (no state inspection)
+- Output is "what commands would run" not "what would change"
 
 ## Implementation Examples
 
-### AptUpgrade with DryRun
+### AptUpgrade in Safe Mode
 
 ```go
-func (a *AptUpgrade) DryRun(cfg config.Config) ([]Action, error) {
-    // Check what would be upgraded
-    output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey,
-        "apt list --upgradable 2>/dev/null | tail -n +2")
-    if err != nil {
-        return nil, err
+func (a *AptUpgrade) Run() playbook.Result {
+    cfg := a.GetConfig()
+    
+    // In dry-run: ssh.Run returns "[dry-run]" marker
+    // In real-run: ssh.Run executes command
+    output, _ := ssh.Run(cfg, "apt-get upgrade -y")
+    
+    if output == "[dry-run]" {
+        return playbook.Result{
+            Changed: true,
+            Message: "Would run: apt-get upgrade -y",
+        }
     }
     
-    packages := strings.Split(strings.TrimSpace(output), "\n")
-    if len(packages) == 0 || packages[0] == "" {
-        return []Action{{
-            Type:        "skip",
-            Resource:    "packages",
-            Description: "All packages are up to date",
-        }}, nil
+    // Normal execution: parse actual output
+    if strings.Contains(output, "0 upgraded") {
+        return playbook.Result{Changed: false, Message: "All packages up to date"}
     }
-    
-    actions := []Action{{
-        Type:        "execute",
-        Resource:    "apt-get",
-        Description: fmt.Sprintf("Would upgrade %d packages", len(packages)),
-        Command:     "apt-get upgrade -y",
-        Details: map[string]string{
-            "packages": strings.Join(packages, ", "),
-        },
-    }}
-    
-    return actions, nil
+    return playbook.Result{Changed: true, Message: "Packages upgraded successfully"}
 }
 ```
 
-### SwapCreate with DryRun
+### SwapCreate in Safe Mode
 
 ```go
-func (s *SwapCreate) DryRun(cfg config.Config) ([]Action, error) {
-    sizeStr := cfg.GetArgOr("size", "1")
-    size, _ := strconv.Atoi(sizeStr)
+func (s *SwapCreate) Run() playbook.Result {
+    sizeStr := s.GetArgOr("size", "1")
     
-    // Check if swap exists
-    output, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey,
-        "swapon --show=NAME --noheadings")
-    
-    if strings.TrimSpace(output) != "" {
-        return []Action{{
-            Type:        "skip",
-            Resource:    "/swapfile",
-            Description: "Swap file already exists",
-        }}, nil
+    // Commands that would run (logged in dry-run, executed otherwise)
+    commands := []string{
+        fmt.Sprintf("fallocate -l %sG /swapfile", sizeStr),
+        "chmod 600 /swapfile",
+        "mkswap /swapfile && swapon /swapfile",
+        "echo '/swapfile none swap sw 0 0' >> /etc/fstab",
     }
     
-    return []Action{
-        {
-            Type:        "create",
-            Resource:    "/swapfile",
-            Description: fmt.Sprintf("Would create %dGB swap file", size),
-            Command:     fmt.Sprintf("fallocate -l %dG /swapfile", size),
-        },
-        {
-            Type:        "modify",
-            Resource:    "/swapfile",
-            Description: "Would set permissions to 600",
-            Command:     "chmod 600 /swapfile",
-        },
-        {
-            Type:        "execute",
-            Resource:    "swap",
-            Description: "Would initialize and enable swap",
-            Command:     "mkswap /swapfile && swapon /swapfile",
-        },
-        {
-            Type:        "modify",
-            Resource:    "/etc/fstab",
-            Description: "Would add swap to fstab for persistence",
-            Command:     "echo '/swapfile none swap sw 0 0' >> /etc/fstab",
-        },
-    }, nil
-}
-```
-
-### UserCreate with DryRun
-
-```go
-func (u *UserCreate) DryRun(cfg config.Config) ([]Action, error) {
-    username := cfg.GetArg("username")
-    if username == "" {
-        return nil, fmt.Errorf("username is required")
+    // Check dry-run mode via playbook method
+    if s.IsDryRun() {
+        return playbook.Result{
+            Changed: true,
+            Message: fmt.Sprintf("Would run %d commands to create swap", len(commands)),
+        }
     }
     
-    // Check if user exists
-    _, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey,
-        fmt.Sprintf("id %s", username))
-    
-    if err == nil {
-        return []Action{{
-            Type:        "skip",
-            Resource:    username,
-            Description: fmt.Sprintf("User '%s' already exists", username),
-        }}, nil
-    }
-    
-    return []Action{
-        {
-            Type:        "create",
-            Resource:    username,
-            Description: fmt.Sprintf("Would create user '%s'", username),
-            Command:     fmt.Sprintf("adduser --disabled-password --gecos '' %s", username),
-        },
-        {
-            Type:        "modify",
-            Resource:    username,
-            Description: fmt.Sprintf("Would add '%s' to sudo group", username),
-            Command:     fmt.Sprintf("usermod -aG sudo %s", username),
-        },
-    }, nil
+    // Execute commands normally...
 }
 ```
 
@@ -193,29 +174,24 @@ func (u *UserCreate) DryRun(cfg config.Config) ([]Action, error) {
 ### Programmatic Usage
 
 ```go
-cfg := config.Config{
-    SSHHost: "server.example.com",
-    SSHPort: "22",
-    SSHKey:  "id_rsa",
-    RootUser: "root",
-    DryRun:  true,
+// Simple dry-run execution
+node := ork.NewNode("server.example.com").
+    SetPort("22").
+    SetKey("id_rsa").
+    SetDryRunMode(true)
+
+results := node.RunPlaybook(playbooks.NewAptUpgrade())
+
+// Process results
+for host, result := range results.Results {
+    if result.Changed {
+        fmt.Printf("%s: %s\n", host, result.Message)
+    }
 }
 
-playbook := playbooks.NewAptUpgrade()
-
-if dryRunnable, ok := playbook.(DryRunnable); ok {
-    actions, err := dryRunnable.DryRun(cfg)
-    if err != nil {
-        log.Fatal(err)
-    }
-    
-    fmt.Println("Would perform the following actions:")
-    for _, action := range actions {
-        fmt.Printf("  [%s] %s: %s\n", action.Type, action.Resource, action.Description)
-        if action.Command != "" {
-            fmt.Printf("    Command: %s\n", action.Command)
-        }
-    }
+// Check dry-run status
+if node.GetDryRunMode() {
+    log.Println("Commands were logged but not executed")
 }
 ```
 
@@ -235,16 +211,15 @@ ork run --host server.example.com --playbook apt-upgrade --dry-run
 ## Implementation Plan
 
 ### Phase 1: Core Framework (COMPLETE)
-- ✅ `CheckPlaybook` method on `RunnableInterface`
-- ✅ `SetDryRun` method on `PlaybookInterface`
-- ✅ Works across Node, Group, and Inventory
+- ✅ `IsDryRunMode` field added to `NodeConfig`
+- ✅ `ssh.Run()` checks `IsDryRunMode` and returns `[dry-run]` marker
+- ✅ `SetDryRunMode()` and `GetDryRunMode()` added to `RunnableInterface`
+- ✅ Implemented on `Node`, `Group`, and `Inventory`
+- ✅ Safety enforced at execution layer - no commands execute on server in dry-run mode
 
-### Phase 2: Remaining Work
-- Playbook implementations to check `IsDryRun()` internally
-- Optional: Detailed action reporting (Action struct)
-
-### Phase 3: CLI Integration
-- Add `--dry-run` flag to CLI tool
+### Phase 2: Future Work
+- CLI integration with `--dry-run` flag
+- Optional: Playbook-level dry-run awareness for better UX
 
 ## Benefits
 

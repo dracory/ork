@@ -131,3 +131,31 @@ func (i *inventoryImplementation) SetLogger(logger *slog.Logger) RunnableInterfa
 	i.logger = logger
 	return i
 }
+
+// SetDryRunMode sets whether to simulate execution without making changes.
+// When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
+// Returns RunnableInterface for fluent method chaining.
+func (i *inventoryImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
+	for _, node := range i.nodes {
+		node.SetDryRunMode(dryRun)
+	}
+	for _, group := range i.groups {
+		group.SetDryRunMode(dryRun)
+	}
+	return i
+}
+
+// GetDryRunMode returns true if dry-run mode is enabled on any node in the inventory.
+func (i *inventoryImplementation) GetDryRunMode() bool {
+	for _, node := range i.nodes {
+		if node.GetDryRunMode() {
+			return true
+		}
+	}
+	for _, group := range i.groups {
+		if group.GetDryRunMode() {
+			return true
+		}
+	}
+	return false
+}

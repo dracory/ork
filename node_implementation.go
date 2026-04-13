@@ -402,3 +402,17 @@ func (n *nodeImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
 	n.cfg.Logger = logger
 	return n
 }
+
+// SetDryRunMode sets whether to simulate execution without making changes.
+// When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
+// Returns RunnableInterface for fluent method chaining.
+func (n *nodeImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
+	n.cfg.IsDryRunMode = dryRun
+	return n
+}
+
+// GetDryRunMode returns true if dry-run mode is enabled.
+// When true, commands are logged but not executed on the server.
+func (n *nodeImplementation) GetDryRunMode() bool {
+	return n.cfg.IsDryRunMode
+}

@@ -24,6 +24,10 @@ type NodeConfig struct {
 
 	// Logger for structured logging. Defaults to slog.Default() if nil.
 	Logger *slog.Logger
+
+	// IsDryRunMode indicates whether to simulate execution without making changes.
+	// When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
+	IsDryRunMode bool
 }
 
 // SSHAddr returns the full SSH address as host:port.

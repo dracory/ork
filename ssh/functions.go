@@ -32,6 +32,15 @@ func PrivateKeyPath(sshKey string) string {
 // Run connects to a node using NodeConfig and executes a command.
 // It extracts SSH connection settings (SSHHost, SSHPort, SSHLogin, SSHKey)
 // from the config and runs the command, returning the output.
+//
+// SAFETY: When cfg.IsDryRunMode is true, this function will NOT execute
+// any commands on the server. Instead, it logs the command and returns
+// "[dry-run]" as the output. This ensures no accidental changes in dry-run mode.
 func Run(cfg config.NodeConfig, cmd string) (string, error) {
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run", "command", cmd)
+		// Return marker that playbook can detect
+		return "[dry-run]", nil
+	}
 	return RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, cmd)
 }

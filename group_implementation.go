@@ -137,3 +137,23 @@ func (g *groupImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
 	g.logger = logger
 	return g
 }
+
+// SetDryRunMode sets whether to simulate execution without making changes.
+// When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
+// Returns RunnableInterface for fluent method chaining.
+func (g *groupImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
+	for _, node := range g.nodes {
+		node.SetDryRunMode(dryRun)
+	}
+	return g
+}
+
+// GetDryRunMode returns true if dry-run mode is enabled on any node in the group.
+func (g *groupImplementation) GetDryRunMode() bool {
+	for _, node := range g.nodes {
+		if node.GetDryRunMode() {
+			return true
+		}
+	}
+	return false
+}

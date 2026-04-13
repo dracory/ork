@@ -517,6 +517,14 @@ func (m *groupTestMockNode) SetLogger(logger *slog.Logger) RunnableInterface {
 	return m
 }
 
+func (m *groupTestMockNode) SetDryRunMode(dryRun bool) RunnableInterface {
+	return m
+}
+
+func (m *groupTestMockNode) GetDryRunMode() bool {
+	return false
+}
+
 // groupTestMockPlaybook is a mock implementation of playbook.PlaybookInterface for testing.
 type groupTestMockPlaybook struct {
 	name    string

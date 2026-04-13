@@ -595,6 +595,14 @@ func (m *invTestMockNode) SetLogger(logger *slog.Logger) RunnableInterface {
 	return m
 }
 
+func (m *invTestMockNode) SetDryRunMode(dryRun bool) RunnableInterface {
+	return m
+}
+
+func (m *invTestMockNode) GetDryRunMode() bool {
+	return false
+}
+
 // invTestMockPlaybook is a mock implementation of playbook.PlaybookInterface for testing.
 type invTestMockPlaybook struct {
 	name    string

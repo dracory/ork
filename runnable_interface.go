@@ -32,4 +32,13 @@ type RunnableInterface interface {
 
 	// SetLogger sets a custom logger. Returns self for chaining.
 	SetLogger(logger *slog.Logger) RunnableInterface
+
+	// SetDryRunMode sets whether to simulate execution without making changes.
+	// When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
+	// Returns self for chaining.
+	SetDryRunMode(dryRun bool) RunnableInterface
+
+	// GetDryRunMode returns true if dry-run mode is enabled.
+	// When true, commands are logged but not executed on the server.
+	GetDryRunMode() bool
 }
