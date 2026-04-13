@@ -47,7 +47,7 @@ func (m *CreateDB) Check() (bool, error) {
 	}
 
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 1 FROM information_schema.schemata WHERE schema_name = '%s';"`, rootPassword, dbName)
-	output, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, _ := ssh.Run(cfg, cmd)
 	return output == "", nil
 }
 
@@ -76,7 +76,7 @@ func (m *CreateDB) Run() playbook.Result {
 	log.Printf("Creating database: %s", dbName)
 
 	cmd := fmt.Sprintf("mysql -u root -p\"%s\" -e \"CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"", rootPassword, dbName)
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

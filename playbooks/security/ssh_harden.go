@@ -30,6 +30,10 @@ import (
 //
 // Args:
 //   - non-root-user: Username to verify exists before disabling root login (default: "deploy")
+//   - ssh-config-path: SSH configuration file path (default: /etc/ssh/sshd_config)
+//   - max-auth-tries: Maximum authentication attempts (default: 3)
+//   - client-alive-interval: Client alive interval in seconds (default: 300)
+//   - client-alive-count-max: Client alive count max (default: 2)
 //
 // Execution Flow:
 //  1. Backs up current SSH configuration with timestamp
@@ -65,14 +69,34 @@ func (s *SshHarden) Run() playbook.Result {
 	cfg := s.GetConfig()
 	nonRootUser := s.GetArg(ArgNonRootUser)
 	if nonRootUser == "" {
-		nonRootUser = "deploy" // Default non-root user name
+		nonRootUser = DefaultNonRootUser
+	}
+
+	sshConfigPath := s.GetArg(ArgSSHConfigPath)
+	if sshConfigPath == "" {
+		sshConfigPath = DefaultSSHConfigPath
+	}
+
+	maxAuthTries := s.GetArg(ArgMaxAuthTries)
+	if maxAuthTries == "" {
+		maxAuthTries = DefaultMaxAuthTries
+	}
+
+	clientAliveInterval := s.GetArg(ArgClientAliveInterval)
+	if clientAliveInterval == "" {
+		clientAliveInterval = DefaultClientAliveInterval
+	}
+
+	clientAliveCountMax := s.GetArg(ArgClientAliveCountMax)
+	if clientAliveCountMax == "" {
+		clientAliveCountMax = DefaultClientAliveCountMax
 	}
 
 	log.Println("=== SSH Security Hardening ===")
 
 	// Step 1: Backup
 	log.Println("Step 1: Backing up current SSH configuration...")
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d)`)
+	_, err := ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sshConfigPath, sshConfigPath))
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
 	}
@@ -80,7 +104,7 @@ func (s *SshHarden) Run() playbook.Result {
 	// Step 2: Verify non-root user
 	log.Println("Step 2: Verifying non-root user exists...")
 	cmd := fmt.Sprintf(`id %s >/dev/null 2>&1 && sudo -l -U %s >/dev/null 2>&1 && echo "OK" || echo "FAIL"`, nonRootUser, nonRootUser)
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil || !strings.Contains(output, "OK") {
 		return playbook.Result{
 			Changed: false,
@@ -94,27 +118,27 @@ func (s *SshHarden) Run() playbook.Result {
 		name string
 		cmd  string
 	}{
-		{"Disable root login", `sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' /etc/ssh/sshd_config`},
-		{"Disable password auth", `sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config`},
-		{"Enable pubkey auth", `sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config`},
-		{"Disable empty passwords", `sed -i 's/^#*PermitEmptyPasswords.*/PermitEmptyPasswords no/' /etc/ssh/sshd_config`},
-		{"Set max auth tries", `grep -q "^MaxAuthTries" /etc/ssh/sshd_config && sed -i 's/^MaxAuthTries.*/MaxAuthTries 3/' /etc/ssh/sshd_config || echo "MaxAuthTries 3" >> /etc/ssh/sshd_config`},
-		{"Disable X11 forwarding", `sed -i 's/^#*X11Forwarding.*/X11Forwarding no/' /etc/ssh/sshd_config`},
-		{"Set client alive interval", `grep -q "^ClientAliveInterval" /etc/ssh/sshd_config && sed -i 's/^ClientAliveInterval.*/ClientAliveInterval 300/' /etc/ssh/sshd_config || echo "ClientAliveInterval 300" >> /etc/ssh/sshd_config`},
-		{"Set client alive count", `grep -q "^ClientAliveCountMax" /etc/ssh/sshd_config && sed -i 's/^ClientAliveCountMax.*/ClientAliveCountMax 2/' /etc/ssh/sshd_config || echo "ClientAliveCountMax 2" >> /etc/ssh/sshd_config`},
+		{"Disable root login", fmt.Sprintf(`sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' %s`, sshConfigPath)},
+		{"Disable password auth", fmt.Sprintf(`sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' %s`, sshConfigPath)},
+		{"Enable pubkey auth", fmt.Sprintf(`sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' %s`, sshConfigPath)},
+		{"Disable empty passwords", fmt.Sprintf(`sed -i 's/^#*PermitEmptyPasswords.*/PermitEmptyPasswords no/' %s`, sshConfigPath)},
+		{"Set max auth tries", fmt.Sprintf(`grep -q "^MaxAuthTries" %s && sed -i 's/^MaxAuthTries.*/MaxAuthTries %s/' %s || echo "MaxAuthTries %s" >> %s`, sshConfigPath, maxAuthTries, sshConfigPath, maxAuthTries, sshConfigPath)},
+		{"Disable X11 forwarding", fmt.Sprintf(`sed -i 's/^#*X11Forwarding.*/X11Forwarding no/' %s`, sshConfigPath)},
+		{"Set client alive interval", fmt.Sprintf(`grep -q "^ClientAliveInterval" %s && sed -i 's/^ClientAliveInterval.*/ClientAliveInterval %s/' %s || echo "ClientAliveInterval %s" >> %s`, sshConfigPath, clientAliveInterval, sshConfigPath, clientAliveInterval, sshConfigPath)},
+		{"Set client alive count", fmt.Sprintf(`grep -q "^ClientAliveCountMax" %s && sed -i 's/^ClientAliveCountMax.*/ClientAliveCountMax %s/' %s || echo "ClientAliveCountMax %s" >> %s`, sshConfigPath, clientAliveCountMax, sshConfigPath, clientAliveCountMax, sshConfigPath)},
 	}
 
 	for _, setting := range settings {
 		log.Printf("Applying: %s...", setting.name)
-		_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, setting.cmd)
+		_, _ = ssh.Run(cfg, setting.cmd)
 	}
 
 	// Validate configuration
 	log.Println("Validating SSH configuration...")
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `sshd -t`)
+	_, err = ssh.Run(cfg, fmt.Sprintf(`sshd -t -f %s`, sshConfigPath))
 	if err != nil {
 		// Restore backup
-		_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `cp /etc/ssh/sshd_config.backup.$(date +%Y%m%d) /etc/ssh/sshd_config`)
+		_, _ = ssh.Run(cfg, fmt.Sprintf(`cp %s.backup.$(date +%%Y%%m%%d) %s`, sshConfigPath, sshConfigPath))
 		return playbook.Result{
 			Changed: false,
 			Message: "SSH configuration validation failed, backup restored",
@@ -124,7 +148,7 @@ func (s *SshHarden) Run() playbook.Result {
 
 	// Restart SSH
 	log.Println("Restarting SSH service...")
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `systemctl restart sshd`)
+	_, err = ssh.Run(cfg, `systemctl restart sshd`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}
@@ -134,8 +158,12 @@ func (s *SshHarden) Run() playbook.Result {
 		Changed: true,
 		Message: "SSH security hardening applied successfully",
 		Details: map[string]string{
-			"backup":      "/etc/ssh/sshd_config.backup.<date>",
-			"non-root-user": nonRootUser,
+			"backup":                fmt.Sprintf("%s.backup.<date>", sshConfigPath),
+			"non-root-user":         nonRootUser,
+			"ssh-config-path":       sshConfigPath,
+			"max-auth-tries":        maxAuthTries,
+			"client-alive-interval": clientAliveInterval,
+			"client-alive-count":    clientAliveCountMax,
 		},
 	}
 }

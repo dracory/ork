@@ -66,7 +66,7 @@ func (u *AllowMariaDB) Run() playbook.Result {
 	if ip == "" || ip == "any" {
 		log.Println("Allowing MariaDB access from ANY IP (use with caution!)")
 		cmd := fmt.Sprintf("ufw allow %s/tcp", mariaDBPort)
-		output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		output, err := ssh.Run(cfg, cmd)
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -87,7 +87,7 @@ func (u *AllowMariaDB) Run() playbook.Result {
 		singleIP = strings.TrimSpace(singleIP)
 		log.Printf("Allowing MariaDB access from: %s", singleIP)
 		cmd := fmt.Sprintf("ufw allow from %s to any port %s", singleIP, mariaDBPort)
-		output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		output, err := ssh.Run(cfg, cmd)
 		if err != nil {
 			log.Printf("Warning: Could not allow %s: %v", singleIP, err)
 		} else {

@@ -1,6 +1,7 @@
 package security
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/dracory/ork/playbook"
@@ -26,9 +27,13 @@ import (
 //   - Core Dumps: Restricted for sensitive data protection
 //   - Kernel Pointers: Hidden from unprivileged users
 //
+// Args:
+//   - sysctl-config-path: Path to sysctl.conf for backup (default: /etc/sysctl.conf)
+//   - sysctl-dropin-path: Path for security drop-in file (default: /etc/sysctl.d/99-security-hardening.conf)
+//
 // Execution Flow:
 //  1. Backs up current sysctl.conf
-//  2. Creates /etc/sysctl.d/99-security-hardening.conf
+//  2. Creates security hardening drop-in configuration
 //  3. Applies parameters with sysctl -p
 //  4. Verifies key parameters are active
 //
@@ -54,19 +59,29 @@ func (k *KernelHarden) Check() (bool, error) {
 func (k *KernelHarden) Run() playbook.Result {
 	cfg := k.GetConfig()
 
+	// Get configurable paths
+	sysctlConfigPath := k.GetArg(ArgSysctlConfigPath)
+	if sysctlConfigPath == "" {
+		sysctlConfigPath = DefaultSysctlConfigPath
+	}
+	sysctlDropInPath := k.GetArg(ArgSysctlDropInPath)
+	if sysctlDropInPath == "" {
+		sysctlDropInPath = DefaultSysctlDropInPath
+	}
+
 	log.Println("=== Hardening Kernel Security Parameters ===")
 	log.Println("WARNING: This will disable IPv6 system-wide")
 
 	// Step 1: Backup
 	log.Println("Step 1: Backing up current sysctl configuration...")
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `cp /etc/sysctl.conf /etc/sysctl.conf.backup.$(date +%Y%m%d)`)
+	_, err := ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sysctlConfigPath, sysctlConfigPath))
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup sysctl config", Error: err}
 	}
 
 	// Step 2: Create security configuration
-	log.Println("Step 2: Creating security hardening configuration...")
-	cmd := `cat >> /etc/sysctl.d/99-security-hardening.conf << 'EOF'
+	log.Printf("Step 2: Creating security hardening configuration at %s...", sysctlDropInPath)
+	cmd := fmt.Sprintf(`cat >> %s << 'EOF'
 # IP Spoofing protection
 net.ipv4.conf.all.rp_filter = 1
 net.ipv4.conf.default.rp_filter = 1
@@ -136,15 +151,15 @@ kernel.dmesg_restrict = 1
 
 # Restrict access to kernel logs
 kernel.printk = 3 3 3 3
-EOF`
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+EOF`, sysctlDropInPath)
+	_, err = ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to create hardening config", Error: err}
 	}
 
 	// Step 3: Apply parameters
 	log.Println("Step 3: Applying kernel parameters...")
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `sysctl -p /etc/sysctl.d/99-security-hardening.conf`)
+	output, err := ssh.Run(cfg, fmt.Sprintf(`sysctl -p %s`, sysctlDropInPath))
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to apply kernel parameters", Error: err}
 	}
@@ -155,8 +170,9 @@ EOF`
 		Changed: true,
 		Message: "Kernel security hardening applied successfully",
 		Details: map[string]string{
-			"config_file": "/etc/sysctl.d/99-security-hardening.conf",
-			"backup":      "/etc/sysctl.conf.backup.<date>",
+			"config_file":   sysctlDropInPath,
+			"backup":        fmt.Sprintf("%s.backup.<date>", sysctlConfigPath),
+			"sysctl-config": sysctlConfigPath,
 		},
 	}
 }

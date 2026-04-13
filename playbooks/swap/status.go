@@ -61,7 +61,7 @@ func (s *SwapStatus) Check() (bool, error) {
 //   - status: Full output from swapon --show command (when swap active)
 func (s *SwapStatus) Run() playbook.Result {
 	cfg := s.GetConfig()
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "swapon --show")
+	output, err := ssh.Run(cfg, "swapon --show")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

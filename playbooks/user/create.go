@@ -24,7 +24,7 @@ func (u *UserCreate) Check() (bool, error) {
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
 	}
-	output, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, fmt.Sprintf("id %s", username))
+	output, _ := ssh.Run(cfg, fmt.Sprintf("id %s", username))
 	return !strings.Contains(output, username), nil
 }
 
@@ -65,11 +65,26 @@ func (u *UserCreate) Check() (bool, error) {
 //   - username (string, required): Username to create
 //   - ssh-key (string, optional): SSH public key for authorized_keys
 //   - password (string, optional): Initial password for the user
+//   - shell (string, optional): Login shell (default: /bin/bash)
+//   - group (string, optional): Primary group (default: same as username)
+//   - sudo-group (string, optional): Sudo/admin group name (default: sudo)
+//   - home-dir (string, optional): Home directory path (default: /home/<username>)
 func (u *UserCreate) Run() playbook.Result {
 	cfg := u.GetConfig()
 	username := u.GetArg(ArgUsername)
 	sshKey := u.GetArg(ArgSSHKey)
 	password := u.GetArg(ArgPassword)
+	shell := u.GetArg(ArgShell)
+	group := u.GetArg(ArgGroup)
+	sudoGroup := u.GetArg(ArgSudoGroup)
+
+	// Apply defaults
+	if shell == "" {
+		shell = DefaultShell
+	}
+	if sudoGroup == "" {
+		sudoGroup = DefaultSudoGroup
+	}
 
 	if username == "" {
 		return playbook.Result{
@@ -81,9 +96,13 @@ func (u *UserCreate) Run() playbook.Result {
 
 	log.Printf("Creating user '%s'...", username)
 
-	// Create user with home directory and bash shell
-	cmd := fmt.Sprintf("id %s &>/dev/null || useradd -m -s /bin/bash %s", username, username)
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	// Build useradd command with options
+	useraddOpts := fmt.Sprintf("-m -s %s", shell)
+	if group != "" {
+		useraddOpts = fmt.Sprintf("%s -g %s", useraddOpts, group)
+	}
+	cmd := fmt.Sprintf("id %s &>/dev/null || useradd %s %s", username, useraddOpts, username)
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -93,12 +112,12 @@ func (u *UserCreate) Run() playbook.Result {
 	}
 
 	// Add to sudo group
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, fmt.Sprintf("usermod -aG sudo %s", username))
+	_, _ = ssh.Run(cfg, fmt.Sprintf("usermod -aG %s %s", sudoGroup, username))
 
 	// Set password if provided
 	if password != "" {
 		cmd = fmt.Sprintf("echo '%s:%s' | chpasswd", username, password)
-		output, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		output, err = ssh.Run(cfg, cmd)
 		if err != nil {
 			log.Printf("Warning: Failed to set password for user '%s': %v", username, err)
 		}
@@ -106,9 +125,15 @@ func (u *UserCreate) Run() playbook.Result {
 
 	// Setup SSH key if provided
 	if sshKey != "" {
+		// Determine home directory
+		homeDir := u.GetArg(ArgHomeDir)
+		if homeDir == "" {
+			homeDir = fmt.Sprintf("/home/%s", username)
+		}
+
 		// Create .ssh directory with proper permissions
-		cmd = fmt.Sprintf("mkdir -p /home/%s/.ssh && chmod 700 /home/%s/.ssh", username, username)
-		output, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		cmd = fmt.Sprintf("mkdir -p %s/.ssh && chmod 700 %s/.ssh", homeDir, homeDir)
+		output, err = ssh.Run(cfg, cmd)
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -118,8 +143,8 @@ func (u *UserCreate) Run() playbook.Result {
 		}
 
 		// Add SSH public key to authorized_keys
-		cmd = fmt.Sprintf("echo '%s' > /home/%s/.ssh/authorized_keys", sshKey, username)
-		output, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		cmd = fmt.Sprintf("echo '%s' > %s/.ssh/authorized_keys", sshKey, homeDir)
+		output, err = ssh.Run(cfg, cmd)
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -129,8 +154,8 @@ func (u *UserCreate) Run() playbook.Result {
 		}
 
 		// Set permissions and ownership on .ssh directory
-		cmd = fmt.Sprintf("chmod 600 /home/%s/.ssh/authorized_keys && chown -R %s:%s /home/%s/.ssh", username, username, username, username)
-		output, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		cmd = fmt.Sprintf("chmod 600 %s/.ssh/authorized_keys && chown -R %s:%s %s/.ssh", homeDir, username, username, homeDir)
+		output, err = ssh.Run(cfg, cmd)
 		if err != nil {
 			log.Printf("Warning: Failed to set permissions on .ssh directory for user '%s': %v", username, err)
 		}

@@ -24,7 +24,7 @@ func (u *UserDelete) Check() (bool, error) {
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
 	}
-	output, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, fmt.Sprintf("id %s", username))
+	output, _ := ssh.Run(cfg, fmt.Sprintf("id %s", username))
 	return strings.Contains(output, username), nil
 }
 
@@ -81,7 +81,7 @@ func (u *UserDelete) Run() playbook.Result {
 
 	// Delete user and home directory (try -r first, then without)
 	cmd := fmt.Sprintf("userdel -r %s 2>/dev/null || userdel %s", username, username)
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

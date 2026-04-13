@@ -58,7 +58,7 @@ type AuditdInstall struct {
 // Check determines if auditd needs to be installed.
 func (a *AuditdInstall) Check() (bool, error) {
 	cfg := a.GetConfig()
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "which auditd")
+	_, err := ssh.Run(cfg, "which auditd")
 	return err != nil, nil
 }
 
@@ -70,7 +70,7 @@ func (a *AuditdInstall) Run() playbook.Result {
 
 	// Install auditd
 	log.Println("Installing auditd package...")
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `DEBIAN_FRONTEND=noninteractive apt-get install -y auditd audispd-plugins`)
+	_, err := ssh.Run(cfg, `DEBIAN_FRONTEND=noninteractive apt-get install -y auditd audispd-plugins`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to install auditd", Error: err}
 	}
@@ -130,15 +130,15 @@ func (a *AuditdInstall) Run() playbook.Result {
 # Make configuration immutable (requires reboot to change)
 -e 2
 EOF`
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Load audit rules
 	log.Println("Loading audit rules...")
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `augenrules --load`)
+	_, _ = ssh.Run(cfg, `augenrules --load`)
 
 	// Enable and start auditd
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `systemctl enable auditd`)
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `systemctl start auditd`)
+	_, _ = ssh.Run(cfg, `systemctl enable auditd`)
+	_, _ = ssh.Run(cfg, `systemctl start auditd`)
 
 	log.Println("=== Auditd Installation Complete ===")
 	return playbook.Result{

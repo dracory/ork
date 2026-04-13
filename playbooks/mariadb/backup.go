@@ -80,13 +80,13 @@ func (m *Backup) Run() playbook.Result {
 
 	// Create backup directory
 	cmd := fmt.Sprintf("mkdir -p %s", backupDir)
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Create backup
 	backupPath := fmt.Sprintf("%s/%s", backupDir, backupFile)
 	cmd = fmt.Sprintf(`mysqldump -u root -p"%s" --single-transaction --routines --triggers "%s" > "%s"`,
 		rootPassword, dbName, backupPath)
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -97,11 +97,11 @@ func (m *Backup) Run() playbook.Result {
 
 	// Compress backup
 	cmd = fmt.Sprintf("gzip -f %s", backupPath)
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Generate checksum
 	cmd = fmt.Sprintf("sha256sum %s.gz > %s.gz.sha256", backupPath, backupPath)
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, _ = ssh.Run(cfg, cmd)
 
 	return playbook.Result{
 		Changed: true,

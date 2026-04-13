@@ -66,7 +66,7 @@ func (f *Fail2banStatus) Run() playbook.Result {
 
 	log.Println("Checking fail2ban status...")
 
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "systemctl status fail2ban --no-pager")
+	output, err := ssh.Run(cfg, "systemctl status fail2ban --no-pager")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -78,7 +78,7 @@ func (f *Fail2banStatus) Run() playbook.Result {
 	log.Printf("Fail2ban Status:\n%s", output)
 
 	// Show banned IPs
-	jailOutput, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "fail2ban-client status sshd 2>/dev/null || echo 'No SSH jail configured'")
+	jailOutput, _ := ssh.Run(cfg, "fail2ban-client status sshd 2>/dev/null || echo 'No SSH jail configured'")
 	log.Printf("SSH Jail Status:\n%s", jailOutput)
 
 	return playbook.Result{

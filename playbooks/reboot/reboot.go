@@ -86,7 +86,7 @@ func (r *Reboot) Run() playbook.Result {
 	log.Printf("Rebooting %s...", cfg.SSHHost)
 
 	// Trigger reboot (non-blocking, command returns immediately)
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "reboot")
+	_, err := ssh.Run(cfg, "reboot")
 	if err != nil {
 		// reboot command often returns connection error since it kills the SSH session
 		log.Printf("Reboot command sent (connection error expected): %v", err)
@@ -116,7 +116,7 @@ func (r *Reboot) Run() playbook.Result {
 	for time.Now().Before(deadline) {
 		time.Sleep(5 * time.Second)
 
-		_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "uptime")
+		_, err := ssh.Run(cfg, "uptime")
 		if err == nil {
 			log.Println("Server is back online!")
 			return playbook.Result{

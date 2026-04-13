@@ -47,7 +47,7 @@ type Install struct {
 // Check determines if MariaDB needs to be installed.
 func (m *Install) Check() (bool, error) {
 	cfg := m.GetConfig()
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "which mysqld")
+	_, err := ssh.Run(cfg, "which mysqld")
 	return err != nil, nil
 }
 
@@ -60,7 +60,7 @@ func (m *Install) Run() playbook.Result {
 
 	// Update package list and install MariaDB
 	cmd := `apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client`
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -71,7 +71,7 @@ func (m *Install) Run() playbook.Result {
 
 	// Start and enable MariaDB
 	cmd = "systemctl start mariadb && systemctl enable mariadb"
-	output, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, err = ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -82,12 +82,12 @@ func (m *Install) Run() playbook.Result {
 
 	// Wait for MariaDB to be ready
 	cmd = "until mysqladmin ping --silent; do sleep 1; done"
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Set root password if provided
 	if rootPassword != "" {
 		cmd = fmt.Sprintf(`mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '%s';"`, rootPassword)
-		_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		_, err = ssh.Run(cfg, cmd)
 		if err != nil {
 			log.Printf("Warning: Could not set root password (may already be set): %v", err)
 		} else {
@@ -98,11 +98,11 @@ func (m *Install) Run() playbook.Result {
 	// Configure MariaDB to listen on all interfaces for public access
 	log.Println("Configuring MariaDB to listen on all interfaces (0.0.0.0)")
 	cmd = `sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mariadb.conf.d/50-server.cnf || sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/my.cnf.d/mariadb-server.cnf || true`
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Restart MariaDB to apply config changes
 	cmd = "systemctl restart mariadb"
-	output, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, err = ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

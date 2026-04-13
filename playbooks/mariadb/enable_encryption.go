@@ -1,7 +1,9 @@
 package mariadb
 
 import (
+	"fmt"
 	"log"
+	"path/filepath"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -26,7 +28,7 @@ import (
 //
 // Encryption Configuration:
 //   - Plugin: file_key_management
-//   - Key file location: /var/lib/mysql-keyfile/keyfile.enc
+//   - Key file location: configurable (default: /var/lib/mysql-keyfile/keyfile.enc)
 //   - Encryption algorithm: AES-256
 //   - Default encryption: ON (all new InnoDB tables encrypted)
 //
@@ -34,6 +36,11 @@ import (
 //   - MariaDB must be installed and running
 //   - Root SSH access required
 //   - MariaDB 10.1.3 or later (encryption support)
+//
+// Args:
+//   - root-password: MariaDB root password (optional)
+//   - config-path: MariaDB config file path (default: /etc/mysql/mariadb.conf.d/50-server.cnf)
+//   - keyfile-path: Encryption key file path (default: /var/lib/mysql-keyfile/keyfile.enc)
 //
 // Related Playbooks:
 //   - mariadb-enable-ssl: Encrypt data in transit
@@ -51,40 +58,51 @@ func (m *EnableEncryption) Check() (bool, error) {
 func (m *EnableEncryption) Run() playbook.Result {
 	cfg := m.GetConfig()
 
+	// Get configurable paths
+	configPath := m.GetArg(ArgConfigPath)
+	if configPath == "" {
+		configPath = DefaultConfigPath
+	}
+	keyFilePath := m.GetArg(ArgKeyFilePath)
+	if keyFilePath == "" {
+		keyFilePath = DefaultKeyFilePath
+	}
+
 	log.Println("=== Enabling MariaDB Encryption at Rest ===")
 
 	// Backup config
 	log.Println("Backing up current MariaDB configuration...")
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `cp /etc/mysql/mariadb.conf.d/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf.backup.$(date +%Y%m%d_%H%M%S)`)
+	_, _ = ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath))
 
 	// Create key directory
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `mkdir -p /var/lib/mysql-keyfile`)
+	keyDir := filepath.Dir(keyFilePath)
+	_, _ = ssh.Run(cfg, fmt.Sprintf(`mkdir -p %s`, keyDir))
 
 	// Generate encryption key
 	log.Println("Generating encryption key file...")
-	cmd := `echo "1;$(openssl rand -hex 32)" > /var/lib/mysql-keyfile/keyfile.enc`
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	cmd := fmt.Sprintf(`echo "1;$(openssl rand -hex 32)" > %s`, keyFilePath)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Set permissions
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `chown mysql:mysql /var/lib/mysql-keyfile/keyfile.enc && chmod 600 /var/lib/mysql-keyfile/keyfile.enc`)
+	_, _ = ssh.Run(cfg, fmt.Sprintf(`chown mysql:mysql %s && chmod 600 %s`, keyFilePath, keyFilePath))
 
 	// Configure encryption
 	log.Println("Configuring encryption in MariaDB configuration...")
-	cmd = `grep -q "file_key_management_filename" /etc/mysql/mariadb.conf.d/50-server.cnf || cat >> /etc/mysql/mariadb.conf.d/50-server.cnf << 'EOF'
+	cmd = fmt.Sprintf(`grep -q "file_key_management_filename" %s || cat >> %s << 'EOF'
 
 # Encryption at Rest Configuration
 plugin_load_add = file_key_management
-file_key_management_filename = /var/lib/mysql-keyfile/keyfile.enc
+file_key_management_filename = %s
 file_key_management_encryption_algorithm = AES_CBC
 innodb_encrypt_tables = ON
 innodb_encrypt_log = ON
 encrypt_tmp_files = ON
-EOF`
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+EOF`, configPath, configPath, keyFilePath)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Restart MariaDB
 	log.Println("Restarting MariaDB to apply changes...")
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `systemctl restart mariadb`)
+	_, err := ssh.Run(cfg, `systemctl restart mariadb`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
@@ -94,7 +112,8 @@ EOF`
 		Changed: true,
 		Message: "Data-at-rest encryption enabled for MariaDB",
 		Details: map[string]string{
-			"key_file": "/var/lib/mysql-keyfile/keyfile.enc",
+			"key_file":    keyFilePath,
+			"config_path": configPath,
 		},
 	}
 }

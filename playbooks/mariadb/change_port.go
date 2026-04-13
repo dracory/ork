@@ -20,6 +20,7 @@ import (
 // Args:
 //   - port: New port number (1024-65535, not 3306) (required)
 //   - root-password: MariaDB root password (optional)
+//   - config-path: MariaDB config file path (default: /etc/mysql/mariadb.conf.d/50-server.cnf)
 //
 // IMPORTANT:
 //   - After changing the port, update your application configurations
@@ -46,6 +47,10 @@ func (m *ChangePort) Check() (bool, error) {
 func (m *ChangePort) Run() playbook.Result {
 	cfg := m.GetConfig()
 	newPort := m.GetArg(ArgPort)
+	configPath := m.GetArg(ArgConfigPath)
+	if configPath == "" {
+		configPath = DefaultConfigPath
+	}
 
 	if newPort == "" {
 		return playbook.Result{
@@ -70,25 +75,25 @@ func (m *ChangePort) Run() playbook.Result {
 
 	// Backup
 	log.Println("Backing up current MariaDB configuration...")
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `cp /etc/mysql/mariadb.conf.d/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf.backup.$(date +%Y%m%d_%H%M%S)`)
+	_, err = ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath))
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup config", Error: err}
 	}
 
 	// Update UFW if active
-	ufwOutput, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`)
+	ufwOutput, _ := ssh.Run(cfg, `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`)
 	if ufwOutput == "ACTIVE" {
 		cmd := fmt.Sprintf(`ufw allow %s/tcp comment 'MariaDB on custom port'`, newPort)
-		_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		_, _ = ssh.Run(cfg, cmd)
 	}
 
 	// Update MariaDB port
-	cmd := fmt.Sprintf(`sed -i 's/^#*port[[:space:]]*=.*/port = %s/' /etc/mysql/mariadb.conf.d/50-server.cnf`, newPort)
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	cmd := fmt.Sprintf(`sed -i 's/^#*port[[:space:]]*=.*/port = %s/' %s`, newPort, configPath)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Restart MariaDB
 	log.Println("Restarting MariaDB service...")
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `systemctl restart mariadb`)
+	_, err = ssh.Run(cfg, `systemctl restart mariadb`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
@@ -98,7 +103,8 @@ func (m *ChangePort) Run() playbook.Result {
 		Changed: true,
 		Message: fmt.Sprintf("MariaDB port changed to %s", newPort),
 		Details: map[string]string{
-			"new_port": newPort,
+			"new_port":    newPort,
+			"config_path": configPath,
 		},
 	}
 }

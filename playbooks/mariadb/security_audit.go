@@ -59,19 +59,19 @@ func (m *SecurityAudit) Run() playbook.Result {
 
 	// Check for anonymous users
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE User='';"`, rootPassword)
-	anonOutput, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	anonOutput, _ := ssh.Run(cfg, cmd)
 
 	// Check for test database
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES LIKE 'test';"`, rootPassword)
-	testOutput, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	testOutput, _ := ssh.Run(cfg, cmd)
 
 	// Check SSL
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW VARIABLES LIKE 'have_ssl';"`, rootPassword)
-	sslOutput, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	sslOutput, _ := ssh.Run(cfg, cmd)
 
 	// Check wildcard hosts
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE Host='%%';"`, rootPassword)
-	wildcardOutput, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	wildcardOutput, _ := ssh.Run(cfg, cmd)
 
 	log.Println("=== Security Audit Complete ===")
 	return playbook.Result{

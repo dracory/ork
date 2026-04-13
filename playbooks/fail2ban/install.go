@@ -53,7 +53,7 @@ type Fail2banInstall struct {
 // Check determines if fail2ban needs to be installed.
 func (f *Fail2banInstall) Check() (bool, error) {
 	cfg := f.GetConfig()
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "which fail2ban-server")
+	_, err := ssh.Run(cfg, "which fail2ban-server")
 	return err != nil, nil
 }
 
@@ -63,7 +63,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 
 	log.Println("Installing fail2ban...")
 
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban")
+	output, err := ssh.Run(cfg, "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -73,7 +73,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 	}
 
 	// Enable and start fail2ban
-	output, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "systemctl enable fail2ban && systemctl start fail2ban")
+	output, err = ssh.Run(cfg, "systemctl enable fail2ban && systemctl start fail2ban")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

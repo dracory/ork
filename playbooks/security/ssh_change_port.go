@@ -83,31 +83,31 @@ func (s *SshChangePort) Run() playbook.Result {
 
 	// Backup
 	log.Println("Backing up current SSH configuration...")
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)`)
+	_, err = ssh.Run(cfg, `cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
 	}
 
 	// Update UFW if active
-	ufwOutput, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`)
+	ufwOutput, _ := ssh.Run(cfg, `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`)
 	if ufwOutput == "ACTIVE" {
 		cmd := fmt.Sprintf(`ufw allow %s/tcp comment 'SSH on custom port'`, newPort)
-		_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		_, _ = ssh.Run(cfg, cmd)
 	}
 
 	// Update SSH port
 	cmd := fmt.Sprintf(`sed -i 's/^#*Port .*/Port %s/' /etc/ssh/sshd_config`, newPort)
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Validate
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `sshd -t`)
+	_, err = ssh.Run(cfg, `sshd -t`)
 	if err != nil {
-		_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `ls -t /etc/ssh/sshd_config.backup.* | head -1 | xargs -I {} cp {} /etc/ssh/sshd_config`)
+		_, _ = ssh.Run(cfg, `ls -t /etc/ssh/sshd_config.backup.* | head -1 | xargs -I {} cp {} /etc/ssh/sshd_config`)
 		return playbook.Result{Changed: false, Message: "SSH configuration validation failed, backup restored", Error: err}
 	}
 
 	// Restart SSH
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `systemctl restart sshd`)
+	_, err = ssh.Run(cfg, `systemctl restart sshd`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}

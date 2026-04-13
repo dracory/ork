@@ -1,6 +1,7 @@
 package mariadb
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/dracory/ork/playbook"
@@ -17,6 +18,8 @@ import (
 //
 // Args:
 //   - root-password: MariaDB root password (optional)
+//   - data-dir: MariaDB data directory (default: /var/lib/mysql)
+//   - config-path: MariaDB config file path (default: /etc/mysql/mariadb.conf.d/50-server.cnf)
 //
 // Execution Flow:
 //  1. Checks for existing SSL certificates
@@ -48,33 +51,43 @@ func (m *EnableSSL) Check() (bool, error) {
 func (m *EnableSSL) Run() playbook.Result {
 	cfg := m.GetConfig()
 
+	// Get configurable paths
+	dataDir := m.GetArg(ArgDataDir)
+	if dataDir == "" {
+		dataDir = DefaultDataDir
+	}
+	configPath := m.GetArg(ArgConfigPath)
+	if configPath == "" {
+		configPath = DefaultConfigPath
+	}
+
 	log.Println("=== Enabling MariaDB SSL/TLS ===")
 
 	// Generate SSL certificates
 	log.Println("Generating SSL certificates...")
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `mysql_ssl_rsa_setup --datadir=/var/lib/mysql`)
+	_, _ = ssh.Run(cfg, fmt.Sprintf(`mysql_ssl_rsa_setup --datadir=%s`, dataDir))
 
 	// Set ownership and permissions
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `chown mysql:mysql /var/lib/mysql/*.pem`)
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `chmod 600 /var/lib/mysql/*-key.pem && chmod 644 /var/lib/mysql/*.pem`)
+	_, _ = ssh.Run(cfg, fmt.Sprintf(`chown mysql:mysql %s/*.pem`, dataDir))
+	_, _ = ssh.Run(cfg, fmt.Sprintf(`chmod 600 %s/*-key.pem && chmod 644 %s/*.pem`, dataDir, dataDir))
 
 	// Backup config
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `cp /etc/mysql/mariadb.conf.d/50-server.cnf /etc/mysql/mariadb.conf.d/50-server.cnf.backup.$(date +%Y%m%d)`)
+	_, _ = ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, configPath, configPath))
 
 	// Configure SSL
 	log.Println("Configuring MariaDB to use SSL...")
-	cmd := `grep -q "ssl-ca" /etc/mysql/mariadb.conf.d/50-server.cnf || cat >> /etc/mysql/mariadb.conf.d/50-server.cnf << 'EOF'
+	cmd := fmt.Sprintf(`grep -q "ssl-ca" %s || cat >> %s << 'EOF'
 
 # SSL/TLS Configuration
-ssl-ca=/var/lib/mysql/ca.pem
-ssl-cert=/var/lib/mysql/server-cert.pem
-ssl-key=/var/lib/mysql/server-key.pem
-EOF`
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+ssl-ca=%s/ca.pem
+ssl-cert=%s/server-cert.pem
+ssl-key=%s/server-key.pem
+EOF`, configPath, configPath, dataDir, dataDir, dataDir)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Restart MariaDB
 	log.Println("Restarting MariaDB service...")
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `systemctl restart mariadb`)
+	_, err := ssh.Run(cfg, `systemctl restart mariadb`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
@@ -84,7 +97,9 @@ EOF`
 		Changed: true,
 		Message: "SSL/TLS enabled for MariaDB",
 		Details: map[string]string{
-			"cert_path": "/var/lib/mysql/",
+			"cert_path":   dataDir,
+			"data_dir":    dataDir,
+			"config_path": configPath,
 		},
 	}
 }

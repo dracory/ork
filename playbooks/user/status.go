@@ -89,7 +89,7 @@ func (u *UserStatus) Run() playbook.Result {
 		log.Printf("Checking user: %s", username)
 
 		cmd := fmt.Sprintf("id %s", username)
-		output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		output, err := ssh.Run(cfg, cmd)
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -101,7 +101,7 @@ func (u *UserStatus) Run() playbook.Result {
 
 		// Check if user has sudo
 		cmd = fmt.Sprintf("groups %s", username)
-		groupsOutput, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		groupsOutput, err := ssh.Run(cfg, cmd)
 		if err == nil {
 			log.Printf("Groups: %s", groupsOutput)
 		}
@@ -117,7 +117,7 @@ func (u *UserStatus) Run() playbook.Result {
 	log.Println("Listing all system users...")
 
 	cmd := "awk -F: '$3 >= 1000 && $3 < 65534 {print $1}' /etc/passwd"
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

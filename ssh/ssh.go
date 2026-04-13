@@ -5,7 +5,6 @@ package ssh
 
 import (
 	"fmt"
-	"os/user"
 
 	"github.com/sfreiberg/simplessh"
 )
@@ -68,27 +67,4 @@ func (c *Client) Close() error {
 		return nil
 	}
 	return c.client.Close()
-}
-
-// RunOnce is a convenience function that connects, runs a command, and closes.
-// Use this for single commands where you don't need to maintain the connection.
-// The host parameter should be just the hostname, port is the SSH port (empty defaults to 22).
-func RunOnce(host, port, user, key, cmd string) (string, error) {
-	client := NewClient(host, port, user, key)
-	if err := client.Connect(); err != nil {
-		return "", err
-	}
-	defer client.Close()
-	return client.Run(cmd)
-}
-
-// PrivateKeyPath constructs the absolute path to an SSH private key file.
-// It combines the current user's home directory with the .ssh directory
-// and the provided key filename.
-func PrivateKeyPath(sshKey string) string {
-	usr, err := user.Current()
-	if err != nil {
-		return ""
-	}
-	return usr.HomeDir + "/.ssh/" + sshKey
 }

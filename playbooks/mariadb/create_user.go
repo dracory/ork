@@ -56,7 +56,7 @@ func (m *CreateUser) Check() (bool, error) {
 	}
 
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 1 FROM mysql.user WHERE user='%s' AND host='%s';"`, rootPassword, username, host)
-	output, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, _ := ssh.Run(cfg, cmd)
 	return output == "", nil
 }
 
@@ -99,7 +99,7 @@ func (m *CreateUser) Run() playbook.Result {
 	// Create user
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "CREATE USER IF NOT EXISTS '%s'@'%s' IDENTIFIED BY '%s';"`,
 		rootPassword, username, host, password)
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -114,7 +114,7 @@ func (m *CreateUser) Run() playbook.Result {
 		if dbName == "*" {
 			cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "GRANT ALL PRIVILEGES ON *.* TO '%s'@'%s';"`,
 				rootPassword, username, host)
-			_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+			_, _ = ssh.Run(cfg, cmd)
 			grantedDBs = append(grantedDBs, "*")
 			log.Printf("Granted ALL PRIVILEGES on all databases to %s@%s", username, host)
 		} else {
@@ -123,7 +123,7 @@ func (m *CreateUser) Run() playbook.Result {
 				db = strings.TrimSpace(db)
 				cmd = fmt.Sprintf("mysql -u root -p\"%s\" -e \"GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%s';\"",
 					rootPassword, db, username, host)
-				_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+				_, err = ssh.Run(cfg, cmd)
 				if err != nil {
 					log.Printf("Warning: Could not grant privileges on %s: %v", db, err)
 				} else {
@@ -136,7 +136,7 @@ func (m *CreateUser) Run() playbook.Result {
 
 	// Flush privileges
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword)
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, _ = ssh.Run(cfg, cmd)
 
 	return playbook.Result{
 		Changed: true,

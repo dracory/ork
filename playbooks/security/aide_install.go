@@ -57,7 +57,7 @@ type AideInstall struct {
 // Check determines if AIDE needs to be installed.
 func (a *AideInstall) Check() (bool, error) {
 	cfg := a.GetConfig()
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "which aide")
+	_, err := ssh.Run(cfg, "which aide")
 	return err != nil, nil
 }
 
@@ -69,7 +69,7 @@ func (a *AideInstall) Run() playbook.Result {
 
 	// Install AIDE
 	log.Println("Installing AIDE package...")
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `DEBIAN_FRONTEND=noninteractive apt-get install -y aide aide-common`)
+	_, err := ssh.Run(cfg, `DEBIAN_FRONTEND=noninteractive apt-get install -y aide aide-common`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to install AIDE", Error: err}
 	}
@@ -85,22 +85,22 @@ func (a *AideInstall) Run() playbook.Result {
 /root/.ssh p+i+n+u+g+s+b+acl+xattrs+sha256
 /home p+i+n+u+g+s+b+acl+xattrs+sha256
 EOF`
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Initialize AIDE database
 	log.Println("Initializing AIDE database (this may take several minutes)...")
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `aideinit`)
+	_, _ = ssh.Run(cfg, `aideinit`)
 
 	// Move database to active location
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db`)
+	_, _ = ssh.Run(cfg, `mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db`)
 
 	// Create daily cron job
 	cmd = `cat > /etc/cron.daily/aide-check << 'EOF'
 #!/bin/bash
 /usr/bin/aide --check | mail -s "AIDE Daily Report - $(hostname)" root
 EOF`
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `chmod +x /etc/cron.daily/aide-check`)
+	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, `chmod +x /etc/cron.daily/aide-check`)
 
 	log.Println("=== AIDE Installation Complete ===")
 	return playbook.Result{

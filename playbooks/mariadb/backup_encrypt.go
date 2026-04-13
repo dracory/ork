@@ -77,16 +77,16 @@ func (b *BackupEncrypt) Run() playbook.Result {
 	log.Printf("Database: %s", dbName)
 
 	// Create backup directory
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, fmt.Sprintf(`mkdir -p %s`, backupDir))
+	_, _ = ssh.Run(cfg, fmt.Sprintf(`mkdir -p %s`, backupDir))
 
 	// Install openssl if needed
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `which openssl || DEBIAN_FRONTEND=noninteractive apt-get install -y openssl`)
+	_, _ = ssh.Run(cfg, `which openssl || DEBIAN_FRONTEND=noninteractive apt-get install -y openssl`)
 
 	// Create encrypted backup
 	log.Println("Creating encrypted backup...")
 	cmd := fmt.Sprintf(`(umask 077 && MYSQL_PWD='%s' mysqldump -u root --single-transaction --routines --triggers --events '%s' | gzip | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:MYSQL_PWD -out %s/%s_%s.sql.gz.enc)`,
 		rootPassword, dbName, backupDir, dbName, timestamp)
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to create backup", Error: err}
 	}

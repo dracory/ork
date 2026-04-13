@@ -60,7 +60,7 @@ func (m *Secure) Run() playbook.Result {
 
 	// Remove anonymous users
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='';"`, rootPassword)
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		log.Printf("Warning: Could not remove anonymous users: %v", err)
 	} else {
@@ -70,7 +70,7 @@ func (m *Secure) Run() playbook.Result {
 
 	// Remove remote root access (only localhost allowed for root)
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"`, rootPassword)
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, err = ssh.Run(cfg, cmd)
 	if err != nil {
 		log.Printf("Warning: Could not restrict root remote access: %v", err)
 	} else {
@@ -80,7 +80,7 @@ func (m *Secure) Run() playbook.Result {
 
 	// Remove test database
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DROP DATABASE IF EXISTS test;"`, rootPassword)
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, err = ssh.Run(cfg, cmd)
 	if err != nil {
 		log.Printf("Warning: Could not remove test database: %v", err)
 	} else {
@@ -90,11 +90,11 @@ func (m *Secure) Run() playbook.Result {
 
 	// Remove test database privileges
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%%';"`, rootPassword)
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, _ = ssh.Run(cfg, cmd)
 
 	// Reload privileges
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword)
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	_, err = ssh.Run(cfg, cmd)
 	if err != nil {
 		log.Printf("Warning: Could not flush privileges: %v", err)
 	} else {

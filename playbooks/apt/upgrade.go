@@ -55,14 +55,13 @@ type AptUpgrade struct {
 func (a *AptUpgrade) Check() (bool, error) {
 	cfg := a.GetConfig()
 	// First ensure package lists are updated
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "apt-get update -qq")
+	_, err := ssh.Run(cfg, "apt-get update -qq")
 	if err != nil {
 		return false, fmt.Errorf("failed to update package lists: %w", err)
 	}
 
 	// Check for upgradable packages
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey,
-		"apt list --upgradable 2>/dev/null | grep -c '\\[upgradable from:' || echo 0")
+	output, err := ssh.Run(cfg, "apt list --upgradable 2>/dev/null | grep -c '\\[upgradable from:' || echo 0")
 	if err != nil {
 		return false, fmt.Errorf("failed to check for upgrades: %w", err)
 	}
@@ -97,7 +96,7 @@ func (a *AptUpgrade) Run() playbook.Result {
 	log.Println("Running apt upgrade...")
 
 	cfg := a.GetConfig()
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "apt-get upgrade -y")
+	output, err := ssh.Run(cfg, "apt-get upgrade -y")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

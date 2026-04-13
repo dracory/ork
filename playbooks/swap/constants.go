@@ -10,6 +10,9 @@ const (
 
 	// ArgSwappiness is the kernel swappiness argument key
 	ArgSwappiness = "swappiness"
+
+	// ArgSwapFilePath is the path for the swap file
+	ArgSwapFilePath = "swapfile-path"
 )
 
 // Default configuration constants for swap playbooks.
@@ -23,4 +26,7 @@ const (
 	// DefaultSwappiness is the default kernel swappiness value (10)
 	// Lower values prefer RAM over swap, better for database workloads
 	DefaultSwappiness = "10"
+
+	// DefaultSwapFilePath is the default path for the swap file
+	DefaultSwapFilePath = "/swapfile"
 )

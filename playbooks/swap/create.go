@@ -74,7 +74,7 @@ type SwapCreate struct {
 // An empty output indicates no swap is active.
 func (s *SwapCreate) Check() (bool, error) {
 	cfg := s.GetConfig()
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "swapon --show=NAME --noheadings")
+	output, err := ssh.Run(cfg, "swapon --show=NAME --noheadings")
 	if err != nil {
 		return false, err
 	}
@@ -101,6 +101,7 @@ func (s *SwapCreate) Run() playbook.Result {
 	sizeStr := s.GetArg(ArgSize)
 	unit := s.GetArg(ArgUnit)
 	swappiness := s.GetArg(ArgSwappiness)
+	swapFilePath := s.GetArg(ArgSwapFilePath)
 
 	// Defaults
 	if sizeStr == "" {
@@ -111,6 +112,9 @@ func (s *SwapCreate) Run() playbook.Result {
 	}
 	if swappiness == "" {
 		swappiness = DefaultSwappiness
+	}
+	if swapFilePath == "" {
+		swapFilePath = DefaultSwapFilePath
 	}
 
 	size, err := strconv.Atoi(sizeStr)
@@ -161,8 +165,8 @@ func (s *SwapCreate) Run() playbook.Result {
 	log.Printf("Creating %s swap file...", sizeDesc)
 
 	// Create swap file
-	cmd := fmt.Sprintf("fallocate -l %d%s /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile", size, sizeFlag)
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	cmd := fmt.Sprintf("fallocate -l %d%s %s && chmod 600 %s && mkswap %s && swapon %s", size, sizeFlag, swapFilePath, swapFilePath, swapFilePath, swapFilePath)
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -172,16 +176,16 @@ func (s *SwapCreate) Run() playbook.Result {
 	}
 
 	// Add to fstab if not already there using tee for visibility
-	output, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "grep -q '/swapfile' /etc/fstab && echo 'exists' || echo 'missing'")
+	output, _ = ssh.Run(cfg, fmt.Sprintf("grep -q '%s' /etc/fstab && echo 'exists' || echo 'missing'", swapFilePath))
 	if strings.TrimSpace(output) == "missing" {
-		_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "echo '/swapfile none swap sw 0 0' | tee -a /etc/fstab")
+		_, err = ssh.Run(cfg, fmt.Sprintf("echo '%s none swap sw 0 0' | tee -a /etc/fstab", swapFilePath))
 		if err != nil {
 			log.Printf("Warning: failed to add swap to fstab: %v", err)
 		}
 	}
 
 	// Configure swappiness
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey,
+	_, err = ssh.Run(cfg,
 		fmt.Sprintf("sysctl vm.swappiness=%s && grep -q 'vm.swappiness' /etc/sysctl.conf && sed -i 's/vm.swappiness=.*/vm.swappiness=%s/' /etc/sysctl.conf || echo 'vm.swappiness=%s' | tee -a /etc/sysctl.conf",
 			swappiness, swappiness, swappiness))
 	if err != nil {
@@ -189,7 +193,7 @@ func (s *SwapCreate) Run() playbook.Result {
 	}
 
 	// Get final swap status
-	status, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "swapon --show")
+	status, _ := ssh.Run(cfg, "swapon --show")
 
 	log.Printf("Swap file created successfully (%s)", sizeDesc)
 	return playbook.Result{
@@ -197,7 +201,7 @@ func (s *SwapCreate) Run() playbook.Result {
 		Message: fmt.Sprintf("Created %s swap file", sizeDesc),
 		Details: map[string]string{
 			"size":       sizeDesc,
-			"file":       "/swapfile",
+			"file":       swapFilePath,
 			"swappiness": swappiness,
 			"status":     status,
 		},

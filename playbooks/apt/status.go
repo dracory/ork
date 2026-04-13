@@ -60,7 +60,7 @@ func (a *AptStatus) Run() playbook.Result {
 
 	cfg := a.GetConfig()
 	// First update package lists
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "apt-get update -qq")
+	_, err := ssh.Run(cfg, "apt-get update -qq")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -70,7 +70,7 @@ func (a *AptStatus) Run() playbook.Result {
 	}
 
 	// Then list upgradable packages
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "apt list --upgradable 2>/dev/null | tail -n +2")
+	output, err := ssh.Run(cfg, "apt list --upgradable 2>/dev/null | tail -n +2")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

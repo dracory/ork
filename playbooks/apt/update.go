@@ -63,7 +63,7 @@ func (a *AptUpdate) Run() playbook.Result {
 	log.Println("Running apt update...")
 
 	cfg := a.GetConfig()
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "apt-get update -y")
+	output, err := ssh.Run(cfg, "apt-get update -y")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

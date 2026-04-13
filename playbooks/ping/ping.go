@@ -49,7 +49,7 @@ func (p *Ping) Check() (bool, error) {
 	// Ping never changes the system, so we always return false
 	// The error indicates if the check itself failed (connection issue)
 	cfg := p.GetConfig()
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "uptime")
+	_, err := ssh.Run(cfg, "uptime")
 	if err != nil {
 		return false, err
 	}
@@ -62,7 +62,7 @@ func (p *Ping) Check() (bool, error) {
 // uptime/load string from the remote command execution.
 func (p *Ping) Run() playbook.Result {
 	cfg := p.GetConfig()
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "uptime")
+	output, err := ssh.Run(cfg, "uptime")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

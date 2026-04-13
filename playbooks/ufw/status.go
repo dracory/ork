@@ -56,7 +56,7 @@ func (u *UfwStatus) Run() playbook.Result {
 
 	log.Println("Checking UFW status...")
 
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "ufw status verbose")
+	output, err := ssh.Run(cfg, "ufw status verbose")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

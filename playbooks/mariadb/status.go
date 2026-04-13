@@ -48,7 +48,7 @@ func (m *Status) Run() playbook.Result {
 	log.Println("Checking MariaDB status...")
 
 	// Check service status
-	serviceOutput, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "systemctl status mariadb --no-pager")
+	serviceOutput, err := ssh.Run(cfg, "systemctl status mariadb --no-pager")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -59,18 +59,18 @@ func (m *Status) Run() playbook.Result {
 	log.Printf("Service Status:\n%s", serviceOutput)
 
 	// Check if MariaDB is listening
-	netOutput, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, fmt.Sprintf("ss -tlnp | grep :%s || netstat -tlnp | grep :%s || echo 'Port %s not found'", mariaDBPort, mariaDBPort, mariaDBPort))
+	netOutput, _ := ssh.Run(cfg, fmt.Sprintf("ss -tlnp | grep :%s || netstat -tlnp | grep :%s || echo 'Port %s not found'", mariaDBPort, mariaDBPort, mariaDBPort))
 	log.Printf("Network Status:\n%s", netOutput)
 
 	// Check version
-	versionOutput, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "mysql --version")
+	versionOutput, _ := ssh.Run(cfg, "mysql --version")
 	log.Printf("Version:\n%s", versionOutput)
 
 	// Check connection
 	connectionStatus := "not tested"
 	if rootPassword != "" {
 		cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 'MariaDB is working' as status;"`, rootPassword)
-		connOutput, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+		connOutput, err := ssh.Run(cfg, cmd)
 		if err != nil {
 			connectionStatus = "failed"
 			log.Printf("Warning: Could not connect to MariaDB: %v", err)

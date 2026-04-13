@@ -60,7 +60,7 @@ type SwapDelete struct {
 // Non-empty output indicates swap is active and can be removed.
 func (s *SwapDelete) Check() (bool, error) {
 	cfg := s.GetConfig()
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "swapon --show=NAME --noheadings")
+	output, err := ssh.Run(cfg, "swapon --show=NAME --noheadings")
 	if err != nil {
 		return false, err
 	}
@@ -72,9 +72,14 @@ func (s *SwapDelete) Check() (bool, error) {
 // Changed is true when swap is removed, false if no swap existed.
 //
 // Result.Details contains:
-//   - file: Path to the removed swap file ("/swapfile")
+//   - file: Path to the removed swap file
 func (s *SwapDelete) Run() playbook.Result {
 	cfg := s.GetConfig()
+	swapFilePath := s.GetArg(ArgSwapFilePath)
+	if swapFilePath == "" {
+		swapFilePath = DefaultSwapFilePath
+	}
+
 	// Check if swap exists
 	needsDelete, err := s.Check()
 	if err != nil {
@@ -92,16 +97,16 @@ func (s *SwapDelete) Run() playbook.Result {
 		}
 	}
 
-	log.Println("Removing swap file...")
+	log.Printf("Removing swap file at %s...", swapFilePath)
 
 	// Turn off swap
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "swapoff /swapfile 2>/dev/null || true")
+	_, _ = ssh.Run(cfg, fmt.Sprintf("swapoff %s 2>/dev/null || true", swapFilePath))
 
 	// Remove from fstab
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, `sed -i '/\/swapfile/d' /etc/fstab`)
+	_, _ = ssh.Run(cfg, fmt.Sprintf(`sed -i '/%s/d' /etc/fstab`, swapFilePath))
 
 	// Delete file
-	_, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "rm -f /swapfile")
+	_, err = ssh.Run(cfg, fmt.Sprintf("rm -f %s", swapFilePath))
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -110,12 +115,12 @@ func (s *SwapDelete) Run() playbook.Result {
 		}
 	}
 
-	log.Println("Swap file removed successfully")
+	log.Printf("Swap file removed successfully: %s", swapFilePath)
 	return playbook.Result{
 		Changed: true,
 		Message: "Swap file removed",
 		Details: map[string]string{
-			"file": "/swapfile",
+			"file": swapFilePath,
 		},
 	}
 }

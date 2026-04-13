@@ -52,7 +52,7 @@ type UfwInstall struct {
 // Check determines if UFW needs to be installed.
 func (u *UfwInstall) Check() (bool, error) {
 	cfg := u.GetConfig()
-	_, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "which ufw")
+	_, err := ssh.Run(cfg, "which ufw")
 	return err != nil, nil
 }
 
@@ -63,7 +63,7 @@ func (u *UfwInstall) Run() playbook.Result {
 	log.Println("Installing UFW firewall...")
 
 	// Install UFW
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y ufw")
+	output, err := ssh.Run(cfg, "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y ufw")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -73,10 +73,10 @@ func (u *UfwInstall) Run() playbook.Result {
 	}
 
 	// Reset UFW to defaults
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "ufw --force reset")
+	_, _ = ssh.Run(cfg, "ufw --force reset")
 
 	// Set default policies
-	_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "ufw default deny incoming && ufw default allow outgoing")
+	_, _ = ssh.Run(cfg, "ufw default deny incoming && ufw default allow outgoing")
 
 	// Parse arguments
 	allowSSH := u.GetArg(ArgAllowSSH)
@@ -97,19 +97,19 @@ func (u *UfwInstall) Run() playbook.Result {
 
 	// Allow SSH if requested
 	if allowSSH == "true" {
-		_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "ufw allow ssh")
+		_, _ = ssh.Run(cfg, "ufw allow ssh")
 		allowedServices = append(allowedServices, "SSH")
 	}
 
 	// Allow HTTP if requested
 	if allowHTTP == "true" {
-		_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "ufw allow 80/tcp")
+		_, _ = ssh.Run(cfg, "ufw allow 80/tcp")
 		allowedServices = append(allowedServices, "HTTP")
 	}
 
 	// Allow HTTPS if requested
 	if allowHTTPS == "true" {
-		_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "ufw allow 443/tcp")
+		_, _ = ssh.Run(cfg, "ufw allow 443/tcp")
 		allowedServices = append(allowedServices, "HTTPS")
 	}
 
@@ -119,14 +119,14 @@ func (u *UfwInstall) Run() playbook.Result {
 		for _, port := range ports {
 			port = strings.TrimSpace(port)
 			if port != "" {
-				_, _ = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, fmt.Sprintf("ufw allow %s/tcp", port))
+				_, _ = ssh.Run(cfg, fmt.Sprintf("ufw allow %s/tcp", port))
 				allowedServices = append(allowedServices, fmt.Sprintf("port %s", port))
 			}
 		}
 	}
 
 	// Enable UFW (non-interactive)
-	output, err = ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "echo 'y' | ufw enable")
+	output, err = ssh.Run(cfg, "echo 'y' | ufw enable")
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

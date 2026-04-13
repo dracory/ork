@@ -43,6 +43,15 @@ const (
 
 	// ArgDBName is the name of the database
 	ArgDBName = "dbname"
+
+	// ArgDataDir specifies the MariaDB data directory
+	ArgDataDir = "data-dir"
+
+	// ArgConfigPath specifies the MariaDB server configuration file path
+	ArgConfigPath = "config-path"
+
+	// ArgKeyFilePath specifies the encryption key file path
+	ArgKeyFilePath = "keyfile-path"
 )
 
 // Default values.
@@ -58,4 +67,13 @@ const (
 
 	// DefaultPrivileges is the default privileges for user grants
 	DefaultPrivileges = "ALL PRIVILEGES"
+
+	// DefaultDataDir is the default MariaDB data directory
+	DefaultDataDir = "/var/lib/mysql"
+
+	// DefaultConfigPath is the default MariaDB server config path
+	DefaultConfigPath = "/etc/mysql/mariadb.conf.d/50-server.cnf"
+
+	// DefaultKeyFilePath is the default encryption key file path
+	DefaultKeyFilePath = "/var/lib/mysql-keyfile/keyfile.enc"
 )

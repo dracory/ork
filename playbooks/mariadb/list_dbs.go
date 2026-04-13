@@ -22,10 +22,10 @@ import (
 // Output:
 //   - List of all database names
 //   - Includes system databases:
-//     - mysql: System tables (users, permissions, etc.)
-//     - information_schema: Metadata about database objects
-//     - performance_schema: Performance monitoring data
-//     - sys: Simplified views of performance schema
+//   - mysql: System tables (users, permissions, etc.)
+//   - information_schema: Metadata about database objects
+//   - performance_schema: Performance monitoring data
+//   - sys: Simplified views of performance schema
 //
 // Prerequisites:
 //   - MariaDB must be installed and running
@@ -59,7 +59,7 @@ func (m *ListDBs) Run() playbook.Result {
 	log.Println("Listing all databases...")
 
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES;"`, rootPassword)
-	output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, cmd)
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
