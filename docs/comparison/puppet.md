@@ -142,12 +142,13 @@ file { '/etc/config':
 
 ### Ork (Playbook-level)
 ```go
-// Check pattern
+// Check pattern via RunnableInterface
 ping := playbooks.NewPing()
-needsChange, _ := ping.Check(node.GetConfig())
+results := node.CheckPlaybook(ping)
+result := results.Results["server.example.com"]
 
-if needsChange {
-    node.RunPlaybook(ping)
+if result.Changed {
+    log.Printf("Would make changes: %s", result.Message)
 }
 ```
 

@@ -1,6 +1,6 @@
 # Ork
 
-Ork is a Go package for SSH-based server automation. Think of it like Ansible, but in Go - you define **Nodes** (remote servers) and run commands or playbooks against them.
+Ork is a Go package for SSH-based server automation. Think of it like Ansible, but in Go - you define **Nodes** (remote servers), organize them into **Groups**, and run commands or playbooks against them individually or at scale via **Inventory**.
 
 ## Installation
 
@@ -35,11 +35,12 @@ func main() {
     node := ork.NewNodeFromConfig(cfg)
     
     // Run a command
-    output, err := node.RunCommand("uptime")
-    if err != nil {
-        log.Fatal(err)
+    results := node.RunCommand("uptime")
+    result := results.Results["server.example.com"]
+    if result.Error != nil {
+        log.Fatal(result.Error)
     }
-    log.Println(output)
+    log.Println(result.Message)
 }
 ```
 
@@ -54,7 +55,12 @@ node := ork.NewNodeForHost("server.example.com").
     SetUser("deploy").
     SetKey("production.prv")
 
-output, err := node.RunCommand("uptime")
+results := node.RunCommand("uptime")
+result := results.Results["server.example.com"]
+if result.Error != nil {
+    log.Fatal(result.Error)
+}
+output := result.Message
 ```
 
 ## Persistent Connections
@@ -72,8 +78,10 @@ if err := node.Connect(); err != nil {
 defer node.Close()
 
 // These commands reuse the same SSH connection
-output1, _ := node.RunCommand("uptime")
-output2, _ := node.RunCommand("df -h")
+results1 := node.RunCommand("uptime")
+results2 := node.RunCommand("df -h")
+output1 := results1.Results["server.example.com"].Message
+output2 := results2.Results["server.example.com"].Message
 ```
 
 ## Playbooks
@@ -85,7 +93,8 @@ node := ork.NewNodeForHost("server.example.com").
     SetArg("username", "alice").
     SetArg("shell", "/bin/bash")
 
-result := node.RunPlaybook(playbooks.NewUserCreate())
+results := node.RunPlaybook(playbooks.NewUserCreate())
+result := results.Results["server.example.com"]
 if result.Error != nil {
     log.Fatalf("Playbook failed: %v", result.Error)
 }
@@ -112,32 +121,76 @@ if result.Changed {
 | `PlaybookUserDelete` | `IDUserDelete` | `user-delete` | `username` | Delete user |
 | `PlaybookUserStatus` | `IDUserStatus` | `user-status` | `username` (opt) | Show user info |
 
-## Idempotency
+## Inventory (Multi-Node Operations)
 
-All playbooks now support idempotent execution. Use `RunPlaybook()` to see whether any changes were actually made:
+Manage multiple servers with the same API:
 
 ```go
-// RunPlaybook returns detailed result information
-result := node.RunPlaybook(playbooks.NewAptUpgrade())
-if result.Error != nil {
-    log.Fatal(result.Error)
+// Create inventory
+inv := ork.NewInventory()
+
+// Add nodes to groups
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
+webGroup.SetArg("env", "production")
+inv.AddGroup(webGroup)
+
+// Run playbook on entire inventory
+results := inv.RunPlaybook(playbooks.NewPing())
+
+// Check summary
+summary := results.Summary()
+fmt.Printf("Total: %d, Changed: %d, Failed: %d\n",
+    summary.Total, summary.Changed, summary.Failed)
+
+// Check individual results
+for host, result := range results.Results {
+    if result.Error != nil {
+        log.Printf("%s failed: %v", host, result.Error)
+    }
 }
+```
+
+## Idempotency
+
+All playbooks support idempotent execution. Use `CheckPlaybook()` to preview changes:
+
+```go
+// Check if changes would be made (dry-run)
+results := node.CheckPlaybook(playbooks.NewAptUpgrade())
+result := results.Results["server.example.com"]
 
 if result.Changed {
-    log.Printf("Changes made: %s", result.Message)
-} else {
-    log.Println("No changes needed - system already in desired state")
+    log.Printf("Would upgrade packages: %s", result.Message)
+    // Now actually run it
+    results = node.RunPlaybook(playbooks.NewAptUpgrade())
 }
 ```
 
 ### Result Structure
 
+Results are returned as `types.Results` with per-node access:
+
 ```go
+type Results struct {
+    Results map[string]Result  // Key is node hostname
+}
+
+func (r Results) Summary() Summary
+
 type Result struct {
     Changed bool              // Whether changes were made
     Message string            // Human-readable description
     Details map[string]string // Additional information
     Error   error             // Non-nil if execution failed
+}
+
+type Summary struct {
+    Total     int
+    Changed   int
+    Unchanged int
+    Failed    int
 }
 ```
 
@@ -156,11 +209,10 @@ aptUpgrade := playbooks.NewAptUpgrade()
 aptUpgrade.SetConfig(cfg)
 result := aptUpgrade.Run()
 
-// Or check before running
-pb := playbooks.NewSwapCreate()
-pb.SetConfig(cfg)
-needsChange, _ := pb.Check()
-if !needsChange {
+// Or check before running via CheckPlaybook
+results := node.CheckPlaybook(playbooks.NewSwapCreate())
+result := results.Results["server.example.com"]
+if !result.Changed {
     log.Println("Swap already exists, skipping...")
     return
 }
@@ -175,12 +227,12 @@ node := ork.NewNodeForHost("server.example.com").
     SetPort("2222").
     SetUser("deploy")
 
-fmt.Printf("Host: %s\n", node.GetConfig().SSHHost)
-fmt.Printf("Port: %s\n", node.GetConfig().SSHPort)
-fmt.Printf("User: %s\n", node.GetConfig().RootUser)
+fmt.Printf("Host: %s\n", node.GetHost())
+fmt.Printf("Port: %s\n", node.GetPort())
+fmt.Printf("User: %s\n", node.GetUser())
 
 // Get full config for integration with internal packages
-cfg := node.GetConfig()
+cfg := node.GetNodeConfig()
 ```
 
 ### Custom Playbooks
@@ -225,6 +277,7 @@ func (p *MyCustomPlaybook) Description() string { return "Does something" }
 // Check() - returns true if changes needed
 func (p *MyCustomPlaybook) Check(cfg config.NodeConfig) (bool, error) {
     // Check if already configured
+    // Playbooks implement Check for use with CheckPlaybook()
     output, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "cat /etc/my-config")
     return !strings.Contains(output, "configured"), nil
 }
@@ -310,7 +363,9 @@ func main() {
 
 ### Package Overview
 
-- `ork` - Main API: `NodeInterface`, `NewNode()`, `NewNodeForHost()`, `NewNodeFromConfig()`, `RunCommand()`, `RunPlaybook()`, `RunPlaybookByID()`
+- `ork` - Main API: `NodeInterface`, `InventoryInterface`, `GroupInterface`, `RunnableInterface`
+- `types` - Shared types: `Result`, `Results`, `Summary`
+- `runnable` - `RunnableInterface` for Node, Group, and Inventory
 - `config` - Configuration types
 - `ssh` - SSH client with connection management
 - `playbook` - Playbook interface and registry

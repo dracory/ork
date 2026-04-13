@@ -97,11 +97,12 @@ Compare to Ork's procedural approach:
 // Ork: Explicit execution
 node := ork.NewNodeForHost("server.example.com")
 
-// Check first, then act
+// Check via RunnableInterface, then act
 nginxInstall := playbooks.NewAptInstall()
-needsInstall, _ := nginxInstall.Check(node.GetConfig())
+results := node.CheckPlaybook(nginxInstall)
+result := results.Results["server.example.com"]
 
-if needsInstall {
+if result.Changed {
     node.RunPlaybook(nginxInstall)
 }
 

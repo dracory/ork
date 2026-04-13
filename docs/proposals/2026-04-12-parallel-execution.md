@@ -4,7 +4,7 @@
 **Status:** Not Implemented  
 **Author:** System Review
 
-> **Note:** For managing multiple hosts concurrently. Depends on Connection Pool for resource management.
+> **Note:** Inventory system implemented. Parallel execution foundation ready. Needs worker pool for actual concurrency.
 
 ## Problem Statement
 
@@ -38,28 +38,16 @@ type HostResult struct {
 func (e *Executor) RunOnHosts(p playbook.Playbook, configs []config.Config) []HostResult
 ```
 
-### 2. Inventory Management
+### 2. Inventory Management (IMPLEMENTED)
 
-```go
-type Inventory struct {
-    Hosts  []Host
-    Groups map[string][]Host
-}
+See `2026-04-13-inventory.md` for implemented Inventory system.
 
-type Host struct {
-    Name     string
-    Address  string
-    Port     string
-    User     string
-    SSHKey   string
-    Vars     map[string]string
-    Groups   []string
-}
+Inventory now provides:
+- `InventoryInterface` with `RunnableInterface`
+- `GroupInterface` with `RunnableInterface`
+- `SetMaxConcurrency()` for parallel execution
 
-func (inv *Inventory) GetGroup(name string) []Host
-func (inv *Inventory) GetHost(name string) (Host, bool)
-func (inv *Inventory) All() []Host
-```
+Remaining: Worker pool for actual concurrent execution.
 
 ### 3. Progress Tracking
 
@@ -338,9 +326,10 @@ groups:
 - Goroutine pool with semaphore limiting
 - Progress tracking callbacks
 
-### Phase 2: Inventory Management
-- `Inventory` struct with host groups
-- JSON/YAML inventory loader
+### Phase 2: Inventory Integration (COMPLETE)
+- ✅ `InventoryInterface` with `RunnableInterface`
+- ✅ `SetMaxConcurrency()` method
+- ✅ `types.Results` for unified result collection
 
 ### Phase 3: Advanced Features
 - Rolling updates
@@ -371,6 +360,6 @@ groups:
 ## Open Questions
 
 1. Should inventory support dynamic sources (cloud APIs)?
-2. How to handle host-specific variables in playbooks?
-3. Should we support serial execution within parallel (e.g., rolling updates)?
-4. How to handle dependencies between hosts (e.g., update DB before app servers)?
+2. Should we support serial execution within parallel (e.g., rolling updates)?
+3. How to handle dependencies between hosts (e.g., update DB before app servers)?
+4. Should Executor be a separate package or part of Inventory?

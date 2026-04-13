@@ -91,7 +91,7 @@ for _, host := range hosts {
     node.RunCommand("uptime")  // One at a time
 }
 
-// Parallel execution planned for Inventory feature
+// Inventory executes across all nodes (sequential for now, parallel planned)
 ```
 
 ## Configuration Model
@@ -188,9 +188,12 @@ update_db:
 node := ork.NewNodeForHost("server.example.com")
 result := node.RunPlaybook(playbooks.NewPing())
 
-// Inventory planned for parallel execution
-inv := ork.NewInventoryFromYAML("inventory.yaml")
-results := inv.RunPlaybook(playbooks.NewPing())  // Parallel
+// Inventory executes across all nodes
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+inv.AddGroup(webGroup)
+results := inv.RunPlaybook(playbooks.NewPing())  // Runs on all nodes
 ```
 
 ## Targeting / Inventory
@@ -213,15 +216,23 @@ salt -S '192.168.1.0/24' test.ping
 salt -C 'G@os:Ubuntu and web* or db*' state.apply
 ```
 
-### Ork (Planned)
+### Ork (Implemented)
 ```go
-// By host
+// By host (single node)
 node := ork.NewNodeForHost("server.example.com")
+results := node.RunPlaybook(playbooks.NewPing())
 
-// By group (planned)
-inv := ork.NewInventoryFromYAML("inventory.yaml")
-webGroup := inv.GetGroup("webservers")
-results := webGroup.RunPlaybook(playbooks.NewPing())
+// By group
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+inv.AddGroup(webGroup)
+results := inv.GetGroupByName("webservers").RunPlaybook(playbooks.NewPing())
+
+// Access per-node results
+for host, result := range results.Results {
+    fmt.Printf("%s: Changed=%v, Error=%v\n", host, result.Changed, result.Error)
+}
 ```
 
 ## When to Choose

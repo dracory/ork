@@ -44,14 +44,17 @@ export const publicIp = server.publicIp;
 
 ### Ork After Pulumi
 ```go
-// After Pulumi creates the server, Ork configures it
-node := ork.NewNodeForHost(server.PublicIp).
+// After Pulumi creates the server, Ork configures it via Inventory
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost(server.PublicIp).
     SetUser("ubuntu").
-    SetKey("deploy.pem")
+    SetKey("deploy.pem"))
+inv.AddGroup(webGroup)
 
 // Configure the server
-node.RunPlaybook(playbooks.NewUfwInstall())
-node.RunPlaybook(playbooks.NewFail2banInstall())
+results := inv.RunPlaybook(playbooks.NewUfwInstall())
+summary := results.Summary()
 ```
 
 ### Pulumi vs Ork
@@ -238,27 +241,35 @@ Outputs:
 
 ### Phase 2: Configuration (Ork)
 ```go
-// Read IP from IaC output
-ip := getCloudFormationOutput("ServerIP")
+// Read IPs from IaC output
+ips := getCloudFormationOutput("ServerIPs")
 
-// Configure with Ork
-node := ork.NewNodeForHost(ip).
-    SetUser("ubuntu").
-    SetKey("deploy.pem")
+// Configure with Ork via Inventory
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
+for _, ip := range ips {
+    webGroup.AddNode(ork.NewNodeForHost(ip).
+        SetUser("ubuntu").
+        SetKey("deploy.pem"))
+}
+inv.AddGroup(webGroup)
 
-// Security hardening
-node.RunPlaybook(playbooks.NewUfwInstall())
-node.RunPlaybook(playbooks.NewFail2banInstall())
-node.RunPlaybook(playbooks.NewSshHarden())
+// Security hardening across all servers
+inv.RunPlaybook(playbooks.NewUfwInstall())
+inv.RunPlaybook(playbooks.NewFail2banInstall())
 
 // Install stack
-node.RunPlaybook(playbooks.NewAptUpdate())
-node.RunCommand("sudo apt-get install -y docker.io")
+inv.RunPlaybook(playbooks.NewAptUpdate())
 
-// Deploy application
+// Deploy application with per-node results
 deploy := myapp.NewDeploy()
 deploy.SetArg("version", "1.2.3")
-node.RunPlaybook(deploy)
+results := inv.RunPlaybook(deploy)
+for host, result := range results.Results {
+    if result.Error != nil {
+        log.Printf("%s deploy failed: %v", host, result.Error)
+    }
+}
 ```
 
 ---

@@ -7,7 +7,7 @@
 | **Language** | Ruby | Go |
 | **Architecture** | Agent-based | Agentless (SSH) |
 | **Execution** | Pull | Push |
-| **Inventory** | Chef Server registry | Go structs / YAML (planned) |
+| **Inventory** | Chef Server registry | Go structs (programmatic) |
 | **Automation Unit** | Cookbooks + Recipes | Playbooks |
 | **State Model** | Declarative / Convergent | Procedural |
 | **Idempotency** | Built into resources | Playbook-level |
@@ -82,18 +82,19 @@ search(:node, 'role:webserver').each do |web_node|
 end
 ```
 
-### Ork Inventory (Planned)
+### Ork Inventory (Implemented)
 ```go
-// Static programmatic
+// Programmatic creation
 inv := ork.NewInventory()
-webGroup := inv.AddGroup("webservers")
-webGroup.AddNode("web1.example.com")
 
-// Or from YAML
-inv, _ := ork.NewInventoryFromYAML("inventory.yaml")
+// Create and add group
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+inv.AddGroup(webGroup)
 
 // Target specific group
-results := inv.GetGroup("webservers").RunPlaybook(playbooks.NewPing())
+results := inv.GetGroupByName("webservers").RunPlaybook(playbooks.NewPing())
+summary := results.Summary()
 ```
 
 ## Automation Units
@@ -144,8 +145,10 @@ end
 ```go
 // Explicit steps executed in order
 ping := playbooks.NewPing()
-result := node.RunPlaybook(ping)
+results := node.RunPlaybook(ping)
 
+// Access result for specific node
+result := results.Results["server.example.com"]
 if result.Error != nil {
     return err
 }
@@ -199,15 +202,15 @@ end
 
 ### Ork (Playbook-level)
 ```go
-// Explicit check pattern
+// Check pattern via RunnableInterface
 aptUpgrade := playbooks.NewAptUpgrade()
 
-// Check if upgrade needed
-needsUpgrade, _ := aptUpgrade.Check(node.GetConfig())
+// Check if upgrade needed - works on Node, Group, or Inventory
+results := node.CheckPlaybook(aptUpgrade)
+result := results.Results["server.example.com"]
 
-if needsUpgrade {
-    result := node.RunPlaybook(aptUpgrade)
-    // result.Changed indicates if packages were updated
+if result.Changed {
+    log.Printf("Packages would be updated")
 }
 ```
 

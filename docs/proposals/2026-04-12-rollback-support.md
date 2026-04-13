@@ -4,7 +4,7 @@
 **Status:** Not Implemented  
 **Author:** System Review
 
-> **Note:** Complex feature for undoing playbook changes. Requires `ReversiblePlaybook` interface and transaction management.
+> **Note:** Complex feature for undoing changes. Note: Return types now use `types.Results`.
 
 ## Problem Statement
 
@@ -136,6 +136,7 @@ func (u *UserCreate) RunWithContext(ctx *ExecutionContext) error {
             },
             Backward: func() error {
                 _, err := ctx.Run(fmt.Sprintf("deluser %s", username))
+                // Note: Playbooks now return types.Results via RunnableInterface
                 return err
             },
         })

@@ -4,7 +4,7 @@
 **Status:** Rejected. Out of scope. Already implemented in Go.  
 **Author:** System Review
 
-> **Note:** Currently only Go struct config. File/env loading needed for CLI tool.
+> **Note:** Configuration is done programmatically via Go structs. No YAML/JSON file loading.
 
 ## Problem Statement
 
@@ -54,7 +54,8 @@ hosts:
     user: deploy
 
 # Inventory file location
-inventory: ./inventory.yml
+# Inventory is created programmatically
+# See 2026-04-13-inventory.md for Inventory API
 
 # Execution settings
 execution:
@@ -281,17 +282,10 @@ func main() {
 ### CLI Usage
 
 ```bash
-# Use default config file
-ork run ping --host production-db
-
-# Use specific config file
-ork run ping --config /path/to/config.yml --host production-db
-
-# Override with environment variable
-ORK_SSH_PORT=2222 ork run ping --host production-db
-
-# Override with flag (highest priority)
-ork run ping --host production-db --port 3333
+# Configuration is done programmatically in Go
+node := ork.NewNodeForHost("production-db").
+    SetPort("2222").
+    SetUser("deploy")
 ```
 
 ## Secrets Management

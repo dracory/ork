@@ -4,7 +4,7 @@
 **Status:** Not Implemented  
 **Author:** System Review
 
-> **Note:** Single-host connection reuse is already implemented via `Node.Connect()`. This proposal covers multi-host connection pooling for fleet operations.
+> **Note:** Single-host connection reuse via `Node.Connect()`. Multi-host pooling needed for Inventory operations.
 
 ## Problem Statement
 

@@ -338,7 +338,7 @@ type CachedResult struct {
     Playbook  string
     Host      string
     Timestamp time.Time
-    Result    Result
+    Result    types.Results // Note: Results now use types.Results with per-node results map
     TTL       time.Duration
 }
 

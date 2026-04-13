@@ -83,14 +83,22 @@ terraform destroy   # Remove infrastructure
 **Configuration Management** - Configures existing servers.
 
 ```go
-// main.go - Configure the servers Terraform created
-node := ork.NewNodeForHost("web-server-1.example.com").
-    SetUser("ubuntu").
-    SetKey("mykey.pem")
+// After Terraform creates the server, Ork configures it
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
 
-// Install and configure software
-node.RunPlaybook(playbooks.NewAptUpdate())
-node.RunPlaybook(playbooks.NewAptUpgrade())
+// Add all created servers
+for _, ip := range serverIps {
+    webGroup.AddNode(ork.NewNodeForHost(ip).
+        SetUser("ubuntu").
+        SetKey("deploy.pem"))
+}
+inv.AddGroup(webGroup)
+
+// Configure all servers
+results := inv.RunPlaybook(playbooks.NewUfwInstall())
+summary := results.Summary()
+fmt.Printf("Configured %d servers, %d changed\n", summary.Total, summary.Changed)
 
 // Custom playbook for application deployment
 result := node.RunPlaybook(myapp.NewDeploy())
@@ -176,24 +184,24 @@ resource "aws_elb" "web" {
 
 **Ork handles:**
 ```go
-// After Terraform creates servers, Ork configures them
-webNodes := []string{"web1.internal", "web2.internal"}
+// After Terraform creates servers, Ork configures them via Inventory
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
 
-for _, host := range webNodes {
-    node := ork.NewNodeForHost(host).
+// Add all web nodes
+for _, host := range []string{"web1.internal", "web2.internal"} {
+    webGroup.AddNode(ork.NewNodeForHost(host).
         SetUser("ubuntu").
-        SetKey("deploy.pem")
+        SetKey("deploy.pem"))
+}
+inv.AddGroup(webGroup)
 
-    // Configure each web server
-    node.RunPlaybook(playbooks.NewUserCreate()).
-        SetArg("username", "deployer")
-
-    node.RunPlaybook(playbooks.NewUfwInstall())
-    node.RunPlaybook(playbooks.NewFail2banInstall())
-
-    // Install and start nginx
-    node.RunCommand("sudo apt-get install -y nginx")
-    node.RunCommand("sudo systemctl enable nginx")
+// Configure all web servers with results
+results := inv.RunPlaybook(playbooks.NewUfwInstall())
+for host, result := range results.Results {
+    if result.Error != nil {
+        log.Printf("%s failed: %v", host, result.Error)
+    }
 }
 ```
 
@@ -275,7 +283,7 @@ for _, ip := range ips {
 | **Install Packages** | No | Yes |
 | **Deploy Apps** | No | Yes |
 | **Run Commands** | No | Yes |
-| **Parallel Execution** | Resource-level | Node-level (planned) |
+| **Parallel Execution** | Resource-level | Inventory-level (planned) |
 | **Rolling Updates** | Via resource lifecycle | Manual |
 | **State Tracking** | Yes (state file) | No |
 | **Drift Detection** | Yes | Manual (via Check) |

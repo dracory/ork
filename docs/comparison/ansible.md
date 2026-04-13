@@ -7,7 +7,7 @@
 | **Language** | YAML + Jinja2 | Go |
 | **Architecture** | Agentless (SSH) | Agentless (SSH) |
 | **Execution** | Push | Push |
-| **Inventory** | Static files (INI/YAML) | Go structs / YAML (planned) |
+| **Inventory** | Static files (INI/YAML) | Go structs (programmatic) |
 | **Automation Unit** | Playbooks | Playbooks |
 | **State Model** | Procedural | Procedural |
 | **Idempotency** | Task-level | Playbook-level |
@@ -32,7 +32,7 @@ Both Ansible and Ork use the same fundamental architecture:
 - Similar SSH-based approach
 - Compiled Go binary (no Python dependency)
 - Can be embedded in Go applications
-- Programmatic inventory (structs) or YAML
+- Programmatic inventory (structs)
 
 ## Inventory Management
 
@@ -64,18 +64,23 @@ all:
         env: production
 ```
 
-### Ork Inventory (Planned)
+### Ork Inventory (Implemented)
 ```go
 // Programmatic creation
 inv := ork.NewInventory()
-webGroup := inv.AddGroup("webservers")
-webGroup.AddNode("web1.example.com").
-    SetPort("2222").
-    SetUser("deploy")
-webGroup.SetVar("env", "production")
 
-// Or load from YAML
-inv, _ := ork.NewInventoryFromYAML("inventory.yaml")
+// Create group and add nodes
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com").
+    SetPort("2222").
+    SetUser("deploy"))
+webGroup.SetArg("env", "production")
+inv.AddGroup(webGroup)
+
+// Run playbook on entire inventory
+results := inv.RunPlaybook(playbooks.NewPing())
+summary := results.Summary()
+fmt.Printf("Changed: %d, Failed: %d\n", summary.Changed, summary.Failed)
 ```
 
 ## Automation Units
@@ -117,8 +122,10 @@ inv, _ := ork.NewInventoryFromYAML("inventory.yaml")
 ```go
 // Run a single playbook
 node := ork.NewNodeForHost("server.example.com")
-result := node.RunPlaybook(playbooks.NewPing())
+results := node.RunPlaybook(playbooks.NewPing())
 
+// Get result for this specific node
+result := results.Results["server.example.com"]
 if result.Error != nil {
     log.Fatal(result.Error)
 }
@@ -155,19 +162,23 @@ result = node.RunPlaybook(playbooks.NewAptUpgrade())
 ```
 
 ### Ork
-- Built into playbooks via `Check()` method
+- Built into playbooks via `CheckPlaybook()` method (via RunnableInterface)
 - `Result.Changed` field indicates if change occurred
-- Explicit pattern: check → decide → execute
+- Works on Node, Group, and Inventory uniformly
 
 ```go
 // Check if changes needed before running
 ping := playbooks.NewPing()
-needsChange, _ := ping.Check(cfg)
+results := node.CheckPlaybook(ping)
 
-if needsChange {
-    result := node.RunPlaybook(ping)
-    // result.Changed tells if modifications were made
+result := results.Results["server.example.com"]
+if result.Changed {
+    log.Printf("Changes would be made: %s", result.Message)
 }
+
+// Also works on groups and inventory
+webServers := inv.GetGroupByName("webservers")
+results := webServers.CheckPlaybook(ping)
 ```
 
 ## Configuration Patterns
@@ -183,8 +194,8 @@ if needsChange {
 ### Variable Precedence (Ork)
 1. Playbook-level args (`SetArg()`)
 2. Node-level args
-3. Group variables (planned)
-4. Inventory variables (planned)
+3. Group args (via `SetArg()`)
+4. Inventory-level args
 5. Node defaults
 
 ## Extensibility

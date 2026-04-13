@@ -63,7 +63,7 @@ fab -H user@host -i /path/to/key.pem diskspace
 | **SSH Handling** | Built-in (Invoke+Paramiko) | Built-in (custom) |
 | **Idempotency** | Manual | Built into playbooks |
 | **Type Safety** | No | Yes (Go) |
-| **Parallel** | Limited | Planned (Inventory) |
+| **Parallel** | Limited | Inventory (sequential now, planned parallel) |
 | **Library/CLI** | Both CLI and library | Library |
 
 ### Fabric with Multiple Hosts
@@ -79,17 +79,26 @@ def uptime(c):
 
 ### Ork Equivalent
 ```go
-// Sequential (current)
+// Sequential (single nodes)
 hosts := []string{"host1", "host2", "host3"}
 for _, host := range hosts {
     node := ork.NewNodeForHost(host)
-    node.RunCommand("uptime")
+    results := node.RunCommand("uptime")
+    result := results.Results[host]
+    fmt.Printf("%s: %s\n", host, result.Message)
 }
 
-// Parallel (planned with Inventory)
+// Inventory (runs on all nodes, parallel planned)
 inv := ork.NewInventory()
-inv.AddNode("host1").AddNode("host2").AddNode("host3")
-results := inv.RunCommand("uptime")  // Parallel
+webGroup := ork.NewGroup("webservers")
+for _, host := range hosts {
+    webGroup.AddNode(ork.NewNodeForHost(host))
+}
+inv.AddGroup(webGroup)
+results := inv.RunCommand("uptime")
+for host, result := range results.Results {
+    fmt.Printf("%s: %s\n", host, result.Message)
+}
 ```
 
 ---
@@ -304,7 +313,7 @@ func deploy(node ork.NodeInterface, version string) {
 | **Go application automation** | Ork |
 | **Server hardening** | Ork (playbooks) |
 | **Custom deployment workflow** | Fabric, Ork |
-| **Multi-server orchestration** | Ork (planned), Fabric |
+| **Multi-server orchestration** | Ork (Inventory), Fabric |
 
 ---
 

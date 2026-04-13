@@ -4,7 +4,7 @@
 **Status:** Partially Implemented  
 **Author:** System Review
 
-> **Note:** `DryRun` field exists in `PlaybookOptions`. Remaining: Playbook implementations to check `IsDryRun()` and skip changes, plus optional `DryRunnable` interface for detailed previews.
+> **Note:** `CheckPlaybook()` method implemented on Node, Group, and Inventory via `RunnableInterface`. Uses `SetDryRun(true)` internally.
 
 ## Problem Statement
 
@@ -19,31 +19,22 @@ Ansible's `--check` mode is one of its most valuable features.
 
 ## Proposed Solution
 
-### 1. Add DryRun Interface
+### 1. CheckPlaybook Method (IMPLEMENTED)
 
 ```go
-type DryRunnable interface {
-    Playbook
-    DryRun(config Config) ([]Action, error)
-}
-
-type Action struct {
-    Type        string            // "create", "modify", "delete", "execute"
-    Resource    string            // What's being changed
-    Description string            // Human-readable description
-    Command     string            // Actual command that would run
-    Details     map[string]string // Additional context
-}
+// CheckPlaybook runs playbook in dry-run mode
+// Available on Node, Group, and Inventory via RunnableInterface
+results := node.CheckPlaybook(pb)
+results := group.CheckPlaybook(pb)
+results := inventory.CheckPlaybook(pb)
 ```
 
-### 2. Add DryRun Flag to Config
+### 2. Playbook SetDryRun Method
 
 ```go
-type Config struct {
-    // ... existing fields ...
-    
-    DryRun bool // If true, don't make actual changes
-}
+// PlaybookInterface has SetDryRun method
+pb.SetDryRun(true)
+result := pb.Run() // Runs in check mode
 ```
 
 ### 3. Create DryRun Executor
@@ -243,14 +234,14 @@ ork run --host server.example.com --playbook apt-upgrade --dry-run
 
 ## Implementation Plan
 
-### Phase 1: Core Framework
-- Add `DryRunnable` interface to `playbook` package
-- Add `Action` type
-- Add `DryRun` bool field to `config.Config`
+### Phase 1: Core Framework (COMPLETE)
+- ✅ `CheckPlaybook` method on `RunnableInterface`
+- ✅ `SetDryRun` method on `PlaybookInterface`
+- ✅ Works across Node, Group, and Inventory
 
-### Phase 2: Playbook Implementation
-- Add `DryRun()` to `AptUpgrade`, `SwapCreate`, `UserCreate`
-- Test accuracy vs actual execution
+### Phase 2: Remaining Work
+- Playbook implementations to check `IsDryRun()` internally
+- Optional: Detailed action reporting (Action struct)
 
 ### Phase 3: CLI Integration
 - Add `--dry-run` flag to CLI tool
@@ -276,13 +267,12 @@ ork run --host server.example.com --playbook apt-upgrade --dry-run
 
 ## Success Metrics
 
-- All core playbooks implement DryRun
+- All core playbooks check IsDryRun()
 - Dry-run predictions match actual execution >95% of the time
 - User feedback indicates increased confidence
 
 ## Open Questions
 
-1. Should dry-run execute read-only commands or use cached state?
+1. Should playbooks report detailed actions during dry-run?
 2. How to handle conditional logic that depends on command output?
-3. Should we support "what-if" scenarios with hypothetical state?
-4. How to visualize complex multi-step operations?
+3. Should CheckPlaybook use cached state for repeated checks?
