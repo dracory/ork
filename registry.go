@@ -4,6 +4,7 @@ import (
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/playbooks/apt"
 	"github.com/dracory/ork/playbooks/fail2ban"
+	"github.com/dracory/ork/playbooks/mariadb"
 	"github.com/dracory/ork/playbooks/ping"
 	"github.com/dracory/ork/playbooks/reboot"
 	"github.com/dracory/ork/playbooks/security"
@@ -49,4 +50,11 @@ func init() {
 	_ = defaultRegistry.PlaybookRegister(security.NewAideInstall())
 	_ = defaultRegistry.PlaybookRegister(security.NewAuditdInstall())
 	_ = defaultRegistry.PlaybookRegister(security.NewSshChangePort())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewInstall())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewSecure())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewCreateDB())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewCreateUser())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewStatus())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewListDBs())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewListUsers())
 }

@@ -67,4 +67,26 @@ const (
 
 	// IDSshChangePort changes the SSH port to reduce automated scanning
 	IDSshChangePort = "ssh-change-port"
+
+	// MariaDB playbooks
+	// IDMariadbInstall installs and configures MariaDB database server
+	IDMariadbInstall = "mariadb-install"
+
+	// IDMariadbSecure performs security hardening on MariaDB
+	IDMariadbSecure = "mariadb-secure"
+
+	// IDMariadbCreateDB creates a new MariaDB database
+	IDMariadbCreateDB = "mariadb-create-db"
+
+	// IDMariadbCreateUser creates a new MariaDB user
+	IDMariadbCreateUser = "mariadb-create-user"
+
+	// IDMariadbStatus displays MariaDB server status
+	IDMariadbStatus = "mariadb-status"
+
+	// IDMariadbListDBs displays all databases
+	IDMariadbListDBs = "mariadb-list-dbs"
+
+	// IDMariadbListUsers displays all users
+	IDMariadbListUsers = "mariadb-list-users"
 )
