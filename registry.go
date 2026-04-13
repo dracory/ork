@@ -57,4 +57,7 @@ func init() {
 	_ = defaultRegistry.PlaybookRegister(mariadb.NewStatus())
 	_ = defaultRegistry.PlaybookRegister(mariadb.NewListDBs())
 	_ = defaultRegistry.PlaybookRegister(mariadb.NewListUsers())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewBackup())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewSecurityAudit())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewChangePort())
 }

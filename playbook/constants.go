@@ -89,4 +89,13 @@ const (
 
 	// IDMariadbListUsers displays all users
 	IDMariadbListUsers = "mariadb-list-users"
+
+	// IDMariadbBackup creates a compressed SQL dump
+	IDMariadbBackup = "mariadb-backup"
+
+	// IDMariadbSecurityAudit performs security audit
+	IDMariadbSecurityAudit = "mariadb-security-audit"
+
+	// IDMariadbChangePort changes MariaDB port
+	IDMariadbChangePort = "mariadb-change-port"
 )
