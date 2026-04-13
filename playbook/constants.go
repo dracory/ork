@@ -46,4 +46,10 @@ const (
 
 	// IDFail2banStatus shows fail2ban service and jail status
 	IDFail2banStatus = "fail2ban-status"
+
+	// IDUfwInstall installs and configures UFW firewall
+	IDUfwInstall = "ufw-install"
+
+	// IDUfwStatus shows UFW firewall configuration and status
+	IDUfwStatus = "ufw-status"
 )
