@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -56,7 +55,7 @@ func (m *ListDBs) Run() playbook.Result {
 		}
 	}
 
-	log.Println("Listing all databases...")
+	cfg.GetLoggerOrDefault().Info("listing all databases")
 
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES;"`, rootPassword)
 	output, err := ssh.Run(cfg, cmd)
@@ -68,7 +67,7 @@ func (m *ListDBs) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Databases:\n%s", output)
+	cfg.GetLoggerOrDefault().Info("databases", "output", output)
 	return playbook.Result{
 		Changed: false,
 		Message: "Database list retrieved",

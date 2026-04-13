@@ -120,6 +120,29 @@ if result.Changed {
 | `PlaybookUserCreate` | `IDUserCreate` | `user-create` | `username` | Create user with sudo |
 | `PlaybookUserDelete` | `IDUserDelete` | `user-delete` | `username` | Delete user |
 | `PlaybookUserStatus` | `IDUserStatus` | `user-status` | `username` (opt) | Show user info |
+| `PlaybookFail2banInstall` | `IDFail2banInstall` | `fail2ban-install` | - | Install and configure fail2ban |
+| `PlaybookFail2banStatus` | `IDFail2banStatus` | `fail2ban-status` | - | Show fail2ban status |
+| `PlaybookUfwInstall` | `IDUfwInstall` | `ufw-install` | - | Install UFW firewall |
+| `PlaybookUfwStatus` | `IDUfwStatus` | `ufw-status` | - | Show UFW status |
+| `PlaybookUfwAllowMariadb` | `IDUfwAllowMariadb` | `ufw-allow-mariadb` | - | Allow MariaDB through UFW |
+| `PlaybookMariadbInstall` | `IDMariadbInstall` | `mariadb-install` | - | Install MariaDB server |
+| `PlaybookMariadbStatus` | `IDMariadbStatus` | `mariadb-status` | - | Show MariaDB status |
+| `PlaybookMariadbSecure` | `IDMariadbSecure` | `mariadb-secure` | - | Secure MariaDB installation |
+| `PlaybookMariadbBackup` | `IDMariadbBackup` | `mariadb-backup` | `database` (opt) | Backup database |
+| `PlaybookMariadbBackupEncrypt` | `IDMariadbBackupEncrypt` | `mariadb-backup-encrypt` | - | Encrypted backup |
+| `PlaybookMariadbChangePort` | `IDMariadbChangePort` | `mariadb-change-port` | `port` | Change MariaDB port |
+| `PlaybookMariadbCreateDB` | `IDMariadbCreateDB` | `mariadb-create-db` | `database` | Create database |
+| `PlaybookMariadbCreateUser` | `IDMariadbCreateUser` | `mariadb-create-user` | `username`, `password` | Create DB user |
+| `PlaybookMariadbEnableEncryption` | `IDMariadbEnableEncryption` | `mariadb-enable-encryption` | - | Enable encryption at rest |
+| `PlaybookMariadbEnableSSL` | `IDMariadbEnableSSL` | `mariadb-enable-ssl` | - | Enable SSL connections |
+| `PlaybookMariadbListDBs` | `IDMariadbListDBs` | `mariadb-list-dbs` | - | List databases |
+| `PlaybookMariadbListUsers` | `IDMariadbListUsers` | `mariadb-list-users` | - | List DB users |
+| `PlaybookMariadbSecurityAudit` | `IDMariadbSecurityAudit` | `mariadb-security-audit` | - | Run security audit |
+| `PlaybookSecurityAideInstall` | `IDSecurityAideInstall` | `security-aide-install` | - | Install AIDE IDS |
+| `PlaybookSecurityAuditdInstall` | `IDSecurityAuditdInstall` | `security-auditd-install` | - | Install audit daemon |
+| `PlaybookSecurityKernelHarden` | `IDSecurityKernelHarden` | `security-kernel-harden` | - | Apply kernel hardening |
+| `PlaybookSecuritySSHChangePort` | `IDSecuritySSHChangePort` | `security-ssh-change-port` | `port` | Change SSH port |
+| `PlaybookSecuritySSHHarden` | `IDSecuritySSHHarden` | `security-ssh-harden` | - | Harden SSH config |
 
 ## Inventory (Multi-Node Operations)
 

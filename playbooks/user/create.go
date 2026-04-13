@@ -4,7 +4,6 @@ package user
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -94,7 +93,7 @@ func (u *UserCreate) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Creating user '%s'...", username)
+	cfg.GetLoggerOrDefault().Info("creating user", "username", username)
 
 	// Build useradd command with options
 	useraddOpts := fmt.Sprintf("-m -s %s", shell)
@@ -119,7 +118,7 @@ func (u *UserCreate) Run() playbook.Result {
 		cmd = fmt.Sprintf("echo '%s:%s' | chpasswd", username, password)
 		output, err = ssh.Run(cfg, cmd)
 		if err != nil {
-			log.Printf("Warning: Failed to set password for user '%s': %v", username, err)
+			cfg.GetLoggerOrDefault().Warn("failed to set password", "username", username, "error", err)
 		}
 	}
 
@@ -157,11 +156,11 @@ func (u *UserCreate) Run() playbook.Result {
 		cmd = fmt.Sprintf("chmod 600 %s/.ssh/authorized_keys && chown -R %s:%s %s/.ssh", homeDir, username, username, homeDir)
 		output, err = ssh.Run(cfg, cmd)
 		if err != nil {
-			log.Printf("Warning: Failed to set permissions on .ssh directory for user '%s': %v", username, err)
+			cfg.GetLoggerOrDefault().Warn("failed to set permissions on .ssh directory", "username", username, "error", err)
 		}
 	}
 
-	log.Printf("User '%s' created with sudo access", username)
+	cfg.GetLoggerOrDefault().Info("user created with sudo access", "username", username)
 	return playbook.Result{
 		Changed: true,
 		Message: fmt.Sprintf("User '%s' created with sudo access", username),

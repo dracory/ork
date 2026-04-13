@@ -5,7 +5,6 @@ package user
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -86,7 +85,7 @@ func (u *UserStatus) Run() playbook.Result {
 
 	if username != "" {
 		// Check specific user
-		log.Printf("Checking user: %s", username)
+		cfg.GetLoggerOrDefault().Info("checking user", "username", username)
 
 		cmd := fmt.Sprintf("id %s", username)
 		output, err := ssh.Run(cfg, cmd)
@@ -97,13 +96,13 @@ func (u *UserStatus) Run() playbook.Result {
 				Error:   fmt.Errorf("user '%s' not found", username),
 			}
 		}
-		log.Println(output)
+		cfg.GetLoggerOrDefault().Info("user info", "output", output)
 
 		// Check if user has sudo
 		cmd = fmt.Sprintf("groups %s", username)
 		groupsOutput, err := ssh.Run(cfg, cmd)
 		if err == nil {
-			log.Printf("Groups: %s", groupsOutput)
+			cfg.GetLoggerOrDefault().Info("user groups", "groups", groupsOutput)
 		}
 
 		return playbook.Result{
@@ -114,7 +113,7 @@ func (u *UserStatus) Run() playbook.Result {
 	}
 
 	// List all non-system users
-	log.Println("Listing all system users...")
+	cfg.GetLoggerOrDefault().Info("listing all system users")
 
 	cmd := "awk -F: '$3 >= 1000 && $3 < 65534 {print $1}' /etc/passwd"
 	output, err := ssh.Run(cfg, cmd)
@@ -127,15 +126,14 @@ func (u *UserStatus) Run() playbook.Result {
 	}
 
 	if output == "" {
-		log.Println("No non-system users found")
+		cfg.GetLoggerOrDefault().Info("no non-system users found")
 		return playbook.Result{
 			Changed: false,
 			Message: "No non-system users found",
 		}
 	}
 
-	log.Println("Users:")
-	log.Println(output)
+	cfg.GetLoggerOrDefault().Info("users found", "users", output)
 	return playbook.Result{
 		Changed: false,
 		Message: "Non-system users listed",

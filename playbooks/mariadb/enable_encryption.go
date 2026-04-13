@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 	"path/filepath"
 
 	"github.com/dracory/ork/playbook"
@@ -68,10 +67,10 @@ func (m *EnableEncryption) Run() playbook.Result {
 		keyFilePath = DefaultKeyFilePath
 	}
 
-	log.Println("=== Enabling MariaDB Encryption at Rest ===")
+	cfg.GetLoggerOrDefault().Info("enabling MariaDB encryption at rest")
 
 	// Backup config
-	log.Println("Backing up current MariaDB configuration...")
+	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
 	_, _ = ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath))
 
 	// Create key directory
@@ -79,7 +78,7 @@ func (m *EnableEncryption) Run() playbook.Result {
 	_, _ = ssh.Run(cfg, fmt.Sprintf(`mkdir -p %s`, keyDir))
 
 	// Generate encryption key
-	log.Println("Generating encryption key file...")
+	cfg.GetLoggerOrDefault().Info("generating encryption key file")
 	cmd := fmt.Sprintf(`echo "1;$(openssl rand -hex 32)" > %s`, keyFilePath)
 	_, _ = ssh.Run(cfg, cmd)
 
@@ -87,7 +86,7 @@ func (m *EnableEncryption) Run() playbook.Result {
 	_, _ = ssh.Run(cfg, fmt.Sprintf(`chown mysql:mysql %s && chmod 600 %s`, keyFilePath, keyFilePath))
 
 	// Configure encryption
-	log.Println("Configuring encryption in MariaDB configuration...")
+	cfg.GetLoggerOrDefault().Info("configuring encryption in MariaDB")
 	cmd = fmt.Sprintf(`grep -q "file_key_management_filename" %s || cat >> %s << 'EOF'
 
 # Encryption at Rest Configuration
@@ -101,13 +100,13 @@ EOF`, configPath, configPath, keyFilePath)
 	_, _ = ssh.Run(cfg, cmd)
 
 	// Restart MariaDB
-	log.Println("Restarting MariaDB to apply changes...")
+	cfg.GetLoggerOrDefault().Info("restarting MariaDB")
 	_, err := ssh.Run(cfg, `systemctl restart mariadb`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
 
-	log.Println("=== MariaDB Encryption at Rest Enabled ===")
+	cfg.GetLoggerOrDefault().Info("MariaDB encryption at rest enabled")
 	return playbook.Result{
 		Changed: true,
 		Message: "Data-at-rest encryption enabled for MariaDB",

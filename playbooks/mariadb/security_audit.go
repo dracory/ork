@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -55,7 +54,7 @@ func (m *SecurityAudit) Run() playbook.Result {
 		}
 	}
 
-	log.Println("=== MariaDB Security Audit ===")
+	cfg.GetLoggerOrDefault().Info("MariaDB security audit started")
 
 	// Check for anonymous users
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE User='';"`, rootPassword)
@@ -73,7 +72,7 @@ func (m *SecurityAudit) Run() playbook.Result {
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE Host='%%';"`, rootPassword)
 	wildcardOutput, _ := ssh.Run(cfg, cmd)
 
-	log.Println("=== Security Audit Complete ===")
+	cfg.GetLoggerOrDefault().Info("MariaDB security audit complete")
 	return playbook.Result{
 		Changed: false,
 		Message: "Security audit completed",

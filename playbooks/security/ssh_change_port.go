@@ -2,7 +2,6 @@ package security
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/dracory/ork/playbook"
@@ -78,11 +77,10 @@ func (s *SshChangePort) Run() playbook.Result {
 		}
 	}
 
-	log.Println("=== Changing SSH Port ===")
-	log.Printf("New SSH port: %s", newPort)
+	cfg.GetLoggerOrDefault().Info("changing SSH port", "port", newPort)
 
 	// Backup
-	log.Println("Backing up current SSH configuration...")
+	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
 	_, err = ssh.Run(cfg, `cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
@@ -112,7 +110,7 @@ func (s *SshChangePort) Run() playbook.Result {
 		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}
 
-	log.Println("=== SSH Port Change Complete ===")
+	cfg.GetLoggerOrDefault().Info("SSH port change complete")
 	return playbook.Result{
 		Changed: true,
 		Message: fmt.Sprintf("SSH port changed to %s", newPort),

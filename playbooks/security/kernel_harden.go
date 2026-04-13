@@ -2,7 +2,6 @@ package security
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -69,18 +68,18 @@ func (k *KernelHarden) Run() playbook.Result {
 		sysctlDropInPath = DefaultSysctlDropInPath
 	}
 
-	log.Println("=== Hardening Kernel Security Parameters ===")
-	log.Println("WARNING: This will disable IPv6 system-wide")
+	cfg.GetLoggerOrDefault().Info("hardening kernel security parameters")
+	cfg.GetLoggerOrDefault().Warn("this will disable IPv6 system-wide")
 
 	// Step 1: Backup
-	log.Println("Step 1: Backing up current sysctl configuration...")
+	cfg.GetLoggerOrDefault().Info("backing up sysctl configuration")
 	_, err := ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sysctlConfigPath, sysctlConfigPath))
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup sysctl config", Error: err}
 	}
 
 	// Step 2: Create security configuration
-	log.Printf("Step 2: Creating security hardening configuration at %s...", sysctlDropInPath)
+	cfg.GetLoggerOrDefault().Info("creating security hardening configuration", "path", sysctlDropInPath)
 	cmd := fmt.Sprintf(`cat >> %s << 'EOF'
 # IP Spoofing protection
 net.ipv4.conf.all.rp_filter = 1
@@ -158,14 +157,14 @@ EOF`, sysctlDropInPath)
 	}
 
 	// Step 3: Apply parameters
-	log.Println("Step 3: Applying kernel parameters...")
+	cfg.GetLoggerOrDefault().Info("applying kernel parameters")
 	output, err := ssh.Run(cfg, fmt.Sprintf(`sysctl -p %s`, sysctlDropInPath))
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to apply kernel parameters", Error: err}
 	}
-	log.Println(output)
+	cfg.GetLoggerOrDefault().Info("sysctl output", "output", output)
 
-	log.Println("=== Kernel Hardening Complete ===")
+	cfg.GetLoggerOrDefault().Info("kernel hardening complete")
 	return playbook.Result{
 		Changed: true,
 		Message: "Kernel security hardening applied successfully",

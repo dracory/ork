@@ -5,7 +5,6 @@ package swap
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
@@ -162,7 +161,7 @@ func (s *SwapCreate) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Creating %s swap file...", sizeDesc)
+	cfg.GetLoggerOrDefault().Info("creating swap file", "size", sizeDesc, "path", swapFilePath)
 
 	// Create swap file
 	cmd := fmt.Sprintf("fallocate -l %d%s %s && chmod 600 %s && mkswap %s && swapon %s", size, sizeFlag, swapFilePath, swapFilePath, swapFilePath, swapFilePath)
@@ -180,7 +179,7 @@ func (s *SwapCreate) Run() playbook.Result {
 	if strings.TrimSpace(output) == "missing" {
 		_, err = ssh.Run(cfg, fmt.Sprintf("echo '%s none swap sw 0 0' | tee -a /etc/fstab", swapFilePath))
 		if err != nil {
-			log.Printf("Warning: failed to add swap to fstab: %v", err)
+			cfg.GetLoggerOrDefault().Warn("failed to add swap to fstab", "error", err)
 		}
 	}
 
@@ -189,13 +188,13 @@ func (s *SwapCreate) Run() playbook.Result {
 		fmt.Sprintf("sysctl vm.swappiness=%s && grep -q 'vm.swappiness' /etc/sysctl.conf && sed -i 's/vm.swappiness=.*/vm.swappiness=%s/' /etc/sysctl.conf || echo 'vm.swappiness=%s' | tee -a /etc/sysctl.conf",
 			swappiness, swappiness, swappiness))
 	if err != nil {
-		log.Printf("Warning: failed to set swappiness: %v", err)
+		cfg.GetLoggerOrDefault().Warn("failed to set swappiness", "error", err)
 	}
 
 	// Get final swap status
 	status, _ := ssh.Run(cfg, "swapon --show")
 
-	log.Printf("Swap file created successfully (%s)", sizeDesc)
+	cfg.GetLoggerOrDefault().Info("swap file created", "size", sizeDesc, "path", swapFilePath)
 	return playbook.Result{
 		Changed: true,
 		Message: fmt.Sprintf("Created %s swap file", sizeDesc),

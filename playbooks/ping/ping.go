@@ -5,7 +5,6 @@ package ping
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -71,7 +70,7 @@ func (p *Ping) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("%s is alive: %s", cfg.SSHHost, strings.TrimSpace(output))
+	cfg.GetLoggerOrDefault().Info("host is alive", "host", cfg.SSHHost, "uptime", strings.TrimSpace(output))
 
 	return playbook.Result{
 		Changed: false, // Ping never changes the system

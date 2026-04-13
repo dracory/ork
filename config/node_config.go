@@ -1,6 +1,8 @@
 // Package config provides configuration types for SSH-based automation.
 package config
 
+import "log/slog"
+
 // NodeConfig holds all configuration variables for remote server operations.
 type NodeConfig struct {
 	// SSH connection settings
@@ -19,6 +21,9 @@ type NodeConfig struct {
 
 	// Extra arguments passed via command line
 	Args map[string]string
+
+	// Logger for structured logging. Defaults to slog.Default() if nil.
+	Logger *slog.Logger
 }
 
 // SSHAddr returns the full SSH address as host:port.
@@ -46,4 +51,12 @@ func (c NodeConfig) GetArgOr(key, defaultValue string) string {
 		return val
 	}
 	return defaultValue
+}
+
+// GetLoggerOrDefault returns the configured logger or slog.Default() if nil.
+func (c NodeConfig) GetLoggerOrDefault() *slog.Logger {
+	if c.Logger != nil {
+		return c.Logger
+	}
+	return slog.Default()
 }

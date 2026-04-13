@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -61,10 +60,10 @@ func (m *EnableSSL) Run() playbook.Result {
 		configPath = DefaultConfigPath
 	}
 
-	log.Println("=== Enabling MariaDB SSL/TLS ===")
+	cfg.GetLoggerOrDefault().Info("enabling MariaDB SSL/TLS")
 
 	// Generate SSL certificates
-	log.Println("Generating SSL certificates...")
+	cfg.GetLoggerOrDefault().Info("generating SSL certificates")
 	_, _ = ssh.Run(cfg, fmt.Sprintf(`mysql_ssl_rsa_setup --datadir=%s`, dataDir))
 
 	// Set ownership and permissions
@@ -75,7 +74,7 @@ func (m *EnableSSL) Run() playbook.Result {
 	_, _ = ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, configPath, configPath))
 
 	// Configure SSL
-	log.Println("Configuring MariaDB to use SSL...")
+	cfg.GetLoggerOrDefault().Info("configuring MariaDB to use SSL")
 	cmd := fmt.Sprintf(`grep -q "ssl-ca" %s || cat >> %s << 'EOF'
 
 # SSL/TLS Configuration
@@ -86,13 +85,13 @@ EOF`, configPath, configPath, dataDir, dataDir, dataDir)
 	_, _ = ssh.Run(cfg, cmd)
 
 	// Restart MariaDB
-	log.Println("Restarting MariaDB service...")
+	cfg.GetLoggerOrDefault().Info("restarting MariaDB service")
 	_, err := ssh.Run(cfg, `systemctl restart mariadb`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
 
-	log.Println("=== MariaDB SSL/TLS Configuration Complete ===")
+	cfg.GetLoggerOrDefault().Info("MariaDB SSL/TLS configuration complete")
 	return playbook.Result{
 		Changed: true,
 		Message: "SSL/TLS enabled for MariaDB",

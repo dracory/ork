@@ -1,6 +1,8 @@
 package ork
 
 import (
+	"log/slog"
+
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/types"
 )
@@ -10,6 +12,7 @@ type inventoryImplementation struct {
 	groups         map[string]GroupInterface
 	nodes          []NodeInterface
 	maxConcurrency int
+	logger         *slog.Logger
 }
 
 // AddGroup adds a group to the inventory.
@@ -113,4 +116,18 @@ func (i *inventoryImplementation) CheckPlaybook(pb playbook.PlaybookInterface) t
 		}
 	}
 	return results
+}
+
+// GetLogger returns the logger. Returns slog.Default() if not set.
+func (i *inventoryImplementation) GetLogger() *slog.Logger {
+	if i.logger == nil {
+		return slog.Default()
+	}
+	return i.logger
+}
+
+// SetLogger sets a custom logger. Returns RunnableInterface for chaining.
+func (i *inventoryImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
+	i.logger = logger
+	return i
 }

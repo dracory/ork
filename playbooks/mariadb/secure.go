@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -54,7 +53,7 @@ func (m *Secure) Run() playbook.Result {
 		}
 	}
 
-	log.Println("Securing MariaDB installation...")
+	cfg.GetLoggerOrDefault().Info("securing MariaDB installation")
 
 	actions := []string{}
 
@@ -62,30 +61,30 @@ func (m *Secure) Run() playbook.Result {
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='';"`, rootPassword)
 	_, err := ssh.Run(cfg, cmd)
 	if err != nil {
-		log.Printf("Warning: Could not remove anonymous users: %v", err)
+		cfg.GetLoggerOrDefault().Warn("could not remove anonymous users", "error", err)
 	} else {
 		actions = append(actions, "removed_anonymous_users")
-		log.Println("Anonymous users removed")
+		cfg.GetLoggerOrDefault().Info("anonymous users removed")
 	}
 
 	// Remove remote root access (only localhost allowed for root)
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"`, rootPassword)
 	_, err = ssh.Run(cfg, cmd)
 	if err != nil {
-		log.Printf("Warning: Could not restrict root remote access: %v", err)
+		cfg.GetLoggerOrDefault().Warn("could not restrict root remote access", "error", err)
 	} else {
 		actions = append(actions, "restricted_root_access")
-		log.Println("Remote root access restricted")
+		cfg.GetLoggerOrDefault().Info("remote root access restricted")
 	}
 
 	// Remove test database
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DROP DATABASE IF EXISTS test;"`, rootPassword)
 	_, err = ssh.Run(cfg, cmd)
 	if err != nil {
-		log.Printf("Warning: Could not remove test database: %v", err)
+		cfg.GetLoggerOrDefault().Warn("could not remove test database", "error", err)
 	} else {
 		actions = append(actions, "removed_test_database")
-		log.Println("Test database removed")
+		cfg.GetLoggerOrDefault().Info("test database removed")
 	}
 
 	// Remove test database privileges
@@ -96,10 +95,10 @@ func (m *Secure) Run() playbook.Result {
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword)
 	_, err = ssh.Run(cfg, cmd)
 	if err != nil {
-		log.Printf("Warning: Could not flush privileges: %v", err)
+		cfg.GetLoggerOrDefault().Warn("could not flush privileges", "error", err)
 	} else {
 		actions = append(actions, "flushed_privileges")
-		log.Println("Privileges flushed")
+		cfg.GetLoggerOrDefault().Info("privileges flushed")
 	}
 
 	return playbook.Result{

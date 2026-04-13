@@ -4,7 +4,6 @@ package user
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -77,7 +76,7 @@ func (u *UserDelete) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Deleting user '%s'...", username)
+	cfg.GetLoggerOrDefault().Info("deleting user", "username", username)
 
 	// Delete user and home directory (try -r first, then without)
 	cmd := fmt.Sprintf("userdel -r %s 2>/dev/null || userdel %s", username, username)
@@ -90,7 +89,7 @@ func (u *UserDelete) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("User '%s' deleted successfully", username)
+	cfg.GetLoggerOrDefault().Info("user deleted", "username", username)
 	return playbook.Result{
 		Changed: true,
 		Message: fmt.Sprintf("User '%s' deleted", username),

@@ -5,7 +5,6 @@ package reboot
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/dracory/ork/playbook"
@@ -83,17 +82,17 @@ func (r *Reboot) Check() (bool, error) {
 //   - max_wait: Maximum wait duration string (when wait is enabled)
 func (r *Reboot) Run() playbook.Result {
 	cfg := r.GetConfig()
-	log.Printf("Rebooting %s...", cfg.SSHHost)
+	cfg.GetLoggerOrDefault().Info("rebooting server", "host", cfg.SSHHost)
 
 	// Trigger reboot (non-blocking, command returns immediately)
 	_, err := ssh.Run(cfg, "reboot")
 	if err != nil {
 		// reboot command often returns connection error since it kills the SSH session
-		log.Printf("Reboot command sent (connection error expected): %v", err)
+		cfg.GetLoggerOrDefault().Info("reboot command sent", "host", cfg.SSHHost, "expected_error", err)
 	}
 
 	if !r.WaitForReconnect {
-		log.Println("Reboot initiated. Not waiting for server to come back online.")
+		cfg.GetLoggerOrDefault().Info("reboot initiated, not waiting", "host", cfg.SSHHost)
 		return playbook.Result{
 			Changed: true, // Reboot was initiated
 			Message: fmt.Sprintf("Reboot initiated on %s", cfg.SSHHost),
@@ -109,7 +108,7 @@ func (r *Reboot) Run() playbook.Result {
 		maxWait = 5 * time.Minute
 	}
 
-	log.Println("Waiting for server to come back online...")
+	cfg.GetLoggerOrDefault().Info("waiting for server to come back online", "host", cfg.SSHHost)
 	time.Sleep(10 * time.Second) // Give it time to actually start rebooting
 
 	deadline := time.Now().Add(maxWait)
@@ -118,7 +117,7 @@ func (r *Reboot) Run() playbook.Result {
 
 		_, err := ssh.Run(cfg, "uptime")
 		if err == nil {
-			log.Println("Server is back online!")
+			cfg.GetLoggerOrDefault().Info("server is back online", "host", cfg.SSHHost)
 			return playbook.Result{
 				Changed: true,
 				Message: fmt.Sprintf("Reboot completed on %s, server is back online", cfg.SSHHost),

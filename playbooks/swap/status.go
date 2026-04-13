@@ -4,7 +4,6 @@ package swap
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -71,7 +70,7 @@ func (s *SwapStatus) Run() playbook.Result {
 	}
 
 	if strings.TrimSpace(output) == "" {
-		log.Println("No swap is currently active")
+		cfg.GetLoggerOrDefault().Info("no swap active")
 		return playbook.Result{
 			Changed: false,
 			Message: "No swap is currently active",
@@ -81,7 +80,7 @@ func (s *SwapStatus) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Swap status:\n%s", output)
+	cfg.GetLoggerOrDefault().Info("swap status", "status", output)
 	return playbook.Result{
 		Changed: false, // Read-only operation
 		Message: "Swap is active",

@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/dracory/ork/playbook"
@@ -70,11 +69,10 @@ func (m *ChangePort) Run() playbook.Result {
 		}
 	}
 
-	log.Println("=== Changing MariaDB Port ===")
-	log.Printf("New MariaDB port: %s", newPort)
+	cfg.GetLoggerOrDefault().Info("changing MariaDB port", "port", newPort)
 
 	// Backup
-	log.Println("Backing up current MariaDB configuration...")
+	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
 	_, err = ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath))
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup config", Error: err}
@@ -92,13 +90,13 @@ func (m *ChangePort) Run() playbook.Result {
 	_, _ = ssh.Run(cfg, cmd)
 
 	// Restart MariaDB
-	log.Println("Restarting MariaDB service...")
+	cfg.GetLoggerOrDefault().Info("restarting MariaDB service")
 	_, err = ssh.Run(cfg, `systemctl restart mariadb`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
 
-	log.Println("=== MariaDB Port Change Complete ===")
+	cfg.GetLoggerOrDefault().Info("MariaDB port change complete")
 	return playbook.Result{
 		Changed: true,
 		Message: fmt.Sprintf("MariaDB port changed to %s", newPort),

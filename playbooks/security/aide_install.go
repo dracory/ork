@@ -1,8 +1,6 @@
 package security
 
 import (
-	"log"
-
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 )
@@ -65,17 +63,17 @@ func (a *AideInstall) Check() (bool, error) {
 func (a *AideInstall) Run() playbook.Result {
 	cfg := a.GetConfig()
 
-	log.Println("=== Installing AIDE (File Integrity Monitoring) ===")
+	cfg.GetLoggerOrDefault().Info("installing AIDE")
 
 	// Install AIDE
-	log.Println("Installing AIDE package...")
+	cfg.GetLoggerOrDefault().Info("installing AIDE package")
 	_, err := ssh.Run(cfg, `DEBIAN_FRONTEND=noninteractive apt-get install -y aide aide-common`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to install AIDE", Error: err}
 	}
 
 	// Configure AIDE
-	log.Println("Configuring AIDE to monitor critical paths...")
+	cfg.GetLoggerOrDefault().Info("configuring AIDE to monitor critical paths")
 	cmd := `cat >> /etc/aide/aide.conf << 'EOF'
 
 # Custom monitoring rules
@@ -88,7 +86,7 @@ EOF`
 	_, _ = ssh.Run(cfg, cmd)
 
 	// Initialize AIDE database
-	log.Println("Initializing AIDE database (this may take several minutes)...")
+	cfg.GetLoggerOrDefault().Info("initializing AIDE database")
 	_, _ = ssh.Run(cfg, `aideinit`)
 
 	// Move database to active location
@@ -102,7 +100,7 @@ EOF`
 	_, _ = ssh.Run(cfg, cmd)
 	_, _ = ssh.Run(cfg, `chmod +x /etc/cron.daily/aide-check`)
 
-	log.Println("=== AIDE Installation Complete ===")
+	cfg.GetLoggerOrDefault().Info("AIDE installation complete")
 	return playbook.Result{
 		Changed: true,
 		Message: "AIDE installed and configured successfully",

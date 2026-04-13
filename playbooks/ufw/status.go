@@ -2,7 +2,6 @@ package ufw
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -54,7 +53,7 @@ func (u *UfwStatus) Check() (bool, error) {
 func (u *UfwStatus) Run() playbook.Result {
 	cfg := u.GetConfig()
 
-	log.Println("Checking UFW status...")
+	cfg.GetLoggerOrDefault().Info("checking UFW status")
 
 	output, err := ssh.Run(cfg, "ufw status verbose")
 	if err != nil {
@@ -65,7 +64,7 @@ func (u *UfwStatus) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("UFW Status:\n%s", output)
+	cfg.GetLoggerOrDefault().Info("UFW status retrieved", "output", output)
 	return playbook.Result{
 		Changed: false,
 		Message: "UFW status retrieved",

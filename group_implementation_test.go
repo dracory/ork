@@ -1,6 +1,7 @@
 package ork
 
 import (
+	"log/slog"
 	"testing"
 	"time"
 
@@ -506,6 +507,14 @@ func (m *groupTestMockNode) CheckPlaybook(pb playbook.PlaybookInterface) types.R
 			},
 		},
 	}
+}
+
+func (m *groupTestMockNode) GetLogger() *slog.Logger {
+	return slog.Default()
+}
+
+func (m *groupTestMockNode) SetLogger(logger *slog.Logger) RunnableInterface {
+	return m
 }
 
 // groupTestMockPlaybook is a mock implementation of playbook.PlaybookInterface for testing.

@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -73,7 +72,7 @@ func (m *CreateDB) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Creating database: %s", dbName)
+	cfg.GetLoggerOrDefault().Info("creating database", "database", dbName)
 
 	cmd := fmt.Sprintf("mysql -u root -p\"%s\" -e \"CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"", rootPassword, dbName)
 	output, err := ssh.Run(cfg, cmd)

@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/dracory/ork/playbook"
@@ -76,7 +75,7 @@ func (m *Backup) Run() playbook.Result {
 	timestamp := time.Now().Format("20060102_150405")
 	backupFile := fmt.Sprintf("%s_%s.sql", dbName, timestamp)
 
-	log.Printf("Creating backup of database: %s", dbName)
+	cfg.GetLoggerOrDefault().Info("creating database backup", "database", dbName)
 
 	// Create backup directory
 	cmd := fmt.Sprintf("mkdir -p %s", backupDir)

@@ -4,7 +4,6 @@ package swap
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -97,7 +96,7 @@ func (s *SwapDelete) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Removing swap file at %s...", swapFilePath)
+	cfg.GetLoggerOrDefault().Info("removing swap file", "path", swapFilePath)
 
 	// Turn off swap
 	_, _ = ssh.Run(cfg, fmt.Sprintf("swapoff %s 2>/dev/null || true", swapFilePath))
@@ -115,7 +114,7 @@ func (s *SwapDelete) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Swap file removed successfully: %s", swapFilePath)
+	cfg.GetLoggerOrDefault().Info("swap file removed", "path", swapFilePath)
 	return playbook.Result{
 		Changed: true,
 		Message: "Swap file removed",

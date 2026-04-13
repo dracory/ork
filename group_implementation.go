@@ -1,15 +1,18 @@
 package ork
 
 import (
+	"log/slog"
+
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/types"
 )
 
 // groupImplementation is the default implementation of GroupInterface.
 type groupImplementation struct {
-	name  string
-	nodes []NodeInterface
-	args  map[string]string
+	name   string
+	nodes  []NodeInterface
+	args   map[string]string
+	logger *slog.Logger
 }
 
 // NewGroup creates a new group with the given name.
@@ -119,4 +122,18 @@ func (g *groupImplementation) CheckPlaybook(pb playbook.PlaybookInterface) types
 		}
 	}
 	return results
+}
+
+// GetLogger returns the logger. Returns slog.Default() if not set.
+func (g *groupImplementation) GetLogger() *slog.Logger {
+	if g.logger == nil {
+		return slog.Default()
+	}
+	return g.logger
+}
+
+// SetLogger sets a custom logger. Returns RunnableInterface for chaining.
+func (g *groupImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
+	g.logger = logger
+	return g
 }

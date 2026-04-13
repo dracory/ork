@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -94,7 +93,7 @@ func (m *CreateUser) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Creating user: %s@%s", username, host)
+	cfg.GetLoggerOrDefault().Info("creating database user", "username", username, "host", host)
 
 	// Create user
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "CREATE USER IF NOT EXISTS '%s'@'%s' IDENTIFIED BY '%s';"`,
@@ -116,7 +115,7 @@ func (m *CreateUser) Run() playbook.Result {
 				rootPassword, username, host)
 			_, _ = ssh.Run(cfg, cmd)
 			grantedDBs = append(grantedDBs, "*")
-			log.Printf("Granted ALL PRIVILEGES on all databases to %s@%s", username, host)
+			cfg.GetLoggerOrDefault().Info("granted all privileges", "username", username, "host", host)
 		} else {
 			databases := strings.Split(dbName, ",")
 			for _, db := range databases {
@@ -125,10 +124,10 @@ func (m *CreateUser) Run() playbook.Result {
 					rootPassword, db, username, host)
 				_, err = ssh.Run(cfg, cmd)
 				if err != nil {
-					log.Printf("Warning: Could not grant privileges on %s: %v", db, err)
+					cfg.GetLoggerOrDefault().Warn("could not grant privileges", "database", db, "error", err)
 				} else {
 					grantedDBs = append(grantedDBs, db)
-					log.Printf("Granted privileges on '%s' to %s@%s", db, username, host)
+					cfg.GetLoggerOrDefault().Info("granted privileges", "database", db, "username", username, "host", host)
 				}
 			}
 		}

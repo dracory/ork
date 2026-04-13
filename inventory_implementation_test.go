@@ -1,6 +1,7 @@
 package ork
 
 import (
+	"log/slog"
 	"testing"
 	"time"
 
@@ -584,6 +585,14 @@ func (m *invTestMockNode) CheckPlaybook(pb playbook.PlaybookInterface) types.Res
 			},
 		},
 	}
+}
+
+func (m *invTestMockNode) GetLogger() *slog.Logger {
+	return slog.Default()
+}
+
+func (m *invTestMockNode) SetLogger(logger *slog.Logger) RunnableInterface {
+	return m
 }
 
 // invTestMockPlaybook is a mock implementation of playbook.PlaybookInterface for testing.

@@ -2,7 +2,6 @@ package fail2ban
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -64,8 +63,7 @@ func (f *Fail2banStatus) Check() (bool, error) {
 func (f *Fail2banStatus) Run() playbook.Result {
 	cfg := f.GetConfig()
 
-	log.Println("Checking fail2ban status...")
-
+	cfg.GetLoggerOrDefault().Info("checking fail2ban status")
 	output, err := ssh.Run(cfg, "systemctl status fail2ban --no-pager")
 	if err != nil {
 		return playbook.Result{
@@ -75,11 +73,9 @@ func (f *Fail2banStatus) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Fail2ban Status:\n%s", output)
-
-	// Show banned IPs
+	cfg.GetLoggerOrDefault().Info("fail2ban status", "output", output)
 	jailOutput, _ := ssh.Run(cfg, "fail2ban-client status sshd 2>/dev/null || echo 'No SSH jail configured'")
-	log.Printf("SSH Jail Status:\n%s", jailOutput)
+	cfg.GetLoggerOrDefault().Info("ssh jail status", "output", jailOutput)
 
 	return playbook.Result{
 		Changed: false,

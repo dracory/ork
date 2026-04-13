@@ -2,6 +2,7 @@ package ork
 
 import (
 	"fmt"
+	"log/slog"
 
 	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/playbook"
@@ -386,4 +387,18 @@ func (n *nodeImplementation) CheckPlaybook(pb playbook.PlaybookInterface) types.
 		Error:   result.Error,
 	}
 	return results
+}
+
+// GetLogger returns the logger. Returns slog.Default() if not set.
+func (n *nodeImplementation) GetLogger() *slog.Logger {
+	if n.cfg.Logger == nil {
+		return slog.Default()
+	}
+	return n.cfg.Logger
+}
+
+// SetLogger sets a custom logger. Returns RunnableInterface for chaining.
+func (n *nodeImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
+	n.cfg.Logger = logger
+	return n
 }

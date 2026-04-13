@@ -1,8 +1,6 @@
 package security
 
 import (
-	"log"
-
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 )
@@ -66,17 +64,17 @@ func (a *AuditdInstall) Check() (bool, error) {
 func (a *AuditdInstall) Run() playbook.Result {
 	cfg := a.GetConfig()
 
-	log.Println("=== Installing Auditd (System Audit Logging) ===")
+	cfg.GetLoggerOrDefault().Info("installing auditd")
 
 	// Install auditd
-	log.Println("Installing auditd package...")
+	cfg.GetLoggerOrDefault().Info("installing auditd package")
 	_, err := ssh.Run(cfg, `DEBIAN_FRONTEND=noninteractive apt-get install -y auditd audispd-plugins`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to install auditd", Error: err}
 	}
 
 	// Create audit rules
-	log.Println("Creating audit rules...")
+	cfg.GetLoggerOrDefault().Info("creating audit rules")
 	cmd := `cat > /etc/audit/rules.d/audit.rules << 'EOF'
 # Remove any existing rules
 -D
@@ -133,14 +131,14 @@ EOF`
 	_, _ = ssh.Run(cfg, cmd)
 
 	// Load audit rules
-	log.Println("Loading audit rules...")
+	cfg.GetLoggerOrDefault().Info("installing auditd rules")
 	_, _ = ssh.Run(cfg, `augenrules --load`)
 
 	// Enable and start auditd
 	_, _ = ssh.Run(cfg, `systemctl enable auditd`)
 	_, _ = ssh.Run(cfg, `systemctl start auditd`)
 
-	log.Println("=== Auditd Installation Complete ===")
+	cfg.GetLoggerOrDefault().Info("auditd installation complete")
 	return playbook.Result{
 		Changed: true,
 		Message: "Auditd installed and configured successfully",

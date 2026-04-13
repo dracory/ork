@@ -2,7 +2,6 @@ package security
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -92,17 +91,17 @@ func (s *SshHarden) Run() playbook.Result {
 		clientAliveCountMax = DefaultClientAliveCountMax
 	}
 
-	log.Println("=== SSH Security Hardening ===")
+	cfg.GetLoggerOrDefault().Info("SSH security hardening started")
 
 	// Step 1: Backup
-	log.Println("Step 1: Backing up current SSH configuration...")
+	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
 	_, err := ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sshConfigPath, sshConfigPath))
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
 	}
 
 	// Step 2: Verify non-root user
-	log.Println("Step 2: Verifying non-root user exists...")
+	cfg.GetLoggerOrDefault().Info("verifying non-root user exists")
 	cmd := fmt.Sprintf(`id %s >/dev/null 2>&1 && sudo -l -U %s >/dev/null 2>&1 && echo "OK" || echo "FAIL"`, nonRootUser, nonRootUser)
 	output, err := ssh.Run(cfg, cmd)
 	if err != nil || !strings.Contains(output, "OK") {
@@ -129,12 +128,12 @@ func (s *SshHarden) Run() playbook.Result {
 	}
 
 	for _, setting := range settings {
-		log.Printf("Applying: %s...", setting.name)
+		cfg.GetLoggerOrDefault().Info("applying SSH setting", "setting", setting.name)
 		_, _ = ssh.Run(cfg, setting.cmd)
 	}
 
 	// Validate configuration
-	log.Println("Validating SSH configuration...")
+	cfg.GetLoggerOrDefault().Info("validating SSH configuration")
 	_, err = ssh.Run(cfg, fmt.Sprintf(`sshd -t -f %s`, sshConfigPath))
 	if err != nil {
 		// Restore backup
@@ -147,13 +146,13 @@ func (s *SshHarden) Run() playbook.Result {
 	}
 
 	// Restart SSH
-	log.Println("Restarting SSH service...")
+	cfg.GetLoggerOrDefault().Info("restarting SSH service")
 	_, err = ssh.Run(cfg, `systemctl restart sshd`)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}
 
-	log.Println("=== SSH Hardening Complete ===")
+	cfg.GetLoggerOrDefault().Info("SSH hardening complete")
 	return playbook.Result{
 		Changed: true,
 		Message: "SSH security hardening applied successfully",

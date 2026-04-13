@@ -2,7 +2,6 @@ package ufw
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -60,7 +59,7 @@ func (u *UfwInstall) Check() (bool, error) {
 func (u *UfwInstall) Run() playbook.Result {
 	cfg := u.GetConfig()
 
-	log.Println("Installing UFW firewall...")
+	cfg.GetLoggerOrDefault().Info("installing UFW firewall")
 
 	// Install UFW
 	output, err := ssh.Run(cfg, "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y ufw")
@@ -135,7 +134,7 @@ func (u *UfwInstall) Run() playbook.Result {
 		}
 	}
 
-	log.Println("UFW installed and configured successfully")
+	cfg.GetLoggerOrDefault().Info("UFW installed and configured")
 	return playbook.Result{
 		Changed: true,
 		Message: fmt.Sprintf("UFW installed with secure defaults (allowed: %s)", strings.Join(allowedServices, ", ")),

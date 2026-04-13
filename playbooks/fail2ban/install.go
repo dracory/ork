@@ -2,7 +2,6 @@ package fail2ban
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -61,7 +60,7 @@ func (f *Fail2banInstall) Check() (bool, error) {
 func (f *Fail2banInstall) Run() playbook.Result {
 	cfg := f.GetConfig()
 
-	log.Println("Installing fail2ban...")
+	cfg.GetLoggerOrDefault().Info("installing fail2ban")
 
 	output, err := ssh.Run(cfg, "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban")
 	if err != nil {
@@ -82,7 +81,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 		}
 	}
 
-	log.Println("Fail2ban installed and started successfully")
+	cfg.GetLoggerOrDefault().Info("fail2ban installed")
 	return playbook.Result{
 		Changed: true,
 		Message: "Fail2ban installed and enabled",

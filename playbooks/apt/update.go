@@ -4,7 +4,6 @@ package apt
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -60,9 +59,9 @@ func (a *AptUpdate) Check() (bool, error) {
 // Result.Details contains:
 //   - output: Full output from apt-get update command
 func (a *AptUpdate) Run() playbook.Result {
-	log.Println("Running apt update...")
-
 	cfg := a.GetConfig()
+	cfg.GetLoggerOrDefault().Info("running apt update")
+
 	output, err := ssh.Run(cfg, "apt-get update -y")
 	if err != nil {
 		return playbook.Result{
@@ -72,7 +71,7 @@ func (a *AptUpdate) Run() playbook.Result {
 		}
 	}
 
-	log.Println("Apt update completed successfully")
+	cfg.GetLoggerOrDefault().Info("apt update completed")
 	return playbook.Result{
 		Changed: true, // Cache was refreshed
 		Message: "Package database updated",

@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -56,7 +55,7 @@ func (m *Install) Run() playbook.Result {
 	cfg := m.GetConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 
-	log.Println("Installing MariaDB server...")
+	cfg.GetLoggerOrDefault().Info("installing MariaDB server")
 
 	// Update package list and install MariaDB
 	cmd := `apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client`
@@ -89,14 +88,14 @@ func (m *Install) Run() playbook.Result {
 		cmd = fmt.Sprintf(`mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '%s';"`, rootPassword)
 		_, err = ssh.Run(cfg, cmd)
 		if err != nil {
-			log.Printf("Warning: Could not set root password (may already be set): %v", err)
+			cfg.GetLoggerOrDefault().Warn("could not set root password", "error", err)
 		} else {
-			log.Println("Root password set successfully")
+			cfg.GetLoggerOrDefault().Info("root password set")
 		}
 	}
 
 	// Configure MariaDB to listen on all interfaces for public access
-	log.Println("Configuring MariaDB to listen on all interfaces (0.0.0.0)")
+	cfg.GetLoggerOrDefault().Info("configuring MariaDB to listen on all interfaces")
 	cmd = `sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mariadb.conf.d/50-server.cnf || sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/my.cnf.d/mariadb-server.cnf || true`
 	_, _ = ssh.Run(cfg, cmd)
 

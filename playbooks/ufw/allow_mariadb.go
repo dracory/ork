@@ -2,7 +2,6 @@ package ufw
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -64,7 +63,7 @@ func (u *AllowMariaDB) Run() playbook.Result {
 	mariaDBPort := cfg.GetArgOr(ArgPort, "3306")
 
 	if ip == "" || ip == "any" {
-		log.Println("Allowing MariaDB access from ANY IP (use with caution!)")
+		cfg.GetLoggerOrDefault().Warn("allowing MariaDB access from ANY IP")
 		cmd := fmt.Sprintf("ufw allow %s/tcp", mariaDBPort)
 		output, err := ssh.Run(cfg, cmd)
 		if err != nil {
@@ -85,14 +84,14 @@ func (u *AllowMariaDB) Run() playbook.Result {
 	allowedIPs := []string{}
 	for _, singleIP := range ips {
 		singleIP = strings.TrimSpace(singleIP)
-		log.Printf("Allowing MariaDB access from: %s", singleIP)
+		cfg.GetLoggerOrDefault().Info("allowing MariaDB access", "ip", singleIP)
 		cmd := fmt.Sprintf("ufw allow from %s to any port %s", singleIP, mariaDBPort)
 		output, err := ssh.Run(cfg, cmd)
 		if err != nil {
-			log.Printf("Warning: Could not allow %s: %v", singleIP, err)
+			cfg.GetLoggerOrDefault().Warn("could not allow IP", "ip", singleIP, "error", err)
 		} else {
 			allowedIPs = append(allowedIPs, singleIP)
-			log.Println(output)
+			cfg.GetLoggerOrDefault().Info("UFW output", "output", output)
 		}
 	}
 

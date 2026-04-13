@@ -2,6 +2,8 @@
 package ork
 
 import (
+	"log/slog"
+
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/types"
 )
@@ -24,4 +26,10 @@ type RunnableInterface interface {
 	// CheckPlaybook runs the playbook's check mode to determine if changes would be made.
 	// Sets Changed=true on result if changes are needed.
 	CheckPlaybook(pb playbook.PlaybookInterface) types.Results
+
+	// GetLogger returns the logger. Returns slog.Default() if not set.
+	GetLogger() *slog.Logger
+
+	// SetLogger sets a custom logger. Returns self for chaining.
+	SetLogger(logger *slog.Logger) RunnableInterface
 }

@@ -2,7 +2,6 @@ package mariadb
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
@@ -60,7 +59,7 @@ func (m *ListUsers) Run() playbook.Result {
 		}
 	}
 
-	log.Println("Listing all database users...")
+	cfg.GetLoggerOrDefault().Info("listing all database users")
 
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user;"`, rootPassword)
 	output, err := ssh.Run(cfg, cmd)
@@ -72,7 +71,7 @@ func (m *ListUsers) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Users:\n%s", output)
+	cfg.GetLoggerOrDefault().Info("database users", "output", output)
 	return playbook.Result{
 		Changed: false,
 		Message: "User list retrieved",

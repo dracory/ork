@@ -5,7 +5,6 @@ package apt
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -56,10 +55,8 @@ func (a *AptStatus) Check() (bool, error) {
 //   - upgradable_count: Number of packages available for upgrade
 //   - packages: Full output from apt list --upgradable (when packages exist)
 func (a *AptStatus) Run() playbook.Result {
-	log.Println("Checking for available updates...")
-
 	cfg := a.GetConfig()
-	// First update package lists
+	cfg.GetLoggerOrDefault().Info("checking for available updates")
 	_, err := ssh.Run(cfg, "apt-get update -qq")
 	if err != nil {
 		return playbook.Result{
@@ -69,7 +66,6 @@ func (a *AptStatus) Run() playbook.Result {
 		}
 	}
 
-	// Then list upgradable packages
 	output, err := ssh.Run(cfg, "apt list --upgradable 2>/dev/null | tail -n +2")
 	if err != nil {
 		return playbook.Result{
@@ -81,7 +77,7 @@ func (a *AptStatus) Run() playbook.Result {
 
 	count := strings.TrimSpace(output)
 	if count == "" || count == "0" {
-		log.Println("All packages are up to date")
+		cfg.GetLoggerOrDefault().Info("all packages are up to date")
 		return playbook.Result{
 			Changed: false,
 			Message: "All packages are up to date",
@@ -91,9 +87,9 @@ func (a *AptStatus) Run() playbook.Result {
 		}
 	}
 
-	log.Printf("Available upgrades:\n%s", output)
+	cfg.GetLoggerOrDefault().Info("available upgrades", "packages", output)
 	return playbook.Result{
-		Changed: false, // Read-only operation
+		Changed: false,
 		Message: fmt.Sprintf("%d packages available for upgrade", strings.Count(output, "\n")+1),
 		Details: map[string]string{
 			"upgradable_count": fmt.Sprintf("%d", strings.Count(output, "\n")+1),

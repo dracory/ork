@@ -4,7 +4,6 @@ package apt
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/dracory/ork/playbook"
@@ -93,9 +92,9 @@ func (a *AptUpgrade) Run() playbook.Result {
 		}
 	}
 
-	log.Println("Running apt upgrade...")
-
 	cfg := a.GetConfig()
+	cfg.GetLoggerOrDefault().Info("running apt upgrade")
+
 	output, err := ssh.Run(cfg, "apt-get upgrade -y")
 	if err != nil {
 		return playbook.Result{
@@ -105,7 +104,7 @@ func (a *AptUpgrade) Run() playbook.Result {
 		}
 	}
 
-	log.Println("Apt upgrade completed successfully")
+	cfg.GetLoggerOrDefault().Info("apt upgrade completed")
 	return playbook.Result{
 		Changed: true,
 		Message: "Packages upgraded successfully",
