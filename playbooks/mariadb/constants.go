@@ -37,10 +37,19 @@ const (
 
 	// ArgSslCaPath specifies the SSL CA certificate path
 	ArgSslCaPath = "ssl-ca-path"
+
+	// ArgBackupDir is the directory to store backups
+	ArgBackupDir = "backup-dir"
+
+	// ArgDBName is the name of the database
+	ArgDBName = "dbname"
 )
 
 // Default values.
 const (
+	// DefaultBackupDir is the default backup directory
+	DefaultBackupDir = "/root/backups"
+
 	// DefaultPort is the default MariaDB port
 	DefaultPort = "3306"
 

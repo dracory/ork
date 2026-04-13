@@ -50,8 +50,11 @@ const (
 	// IDUfwInstall installs and configures UFW firewall
 	IDUfwInstall = "ufw-install"
 
-	// IDUfwStatus shows UFW firewall configuration and status
+	// IDUfwStatus checks UFW firewall status
 	IDUfwStatus = "ufw-status"
+
+	// IDUfwAllowMariaDB configures UFW for MariaDB access
+	IDUfwAllowMariaDB = "ufw-allow-mariadb"
 
 	// IDSshHarden applies security hardening to SSH server configuration
 	IDSshHarden = "ssh-harden"
@@ -104,4 +107,7 @@ const (
 
 	// IDMariadbEnableEncryption enables data-at-rest encryption
 	IDMariadbEnableEncryption = "mariadb-enable-encryption"
+
+	// IDMariadbBackupEncrypt creates an encrypted backup
+	IDMariadbBackupEncrypt = "mariadb-backup-encrypt"
 )

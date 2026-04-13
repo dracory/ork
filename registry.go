@@ -45,6 +45,7 @@ func init() {
 	_ = defaultRegistry.PlaybookRegister(fail2ban.NewFail2banStatus())
 	_ = defaultRegistry.PlaybookRegister(ufw.NewUfwInstall())
 	_ = defaultRegistry.PlaybookRegister(ufw.NewUfwStatus())
+	_ = defaultRegistry.PlaybookRegister(ufw.NewAllowMariaDB())
 	_ = defaultRegistry.PlaybookRegister(security.NewSshHarden())
 	_ = defaultRegistry.PlaybookRegister(security.NewKernelHarden())
 	_ = defaultRegistry.PlaybookRegister(security.NewAideInstall())
@@ -62,4 +63,5 @@ func init() {
 	_ = defaultRegistry.PlaybookRegister(mariadb.NewChangePort())
 	_ = defaultRegistry.PlaybookRegister(mariadb.NewEnableSSL())
 	_ = defaultRegistry.PlaybookRegister(mariadb.NewEnableEncryption())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewBackupEncrypt())
 }

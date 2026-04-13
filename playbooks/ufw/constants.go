@@ -15,6 +15,12 @@ const (
 
 	// ArgAllowPorts allows custom ports - comma-separated list (e.g., "8080,9000")
 	ArgAllowPorts = "allow-ports"
+
+	// ArgIP specifies IP address(es) to allow - single IP or comma-separated list
+	ArgIP = "ip"
+
+	// ArgPort specifies the port number to configure
+	ArgPort = "port"
 )
 
 // Default configuration constants.

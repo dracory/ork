@@ -9,12 +9,6 @@ import (
 	"github.com/dracory/ork/ssh"
 )
 
-// Argument constants for backup playbook
-const (
-	// ArgBackupDir specifies the directory to store backup files (default: /root/backups)
-	ArgBackupDir = "backup-dir"
-)
-
 // Backup creates a compressed SQL dump of a MariaDB database.
 // This playbook generates timestamped backups using mysqldump with transaction
 // consistency, then compresses the output with gzip to save disk space.
