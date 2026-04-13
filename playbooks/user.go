@@ -18,7 +18,7 @@ type userCreate struct {
 // Returns true if user doesn't exist, false if user already exists.
 func (u *userCreate) Check() (bool, error) {
 	cfg := u.GetConfig()
-	username := cfg.GetArg("username")
+	username := u.GetArg("username")
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
 	}
@@ -29,7 +29,7 @@ func (u *userCreate) Check() (bool, error) {
 // Run creates the user and returns detailed result.
 func (u *userCreate) Run() playbook.Result {
 	cfg := u.GetConfig()
-	username := cfg.GetArg("username")
+	username := u.GetArg("username")
 	if username == "" {
 		return playbook.Result{
 			Changed: false,
@@ -78,7 +78,7 @@ type userDelete struct {
 // Returns true if user exists, false if user doesn't exist.
 func (u *userDelete) Check() (bool, error) {
 	cfg := u.GetConfig()
-	username := cfg.GetArg("username")
+	username := u.GetArg("username")
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
 	}
@@ -89,7 +89,7 @@ func (u *userDelete) Check() (bool, error) {
 // Run removes the user and returns detailed result.
 func (u *userDelete) Run() playbook.Result {
 	cfg := u.GetConfig()
-	username := cfg.GetArg("username")
+	username := u.GetArg("username")
 	if username == "" {
 		return playbook.Result{
 			Changed: false,
@@ -138,7 +138,7 @@ func (u *userStatus) Check() (bool, error) {
 // Run displays user status and returns detailed result.
 func (u *userStatus) Run() playbook.Result {
 	cfg := u.GetConfig()
-	username := cfg.GetArg("username")
+	username := u.GetArg("username")
 	if username == "" {
 		// Show all users
 		output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "cat /etc/passwd | grep -E 'bash|zsh' | cut -d: -f1")

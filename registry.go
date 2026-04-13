@@ -3,6 +3,7 @@ package ork
 import (
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/playbooks"
+	"github.com/dracory/ork/playbooks/swap"
 )
 
 // defaultRegistry is the global playbook registry that holds all built-in
@@ -27,9 +28,9 @@ func init() {
 	_ = defaultRegistry.PlaybookRegister(playbooks.NewAptUpgrade())
 	_ = defaultRegistry.PlaybookRegister(playbooks.NewAptStatus())
 	_ = defaultRegistry.PlaybookRegister(playbooks.NewReboot())
-	_ = defaultRegistry.PlaybookRegister(playbooks.NewSwapCreate())
-	_ = defaultRegistry.PlaybookRegister(playbooks.NewSwapDelete())
-	_ = defaultRegistry.PlaybookRegister(playbooks.NewSwapStatus())
+	_ = defaultRegistry.PlaybookRegister(swap.NewSwapCreate())
+	_ = defaultRegistry.PlaybookRegister(swap.NewSwapDelete())
+	_ = defaultRegistry.PlaybookRegister(swap.NewSwapStatus())
 	_ = defaultRegistry.PlaybookRegister(playbooks.NewUserCreate())
 	_ = defaultRegistry.PlaybookRegister(playbooks.NewUserDelete())
 	_ = defaultRegistry.PlaybookRegister(playbooks.NewUserStatus())
