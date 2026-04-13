@@ -241,6 +241,58 @@ if !result.Changed {
 }
 ```
 
+## Dry-Run Mode
+
+Preview what changes would be made without actually executing commands on the server. Safety is enforced at the SSH execution layer - **no commands execute on the server in dry-run mode**.
+
+### Enable Dry-Run
+
+```go
+// At node level
+node := ork.NewNodeForHost("server.example.com").
+    SetDryRunMode(true)
+results := node.RunPlaybook(playbooks.NewAptUpgrade())
+// Commands are logged but not executed
+
+// At group level
+webGroup := ork.NewGroup("webservers")
+webGroup.SetDryRunMode(true)
+webGroup.AddNode(node1)
+webGroup.AddNode(node2)
+// All nodes inherit dry-run mode
+
+// At inventory level
+inv := ork.NewInventory()
+inv.SetDryRunMode(true)
+inv.AddGroup(webGroup)
+results := inv.RunCommand("uptime")
+// All groups and nodes inherit dry-run mode
+```
+
+### How It Works
+
+1. **Safety at execution layer**: `ssh.Run()` checks `cfg.IsDryRunMode` and returns `"[dry-run]"` without executing commands
+2. **Automatic propagation**: Dry-run mode propagates from Inventory → Groups → Nodes at execution time
+3. **Thread-safe**: Uses mutex protection for concurrent access to dry-run state
+
+### Detecting Dry-Run in Playbooks
+
+```go
+func (p *MyPlaybook) Run() playbook.Result {
+    output, _ := ssh.Run(p.cfg, "apt-get upgrade -y")
+
+    if output == "[dry-run]" {
+        return playbook.Result{
+            Changed: true,
+            Message: "Would run: apt-get upgrade -y",
+        }
+    }
+    // Normal execution handling...
+}
+```
+
+**Note:** Even if a playbook doesn't check for the `[dry-run]` marker, **safety is guaranteed** - no commands execute on the server when dry-run mode is enabled.
+
 ## Advanced Usage
 
 ### Inspecting Configuration

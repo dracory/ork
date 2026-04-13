@@ -53,11 +53,121 @@ type RunnableInterface interface {
     // ... other methods ...
     
     // SetDryRunMode sets whether to simulate execution without making changes.
-    // When true, ssh.Run() will log commands and return "[dry-run]" marker.
+    // Stores the flag locally; propagation to nodes happens at execution time.
     SetDryRunMode(dryRun bool) RunnableInterface
     
     // GetDryRunMode returns true if dry-run mode is enabled.
     GetDryRunMode() bool
+}
+```
+
+**4. Runtime Propagation with propagateDryRun() Helper**
+
+Dry-run mode is applied to child nodes/groups at execution time via a consolidated helper method. This approach avoids code duplication and ensures consistency:
+
+```go
+// Group implementation with mutex-protected dryRunMode
+type groupImplementation struct {
+    // ... other fields ...
+    dryRunMode bool
+    mu         sync.RWMutex
+}
+
+// propagateDryRun applies the group's dry-run mode to all nodes
+func (g *groupImplementation) propagateDryRun() {
+    g.mu.RLock()
+    mode := g.dryRunMode
+    g.mu.RUnlock()
+    for _, node := range g.nodes {
+        if node.GetDryRunMode() != mode {
+            node.SetDryRunMode(mode)
+        }
+    }
+}
+
+// RunPlaybook uses propagateDryRun before execution
+func (g *groupImplementation) RunPlaybook(pb playbook.PlaybookInterface) types.Results {
+    g.propagateDryRun()  // Apply dry-run to all nodes before execution
+    for _, node := range g.nodes {
+        nodeResults := node.RunPlaybook(pb)
+        // ...
+    }
+}
+
+// Inventory implementation with same pattern
+type inventoryImplementation struct {
+    // ... other fields ...
+    dryRunMode bool
+    mu         sync.RWMutex
+}
+
+func (i *inventoryImplementation) propagateDryRun() {
+    i.mu.RLock()
+    mode := i.dryRunMode
+    i.mu.RUnlock()
+    for _, group := range i.groups {
+        if group.GetDryRunMode() != mode {
+            group.SetDryRunMode(mode)
+        }
+    }
+    for _, node := range i.nodes {
+        if node.GetDryRunMode() != mode {
+            node.SetDryRunMode(mode)
+        }
+    }
+}
+```
+
+**5. Consistent Propagation on Add/Set Operations**
+
+For double safety, propagateDryRun is also called when adding nodes/groups or setting the mode:
+
+```go
+// AddNode propagates dry-run mode to new nodes
+func (g *groupImplementation) AddNode(node NodeInterface) GroupInterface {
+    g.nodes = append(g.nodes, node)
+    // Ensure new node inherits current dry-run mode
+    if node.GetDryRunMode() != g.GetDryRunMode() {
+        node.SetDryRunMode(g.GetDryRunMode())
+    }
+    return g
+}
+
+// SetDryRunMode updates mode and propagates immediately
+func (g *groupImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
+    g.mu.Lock()
+    g.dryRunMode = dryRun
+    g.mu.Unlock()
+    g.propagateDryRun()  // Propagate immediately for consistency
+    return g
+}
+```
+
+**6. Node-Level Dry-Run Enforcement**
+
+Nodes enforce dry-run mode in both command execution and playbook running:
+
+```go
+// RunCommand checks dry-run before SSH execution
+func (n *nodeImplementation) RunCommand(cmd string) types.Results {
+    if n.cfg.IsDryRunMode {
+        n.cfg.GetLoggerOrDefault().Info("dry-run: would run command", 
+            "host", n.GetHost(), "command", cmd)
+        return types.Results{
+            Results: map[string]types.Result{
+                n.GetHost(): {Changed: true, Message: "[dry-run]"},
+            },
+        }
+    }
+    // Normal SSH execution...
+}
+
+// RunPlaybook propagates dry-run to playbook
+func (n *nodeImplementation) RunPlaybook(pb playbook.PlaybookInterface) types.Results {
+    pb.SetConfig(n.cfg)
+    pb.SetDryRun(n.cfg.IsDryRunMode)  // Propagate dry-run to playbook
+    result := pb.Run()
+    // ...
 }
 ```
 
@@ -157,8 +267,9 @@ func (s *SwapCreate) Run() playbook.Result {
         "echo '/swapfile none swap sw 0 0' >> /etc/fstab",
     }
     
-    // Check dry-run mode via playbook method
-    if s.IsDryRun() {
+    // Check dry-run mode via ssh.Run output marker
+    output, _ := ssh.Run(s.cfg, "echo test")
+    if output == "[dry-run]" {
         return playbook.Result{
             Changed: true,
             Message: fmt.Sprintf("Would run %d commands to create swap", len(commands)),
@@ -242,12 +353,11 @@ ork run --host server.example.com --playbook apt-upgrade --dry-run
 
 ## Success Metrics
 
-- All core playbooks check IsDryRun()
-- Dry-run predictions match actual execution >95% of the time
+- All core playbooks handle `[dry-run]` marker from ssh.Run()
+- Zero commands execute on server when dry-run mode is enabled
 - User feedback indicates increased confidence
 
 ## Open Questions
 
 1. Should playbooks report detailed actions during dry-run?
 2. How to handle conditional logic that depends on command output?
-3. Should CheckPlaybook use cached state for repeated checks?

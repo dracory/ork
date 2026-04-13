@@ -290,6 +290,17 @@ func (n *nodeImplementation) RunCommand(cmd string) types.Results {
 		Results: make(map[string]types.Result),
 	}
 
+	// Check dry-run mode before executing
+	if n.cfg.IsDryRunMode {
+		n.cfg.GetLoggerOrDefault().Info("dry-run: would run command", "host", n.GetHost(), "command", cmd)
+		results.Results[n.GetHost()] = types.Result{
+			Changed: true,
+			Message: "[dry-run]",
+			Error:   nil,
+		}
+		return results
+	}
+
 	var output string
 	var err error
 
@@ -324,6 +335,8 @@ func (n *nodeImplementation) RunPlaybook(pb playbook.PlaybookInterface) types.Re
 	}
 
 	pb.SetConfig(n.cfg)
+	// Propagate node's dry-run mode to playbook
+	pb.SetDryRun(n.cfg.IsDryRunMode)
 	result := pb.Run()
 
 	results.Results[n.GetHost()] = types.Result{
@@ -356,6 +369,8 @@ func (n *nodeImplementation) RunPlaybookByID(id string, opts ...playbook.Playboo
 	}
 
 	pb.SetConfig(n.cfg)
+	// Start with node's dry-run mode, allow opts to override
+	pb.SetDryRun(n.cfg.IsDryRunMode)
 	if len(opts) > 0 {
 		pb.SetArgs(opts[0].Args)
 		pb.SetDryRun(opts[0].DryRun)
@@ -378,7 +393,8 @@ func (n *nodeImplementation) CheckPlaybook(pb playbook.PlaybookInterface) types.
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
-	pb.SetDryRun(true)
+	// Use node's dry-run mode setting (may be already set via SetDryRunMode)
+	pb.SetDryRun(n.cfg.IsDryRunMode)
 	result := pb.Run()
 	results.Results[n.GetHost()] = types.Result{
 		Changed: result.Changed,

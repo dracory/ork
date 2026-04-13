@@ -2,6 +2,8 @@ package ork
 
 import (
 	"log/slog"
+	"maps"
+	"sync"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/types"
@@ -9,10 +11,12 @@ import (
 
 // groupImplementation is the default implementation of GroupInterface.
 type groupImplementation struct {
-	name   string
-	nodes  []NodeInterface
-	args   map[string]string
-	logger *slog.Logger
+	name       string
+	nodes      []NodeInterface
+	args       map[string]string
+	logger     *slog.Logger
+	dryRunMode bool
+	mu         sync.RWMutex
 }
 
 // NewGroup creates a new group with the given name.
@@ -32,6 +36,10 @@ func (g *groupImplementation) GetName() string {
 // AddNode adds a node to this group.
 func (g *groupImplementation) AddNode(node NodeInterface) GroupInterface {
 	g.nodes = append(g.nodes, node)
+	// Propagate dry-run mode to new node for consistency
+	if node.GetDryRunMode() != g.GetDryRunMode() {
+		node.SetDryRunMode(g.GetDryRunMode())
+	}
 	return g
 }
 
@@ -56,10 +64,20 @@ func (g *groupImplementation) GetArg(key string) string {
 // GetArgs returns a copy of all arguments defined for this group.
 func (g *groupImplementation) GetArgs() map[string]string {
 	result := make(map[string]string, len(g.args))
-	for k, v := range g.args {
-		result[k] = v
-	}
+	maps.Copy(result, g.args)
 	return result
+}
+
+// propagateDryRun applies the group's dry-run mode to all nodes.
+func (g *groupImplementation) propagateDryRun() {
+	g.mu.RLock()
+	mode := g.dryRunMode
+	g.mu.RUnlock()
+	for _, node := range g.nodes {
+		if node.GetDryRunMode() != mode {
+			node.SetDryRunMode(mode)
+		}
+	}
 }
 
 // RunCommand executes a shell command across all nodes in this group.
@@ -68,11 +86,10 @@ func (g *groupImplementation) RunCommand(cmd string) types.Results {
 		Results: make(map[string]types.Result),
 	}
 
+	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
 	for _, node := range g.nodes {
 		nodeResults := node.RunCommand(cmd)
-		for host, result := range nodeResults.Results {
-			results.Results[host] = result
-		}
+		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
@@ -83,11 +100,10 @@ func (g *groupImplementation) RunPlaybook(pb playbook.PlaybookInterface) types.R
 		Results: make(map[string]types.Result),
 	}
 
+	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
 	for _, node := range g.nodes {
 		nodeResults := node.RunPlaybook(pb)
-		for host, result := range nodeResults.Results {
-			results.Results[host] = result
-		}
+		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
@@ -98,11 +114,11 @@ func (g *groupImplementation) RunPlaybookByID(id string, opts ...playbook.Playbo
 		Results: make(map[string]types.Result),
 	}
 
+	g.propagateDryRun()
+
 	for _, node := range g.nodes {
 		nodeResults := node.RunPlaybookByID(id, opts...)
-		for host, result := range nodeResults.Results {
-			results.Results[host] = result
-		}
+		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
@@ -113,13 +129,11 @@ func (g *groupImplementation) CheckPlaybook(pb playbook.PlaybookInterface) types
 		Results: make(map[string]types.Result),
 	}
 
+	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
+
 	for _, node := range g.nodes {
-		pbCopy := pb
-		pbCopy.SetDryRun(true)
-		nodeResults := node.RunPlaybook(pbCopy)
-		for host, result := range nodeResults.Results {
-			results.Results[host] = result
-		}
+		nodeResults := node.CheckPlaybook(pb)
+		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
@@ -140,20 +154,20 @@ func (g *groupImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
 
 // SetDryRunMode sets whether to simulate execution without making changes.
 // When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
+// The dry-run mode is applied to nodes at execution time (RunPlaybook, RunCommand, etc.).
 // Returns RunnableInterface for fluent method chaining.
 func (g *groupImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
-	for _, node := range g.nodes {
-		node.SetDryRunMode(dryRun)
-	}
+	g.mu.Lock()
+	g.dryRunMode = dryRun
+	g.mu.Unlock()
+	// Also propagate immediately for consistency
+	g.propagateDryRun()
 	return g
 }
 
-// GetDryRunMode returns true if dry-run mode is enabled on any node in the group.
+// GetDryRunMode returns true if dry-run mode is enabled for this group.
 func (g *groupImplementation) GetDryRunMode() bool {
-	for _, node := range g.nodes {
-		if node.GetDryRunMode() {
-			return true
-		}
-	}
-	return false
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	return g.dryRunMode
 }

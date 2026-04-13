@@ -2,6 +2,8 @@ package ork
 
 import (
 	"log/slog"
+	"maps"
+	"sync"
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/types"
@@ -13,13 +15,17 @@ type inventoryImplementation struct {
 	nodes          []NodeInterface
 	maxConcurrency int
 	logger         *slog.Logger
+	dryRunMode     bool
+	mu             sync.RWMutex
 }
 
 // AddGroup adds a group to the inventory.
 func (i *inventoryImplementation) AddGroup(group GroupInterface) InventoryInterface {
-	// Use reflection or type assertion to get group name
-	// For now, store by a unique identifier
 	i.groups[group.GetName()] = group
+	// Propagate dry-run mode to new group for consistency
+	if group.GetDryRunMode() != i.GetDryRunMode() {
+		group.SetDryRunMode(i.GetDryRunMode())
+	}
 	return i
 }
 
@@ -31,6 +37,10 @@ func (i *inventoryImplementation) GetGroupByName(name string) GroupInterface {
 // AddNode adds a node directly to the inventory.
 func (i *inventoryImplementation) AddNode(node NodeInterface) InventoryInterface {
 	i.nodes = append(i.nodes, node)
+	// Propagate dry-run mode to new node for consistency
+	if node.GetDryRunMode() != i.GetDryRunMode() {
+		node.SetDryRunMode(i.GetDryRunMode())
+	}
 	return i
 }
 
@@ -52,18 +62,35 @@ func (i *inventoryImplementation) SetMaxConcurrency(max int) InventoryInterface 
 	return i
 }
 
+// propagateDryRun applies the inventory's dry-run mode to all groups and nodes.
+func (i *inventoryImplementation) propagateDryRun() {
+	i.mu.RLock()
+	mode := i.dryRunMode
+	i.mu.RUnlock()
+	for _, group := range i.groups {
+		if group.GetDryRunMode() != mode {
+			group.SetDryRunMode(mode)
+		}
+	}
+	for _, node := range i.nodes {
+		if node.GetDryRunMode() != mode {
+			node.SetDryRunMode(mode)
+		}
+	}
+}
+
 // RunCommand executes a shell command across all nodes.
 func (i *inventoryImplementation) RunCommand(cmd string) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
 
+	i.propagateDryRun()
+
 	nodes := i.GetNodes()
 	for _, node := range nodes {
 		nodeResults := node.RunCommand(cmd)
-		for host, result := range nodeResults.Results {
-			results.Results[host] = result
-		}
+		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
@@ -74,12 +101,11 @@ func (i *inventoryImplementation) RunPlaybook(pb playbook.PlaybookInterface) typ
 		Results: make(map[string]types.Result),
 	}
 
+	i.propagateDryRun()
 	nodes := i.GetNodes()
 	for _, node := range nodes {
 		nodeResults := node.RunPlaybook(pb)
-		for host, result := range nodeResults.Results {
-			results.Results[host] = result
-		}
+		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
@@ -90,12 +116,11 @@ func (i *inventoryImplementation) RunPlaybookByID(id string, opts ...playbook.Pl
 		Results: make(map[string]types.Result),
 	}
 
+	i.propagateDryRun()
 	nodes := i.GetNodes()
 	for _, node := range nodes {
 		nodeResults := node.RunPlaybookByID(id, opts...)
-		for host, result := range nodeResults.Results {
-			results.Results[host] = result
-		}
+		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
@@ -106,14 +131,11 @@ func (i *inventoryImplementation) CheckPlaybook(pb playbook.PlaybookInterface) t
 		Results: make(map[string]types.Result),
 	}
 
+	i.propagateDryRun()
 	nodes := i.GetNodes()
 	for _, node := range nodes {
-		pbCopy := pb
-		pbCopy.SetDryRun(true)
-		nodeResults := node.RunPlaybook(pbCopy)
-		for host, result := range nodeResults.Results {
-			results.Results[host] = result
-		}
+		nodeResults := node.CheckPlaybook(pb)
+		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
@@ -134,28 +156,20 @@ func (i *inventoryImplementation) SetLogger(logger *slog.Logger) RunnableInterfa
 
 // SetDryRunMode sets whether to simulate execution without making changes.
 // When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
+// The dry-run mode is applied to groups/nodes at execution time and when set.
 // Returns RunnableInterface for fluent method chaining.
 func (i *inventoryImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
-	for _, node := range i.nodes {
-		node.SetDryRunMode(dryRun)
-	}
-	for _, group := range i.groups {
-		group.SetDryRunMode(dryRun)
-	}
+	i.mu.Lock()
+	i.dryRunMode = dryRun
+	i.mu.Unlock()
+	// Also propagate immediately for consistency
+	i.propagateDryRun()
 	return i
 }
 
-// GetDryRunMode returns true if dry-run mode is enabled on any node in the inventory.
+// GetDryRunMode returns true if dry-run mode is enabled for this inventory.
 func (i *inventoryImplementation) GetDryRunMode() bool {
-	for _, node := range i.nodes {
-		if node.GetDryRunMode() {
-			return true
-		}
-	}
-	for _, group := range i.groups {
-		if group.GetDryRunMode() {
-			return true
-		}
-	}
-	return false
+	i.mu.RLock()
+	defer i.mu.RUnlock()
+	return i.dryRunMode
 }
