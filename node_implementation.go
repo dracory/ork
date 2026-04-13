@@ -174,7 +174,7 @@ func (n *nodeImplementation) GetArgs() map[string]string {
 	return argsCopy
 }
 
-// GetConfig returns a copy of the underlying config.NodeConfig.
+// GetNodeConfig returns a copy of the underlying config.NodeConfig.
 // This allows integration with code that uses the config package directly.
 // The returned configuration includes all accumulated settings (host, port, user, key, args).
 //
@@ -186,9 +186,9 @@ func (n *nodeImplementation) GetArgs() map[string]string {
 //	node := ork.NewNode("server.example.com").
 //	    SetPort("2222").
 //	    SetUser("deploy")
-//	cfg := node.GetConfig()
+//	cfg := node.GetNodeConfig()
 //	fmt.Printf("Connecting to %s\n", cfg.SSHAddr())
-func (n *nodeImplementation) GetConfig() config.NodeConfig {
+func (n *nodeImplementation) GetNodeConfig() config.NodeConfig {
 	cfgCopy := n.cfg
 
 	if n.cfg.Args != nil {

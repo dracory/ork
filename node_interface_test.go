@@ -34,7 +34,7 @@ func TestNewNodeForHost(t *testing.T) {
 	}
 
 	// Verify Args is initialized
-	cfg := node.GetConfig()
+	cfg := node.GetNodeConfig()
 	if cfg.Args == nil {
 		t.Error("Expected Args to be initialized, got nil")
 	}
@@ -76,7 +76,7 @@ func TestNewNode(t *testing.T) {
 	}
 
 	// Verify Args is initialized
-	cfg := node.GetConfig()
+	cfg := node.GetNodeConfig()
 	if cfg.Args == nil {
 		t.Error("Expected Args to be initialized, got nil")
 	}

@@ -10,6 +10,9 @@ import (
 // It can be overridden in tests to mock SSH connections.
 var sshRunOnce = ssh.RunOnce
 
+// check if the interface implements the RunnableInterface
+// var _ types.RunnableInterface = (*nodeImplementation)(nil)
+
 // NodeInterface defines the contract for managing a remote server via SSH.
 // Implementations must support configuration via setter methods, connection
 // management, command execution, and playbook execution.
@@ -78,7 +81,7 @@ type NodeInterface interface {
 	//	fmt.Println(args["username"])  // Output: alice
 	GetArgs() map[string]string
 
-	// GetConfig returns a copy of the underlying config.NodeConfig.
+	// GetNodeConfig returns a copy of the underlying config.NodeConfig.
 	// This allows integration with code that uses the config package directly.
 	// The returned configuration includes all accumulated settings (host, port, user, key, args).
 	//
@@ -89,7 +92,7 @@ type NodeInterface interface {
 	//	    SetUser("deploy")
 	//	cfg := node.GetConfig()
 	//	fmt.Printf("Connecting to %s\n", cfg.SSHAddr())
-	GetConfig() config.NodeConfig
+	GetNodeConfig() config.NodeConfig
 
 	// GetHost returns the configured SSH host (hostname or IP address).
 	//

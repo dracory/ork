@@ -414,7 +414,7 @@ func TestNodeImplementation_GetConfig(t *testing.T) {
 		},
 	}
 
-	cfg := n.GetConfig()
+	cfg := n.GetNodeConfig()
 
 	// Verify all fields are copied correctly
 	if cfg.SSHHost != "server.example.com" {
@@ -452,7 +452,7 @@ func TestNodeImplementation_GetConfig_DeepCopy(t *testing.T) {
 	}
 
 	// Get a copy of the config
-	cfg := n.GetConfig()
+	cfg := n.GetNodeConfig()
 
 	// Modify the returned config
 	cfg.SSHHost = "modified.example.com"
@@ -500,7 +500,7 @@ func TestNodeImplementation_GetConfig_NilArgs(t *testing.T) {
 		},
 	}
 
-	cfg := n.GetConfig()
+	cfg := n.GetNodeConfig()
 
 	// Verify Args is nil in the copy
 	if cfg.Args != nil {
@@ -520,7 +520,7 @@ func TestNodeImplementation_GetConfig_EmptyArgs(t *testing.T) {
 		},
 	}
 
-	cfg := n.GetConfig()
+	cfg := n.GetNodeConfig()
 
 	// Verify Args is empty in the copy
 	if cfg.Args == nil {
@@ -572,7 +572,7 @@ func TestNodeImplementation_GettersAfterSetters(t *testing.T) {
 	}
 
 	// Verify GetConfig returns updated values
-	cfg := n.GetConfig()
+	cfg := n.GetNodeConfig()
 	if cfg.SSHPort != "2222" {
 		t.Errorf("Expected config SSHPort=%q, got %q", "2222", cfg.SSHPort)
 	}
