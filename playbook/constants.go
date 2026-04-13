@@ -40,4 +40,10 @@ const (
 
 	// IDUserStatus shows user info (accepts optional "username" arg)
 	IDUserStatus = "user-status"
+
+	// IDFail2banInstall installs fail2ban intrusion prevention
+	IDFail2banInstall = "fail2ban-install"
+
+	// IDFail2banStatus shows fail2ban service and jail status
+	IDFail2banStatus = "fail2ban-status"
 )

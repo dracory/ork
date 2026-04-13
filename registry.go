@@ -3,6 +3,7 @@ package ork
 import (
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/playbooks/apt"
+	"github.com/dracory/ork/playbooks/fail2ban"
 	"github.com/dracory/ork/playbooks/ping"
 	"github.com/dracory/ork/playbooks/reboot"
 	"github.com/dracory/ork/playbooks/swap"
@@ -37,4 +38,6 @@ func init() {
 	_ = defaultRegistry.PlaybookRegister(user.NewUserCreate())
 	_ = defaultRegistry.PlaybookRegister(user.NewUserDelete())
 	_ = defaultRegistry.PlaybookRegister(user.NewUserStatus())
+	_ = defaultRegistry.PlaybookRegister(fail2ban.NewFail2banInstall())
+	_ = defaultRegistry.PlaybookRegister(fail2ban.NewFail2banStatus())
 }
