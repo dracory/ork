@@ -60,4 +60,6 @@ func init() {
 	_ = defaultRegistry.PlaybookRegister(mariadb.NewBackup())
 	_ = defaultRegistry.PlaybookRegister(mariadb.NewSecurityAudit())
 	_ = defaultRegistry.PlaybookRegister(mariadb.NewChangePort())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewEnableSSL())
+	_ = defaultRegistry.PlaybookRegister(mariadb.NewEnableEncryption())
 }

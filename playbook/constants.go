@@ -98,4 +98,10 @@ const (
 
 	// IDMariadbChangePort changes MariaDB port
 	IDMariadbChangePort = "mariadb-change-port"
+
+	// IDMariadbEnableSSL enables SSL/TLS encryption
+	IDMariadbEnableSSL = "mariadb-enable-ssl"
+
+	// IDMariadbEnableEncryption enables data-at-rest encryption
+	IDMariadbEnableEncryption = "mariadb-enable-encryption"
 )
