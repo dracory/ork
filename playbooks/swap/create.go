@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -63,7 +63,7 @@ import (
 //   - Uses secure permissions on swap file (600)
 //   - Falls back gracefully if fstab or sysctl updates fail (logs warning)
 type SwapCreate struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if swap needs to be created.
@@ -95,7 +95,7 @@ func (s *SwapCreate) Check() (bool, error) {
 //   - file: Swap file path ("/swapfile")
 //   - swappiness: Configured kernel swappiness value
 //   - status: Output from swapon --show showing active swap
-func (s *SwapCreate) Run() playbook.Result {
+func (s *SwapCreate) Run() types.Result {
 	cfg := s.GetNodeConfig()
 
 	// Arguments
@@ -120,7 +120,7 @@ func (s *SwapCreate) Run() playbook.Result {
 
 	size, err := strconv.Atoi(sizeStr)
 	if err != nil || size < 1 {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Invalid swap size",
 			Error:   fmt.Errorf("invalid swap size: %s (must be positive integer)", sizeStr),
@@ -136,7 +136,7 @@ func (s *SwapCreate) Run() playbook.Result {
 	case "gb", "g":
 		sizeDesc = fmt.Sprintf("%dGB", size)
 	default:
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Invalid unit",
 			Error:   fmt.Errorf("invalid unit: %s (use 'gb' or 'mb')", unit),
@@ -146,7 +146,7 @@ func (s *SwapCreate) Run() playbook.Result {
 	// Check if swap already exists
 	needsCreate, err := s.Check()
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to check swap status",
 			Error:   err,
@@ -154,7 +154,7 @@ func (s *SwapCreate) Run() playbook.Result {
 	}
 
 	if !needsCreate {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Swap already exists",
 		}
@@ -178,7 +178,7 @@ func (s *SwapCreate) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would add to fstab", "cmd", cmdAddFstab.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would configure swappiness", "cmd", cmdSwappiness.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would get swap status", "cmd", cmdStatus.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would create %s swap file at %s", sizeDesc, swapFilePath),
 		}
@@ -186,7 +186,7 @@ func (s *SwapCreate) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdCreate)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to create swap",
 			Error:   fmt.Errorf("failed to create swap: %w\nOutput: %s", err, output),
@@ -196,7 +196,7 @@ func (s *SwapCreate) Run() playbook.Result {
 	// Make swap file
 	_, err = ssh.Run(cfg, cmdMakeSwap)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to make swap",
 			Error:   fmt.Errorf("failed to make swap: %w", err),
@@ -207,7 +207,7 @@ func (s *SwapCreate) Run() playbook.Result {
 	cmdEnableSwap := types.Command{Command: fmt.Sprintf("swapon %s", swapFilePath), Description: "Enable swap"}
 	_, err = ssh.Run(cfg, cmdEnableSwap)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to enable swap",
 			Error:   fmt.Errorf("failed to enable swap: %w", err),
@@ -233,7 +233,7 @@ func (s *SwapCreate) Run() playbook.Result {
 	status, _ := ssh.Run(cfg, cmdStatus)
 
 	cfg.GetLoggerOrDefault().Info("swap file created", "size", sizeDesc, "path", swapFilePath)
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("Created %s swap file", sizeDesc),
 		Details: map[string]string{
@@ -258,9 +258,9 @@ func (s *SwapCreate) Run() playbook.Result {
 //	- size: "1" (1 unit)
 //	- unit: "gb" (gigabytes)
 //	- swappiness: "10" (low swappiness, prefers RAM)
-func NewSwapCreate() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDSwapCreate)
+func NewSwapCreate() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDSwapCreate)
 	pb.SetDescription("Create a swap file (size via args['size'], unit via args['unit']='gb'|'mb', swappiness via args['swappiness']=10, defaults: 1GB, swappiness=10)")
 	return &SwapCreate{BasePlaybook: pb}
 }

@@ -1,7 +1,7 @@
 # Proposal: Connection Pooling (Multi-Host)
 
 **Date:** 2026-04-12  
-**Status:** Not Implemented  
+**Status:** Rejected. Out of scope.  
 **Author:** System Review
 
 > **Note:** Single-host connection reuse via `Node.Connect()`. Multi-host pooling needed for Inventory operations.
@@ -89,8 +89,8 @@ for _, cfg := range hostConfigs {
 **Risk:** Connection state issues between commands  
 **Mitigation:** Add connection health checks before each command
 
-**Risk:** Breaking changes for existing playbooks  
-**Mitigation:** Keep `RunOnce` as default, make connection reuse opt-in
+**Risk:** Breaking changes for existing playbooks
+**Mitigation:** Keep `Run` as default, make connection reuse opt-in
 
 ## Success Metrics
 

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -38,7 +38,7 @@ import (
 //   - Pre-flight check before maintenance windows
 //   - Reporting and compliance auditing
 type AptStatus struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns false since AptStatus is read-only.
@@ -55,7 +55,7 @@ func (a *AptStatus) Check() (bool, error) {
 // Result.Details contains:
 //   - upgradable_count: Number of packages available for upgrade
 //   - packages: Full output from apt list --upgradable (when packages exist)
-func (a *AptStatus) Run() playbook.Result {
+func (a *AptStatus) Run() types.Result {
 	cfg := a.GetNodeConfig()
 
 	cmdUpdate := types.Command{Command: "apt-get update -qq", Description: "Update package lists"}
@@ -65,7 +65,7 @@ func (a *AptStatus) Run() playbook.Result {
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpdate.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdList.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Would check for available package updates",
 		}
@@ -74,7 +74,7 @@ func (a *AptStatus) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("checking for available updates")
 	_, err := ssh.Run(cfg, cmdUpdate)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to update package lists",
 			Error:   fmt.Errorf("failed to update package lists: %w", err),
@@ -83,7 +83,7 @@ func (a *AptStatus) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdList)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to list upgradable packages",
 			Error:   fmt.Errorf("failed to list upgradable packages: %w", err),
@@ -93,7 +93,7 @@ func (a *AptStatus) Run() playbook.Result {
 	count := strings.TrimSpace(output)
 	if count == "" || count == "0" {
 		cfg.GetLoggerOrDefault().Info("all packages are up to date")
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "All packages are up to date",
 			Details: map[string]string{
@@ -103,7 +103,7 @@ func (a *AptStatus) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("available upgrades", "packages", output)
-	return playbook.Result{
+	return types.Result{
 		Changed: false,
 		Message: fmt.Sprintf("%d packages available for upgrade", strings.Count(output, "\n")+1),
 		Details: map[string]string{
@@ -119,9 +119,9 @@ func (a *AptStatus) Run() playbook.Result {
 //
 //	A PlaybookInterface implementation configured with IDAptStatus identifier
 //	and description "Show available package updates (read-only)".
-func NewAptStatus() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDAptStatus)
+func NewAptStatus() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDAptStatus)
 	pb.SetDescription("Show available package updates (read-only)")
 	return &AptStatus{BasePlaybook: pb}
 }

@@ -1,7 +1,7 @@
 # Proposal: Parallel Execution
 
 **Date:** 2026-04-12  
-**Status:** Not Implemented  
+**Status:** Rejected. Out of scope for now. May be implement in the future.
 **Author:** System Review
 
 > **Note:** Inventory system implemented. Parallel execution foundation ready. Needs worker pool for actual concurrency.
@@ -30,12 +30,12 @@ type Executor struct {
 type HostResult struct {
     Host   string
     Config config.Config
-    Result playbook.Result
+    Result types.Result
     Error  error
     Duration time.Duration
 }
 
-func (e *Executor) RunOnHosts(p playbook.Playbook, configs []config.Config) []HostResult
+func (e *Executor) RunOnHosts(p types.PlaybookInterface, configs []config.Config) []HostResult
 ```
 
 ### 2. Inventory Management (IMPLEMENTED)
@@ -132,7 +132,7 @@ func main() {
 ### With Progress Tracking
 
 ```go
-func RunWithProgress(p playbook.Playbook, configs []config.Config) {
+func RunWithProgress(p types.PlaybookInterface, configs []config.Config) {
     tracker := &ProgressTracker{Total: len(configs)}
     
     executor := &Executor{
@@ -179,7 +179,7 @@ func NewExecutor(maxParallel int, stopOnError bool) *Executor {
     }
 }
 
-func (e *Executor) RunOnHosts(p playbook.Playbook, configs []config.Config) []HostResult {
+func (e *Executor) RunOnHosts(p types.PlaybookInterface, configs []config.Config) []HostResult {
     results := make([]HostResult, len(configs))
     var wg sync.WaitGroup
     
@@ -240,7 +240,7 @@ func (e *Executor) RunOnHosts(p playbook.Playbook, configs []config.Config) []Ho
     return results
 }
 
-func (e *Executor) executeWithTimeout(ctx context.Context, p playbook.Playbook, cfg config.Config) HostResult {
+func (e *Executor) executeWithTimeout(ctx context.Context, p types.PlaybookInterface, cfg config.Config) HostResult {
     result := HostResult{
         Host:   cfg.SSHHost,
         Config: cfg,
@@ -253,7 +253,7 @@ func (e *Executor) executeWithTimeout(ctx context.Context, p playbook.Playbook, 
     defer cancel()
     
     // Run in goroutine
-    done := make(chan playbook.Result, 1)
+    done := make(chan types.Result, 1)
     go func() {
         done <- p.Run(cfg)
     }()

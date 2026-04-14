@@ -3,7 +3,7 @@ package mariadb
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -28,7 +28,7 @@ import (
 //   - mariadb-install: Install MariaDB server
 //   - mariadb-secure: Security hardening
 type Status struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns false since this is a read-only playbook.
@@ -37,7 +37,7 @@ func (m *Status) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *Status) Run() playbook.Result {
+func (m *Status) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 	mariaDBPort := m.GetArg(ArgPort)
@@ -62,7 +62,7 @@ func (m *Status) Run() playbook.Result {
 		if rootPassword != "" {
 			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdConn.Command, "description", cmdConn.Description)
 		}
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Would check MariaDB status",
 		}
@@ -72,7 +72,7 @@ func (m *Status) Run() playbook.Result {
 
 	serviceOutput, err := ssh.Run(cfg, cmdService)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "MariaDB is not running",
 			Error:   fmt.Errorf("mariadb is not running: %w", err),
@@ -101,7 +101,7 @@ func (m *Status) Run() playbook.Result {
 		}
 	}
 
-	return playbook.Result{
+	return types.Result{
 		Changed: false,
 		Message: "MariaDB status retrieved",
 		Details: map[string]string{
@@ -114,9 +114,9 @@ func (m *Status) Run() playbook.Result {
 }
 
 // NewStatus creates a new mariadb-status playbook.
-func NewStatus() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbStatus)
+func NewStatus() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbStatus)
 	pb.SetDescription("Display MariaDB server status information (read-only)")
 	return &Status{BasePlaybook: pb}
 }

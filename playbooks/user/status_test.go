@@ -10,35 +10,6 @@ import (
 // TestUserStatus_Run_DryRun verifies that dry-run mode correctly handles user status.
 func TestUserStatus_Run_DryRun(t *testing.T) {
 	pb := NewUserStatus()
-
-	cfg := config.NodeConfig{
-		IsDryRunMode: true,
-		Logger:       slog.Default(),
-		Args:         map[string]string{},
-	}
-
-	pb.SetNodeConfig(cfg)
-
-	result := pb.Run()
-
-	// Status is a read-only operation, so Changed should be false even in dry-run
-	if result.Changed {
-		t.Error("Expected Changed to be false in dry-run mode for read-only operation")
-	}
-
-	expectedMessage := "Would list all system users"
-	if result.Message != expectedMessage {
-		t.Errorf("Expected message '%s', got '%s'", expectedMessage, result.Message)
-	}
-
-	if result.Error != nil {
-		t.Errorf("Expected no error in dry-run mode, got: %v", result.Error)
-	}
-}
-
-// TestUserStatus_Run_DryRun_WithUsername verifies dry-run with specific username.
-func TestUserStatus_Run_DryRun_WithUsername(t *testing.T) {
-	pb := NewUserStatus()
 	pb.SetArg("username", "testuser")
 
 	cfg := config.NodeConfig{
@@ -65,12 +36,12 @@ func TestUserStatus_Run_DryRun_WithUsername(t *testing.T) {
 	}
 }
 
-// TestUserStatus_Run_NotDryRun verifies that non-dry-run mode returns different result structure.
-func TestUserStatus_Run_NotDryRun(t *testing.T) {
+// TestUserStatus_Run_RequiresUsername verifies that username is required.
+func TestUserStatus_Run_RequiresUsername(t *testing.T) {
 	pb := NewUserStatus()
 
 	cfg := config.NodeConfig{
-		IsDryRunMode: false,
+		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
 	}
@@ -79,15 +50,13 @@ func TestUserStatus_Run_NotDryRun(t *testing.T) {
 
 	result := pb.Run()
 
-	// In non-dry-run mode, it will try to execute SSH commands and likely fail
-	// since there's no real SSH server. We just verify it doesn't return the dry-run message.
-	if result.Message == "Would list all system users" {
-		t.Error("Should not return dry-run message when IsDryRunMode is false")
+	if result.Error == nil {
+		t.Error("Expected error when username is not provided")
 	}
 
-	// Status is a read-only operation, so Changed should always be false
-	if result.Changed {
-		t.Error("Expected Changed to be false for read-only operation")
+	expectedMessage := "Username is required"
+	if result.Message != expectedMessage {
+		t.Errorf("Expected message '%s', got '%s'", expectedMessage, result.Message)
 	}
 }
 

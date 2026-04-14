@@ -1,4 +1,4 @@
-package playbook
+package playbooks
 
 // Playbook ID constants for use with RunPlaybook.
 // These constants provide compile-time safety and IDE autocomplete for playbook IDs.
@@ -6,7 +6,7 @@ package playbook
 // Example:
 //
 //	node := ork.NewNodeForHost("server.example.com")
-//	err := node.RunPlaybook(playbook.IDPing)
+//	err := node.RunPlaybook(playbooks.IDPing)
 const (
 	// IDPing checks SSH connectivity
 	IDPing = "ping"
@@ -38,7 +38,10 @@ const (
 	// IDUserDelete deletes a user (requires "username" arg)
 	IDUserDelete = "user-delete"
 
-	// IDUserStatus shows user info (accepts optional "username" arg)
+	// IDUserList lists all non-system users
+	IDUserList = "user-list"
+
+	// IDUserStatus shows user info (requires "username" arg)
 	IDUserStatus = "user-status"
 
 	// IDFail2banInstall installs fail2ban intrusion prevention

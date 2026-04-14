@@ -255,16 +255,16 @@ for _, ip := range ips {
 inv.AddGroup(webGroup)
 
 // Security hardening across all servers
-inv.RunPlaybook(playbooks.NewUfwInstall())
-inv.RunPlaybook(playbooks.NewFail2banInstall())
+results := inv.RunPlaybook(playbooks.NewUfwInstall())
+results = inv.RunPlaybook(playbooks.NewFail2banInstall())
 
 // Install stack
-inv.RunPlaybook(playbooks.NewAptUpdate())
+results = inv.RunPlaybook(playbooks.NewAptUpdate())
 
 // Deploy application with per-node results
 deploy := myapp.NewDeploy()
 deploy.SetArg("version", "1.2.3")
-results := inv.RunPlaybook(deploy)
+results = inv.RunPlaybook(deploy)
 for host, result := range results.Results {
     if result.Error != nil {
         log.Printf("%s deploy failed: %v", host, result.Error)

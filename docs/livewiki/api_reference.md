@@ -4,8 +4,8 @@ page-type: reference
 summary: Complete API reference for all public interfaces, functions, and types.
 tags: [reference, api, interfaces]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-14
+version: 1.1.0
 ---
 
 # API Reference
@@ -19,9 +19,9 @@ Complete reference for all public APIs in Ork.
 | `ork` | `github.com/dracory/ork` | Main API with Node, Group, Inventory |
 | `config` | `github.com/dracory/ork/config` | Configuration types |
 | `ssh` | `github.com/dracory/ork/ssh` | SSH client utilities |
-| `playbook` | `github.com/dracory/ork/playbook` | Playbook interface and registry |
+| `playbook` | `github.com/dracory/ork/playbook` | BasePlaybook implementation |
 | `playbooks` | `github.com/dracory/ork/playbooks` | Built-in playbook implementations |
-| `types` | `github.com/dracory/ork/types` | Shared result types |
+| `types` | `github.com/dracory/ork/types` | PlaybookInterface, Registry, Command, Result types |
 
 ## ork Package
 
@@ -55,7 +55,7 @@ type NodeInterface interface {
     IsConnected() bool
     
     // Playbook by ID (deprecated, use RunPlaybook)
-    RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results
+    RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
 }
 ```
 
@@ -124,9 +124,9 @@ Base interface for all executable entities.
 ```go
 type RunnableInterface interface {
     RunCommand(cmd string) types.Results
-    RunPlaybook(pb playbook.PlaybookInterface) types.Results
-    RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results
-    CheckPlaybook(pb playbook.PlaybookInterface) types.Results
+    RunPlaybook(pb types.PlaybookInterface) types.Results
+    RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
+    CheckPlaybook(pb types.PlaybookInterface) types.Results
     GetLogger() *slog.Logger
     SetLogger(logger *slog.Logger) RunnableInterface
     SetDryRunMode(dryRun bool) RunnableInterface
@@ -137,8 +137,11 @@ type RunnableInterface interface {
 ### Registry Functions
 
 ```go
-// Get the global playbook registry singleton
-func GetGlobalPlaybookRegistry() (*playbook.Registry, error)
+// Get the global playbook registry singleton (lazily initialized)
+func GetGlobalPlaybookRegistry() (*types.Registry, error)
+
+// Create a new isolated registry with all built-in playbooks registered
+func NewDefaultRegistry() (*types.Registry, error)
 ```
 
 ### Playbook Constants
@@ -211,6 +214,19 @@ func (c NodeConfig) GetLoggerOrDefault() *slog.Logger
 
 ## types Package
 
+### Command
+
+Represents a shell command with its description.
+
+```go
+type Command struct {
+    Command     string
+    Description string
+}
+```
+
+Used to display and execute shell commands in a structured way, especially useful in dry-run mode to show what commands would be executed.
+
 ### Result
 
 Individual operation result.
@@ -250,11 +266,9 @@ type Summary struct {
 }
 ```
 
-## playbook Package
-
 ### PlaybookInterface
 
-All playbooks must implement this interface.
+All playbooks must implement this interface (defined in types package).
 
 ```go
 type PlaybookInterface interface {
@@ -265,8 +279,8 @@ type PlaybookInterface interface {
     SetDescription(description string) PlaybookInterface
     
     // Configuration
-    GetConfig() config.NodeConfig
-    SetConfig(cfg config.NodeConfig) PlaybookInterface
+    GetNodeConfig() config.NodeConfig
+    SetNodeConfig(cfg config.NodeConfig) PlaybookInterface
     
     // Arguments
     GetArg(key string) string
@@ -286,41 +300,7 @@ type PlaybookInterface interface {
 }
 ```
 
-### Result
-
-```go
-type Result struct {
-    Changed bool
-    Message string
-    Details map[string]string
-    Error   error
-}
-```
-
-### PlaybookOptions
-
-```go
-type PlaybookOptions struct {
-    Args    map[string]string
-    DryRun  bool
-    Timeout time.Duration
-}
-```
-
-### Registry
-
-```go
-type Registry struct {
-    playbooks map[string]PlaybookInterface
-    mu        sync.RWMutex
-}
-
-// Methods
-func NewRegistry() *Registry
-func (r *Registry) PlaybookRegister(pb PlaybookInterface) error
-func (r *Registry) PlaybookFindByID(id string) (PlaybookInterface, bool)
-func (r *Registry) PlaybookList() []PlaybookInterface
-```
+## playbook Package
 
 ### BasePlaybook
 
@@ -379,74 +359,75 @@ func Run(cfg config.NodeConfig, cmd string) (string, error)
 
 ```go
 // Ping
-func ping.NewPing() playbook.PlaybookInterface
+func ping.NewPing() types.PlaybookInterface
 
 // Apt
-func apt.NewAptUpdate() playbook.PlaybookInterface
-func apt.NewAptUpgrade() playbook.PlaybookInterface
-func apt.NewAptStatus() playbook.PlaybookInterface
+func apt.NewAptUpdate() types.PlaybookInterface
+func apt.NewAptUpgrade() types.PlaybookInterface
+func apt.NewAptStatus() types.PlaybookInterface
 
 // Reboot
-func reboot.NewReboot() playbook.PlaybookInterface
+func reboot.NewReboot() types.PlaybookInterface
 ```
 
 ### User Management
 
 ```go
-func user.NewUserCreate() playbook.PlaybookInterface
-func user.NewUserDelete() playbook.PlaybookInterface
-func user.NewUserStatus() playbook.PlaybookInterface
+func user.NewUserCreate() types.PlaybookInterface
+func user.NewUserDelete() types.PlaybookInterface
+func user.NewUserList() types.PlaybookInterface
+func user.NewUserStatus() types.PlaybookInterface
 ```
 
 ### Swap Management
 
 ```go
-func swap.NewSwapCreate() playbook.PlaybookInterface
-func swap.NewSwapDelete() playbook.PlaybookInterface
-func swap.NewSwapStatus() playbook.PlaybookInterface
+func swap.NewSwapCreate() types.PlaybookInterface
+func swap.NewSwapDelete() types.PlaybookInterface
+func swap.NewSwapStatus() types.PlaybookInterface
 ```
 
 ### Security
 
 ```go
-func security.NewSshHarden() playbook.PlaybookInterface
-func security.NewKernelHarden() playbook.PlaybookInterface
-func security.NewAideInstall() playbook.PlaybookInterface
-func security.NewAuditdInstall() playbook.PlaybookInterface
-func security.NewSshChangePort() playbook.PlaybookInterface
+func security.NewSshHarden() types.PlaybookInterface
+func security.NewKernelHarden() types.PlaybookInterface
+func security.NewAideInstall() types.PlaybookInterface
+func security.NewAuditdInstall() types.PlaybookInterface
+func security.NewSshChangePort() types.PlaybookInterface
 ```
 
 ### Firewall
 
 ```go
-func ufw.NewUfwInstall() playbook.PlaybookInterface
-func ufw.NewUfwStatus() playbook.PlaybookInterface
-func ufw.NewAllowMariaDB() playbook.PlaybookInterface
+func ufw.NewUfwInstall() types.PlaybookInterface
+func ufw.NewUfwStatus() types.PlaybookInterface
+func ufw.NewAllowMariaDB() types.PlaybookInterface
 ```
 
 ### Fail2ban
 
 ```go
-func fail2ban.NewFail2banInstall() playbook.PlaybookInterface
-func fail2ban.NewFail2banStatus() playbook.PlaybookInterface
+func fail2ban.NewFail2banInstall() types.PlaybookInterface
+func fail2ban.NewFail2banStatus() types.PlaybookInterface
 ```
 
 ### MariaDB
 
 ```go
-func mariadb.NewInstall() playbook.PlaybookInterface
-func mariadb.NewSecure() playbook.PlaybookInterface
-func mariadb.NewCreateDB() playbook.PlaybookInterface
-func mariadb.NewCreateUser() playbook.PlaybookInterface
-func mariadb.NewStatus() playbook.PlaybookInterface
-func mariadb.NewListDBs() playbook.PlaybookInterface
-func mariadb.NewListUsers() playbook.PlaybookInterface
-func mariadb.NewBackup() playbook.PlaybookInterface
-func mariadb.NewSecurityAudit() playbook.PlaybookInterface
-func mariadb.NewChangePort() playbook.PlaybookInterface
-func mariadb.NewEnableSSL() playbook.PlaybookInterface
-func mariadb.NewEnableEncryption() playbook.PlaybookInterface
-func mariadb.NewBackupEncrypt() playbook.PlaybookInterface
+func mariadb.NewInstall() types.PlaybookInterface
+func mariadb.NewSecure() types.PlaybookInterface
+func mariadb.NewCreateDB() types.PlaybookInterface
+func mariadb.NewCreateUser() types.PlaybookInterface
+func mariadb.NewStatus() types.PlaybookInterface
+func mariadb.NewListDBs() types.PlaybookInterface
+func mariadb.NewListUsers() types.PlaybookInterface
+func mariadb.NewBackup() types.PlaybookInterface
+func mariadb.NewSecurityAudit() types.PlaybookInterface
+func mariadb.NewChangePort() types.PlaybookInterface
+func mariadb.NewEnableSSL() types.PlaybookInterface
+func mariadb.NewEnableEncryption() types.PlaybookInterface
+func mariadb.NewBackupEncrypt() types.PlaybookInterface
 ```
 
 ## Usage Examples
@@ -508,36 +489,36 @@ type MyPlaybook struct {
 }
 
 func (p *MyPlaybook) Check() (bool, error) {
-    cfg := p.GetConfig()
+    cfg := p.GetNodeConfig()
     output, _ := ssh.Run(cfg, "check command")
     return !strings.Contains(output, "configured"), nil
 }
 
-func (p *MyPlaybook) Run() playbook.Result {
+func (p *MyPlaybook) Run() types.Result {
     needsChange, _ := p.Check()
     if !needsChange {
-        return playbook.Result{
+        return types.Result{
             Changed: false,
             Message: "Already configured",
         }
     }
     
-    cfg := p.GetConfig()
+    cfg := p.GetNodeConfig()
     _, err := ssh.Run(cfg, "apply command")
     if err != nil {
-        return playbook.Result{
+        return types.Result{
             Changed: false,
             Error: err,
         }
     }
     
-    return playbook.Result{
+    return types.Result{
         Changed: true,
         Message: "Configuration applied",
     }
 }
 
-func NewMyPlaybook() playbook.PlaybookInterface {
+func NewMyPlaybook() types.PlaybookInterface {
     pb := playbook.NewBasePlaybook()
     pb.SetID("my-playbook")
     pb.SetDescription("Does something useful")

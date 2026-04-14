@@ -154,8 +154,8 @@ if result.Error != nil {
 }
 
 // Chain multiple playbooks
-node.RunPlaybook(playbooks.NewAptUpdate())
-node.RunPlaybook(playbooks.NewAptUpgrade())
+results = node.RunPlaybook(playbooks.NewAptUpdate())
+results = node.RunPlaybook(playbooks.NewAptUpgrade())
 ```
 
 ## State Model
@@ -179,7 +179,8 @@ package 'nginx'  # Chef picks apt, yum, or msi
 
 ```go
 // You control exactly what runs and when
-result := node.RunPlaybook(playbooks.NewAptUpgrade())
+results := node.RunPlaybook(playbooks.NewAptUpgrade())
+result := results.Results["server.example.com"]
 ```
 
 ## Idempotency

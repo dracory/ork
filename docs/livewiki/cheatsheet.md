@@ -71,7 +71,7 @@ results := node.RunPlaybook(playbooks.NewPing())
 results := node.RunPlaybook(playbooks.NewAptUpdate())
 
 // By ID
-results := node.RunPlaybookByID(playbook.IDPing)
+results := node.RunPlaybookByID(playbooks.IDPing)
 
 // Check mode (dry-run for single playbook)
 results := node.CheckPlaybook(playbooks.NewAptUpgrade())
@@ -267,32 +267,32 @@ addr := cfg.SSHAddr()  // "host:port"
 
 ```go
 // System
-playbook.IDPing
-playbook.IDAptUpdate
-playbook.IDAptUpgrade
-playbook.IDAptStatus
-playbook.IDReboot
+playbooks.IDPing
+playbooks.IDAptUpdate
+playbooks.IDAptUpgrade
+playbooks.IDAptStatus
+playbooks.IDReboot
 
 // Users
-playbook.IDUserCreate
-playbook.IDUserDelete
-playbook.IDUserStatus
+playbooks.IDUserCreate
+playbooks.IDUserDelete
+playbooks.IDUserStatus
 
 // Swap
-playbook.IDSwapCreate
-playbook.IDSwapDelete
-playbook.IDSwapStatus
+playbooks.IDSwapCreate
+playbooks.IDSwapDelete
+playbooks.IDSwapStatus
 
 // Security
-playbook.IDSshHarden
-playbook.IDKernelHarden
-playbook.IDAideInstall
-playbook.IDAuditdInstall
+playbooks.IDSshHarden
+playbooks.IDKernelHarden
+playbooks.IDAideInstall
+playbooks.IDAuditdInstall
 
 // MariaDB
-playbook.IDMariadbInstall
-playbook.IDMariadbSecure
-playbook.IDMariadbCreateDB
+playbooks.IDMariadbInstall
+playbooks.IDMariadbSecure
+playbooks.IDMariadbCreateDB
 // ... etc
 ```
 

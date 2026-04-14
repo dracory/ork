@@ -2,14 +2,8 @@ package ork
 
 import (
 	"github.com/dracory/ork/config"
-	"github.com/dracory/ork/playbook"
-	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
-
-// sshRunOnce is a variable that points to ssh.RunOnce.
-// It can be overridden in tests to mock SSH connections.
-var sshRunOnce = ssh.RunOnce
 
 // check if the interface implements the RunnableInterface
 // var _ types.RunnableInterface = (*nodeImplementation)(nil)
@@ -240,7 +234,7 @@ type NodeInterface interface {
 	// Optional PlaybookOptions can be provided to override node-level arguments for this
 	// specific execution. This allows per-playbook variable scoping without affecting
 	// the node's state.
-	RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results
+	RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
 }
 
 // NewNode creates a new Node with default configuration values.

@@ -3,15 +3,15 @@ package fail2ban
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
 
 // NewFail2banInstall creates a new fail2ban-install playbook.
-func NewFail2banInstall() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDFail2banInstall)
+func NewFail2banInstall() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDFail2banInstall)
 	pb.SetDescription("Install and enable fail2ban intrusion prevention system")
 	return &Fail2banInstall{BasePlaybook: pb}
 }
@@ -55,7 +55,7 @@ func NewFail2banInstall() playbook.PlaybookInterface {
 // Related Playbooks:
 //   - fail2ban-status: Check service and jail status
 type Fail2banInstall struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if fail2ban needs to be installed.
@@ -71,7 +71,7 @@ func (f *Fail2banInstall) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (f *Fail2banInstall) Run() playbook.Result {
+func (f *Fail2banInstall) Run() types.Result {
 	cfg := f.GetNodeConfig()
 
 	cmdInstall := types.Command{
@@ -92,7 +92,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 			"cmd:", cmdEnable.Command,
 			"description:", cmdEnable.Description)
 
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would install and enable fail2ban",
 		}
@@ -102,7 +102,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to install fail2ban",
 			Error:   fmt.Errorf("failed to install fail2ban: %w\nOutput: %s", err, output),
@@ -112,7 +112,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 	// Enable and start fail2ban
 	output, err = ssh.Run(cfg, cmdEnable)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to enable/start fail2ban",
 			Error:   fmt.Errorf("failed to enable/start fail2ban: %w\nOutput: %s", err, output),
@@ -120,7 +120,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("fail2ban installed")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: "Fail2ban installed and enabled",
 	}

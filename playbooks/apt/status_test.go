@@ -1,10 +1,12 @@
 package apt
 
 import (
+	"fmt"
 	"log/slog"
 	"testing"
 
 	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/internal/playbooktest"
 )
 
 // TestAptStatus_Run_DryRun verifies that dry-run mode correctly handles apt status.
@@ -95,4 +97,59 @@ func TestAptStatus_NewAptStatus(t *testing.T) {
 	if pb.GetDescription() != expectedDescription {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
+}
+
+// TestAptStatus_Run_WithMock demonstrates using the mock SSH client for testing.
+// This test verifies the actual command execution without requiring a real SSH server.
+func TestAptStatus_Run_WithMock(t *testing.T) {
+	test := playbooktest.New(t)
+	defer test.Cleanup()
+
+	test.Setup()
+	test.ExpectCommand("apt-get update -qq", "")
+	test.ExpectCommand("apt list --upgradable 2>/dev/null | tail -n +2", "nginx/stable 1.18.0-0ubuntu1 amd64 [upgradable from 1.17.0-0ubuntu1]")
+
+	pb := NewAptStatus()
+	pb.SetNodeConfig(test.Config())
+	result := pb.Run()
+
+	test.AssertResultNoError(result)
+	test.AssertResultUnchanged(result)
+	test.AssertCommandRun("apt-get update -qq")
+	test.AssertCommandRun("apt list --upgradable 2>/dev/null | tail -n +2")
+	test.AssertResultMessageContains(result, "1 packages available for upgrade")
+}
+
+// TestAptStatus_Run_WithMockNoUpdates demonstrates testing when no updates are available.
+func TestAptStatus_Run_WithMockNoUpdates(t *testing.T) {
+	test := playbooktest.New(t)
+	defer test.Cleanup()
+
+	test.Setup()
+	test.ExpectCommand("apt-get update -qq", "")
+	test.ExpectCommand("apt list --upgradable 2>/dev/null | tail -n +2", "")
+
+	pb := NewAptStatus()
+	pb.SetNodeConfig(test.Config())
+	result := pb.Run()
+
+	test.AssertResultNoError(result)
+	test.AssertResultUnchanged(result)
+	test.AssertResultMessageContains(result, "All packages are up to date")
+}
+
+// TestAptStatus_Run_WithMockError demonstrates testing error scenarios.
+func TestAptStatus_Run_WithMockError(t *testing.T) {
+	test := playbooktest.New(t)
+	defer test.Cleanup()
+
+	test.Setup()
+	test.ExpectError("apt-get update -qq", fmt.Errorf("failed to lock apt directory"))
+
+	pb := NewAptStatus()
+	pb.SetNodeConfig(test.Config())
+	result := pb.Run()
+
+	test.AssertResultError(result)
+	test.AssertErrorContains(result.Error, "failed to update package lists")
 }

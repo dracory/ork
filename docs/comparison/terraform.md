@@ -101,7 +101,7 @@ summary := results.Summary()
 fmt.Printf("Configured %d servers, %d changed\n", summary.Total, summary.Changed)
 
 // Custom playbook for application deployment
-result := node.RunPlaybook(myapp.NewDeploy())
+results = node.RunPlaybook(myapp.NewDeploy())
 ```
 
 ## Execution Model
@@ -228,7 +228,8 @@ Terraform tracks resources in state file. Second apply = no-op.
 // Second run: Same commands, nginx already installed
 
 // Playbooks handle idempotency internally
-result := node.RunPlaybook(playbooks.NewAptInstall())
+results := node.RunPlaybook(playbooks.NewAptInstall())
+result := results.Results["server.example.com"]
 if result.Changed {
     log.Println("Nginx was installed")
 } else {
@@ -263,7 +264,11 @@ ips := getTerraformOutput("web_ips")
 
 for _, ip := range ips {
     node := ork.NewNodeForHost(ip)
-    node.RunPlaybook(playbooks.NewPing())
+    results := node.RunPlaybook(playbooks.NewPing())
+    result := results.Results[ip]
+    if result.Error != nil {
+        log.Printf("%s: %v", ip, result.Error)
+    }
 }
 ```
 

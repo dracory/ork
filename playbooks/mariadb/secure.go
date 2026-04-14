@@ -3,7 +3,7 @@ package mariadb
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -33,7 +33,7 @@ import (
 //   - mariadb-install: Initial installation
 //   - mariadb-create-user: Create restricted application users
 type Secure struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns true since we always want to ensure security settings are applied.
@@ -42,12 +42,12 @@ func (m *Secure) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *Secure) Run() playbook.Result {
+func (m *Secure) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 
 	if rootPassword == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "MariaDB root password not provided",
 			Error:   fmt.Errorf("root-password is required"),
@@ -70,7 +70,7 @@ func (m *Secure) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdTestDb.Command, "description", cmdTestDb.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdTestPriv.Command, "description", cmdTestPriv.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdFlush.Command, "description", cmdFlush.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would secure MariaDB installation",
 		}
@@ -117,7 +117,7 @@ func (m *Secure) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("privileges flushed")
 	}
 
-	return playbook.Result{
+	return types.Result{
 		Changed: len(actions) > 0,
 		Message: "MariaDB security hardening completed",
 		Details: map[string]string{
@@ -127,9 +127,9 @@ func (m *Secure) Run() playbook.Result {
 }
 
 // NewSecure creates a new mariadb-secure playbook.
-func NewSecure() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbSecure)
+func NewSecure() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbSecure)
 	pb.SetDescription("Perform basic security hardening on MariaDB installation")
 	return &Secure{BasePlaybook: pb}
 }

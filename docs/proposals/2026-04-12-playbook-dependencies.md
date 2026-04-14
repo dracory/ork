@@ -76,7 +76,7 @@ func (g *DependencyGraph) DetectCycles() error
 
 ```go
 type DependencyResolver struct {
-    registry *playbook.Registry
+    registry *types.Registry
     cache    map[string]Result // Cache results to avoid re-running
 }
 
@@ -143,19 +143,18 @@ func (a *AptUpgrade) Dependencies() []string {
     return []string{"apt-update"} // Must run apt-update first
 }
 
-func (a *AptUpgrade) Run(cfg config.Config) playbook.Result {
+func (a *AptUpgrade) Run(cfg config.Config) types.Result {
     // apt-update already ran, just do the upgrade
-    output, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey,
-        "apt-get upgrade -y")
+    output, err := ssh.Run(cfg, types.Command{Command: "apt-get upgrade -y"})
     if err != nil {
-        return playbook.Result{
+        return types.Result{
             Changed: false,
             Message: "apt upgrade failed",
             Error:   fmt.Errorf("apt upgrade failed: %w", err),
         }
     }
     
-    return playbook.Result{
+    return types.Result{
         Changed: true,
         Message: "Apt upgrade completed successfully",
     }
@@ -184,10 +183,10 @@ func (d *DeployWebApp) Dependencies() []string {
     }
 }
 
-func (d *DeployWebApp) Run(cfg config.Config) playbook.Result {
+func (d *DeployWebApp) Run(cfg config.Config) types.Result {
     // All dependencies satisfied, deploy app
     // ... deployment logic ...
-    return playbook.Result{
+    return types.Result{
         Changed: true,
         Message: "Web application deployed",
     }
@@ -253,7 +252,7 @@ func (d *DeployApp) DependenciesAdvanced() []Dependency {
 ### Automatic Resolution
 
 ```go
-func RunWithDependencies(pb Playbook, cfg config.Config, registry *playbook.Registry) error {
+func RunWithDependencies(pb Playbook, cfg config.Config, registry *types.Registry) error {
     resolver := NewDependencyResolver(registry)
     
     // Resolve execution order

@@ -4,8 +4,8 @@ page-type: tutorial
 summary: Development workflow, testing guidelines, and contributing to Ork.
 tags: [development, testing, contributing]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-14
+version: 1.1.0
 ---
 
 # Development Guide
@@ -27,7 +27,7 @@ ork/
 ├── inventory_interface.go
 ├── runnable_interface.go   # Base runnable interface
 ├── constants.go            # Playbook ID constants
-├── registry.go             # Playbook registry
+├── registry.go             # Global registry + NewDefaultRegistry factory
 ├── registry_test.go
 ├── config/
 │   └── node_config.go      # Configuration types
@@ -36,11 +36,10 @@ ork/
 │   ├── functions.go       # SSH utility functions
 │   └── ssh_test.go
 ├── playbook/
-│   ├── playbook.go        # Playbook interface
+│   ├── playbook.go        # BasePlaybook implementation
 │   ├── base_playbook.go   # Base implementation
 │   ├── constants.go       # Playbook IDs
-│   ├── functions.go       # Utility functions
-│   └── registry.go        # Registry implementation
+│   └── functions.go       # Utility functions
 ├── playbooks/
 │   ├── doc.go             # Package documentation
 │   ├── apt/               # Apt playbooks
@@ -53,7 +52,13 @@ ork/
 │   ├── ufw/               # UFW firewall
 │   └── fail2ban/          # Fail2ban playbooks
 ├── types/
+│   ├── registry.go        # PlaybookInterface, Registry, PlaybookOptions
+│   ├── command.go         # Command struct
 │   └── results.go         # Result types
+├── internal/
+│   ├── playbooktest/      # Test helpers for playbook testing
+│   ├── sshtest/           # Mock SSH client for testing
+│   └── README.md          # Testing framework documentation
 └── docs/
     └── livewiki/          # This documentation
 ```
@@ -138,23 +143,35 @@ func TestNode_NewNodeForHost(t *testing.T) {
 
 ### Mocking SSH
 
-Ork uses variable injection for mocking:
+Ork provides two approaches for mocking SSH:
+
+#### Option 1: Using internal/sshtest (Recommended)
 
 ```go
-// In production code
-var sshRunOnce = ssh.RunOnce
+import "github.com/dracory/ork/internal/sshtest"
 
-// In tests
 func TestNode_RunCommand(t *testing.T) {
-    // Save original
-    originalSSHRunOnce := sshRunOnce
-    defer func() { sshRunOnce = originalSSHRunOnce }()
-    
-    // Mock implementation
-    sshRunOnce = func(host, port, user, key, cmd string) (string, error) {
+    mock := sshtest.NewMockClient()
+    mock.ExpectCommand("uptime", "up 5 days")
+    mock.Connect()
+    defer mock.Close()
+
+    output, err := mock.Run("uptime")
+    // ... assertions
+    mock.AssertCommandRun("uptime")
+}
+```
+
+#### Option 2: Using SetRunFunc
+
+```go
+func TestNode_RunCommand(t *testing.T) {
+    // Mock SSH via SetRunFunc
+    ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
         return "mocked output", nil
-    }
-    
+    })
+    defer ssh.SetRunFunc(nil)
+
     // Test with mocked SSH
     node := NewNodeForHost("test.example.com")
     results := node.RunCommand("uptime")
@@ -254,9 +271,9 @@ func (m *MyPlaybook) Run() playbook.Result {
 }
 
 // NewMyPlaybook creates a new instance.
-func NewMyPlaybook() playbook.PlaybookInterface {
+func NewMyPlaybook() types.PlaybookInterface {
     pb := playbook.NewBasePlaybook()
-    pb.SetID(playbook.IDMyPlaybook)  // Add to playbook/constants.go
+    pb.SetID(playbooks.IDMyPlaybook)  // Add to playbook/constants.go
     pb.SetDescription("Does something useful")
     return &MyPlaybook{BasePlaybook: pb}
 }
@@ -276,7 +293,7 @@ const (
 ```go
 const (
     // ... existing constants
-    PlaybookMyPlaybook = playbook.IDMyPlaybook
+    PlaybookMyPlaybook = playbooks.IDMyPlaybook
 )
 ```
 
@@ -285,13 +302,58 @@ const (
 ```go
 import "github.com/dracory/ork/playbooks/myplaybook"
 
-func init() {
-    // ... existing registrations
-    _ = defaultRegistry.PlaybookRegister(myplaybook.NewMyPlaybook())
+// Add to the playbooks slice in NewDefaultRegistry()
+playbooks := []types.PlaybookInterface{
+    // ... existing playbooks
+    myplaybook.NewMyPlaybook(),
 }
 ```
 
 ### 7. Write Tests
+
+Using the internal/playbooktest helper (recommended):
+
+```go
+// playbooks/myplaybook/myplaybook_test.go
+package myplaybook
+
+import (
+    "testing"
+    "github.com/dracory/ork/internal/playbooktest"
+)
+
+func TestMyPlaybook_Check(t *testing.T) {
+    test := playbooktest.New(t)
+    defer test.Cleanup()
+    test.Setup()
+    
+    test.SetArg(ArgParameter, "test")
+    test.ExpectCommand("check parameter", "not configured")
+    
+    pb := NewMyPlaybook()
+    pb.SetNodeConfig(test.Config())
+    
+    needsChange, err := pb.Check()
+    test.AssertNoError(err)
+    if !needsChange {
+        t.Error("expected changes needed")
+    }
+}
+
+func TestMyPlaybook_Run(t *testing.T) {
+    test := playbooktest.New(t)
+    defer test.Cleanup()
+    test.Setup()
+    
+    pb := NewMyPlaybook()
+    pb.SetNodeConfig(test.Config())
+    
+    result := pb.Run()
+    test.AssertResultChanged(result)
+}
+```
+
+Or using traditional mocking:
 
 ```go
 // playbooks/myplaybook/myplaybook_test.go
@@ -304,7 +366,7 @@ import (
 
 func TestMyPlaybook_Check(t *testing.T) {
     pb := NewMyPlaybook()
-    pb.SetConfig(config.NodeConfig{
+    pb.SetNodeConfig(config.NodeConfig{
         SSHHost: "test.example.com",
         Args: map[string]string{
             ArgParameter: "test",
@@ -317,7 +379,7 @@ func TestMyPlaybook_Check(t *testing.T) {
 
 func TestMyPlaybook_Run(t *testing.T) {
     pb := NewMyPlaybook()
-    pb.SetConfig(config.NodeConfig{
+    pb.SetNodeConfig(config.NodeConfig{
         SSHHost: "test.example.com",
         IsDryRunMode: true,
     })

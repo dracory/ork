@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/dracory/ork/config"
-	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/types"
 )
 
@@ -476,7 +475,7 @@ func (m *groupTestMockNode) RunCommand(cmd string) types.Results {
 	}
 }
 
-func (m *groupTestMockNode) RunPlaybook(pb playbook.PlaybookInterface) types.Results {
+func (m *groupTestMockNode) RunPlaybook(pb types.PlaybookInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -487,7 +486,7 @@ func (m *groupTestMockNode) RunPlaybook(pb playbook.PlaybookInterface) types.Res
 	}
 }
 
-func (m *groupTestMockNode) RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results {
+func (m *groupTestMockNode) RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -498,7 +497,7 @@ func (m *groupTestMockNode) RunPlaybookByID(id string, opts ...playbook.Playbook
 	}
 }
 
-func (m *groupTestMockNode) CheckPlaybook(pb playbook.PlaybookInterface) types.Results {
+func (m *groupTestMockNode) CheckPlaybook(pb types.PlaybookInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -525,7 +524,7 @@ func (m *groupTestMockNode) GetDryRunMode() bool {
 	return false
 }
 
-// groupTestMockPlaybook is a mock implementation of playbook.PlaybookInterface for testing.
+// groupTestMockPlaybook is a mock implementation of types.PlaybookInterface for testing.
 type groupTestMockPlaybook struct {
 	name    string
 	cfg     config.NodeConfig
@@ -538,7 +537,7 @@ func (m *groupTestMockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *groupTestMockPlaybook) SetID(id string) playbook.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetID(id string) types.PlaybookInterface {
 	m.name = id
 	return m
 }
@@ -547,7 +546,7 @@ func (m *groupTestMockPlaybook) GetDescription() string {
 	return "Mock playbook"
 }
 
-func (m *groupTestMockPlaybook) SetDescription(desc string) playbook.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetDescription(desc string) types.PlaybookInterface {
 	return m
 }
 
@@ -555,7 +554,7 @@ func (m *groupTestMockPlaybook) GetNodeConfig() config.NodeConfig {
 	return m.cfg
 }
 
-func (m *groupTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) playbook.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.PlaybookInterface {
 	m.cfg = cfg
 	return m
 }
@@ -567,7 +566,7 @@ func (m *groupTestMockPlaybook) GetArg(key string) string {
 	return m.args[key]
 }
 
-func (m *groupTestMockPlaybook) SetArg(key, value string) playbook.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetArg(key, value string) types.PlaybookInterface {
 	if m.args == nil {
 		m.args = make(map[string]string)
 	}
@@ -579,7 +578,7 @@ func (m *groupTestMockPlaybook) GetArgs() map[string]string {
 	return m.args
 }
 
-func (m *groupTestMockPlaybook) SetArgs(args map[string]string) playbook.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetArgs(args map[string]string) types.PlaybookInterface {
 	m.args = args
 	return m
 }
@@ -588,7 +587,7 @@ func (m *groupTestMockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }
 
-func (m *groupTestMockPlaybook) SetDryRun(dryRun bool) playbook.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetDryRun(dryRun bool) types.PlaybookInterface {
 	m.dryRun = dryRun
 	return m
 }
@@ -597,7 +596,7 @@ func (m *groupTestMockPlaybook) GetTimeout() time.Duration {
 	return m.timeout
 }
 
-func (m *groupTestMockPlaybook) SetTimeout(timeout time.Duration) playbook.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetTimeout(timeout time.Duration) types.PlaybookInterface {
 	m.timeout = timeout
 	return m
 }
@@ -606,8 +605,8 @@ func (m *groupTestMockPlaybook) Check() (bool, error) {
 	return true, nil
 }
 
-func (m *groupTestMockPlaybook) Run() playbook.Result {
-	return playbook.Result{
+func (m *groupTestMockPlaybook) Run() types.Result {
+	return types.Result{
 		Changed: true,
 		Message: "Success",
 	}

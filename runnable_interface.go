@@ -4,7 +4,6 @@ package ork
 import (
 	"log/slog"
 
-	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/types"
 )
 
@@ -17,15 +16,15 @@ type RunnableInterface interface {
 
 	// RunPlaybook executes a playbook instance.
 	// For Inventory, runs concurrently across all nodes.
-	RunPlaybook(pb playbook.PlaybookInterface) types.Results
+	RunPlaybook(pb types.PlaybookInterface) types.Results
 
 	// RunPlaybookByID executes a playbook by ID from the registry.
 	// Deprecated: Use RunPlaybook() instead.
-	RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results
+	RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
 
 	// CheckPlaybook runs the playbook's check mode to determine if changes would be made.
 	// Sets Changed=true on result if changes are needed.
-	CheckPlaybook(pb playbook.PlaybookInterface) types.Results
+	CheckPlaybook(pb types.PlaybookInterface) types.Results
 
 	// GetLogger returns the logger. Returns slog.Default() if not set.
 	GetLogger() *slog.Logger

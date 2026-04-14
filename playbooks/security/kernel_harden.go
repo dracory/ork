@@ -3,7 +3,7 @@ package security
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -47,7 +47,7 @@ import (
 // Related Playbooks:
 //   - ssh-harden: Network-facing service hardening
 type KernelHarden struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns true since we want to verify and apply security settings.
@@ -56,7 +56,7 @@ func (k *KernelHarden) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (k *KernelHarden) Run() playbook.Result {
+func (k *KernelHarden) Run() types.Result {
 	cfg := k.GetNodeConfig()
 
 	// Get configurable paths
@@ -152,7 +152,7 @@ EOF`, sysctlDropInPath), Description: "Create kernel hardening config"}
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would create kernel hardening config", "path", sysctlDropInPath)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdApply.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would harden kernel security parameters",
 		}
@@ -162,26 +162,26 @@ EOF`, sysctlDropInPath), Description: "Create kernel hardening config"}
 	cfg.GetLoggerOrDefault().Info("backing up sysctl configuration")
 	_, err := ssh.Run(cfg, cmdBackup)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to backup sysctl config", Error: err}
+		return types.Result{Changed: false, Message: "Failed to backup sysctl config", Error: err}
 	}
 
 	// Step 2: Create security configuration
 	cfg.GetLoggerOrDefault().Info("creating security hardening configuration", "path", sysctlDropInPath)
 	_, err = ssh.Run(cfg, cmdCreateConfig)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to create hardening config", Error: err}
+		return types.Result{Changed: false, Message: "Failed to create hardening config", Error: err}
 	}
 
 	// Step 3: Apply parameters
 	cfg.GetLoggerOrDefault().Info("applying kernel parameters")
 	output, err := ssh.Run(cfg, cmdApply)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to apply kernel parameters", Error: err}
+		return types.Result{Changed: false, Message: "Failed to apply kernel parameters", Error: err}
 	}
 	cfg.GetLoggerOrDefault().Info("sysctl output", "output", output)
 
 	cfg.GetLoggerOrDefault().Info("kernel hardening complete")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: "Kernel security hardening applied successfully",
 		Details: map[string]string{
@@ -193,9 +193,9 @@ EOF`, sysctlDropInPath), Description: "Create kernel hardening config"}
 }
 
 // NewKernelHarden creates a new kernel-harden playbook.
-func NewKernelHarden() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDKernelHarden)
+func NewKernelHarden() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDKernelHarden)
 	pb.SetDescription("Apply security-focused kernel parameters via sysctl")
 	return &KernelHarden{BasePlaybook: pb}
 }

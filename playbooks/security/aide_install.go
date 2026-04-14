@@ -1,7 +1,7 @@
 package security
 
 import (
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -50,7 +50,7 @@ import (
 // Related Playbooks:
 //   - auditd-install: System call auditing
 type AideInstall struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if AIDE needs to be installed.
@@ -62,7 +62,7 @@ func (a *AideInstall) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (a *AideInstall) Run() playbook.Result {
+func (a *AideInstall) Run() types.Result {
 	cfg := a.GetNodeConfig()
 
 	// Define commands
@@ -92,7 +92,7 @@ EOF`, Description: "Create AIDE daily cron job"}
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdMoveDb.Command, "description", cmdMoveDb.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCron.Command, "description", cmdCron.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdChmod.Command, "description", cmdChmod.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would install and configure AIDE",
 		}
@@ -104,7 +104,7 @@ EOF`, Description: "Create AIDE daily cron job"}
 	cfg.GetLoggerOrDefault().Info("installing AIDE package")
 	_, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to install AIDE", Error: err}
+		return types.Result{Changed: false, Message: "Failed to install AIDE", Error: err}
 	}
 
 	// Configure AIDE
@@ -123,16 +123,16 @@ EOF`, Description: "Create AIDE daily cron job"}
 	_, _ = ssh.Run(cfg, cmdChmod)
 
 	cfg.GetLoggerOrDefault().Info("AIDE installation complete")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: "AIDE installed and configured successfully",
 	}
 }
 
 // NewAideInstall creates a new aide-install playbook.
-func NewAideInstall() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDAideInstall)
+func NewAideInstall() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDAideInstall)
 	pb.SetDescription("Install and configure AIDE file integrity monitoring")
 	return &AideInstall{BasePlaybook: pb}
 }

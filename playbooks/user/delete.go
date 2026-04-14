@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
 
 // UserDelete removes a user.
 type UserDelete struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if user exists and can be deleted.
@@ -58,11 +58,11 @@ func (u *UserDelete) Check() (bool, error) {
 //
 // Args:
 //   - username (string, required): Username to delete
-func (u *UserDelete) Run() playbook.Result {
+func (u *UserDelete) Run() types.Result {
 	cfg := u.GetNodeConfig()
 	username := u.GetArg(ArgUsername)
 	if username == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Username is required",
 			Error:   fmt.Errorf("username is required (pass via --arg=username=value)"),
@@ -71,7 +71,7 @@ func (u *UserDelete) Run() playbook.Result {
 
 	// Safety check: prevent deletion of root user
 	if username == "root" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Cannot delete root user",
 			Error:   fmt.Errorf("deletion of root user is not allowed for safety reasons"),
@@ -86,7 +86,7 @@ func (u *UserDelete) Run() playbook.Result {
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdDelete.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would delete user: %s", username),
 		}
@@ -94,7 +94,7 @@ func (u *UserDelete) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdDelete)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to delete user",
 			Error:   fmt.Errorf("failed to delete user: %w\nOutput: %s", err, output),
@@ -102,16 +102,16 @@ func (u *UserDelete) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("user deleted", "username", username)
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("User '%s' deleted", username),
 	}
 }
 
 // NewUserDelete creates a new user-delete playbook.
-func NewUserDelete() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDUserDelete)
+func NewUserDelete() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDUserDelete)
 	pb.SetDescription("Delete a user (username via args['username'])")
 	return &UserDelete{BasePlaybook: pb}
 }

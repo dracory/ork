@@ -78,7 +78,7 @@ node := ork.NewNode()
 
 ```go
 // By ID (must be registered)
-results := node.RunPlaybookByID(playbook.IDAptUpdate)
+results := node.RunPlaybookByID(playbooks.IDAptUpdate)
 
 // Direct instance (preferred)
 results := node.RunPlaybook(playbooks.NewAptUpdate())
@@ -311,13 +311,12 @@ docker ps
 
 **Problem**: SSH calls still hitting real servers in tests.
 
-**Solution**: Ensure you're using the mockable variable:
+**Solution**: Ensure you're using SetRunFunc:
 
 ```go
 // In test
-original := sshRunOnce
-sshRunOnce = mockFn
-defer func() { sshRunOnce = original }()
+ssh.SetRunFunc(mockFn)
+defer ssh.SetRunFunc(nil)
 ```
 
 ## Debugging Tips

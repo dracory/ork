@@ -4,8 +4,8 @@ page-type: reference
 summary: System architecture, design patterns, and key architectural decisions in Ork.
 tags: [architecture, design, patterns]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-14
+version: 1.1.0
 ---
 
 # Ork Architecture
@@ -33,6 +33,11 @@ graph TB
         H[ssh Package]
         I[playbook Package]
         J[types Package]
+    end
+    
+    subgraph "Testing Framework"
+        TF1[internal/playbooktest]
+        TF2[internal/sshtest]
     end
     
     subgraph "Playbook Implementations"
@@ -153,15 +158,15 @@ type NodeConfig struct {
 
 ### 3. Playbook System Layer
 
-#### Playbook Interface
+#### Playbook Interface (types package)
 
-All automation tasks implement this interface:
+All automation tasks implement this interface (defined in types package):
 
 ```go
 type PlaybookInterface interface {
     GetID() string
     GetDescription() string
-    SetConfig(cfg config.NodeConfig) PlaybookInterface
+    SetNodeConfig(cfg config.NodeConfig) PlaybookInterface
     GetArg(key string) string
     SetArg(key, value string) PlaybookInterface
     Check() (bool, error)
@@ -169,7 +174,7 @@ type PlaybookInterface interface {
 }
 ```
 
-#### Base Playbook
+#### Base Playbook (playbook package)
 
 Provides common functionality:
 
@@ -186,8 +191,8 @@ classDiagram
         +SetID(id string) PlaybookInterface
         +GetDescription() string
         +SetDescription(desc string) PlaybookInterface
-        +GetConfig() NodeConfig
-        +SetConfig(cfg NodeConfig) PlaybookInterface
+        +GetNodeConfig() NodeConfig
+        +SetNodeConfig(cfg NodeConfig) PlaybookInterface
         +GetArg(key string) string
         +SetArg(key, value string) PlaybookInterface
     }
@@ -217,14 +222,16 @@ node := ork.NewNodeForHost("server.example.com").
 
 ### 2. Repository Pattern (Registry)
 
-Playbook registry for ID-based lookup:
+Playbook registry (types.Registry) for ID-based lookup:
 
 ```mermaid
 graph LR
-    A[Registry] --> B[Register Playbook]
+    A[types.Registry] --> B[Register Playbook]
     C[Node] --> D[Run by ID]
     D --> A
     A --> E[Find by ID]
+    F[GetGlobalPlaybookRegistry] --> A
+    G[NewDefaultRegistry] --> A
 ```
 
 ### 3. Strategy Pattern
@@ -454,7 +461,7 @@ type MyPlaybook struct {
 }
 
 func (p *MyPlaybook) Check() (bool, error) { ... }
-func (p *MyPlaybook) Run() playbook.Result { ... }
+func (p *MyPlaybook) Run() types.Result { ... }
 
 // Register globally
 registry, err := ork.GetGlobalPlaybookRegistry()
@@ -462,13 +469,6 @@ if err != nil {
     log.Fatal(err)
 }
 registry.PlaybookRegister(myPlaybook)
-```
-
-### Custom SSH Logic
-
-```go
-// sshRunOnce is a variable that can be mocked
-type sshRunOnce = func(host, port, user, key, cmd string) (string, error)
 ```
 
 ## See Also

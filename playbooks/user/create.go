@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
 
 // UserCreate creates a new non-root user with sudo access.
 type UserCreate struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if user needs to be created.
@@ -70,7 +70,7 @@ func (u *UserCreate) Check() (bool, error) {
 //   - group (string, optional): Primary group (default: same as username)
 //   - sudo-group (string, optional): Sudo/admin group name (default: sudo)
 //   - home-dir (string, optional): Home directory path (default: /home/<username>)
-func (u *UserCreate) Run() playbook.Result {
+func (u *UserCreate) Run() types.Result {
 	cfg := u.GetNodeConfig()
 	username := u.GetArg(ArgUsername)
 	sshKey := u.GetArg(ArgSSHKey)
@@ -88,7 +88,7 @@ func (u *UserCreate) Run() playbook.Result {
 	}
 
 	if username == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Username is required",
 			Error:   fmt.Errorf("username is required (pass via --arg=username=value)"),
@@ -138,7 +138,7 @@ func (u *UserCreate) Run() playbook.Result {
 			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAuthKey.Command)
 			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSSHPerms.Command)
 		}
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would create user: %s", username),
 		}
@@ -146,7 +146,7 @@ func (u *UserCreate) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdCreate)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to create user",
 			Error:   fmt.Errorf("failed to create user: %w\nOutput: %s", err, output),
@@ -169,7 +169,7 @@ func (u *UserCreate) Run() playbook.Result {
 		// Create .ssh directory with proper permissions
 		output, err = ssh.Run(cfg, cmdSSHDir)
 		if err != nil {
-			return playbook.Result{
+			return types.Result{
 				Changed: false,
 				Message: "Failed to create .ssh directory",
 				Error:   fmt.Errorf("failed to create .ssh directory: %w\nOutput: %s", err, output),
@@ -179,7 +179,7 @@ func (u *UserCreate) Run() playbook.Result {
 		// Add SSH public key to authorized_keys
 		output, err = ssh.Run(cfg, cmdAuthKey)
 		if err != nil {
-			return playbook.Result{
+			return types.Result{
 				Changed: false,
 				Message: "Failed to add SSH key",
 				Error:   fmt.Errorf("failed to add SSH key: %w\nOutput: %s", err, output),
@@ -194,16 +194,16 @@ func (u *UserCreate) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("user created with sudo access", "username", username)
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("User '%s' created with sudo access", username),
 	}
 }
 
 // NewUserCreate creates a new user-create playbook.
-func NewUserCreate() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDUserCreate)
+func NewUserCreate() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDUserCreate)
 	pb.SetDescription("Create a new user with sudo access (username via args['username'])")
 	return &UserCreate{BasePlaybook: pb}
 }

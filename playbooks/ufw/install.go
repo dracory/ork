@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -46,7 +46,7 @@ import (
 //   - ufw-status: Check firewall status
 //   - ufw-allow: Allow additional ports after installation
 type UfwInstall struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if UFW needs to be installed.
@@ -58,7 +58,7 @@ func (u *UfwInstall) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (u *UfwInstall) Run() playbook.Result {
+func (u *UfwInstall) Run() types.Result {
 	cfg := u.GetNodeConfig()
 
 	// Define commands
@@ -130,7 +130,7 @@ func (u *UfwInstall) Run() playbook.Result {
 			}
 		}
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdEnable.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would install and configure UFW firewall",
 		}
@@ -141,7 +141,7 @@ func (u *UfwInstall) Run() playbook.Result {
 	// Install UFW
 	output, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to install UFW",
 			Error:   fmt.Errorf("failed to install UFW: %w\nOutput: %s", err, output),
@@ -205,7 +205,7 @@ func (u *UfwInstall) Run() playbook.Result {
 	// Enable UFW (non-interactive)
 	output, err = ssh.Run(cfg, cmdEnable)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to enable UFW",
 			Error:   fmt.Errorf("failed to enable UFW: %w\nOutput: %s", err, output),
@@ -213,7 +213,7 @@ func (u *UfwInstall) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("UFW installed and configured")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("UFW installed with secure defaults (allowed: %s)", strings.Join(allowedServices, ", ")),
 		Details: map[string]string{
@@ -223,9 +223,9 @@ func (u *UfwInstall) Run() playbook.Result {
 }
 
 // NewUfwInstall creates a new ufw-install playbook.
-func NewUfwInstall() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDUfwInstall)
+func NewUfwInstall() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDUfwInstall)
 	pb.SetDescription("Install and configure UFW firewall with secure defaults")
 	return &UfwInstall{BasePlaybook: pb}
 }

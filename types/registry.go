@@ -1,8 +1,8 @@
-// Package playbook provides the base types and interfaces for creating
-// automation playbooks using SSH-based remote execution.
-package playbook
+package types
 
 import (
+	"errors"
+	"sync"
 	"time"
 
 	"github.com/dracory/ork/config"
@@ -24,26 +24,6 @@ type PlaybookOptions struct {
 	Timeout time.Duration
 }
 
-// Result represents the outcome of a playbook execution.
-// It indicates whether any changes were made and provides details about the execution.
-type Result struct {
-	// Changed indicates whether the playbook made any changes to the system.
-	// false means the system was already in the desired state.
-	// true means the playbook modified the system.
-	Changed bool
-
-	// Message is a human-readable description of what happened.
-	Message string
-
-	// Details contains additional information about the execution.
-	// Keys are field names, values are string representations.
-	Details map[string]string
-
-	// Error is non-nil if the playbook failed to execute.
-	// When Error is non-nil, Changed may be true if some changes occurred before the failure.
-	Error error
-}
-
 // PlaybookInterface is the interface that all playbooks must implement.
 // A playbook is a self-contained automation task that runs on a remote server.
 // All playbooks support idempotency through the Check() method and Result return value.
@@ -52,7 +32,7 @@ type Result struct {
 //
 //	pb := playbooks.NewUserCreate().
 //	    SetNodeConfig(cfg).
-//	    SetOptions(&playbook.PlaybookOptions{Args: map[string]string{"username": "alice"}})
+//	    SetOptions(&types.PlaybookOptions{Args: map[string]string{"username": "alice"}})
 //
 //	needsRun, _ := pb.Check()
 //	result := pb.Run()
@@ -114,4 +94,66 @@ type PlaybookInterface interface {
 	// Uses the config and options set via SetConfig/SetOptions.
 	// The Result.Changed field indicates whether any changes were made.
 	Run() Result
+}
+
+// Registry holds a collection of playbooks.
+type Registry struct {
+	playbooks map[string]PlaybookInterface
+	mu        sync.RWMutex
+}
+
+// NewRegistry creates a new playbook registry.
+func NewRegistry() *Registry {
+	return &Registry{
+		playbooks: make(map[string]PlaybookInterface),
+	}
+}
+
+// PlaybookRegister adds a playbook to the registry.
+// Returns an error if the playbook is nil or if a playbook with the same ID already exists.
+func (r *Registry) PlaybookRegister(p PlaybookInterface) error {
+	if p == nil {
+		return errors.New("types.Registry: cannot register nil playbook")
+	}
+
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	id := p.GetID()
+	if _, exists := r.playbooks[id]; exists {
+		return errors.New("types.Registry: playbook with ID '" + id + "' already exists")
+	}
+
+	r.playbooks[id] = p
+	return nil
+}
+
+// PlaybookFindByID retrieves a playbook by ID.
+func (r *Registry) PlaybookFindByID(id string) (PlaybookInterface, bool) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	p, ok := r.playbooks[id]
+	return p, ok
+}
+
+// PlaybookList returns all registered playbooks.
+func (r *Registry) PlaybookList() []PlaybookInterface {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	list := make([]PlaybookInterface, 0, len(r.playbooks))
+	for _, p := range r.playbooks {
+		list = append(list, p)
+	}
+	return list
+}
+
+// GetPlaybookIDs returns all registered playbook IDs.
+func (r *Registry) GetPlaybookIDs() []string {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	ids := make([]string, 0, len(r.playbooks))
+	for id := range r.playbooks {
+		ids = append(ids, id)
+	}
+	return ids
 }

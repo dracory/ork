@@ -35,7 +35,8 @@
 // For advanced use cases, the internal packages remain accessible:
 //   - config - Configuration types
 //   - ssh - SSH client
-//   - playbook - Playbook interface and registry
+//   - types - Shared types (PlaybookInterface, Registry, Result, Command)
+//   - playbook - Playbook interface (re-exports from types for backward compatibility)
 //   - playbooks - Built-in playbook implementations
 package ork
 

@@ -3,7 +3,7 @@ package ufw
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -42,7 +42,7 @@ import (
 //   - ufw-install: Install UFW firewall
 //   - ufw-allow: Allow additional ports
 type UfwStatus struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns false since this is a read-only playbook.
@@ -51,14 +51,14 @@ func (u *UfwStatus) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (u *UfwStatus) Run() playbook.Result {
+func (u *UfwStatus) Run() types.Result {
 	cfg := u.GetNodeConfig()
 	cmdStatus := types.Command{Command: "ufw status verbose", Description: "Check UFW status"}
 
 	// Check for dry-run mode - display actual command
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStatus.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Would check UFW firewall status",
 		}
@@ -68,7 +68,7 @@ func (u *UfwStatus) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdStatus)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to check UFW status",
 			Error:   fmt.Errorf("failed to check UFW status: %w", err),
@@ -76,7 +76,7 @@ func (u *UfwStatus) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("UFW status retrieved", "output", output)
-	return playbook.Result{
+	return types.Result{
 		Changed: false,
 		Message: "UFW status retrieved",
 		Details: map[string]string{
@@ -86,9 +86,9 @@ func (u *UfwStatus) Run() playbook.Result {
 }
 
 // NewUfwStatus creates a new ufw-status playbook.
-func NewUfwStatus() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDUfwStatus)
+func NewUfwStatus() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDUfwStatus)
 	pb.SetDescription("Display UFW firewall configuration and status (read-only)")
 	return &UfwStatus{BasePlaybook: pb}
 }

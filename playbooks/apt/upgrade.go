@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -43,7 +43,7 @@ import (
 //   - Reports Changed=false when no packages need upgrading
 //   - Reports Changed=true when packages are actually upgraded
 type AptUpgrade struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if there are packages that need upgrading.
@@ -77,11 +77,11 @@ func (a *AptUpgrade) Check() (bool, error) {
 //
 // Result.Details contains:
 //   - output: Full output from apt-get upgrade command (when upgrades occur)
-func (a *AptUpgrade) Run() playbook.Result {
+func (a *AptUpgrade) Run() types.Result {
 	// Check if upgrades are needed
 	needsUpgrade, err := a.Check()
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to check for upgrades",
 			Error:   err,
@@ -89,7 +89,7 @@ func (a *AptUpgrade) Run() playbook.Result {
 	}
 
 	if !needsUpgrade {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "All packages are up to date",
 		}
@@ -101,7 +101,7 @@ func (a *AptUpgrade) Run() playbook.Result {
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpgrade.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would upgrade packages: " + cmdUpgrade.Command,
 		}
@@ -110,7 +110,7 @@ func (a *AptUpgrade) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("running apt upgrade")
 	output, err := ssh.Run(cfg, cmdUpgrade)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Apt upgrade failed",
 			Error:   fmt.Errorf("apt upgrade failed: %w\nOutput: %s", err, output),
@@ -118,7 +118,7 @@ func (a *AptUpgrade) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("apt upgrade completed")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: "Packages upgraded successfully",
 		Details: map[string]string{
@@ -133,9 +133,9 @@ func (a *AptUpgrade) Run() playbook.Result {
 //
 //	A PlaybookInterface implementation configured with IDAptUpgrade identifier
 //	and description "Install available package updates (apt-get upgrade)".
-func NewAptUpgrade() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDAptUpgrade)
+func NewAptUpgrade() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDAptUpgrade)
 	pb.SetDescription("Install available package updates (apt-get upgrade)")
 	return &AptUpgrade{BasePlaybook: pb}
 }

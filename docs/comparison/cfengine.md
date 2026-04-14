@@ -103,11 +103,12 @@ results := node.CheckPlaybook(nginxInstall)
 result := results.Results["server.example.com"]
 
 if result.Changed {
-    node.RunPlaybook(nginxInstall)
+    results = node.RunPlaybook(nginxInstall)
 }
 
 // Direct command execution
-node.RunCommand("sudo systemctl restart nginx")
+results = node.RunCommand("sudo systemctl restart nginx")
+result = results.Results["server.example.com"]
 ```
 
 ## Model Comparison
@@ -142,7 +143,8 @@ node := ork.NewNodeForHost("server.example.com")
 if shouldCreateUser {
     userPb := playbooks.NewUserCreate()
     userPb.SetArg("username", "deploy")
-    result := node.RunPlaybook(userPb)
+    results := node.RunPlaybook(userPb)
+    result := results.Results["server.example.com"]
 
     if result.Error != nil {
         log.Fatal(result.Error)

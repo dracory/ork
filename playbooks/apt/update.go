@@ -5,7 +5,7 @@ package apt
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -40,7 +40,7 @@ import (
 //   - Always reports Changed=true because the cache modification time is updated
 //   - The cost of checking if update is needed is similar to running it
 type AptUpdate struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns true for apt-update since cache refresh is always beneficial.
@@ -59,14 +59,14 @@ func (a *AptUpdate) Check() (bool, error) {
 //
 // Result.Details contains:
 //   - output: Full output from apt-get update command
-func (a *AptUpdate) Run() playbook.Result {
+func (a *AptUpdate) Run() types.Result {
 	cfg := a.GetNodeConfig()
 	cmdUpdate := types.Command{Command: "apt-get update -y", Description: "Update package database"}
 
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpdate.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would update package database: " + cmdUpdate.Command,
 		}
@@ -75,7 +75,7 @@ func (a *AptUpdate) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("running apt update")
 	output, err := ssh.Run(cfg, cmdUpdate)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Apt update failed",
 			Error:   fmt.Errorf("apt update failed: %w\nOutput: %s", err, output),
@@ -83,7 +83,7 @@ func (a *AptUpdate) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("apt update completed")
-	return playbook.Result{
+	return types.Result{
 		Changed: true, // Cache was refreshed
 		Message: "Package database updated",
 		Details: map[string]string{
@@ -98,9 +98,9 @@ func (a *AptUpdate) Run() playbook.Result {
 //
 //	A PlaybookInterface implementation configured with IDAptUpdate identifier
 //	and description "Refresh package database (apt-get update)".
-func NewAptUpdate() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDAptUpdate)
+func NewAptUpdate() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDAptUpdate)
 	pb.SetDescription("Refresh package database (apt-get update)")
 	return &AptUpdate{BasePlaybook: pb}
 }

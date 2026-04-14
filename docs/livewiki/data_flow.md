@@ -60,7 +60,7 @@ sequenceDiagram
             simplessh-->>sshClient: Output
             sshClient-->>Node: Output
         else No Persistent Connection
-            Node->>ssh: RunOnce(host, port, user, key, "uptime")
+            Node->>ssh: Run(cfg, "uptime")
             ssh->>ssh: NewClient
             ssh->>ssh: Connect()
             ssh->>simplessh: ConnectWithKeyFile

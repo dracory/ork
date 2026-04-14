@@ -357,7 +357,7 @@ func (p *MyCustomPlaybook) Description() string { return "Does something" }
 func (p *MyCustomPlaybook) Check(cfg config.NodeConfig) (bool, error) {
     // Check if already configured
     // Playbooks implement Check for use with CheckPlaybook()
-    output, _ := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "cat /etc/my-config")
+    output, _ := ssh.Run(cfg, types.Command{Command: "cat /etc/my-config"})
     return !strings.Contains(output, "configured"), nil
 }
 
@@ -372,7 +372,7 @@ func (p *MyCustomPlaybook) Run(cfg config.NodeConfig) playbook.Result {
     }
 
     // Apply changes...
-    _, err := ssh.RunOnce(cfg.SSHHost, cfg.SSHPort, cfg.RootUser, cfg.SSHKey, "setup-command")
+    _, err := ssh.Run(cfg, types.Command{Command: "setup-command"})
     if err != nil {
         return playbook.Result{Changed: false, Error: err}
     }

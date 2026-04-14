@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -38,7 +38,7 @@ import (
 //   - SSH key must be accessible at ~/.ssh/ with correct permissions
 //   - Root user must have SSH key authentication enabled
 type Ping struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check verifies SSH connectivity to the remote server.
@@ -61,14 +61,14 @@ func (p *Ping) Check() (bool, error) {
 // Changed is always false since ping doesn't modify the system.
 // On success, Result.Details contains an 'uptime' key with the server's
 // uptime/load string from the remote command execution.
-func (p *Ping) Run() playbook.Result {
+func (p *Ping) Run() types.Result {
 	cfg := p.GetNodeConfig()
 	cmdUptime := types.Command{Command: "uptime", Description: "Check server uptime"}
 
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd: ", cmdUptime.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: fmt.Sprintf("Would ping: %s", cfg.SSHHost),
 		}
@@ -77,7 +77,7 @@ func (p *Ping) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("running command", "cmd", cmdUptime.Command, "description", cmdUptime.Description)
 	output, err := ssh.Run(cfg, cmdUptime)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: fmt.Sprintf("Failed to ping %s", cfg.SSHHost),
 			Error:   fmt.Errorf("failed to ping %s: %w", cfg.SSHHost, err),
@@ -86,7 +86,7 @@ func (p *Ping) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("host is alive", "host", cfg.SSHHost, "uptime", strings.TrimSpace(output))
 
-	return playbook.Result{
+	return types.Result{
 		Changed: false, // Ping never changes the system
 		Message: fmt.Sprintf("%s is alive", cfg.SSHHost),
 		Details: map[string]string{
@@ -104,9 +104,9 @@ func (p *Ping) Run() playbook.Result {
 //
 // The returned playbook can be registered with the playbook registry
 // and executed via the CLI or programmatically.
-func NewPing() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDPing)
+func NewPing() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDPing)
 	pb.SetDescription("Check SSH connectivity and show server uptime/load")
 	return &Ping{BasePlaybook: pb}
 }

@@ -3,7 +3,7 @@ package mariadb
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -35,7 +35,7 @@ import (
 //   - mariadb-create-db: Create a new database
 //   - mariadb-backup: Backup an existing database
 type ListDBs struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns false since this is a read-only playbook.
@@ -44,12 +44,12 @@ func (m *ListDBs) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *ListDBs) Run() playbook.Result {
+func (m *ListDBs) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 
 	if rootPassword == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "MariaDB root password not provided",
 			Error:   fmt.Errorf("root-password is required"),
@@ -64,7 +64,7 @@ func (m *ListDBs) Run() playbook.Result {
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdList.Command, "description", cmdList.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Would list all databases",
 		}
@@ -74,7 +74,7 @@ func (m *ListDBs) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdList)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to list databases",
 			Error:   fmt.Errorf("failed to list databases: %w", err),
@@ -82,7 +82,7 @@ func (m *ListDBs) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("databases", "output", output)
-	return playbook.Result{
+	return types.Result{
 		Changed: false,
 		Message: "Database list retrieved",
 		Details: map[string]string{
@@ -92,9 +92,9 @@ func (m *ListDBs) Run() playbook.Result {
 }
 
 // NewListDBs creates a new mariadb-list-dbs playbook.
-func NewListDBs() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbListDBs)
+func NewListDBs() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbListDBs)
 	pb.SetDescription("Display all databases in the MariaDB server (read-only)")
 	return &ListDBs{BasePlaybook: pb}
 }

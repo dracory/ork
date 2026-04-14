@@ -21,7 +21,7 @@ The `ssh` package wraps `github.com/sfreiberg/simplessh` with a simplified API f
 | File | Purpose |
 |------|---------|
 | `ssh.go` | `Client` struct and methods |
-| `functions.go` | Utility functions (`RunOnce`, `Run`, `PrivateKeyPath`) |
+| `functions.go` | Utility functions (`Run`, `PrivateKeyPath`) |
 | `ssh_test.go` | SSH tests |
 
 ## Client
@@ -102,29 +102,6 @@ Safe to call multiple times. Returns nil if already closed.
 
 ## Utility Functions
 
-### RunOnce
-
-Connects, runs a command, and closes. For single commands where you don't need a persistent connection.
-
-```go
-func RunOnce(host, port, user, key, cmd string) (string, error)
-```
-
-```go
-// Simple one-off command
-output, err := ssh.RunOnce(
-    "server.example.com",
-    "22",
-    "root",
-    "id_rsa",
-    "uptime",
-)
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(output)
-```
-
 ### PrivateKeyPath
 
 Constructs the absolute path to an SSH private key file.
@@ -175,18 +152,18 @@ output, err := ssh.Run(cfg, "apt-get upgrade -y")
 
 ## Usage Patterns
 
-### Pattern 1: One-Time Connection (RunOnce)
+### Pattern 1: Using Run() with Config
 
-For single commands where connection reuse isn't needed:
+For playbook development, use Run() with NodeConfig:
 
 ```go
-output, err := ssh.RunOnce(
-    "server.example.com",
-    "22",
-    "root",
-    "id_rsa",
-    "uptime",
-)
+cfg := config.NodeConfig{
+    SSHHost:  "server.example.com",
+    SSHPort:  "22",
+    SSHLogin: "root",
+    SSHKey:   "id_rsa",
+}
+output, err := ssh.Run(cfg, types.Command{Command: "uptime"})
 ```
 
 ### Pattern 2: Persistent Connection
@@ -231,23 +208,21 @@ The `ork` package uses `ssh` internally:
 ```go
 // node_implementation.go
 
-// One-time connection
-output, err := sshRunOnce(n.cfg.SSHHost, n.cfg.SSHPort, 
-    n.cfg.RootUser, n.cfg.SSHKey, cmd)
+// One-time connection via Run
+output, err := ssh.Run(n.cfg, types.Command{Command: cmd})
 
 // Or persistent connection via stored client
 output, err := n.sshClient.Run(cmd)
 ```
 
-The `sshRunOnce` variable allows mocking in tests:
+Testing uses `SetRunFunc` for mocking:
 
 ```go
 // In tests
-original := sshRunOnce
-sshRunOnce = func(host, port, user, key, cmd string) (string, error) {
+ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
     return "mocked output", nil
-}
-defer func() { sshRunOnce = original }()
+})
+defer ssh.SetRunFunc(nil)
 ```
 
 ## Error Handling
@@ -278,17 +253,19 @@ package main
 import (
     "fmt"
     "log"
+    "github.com/dracory/ork/config"
     "github.com/dracory/ork/ssh"
+    "github.com/dracory/ork/types"
 )
 
 func main() {
-    output, err := ssh.RunOnce(
-        "server.example.com",
-        "22",
-        "root",
-        "id_rsa",
-        "uptime",
-    )
+    cfg := config.NodeConfig{
+        SSHHost:  "server.example.com",
+        SSHPort:  "22",
+        SSHLogin: "root",
+        SSHKey:   "id_rsa",
+    }
+    output, err := ssh.Run(cfg, types.Command{Command: "uptime"})
     if err != nil {
         log.Fatal(err)
     }

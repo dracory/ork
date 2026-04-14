@@ -139,7 +139,8 @@ node.SetPort("2222").
     SetUser("deploy").
     SetArg("version", "1.2.3")
 
-result = node.RunPlaybook(playbooks.NewAptUpgrade())
+results = node.RunPlaybook(playbooks.NewAptUpgrade())
+result = results.Results["server.example.com"]
 ```
 
 ## Idempotency
@@ -178,7 +179,7 @@ if result.Changed {
 
 // Also works on groups and inventory
 webServers := inv.GetGroupByName("webservers")
-results := webServers.CheckPlaybook(ping)
+results = webServers.CheckPlaybook(ping)
 ```
 
 ## Configuration Patterns
@@ -208,6 +209,58 @@ results := webServers.CheckPlaybook(ping)
 | **Secrets** | Ansible Vault | User implements |
 | **Callbacks** | Custom callback plugins | Go interfaces |
 
+## Feature Comparison Table
+
+| Feature | Ansible | Ork | Notes |
+|---------|---------|-----|-------|
+| **Dynamic Inventory** | ✅ Yes (scripts) | ✅ Yes (Go code) | Ansible uses dedicated inventory scripts; Ork queries external sources via Go code (AWS SDK, etc.) |
+| **Parallel Execution** | ✅ Yes (native) | ❌ No (sequential) | Ansible runs tasks in parallel by default; Ork is sequential |
+| **Check Mode (Dry-run)** | ✅ Yes | ✅ Yes | Both support previewing changes without applying |
+| **Handlers** | ✅ Yes | ❌ No | Ansible has notify/handlers for event-driven actions |
+| **Roles** | ✅ Yes | ⚠️ Partial | Ansible has built-in roles; Ork can organize playbooks manually |
+| **Modules** | ✅ 3000+ | ⚠️ Limited | Ansible has vast module library; Ork has built-in playbooks |
+| **Templates** | ✅ Jinja2 | ⚠️ Go templates | Ansible uses Jinja2; Ork uses Go's text/template |
+| **Variables** | ✅ Complex hierarchy | ✅ Args/Config | Ansible has 12-level precedence; Ork has simpler precedence |
+| **Secrets Management** | ✅ Ansible Vault | ❌ Manual | Ansible has built-in encryption; Ork relies on external tools |
+| **Error Handling** | ✅ ignore_errors, failed_when | ✅ Go error handling | Ansible has declarative error handling; Ork uses Go's error patterns |
+| **Retry Mechanisms** | ✅ until/retries | ❌ Manual | Ansible has built-in retries; Ork requires manual implementation |
+| **Windows Support** | ✅ Yes | ⚠️ Limited | Ansible has WinRM modules; Ork SSH-based (limited Windows) |
+| **Network Devices** | ✅ Yes (many vendors) | ❌ No | Ansible supports routers/switches; Ork is server-focused |
+| **Cloud Modules** | ✅ Yes (AWS, GCP, Azure) | ❌ No | Ansible can provision cloud resources; Ork only configures |
+| **Idempotency** | ✅ Task-level | ✅ Playbook-level | Ansible modules are idempotent; Ork playbooks implement idempotency |
+| **Conditional Execution** | ✅ when conditionals | ✅ Go if/else | Ansible uses YAML conditionals; Ork uses Go logic |
+| **Loops** | ✅ with_items, loop | ✅ Go for loops | Ansible has YAML loops; Ork uses Go iteration |
+| **Blocks** | ✅ Yes | ❌ No | Ansible can group tasks with error handling |
+| **Async Tasks** | ✅ Yes | ❌ No | Ansible supports long-running async tasks |
+| **Facts Gathering** | ✅ Yes (automatic) | ❌ Manual | Ansible auto-collects system info; Ork requires manual commands |
+| **Vault Encryption** | ✅ Yes | ❌ No | Ansible encrypts variables at rest |
+| **Galaxy Ecosystem** | ✅ Yes (roles/collections) | ❌ No | Ansible has community repository |
+| **CLI Tool** | ✅ Yes | ⚠️ Planned | Ansible has ansible/ansible-playbook CLI; Ork is library-first |
+| **API/Library** | ⚠️ Python API | ✅ Go API | Ansible is CLI-first with Python API; Ork is Go library |
+| **Type Safety** | ❌ No | ✅ Yes | Ansible is dynamic YAML; Ork has compile-time type checking |
+| **Compile-time Checking** | ❌ No | ✅ Yes | Ork catches errors at compile time |
+| **Embeddable** | ❌ No | ✅ Yes | Ork can be embedded in Go applications |
+| **Persistent Connections** | ✅ Yes (pipelining) | ✅ Yes | Both support connection reuse |
+| **SSH Config Support** | ✅ Yes | ⚠️ Limited | Ansible reads ~/.ssh/config; Ork has basic support |
+| **Password Authentication** | ✅ Yes | ⚠️ Limited | Ansible supports passwords; Ork focuses on keys |
+| **Become/Sudo** | ✅ Yes | ⚠️ Manual | Ansible has become privilege escalation; Ork uses sudo in commands |
+| **Tags** | ✅ Yes | ❌ No | Ansible can run tagged tasks; Ork runs all |
+| **Start-at-task** | ✅ Yes | ❌ No | Ansible can resume from specific task |
+| **Step Mode** | ✅ Yes | ❌ No | Ansible can pause at each task for debugging |
+| **Diff Mode** | ✅ Yes | ❌ No | Ansible shows file changes |
+| **Check Mode Impact** | ✅ Modules support | ✅ Playbooks support | Both can preview changes |
+| **Vault ID** | ✅ Yes | ❌ No | Ansible supports multiple vaults |
+| **Collections** | ✅ Yes | ❌ No | Ansible bundles modules in collections |
+| **Inventory Plugins** | ✅ Yes | ❌ No | Ansible has dynamic inventory plugins |
+| **Strategy Plugins** | ✅ Yes | ❌ No | Ansible can change execution strategy |
+| **Callback Plugins** | ✅ Yes | ⚠️ Go interfaces | Ansible has rich callback system; Ork uses Go interfaces |
+| **Connection Plugins** | ✅ Yes | ❌ No | Ansible supports multiple transports (SSH, WinRM, etc.) |
+| **Filter Plugins** | ✅ Yes | ❌ No | Ansible has Jinja2 filter extensions |
+| **Test Plugins** | ✅ Yes | ❌ No | Ansible has syntax/validation tests |
+| **Documentation** | ✅ Extensive | ⚠️ Growing | Ansible has large community docs; Ork docs are evolving |
+| **Community Size** | ✅ Large | ⚠️ Small | Ansible has huge community; Ork is newer |
+| **Learning Resources** | ✅ Abundant | ⚠️ Limited | Ansible has many tutorials/courses; Ork resources are limited |
+
 ## When to Choose Each
 
 ### Choose Ansible when:
@@ -235,3 +288,4 @@ results := webServers.CheckPlaybook(ping)
 **Differences:**
 - Ansible: YAML-centric, mature ecosystem
 - Ork: Go-native, compile-time safety, embeddable
+

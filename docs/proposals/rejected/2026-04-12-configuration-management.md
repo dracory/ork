@@ -271,7 +271,7 @@ func main() {
     
     // Run playbook
     playbook := playbooks.NewPing()
-    playbook.SetConfig(cfg)
+    playbook.SetNodeConfig(cfg)
     result := playbook.Run()
     if result.Error != nil {
         log.Fatal(result.Error)

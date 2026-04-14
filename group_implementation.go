@@ -5,7 +5,6 @@ import (
 	"maps"
 	"sync"
 
-	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/types"
 )
 
@@ -95,7 +94,7 @@ func (g *groupImplementation) RunCommand(cmd string) types.Results {
 }
 
 // RunPlaybook executes a playbook across all nodes in this group.
-func (g *groupImplementation) RunPlaybook(pb playbook.PlaybookInterface) types.Results {
+func (g *groupImplementation) RunPlaybook(pb types.PlaybookInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -109,7 +108,7 @@ func (g *groupImplementation) RunPlaybook(pb playbook.PlaybookInterface) types.R
 }
 
 // RunPlaybookByID executes a playbook by ID across all nodes in this group.
-func (g *groupImplementation) RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results {
+func (g *groupImplementation) RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -124,7 +123,7 @@ func (g *groupImplementation) RunPlaybookByID(id string, opts ...playbook.Playbo
 }
 
 // CheckPlaybook runs the playbook's check mode across all nodes in this group.
-func (g *groupImplementation) CheckPlaybook(pb playbook.PlaybookInterface) types.Results {
+func (g *groupImplementation) CheckPlaybook(pb types.PlaybookInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}

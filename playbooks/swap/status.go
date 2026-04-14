@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -42,7 +42,7 @@ import (
 // Idempotency:
 //   - Always reports Changed=false since this is read-only
 type SwapStatus struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns false since SwapStatus is read-only.
@@ -59,14 +59,14 @@ func (s *SwapStatus) Check() (bool, error) {
 // Result.Details contains:
 //   - active: "true" when swap exists, "false" when no swap active
 //   - status: Full output from swapon --show command (when swap active)
-func (s *SwapStatus) Run() playbook.Result {
+func (s *SwapStatus) Run() types.Result {
 	cfg := s.GetNodeConfig()
 	cmdStatus := types.Command{Command: "swapon --show", Description: "Check swap status"}
 
 	// Check for dry-run mode - display actual command
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStatus.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Would check swap status",
 		}
@@ -74,7 +74,7 @@ func (s *SwapStatus) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdStatus)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to get swap status",
 			Error:   fmt.Errorf("failed to get swap status: %w", err),
@@ -83,7 +83,7 @@ func (s *SwapStatus) Run() playbook.Result {
 
 	if strings.TrimSpace(output) == "" {
 		cfg.GetLoggerOrDefault().Info("no swap active")
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "No swap is currently active",
 			Details: map[string]string{
@@ -93,7 +93,7 @@ func (s *SwapStatus) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("swap status", "status", output)
-	return playbook.Result{
+	return types.Result{
 		Changed: false, // Read-only operation
 		Message: "Swap is active",
 		Details: map[string]string{
@@ -109,9 +109,9 @@ func (s *SwapStatus) Run() playbook.Result {
 //
 //	A PlaybookInterface implementation configured with IDSwapStatus identifier
 //	and description "Show swap status and usage".
-func NewSwapStatus() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDSwapStatus)
+func NewSwapStatus() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDSwapStatus)
 	pb.SetDescription("Show swap status and usage")
 	return &SwapStatus{BasePlaybook: pb}
 }

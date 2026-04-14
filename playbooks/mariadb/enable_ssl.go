@@ -3,7 +3,7 @@ package mariadb
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -39,7 +39,7 @@ import (
 //   - mariadb-security-audit: Verify SSL is working properly
 //   - mariadb-create-user: Create users with SSL requirements
 type EnableSSL struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if SSL needs to be enabled.
@@ -48,7 +48,7 @@ func (m *EnableSSL) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *EnableSSL) Run() playbook.Result {
+func (m *EnableSSL) Run() types.Result {
 	cfg := m.GetNodeConfig()
 
 	// Get configurable paths
@@ -85,7 +85,7 @@ EOF`, configPath, configPath, dataDir, dataDir, dataDir), Description: "Configur
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command, "description", cmdBackup.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdConfigure.Command, "description", cmdConfigure.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would enable MariaDB SSL/TLS",
 		}
@@ -110,11 +110,11 @@ EOF`, configPath, configPath, dataDir, dataDir, dataDir), Description: "Configur
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB service")
 	_, err := ssh.Run(cfg, cmdRestart)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
+		return types.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
 
 	cfg.GetLoggerOrDefault().Info("MariaDB SSL/TLS configuration complete")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: "SSL/TLS enabled for MariaDB",
 		Details: map[string]string{
@@ -126,9 +126,9 @@ EOF`, configPath, configPath, dataDir, dataDir, dataDir), Description: "Configur
 }
 
 // NewEnableSSL creates a new mariadb-enable-ssl playbook.
-func NewEnableSSL() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbEnableSSL)
+func NewEnableSSL() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbEnableSSL)
 	pb.SetDescription("Enable SSL/TLS encryption for MariaDB connections")
 	return &EnableSSL{BasePlaybook: pb}
 }

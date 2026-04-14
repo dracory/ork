@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/dracory/ork/config"
-	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/types"
 )
 
@@ -554,7 +553,7 @@ func (m *invTestMockNode) RunCommand(cmd string) types.Results {
 	}
 }
 
-func (m *invTestMockNode) RunPlaybook(pb playbook.PlaybookInterface) types.Results {
+func (m *invTestMockNode) RunPlaybook(pb types.PlaybookInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -565,7 +564,7 @@ func (m *invTestMockNode) RunPlaybook(pb playbook.PlaybookInterface) types.Resul
 	}
 }
 
-func (m *invTestMockNode) RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results {
+func (m *invTestMockNode) RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -576,7 +575,7 @@ func (m *invTestMockNode) RunPlaybookByID(id string, opts ...playbook.PlaybookOp
 	}
 }
 
-func (m *invTestMockNode) CheckPlaybook(pb playbook.PlaybookInterface) types.Results {
+func (m *invTestMockNode) CheckPlaybook(pb types.PlaybookInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -603,7 +602,7 @@ func (m *invTestMockNode) GetDryRunMode() bool {
 	return false
 }
 
-// invTestMockPlaybook is a mock implementation of playbook.PlaybookInterface for testing.
+// invTestMockPlaybook is a mock implementation of types.PlaybookInterface for testing.
 type invTestMockPlaybook struct {
 	name    string
 	cfg     config.NodeConfig
@@ -616,7 +615,7 @@ func (m *invTestMockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *invTestMockPlaybook) SetID(id string) playbook.PlaybookInterface {
+func (m *invTestMockPlaybook) SetID(id string) types.PlaybookInterface {
 	m.name = id
 	return m
 }
@@ -625,7 +624,7 @@ func (m *invTestMockPlaybook) GetDescription() string {
 	return "Mock playbook"
 }
 
-func (m *invTestMockPlaybook) SetDescription(desc string) playbook.PlaybookInterface {
+func (m *invTestMockPlaybook) SetDescription(desc string) types.PlaybookInterface {
 	return m
 }
 
@@ -633,7 +632,7 @@ func (m *invTestMockPlaybook) GetNodeConfig() config.NodeConfig {
 	return m.cfg
 }
 
-func (m *invTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) playbook.PlaybookInterface {
+func (m *invTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.PlaybookInterface {
 	m.cfg = cfg
 	return m
 }
@@ -645,7 +644,7 @@ func (m *invTestMockPlaybook) GetArg(key string) string {
 	return m.args[key]
 }
 
-func (m *invTestMockPlaybook) SetArg(key, value string) playbook.PlaybookInterface {
+func (m *invTestMockPlaybook) SetArg(key, value string) types.PlaybookInterface {
 	if m.args == nil {
 		m.args = make(map[string]string)
 	}
@@ -657,7 +656,7 @@ func (m *invTestMockPlaybook) GetArgs() map[string]string {
 	return m.args
 }
 
-func (m *invTestMockPlaybook) SetArgs(args map[string]string) playbook.PlaybookInterface {
+func (m *invTestMockPlaybook) SetArgs(args map[string]string) types.PlaybookInterface {
 	m.args = args
 	return m
 }
@@ -666,7 +665,7 @@ func (m *invTestMockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }
 
-func (m *invTestMockPlaybook) SetDryRun(dryRun bool) playbook.PlaybookInterface {
+func (m *invTestMockPlaybook) SetDryRun(dryRun bool) types.PlaybookInterface {
 	m.dryRun = dryRun
 	return m
 }
@@ -675,7 +674,7 @@ func (m *invTestMockPlaybook) GetTimeout() time.Duration {
 	return m.timeout
 }
 
-func (m *invTestMockPlaybook) SetTimeout(timeout time.Duration) playbook.PlaybookInterface {
+func (m *invTestMockPlaybook) SetTimeout(timeout time.Duration) types.PlaybookInterface {
 	m.timeout = timeout
 	return m
 }
@@ -684,8 +683,8 @@ func (m *invTestMockPlaybook) Check() (bool, error) {
 	return true, nil
 }
 
-func (m *invTestMockPlaybook) Run() playbook.Result {
-	return playbook.Result{
+func (m *invTestMockPlaybook) Run() types.Result {
+	return types.Result{
 		Changed: true,
 		Message: "Success",
 	}

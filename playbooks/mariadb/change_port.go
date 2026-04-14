@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -35,7 +35,7 @@ import (
 //   - mariadb-status: Verify server is running after port change
 //   - ufw-install: Configure firewall for new port
 type ChangePort struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns true to apply the port change.
@@ -44,7 +44,7 @@ func (m *ChangePort) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *ChangePort) Run() playbook.Result {
+func (m *ChangePort) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	newPort := m.GetArg(ArgPort)
 	configPath := m.GetArg(ArgConfigPath)
@@ -53,7 +53,7 @@ func (m *ChangePort) Run() playbook.Result {
 	}
 
 	if newPort == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Port parameter is required",
 			Error:   fmt.Errorf("use --arg=port=<port_number>"),
@@ -63,7 +63,7 @@ func (m *ChangePort) Run() playbook.Result {
 	// Validate port
 	portNum, err := strconv.Atoi(newPort)
 	if err != nil || portNum < 1024 || portNum > 65535 || portNum == 3306 {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Invalid port number",
 			Error:   fmt.Errorf("port must be 1024-65535, not 3306"),
@@ -84,7 +84,7 @@ func (m *ChangePort) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAllowPort.Command, "description", cmdAllowPort.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpdatePort.Command, "description", cmdUpdatePort.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would change MariaDB port to %s", newPort),
 		}
@@ -96,7 +96,7 @@ func (m *ChangePort) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
 	_, err = ssh.Run(cfg, cmdBackup)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to backup config", Error: err}
+		return types.Result{Changed: false, Message: "Failed to backup config", Error: err}
 	}
 
 	// Update UFW if active
@@ -112,11 +112,11 @@ func (m *ChangePort) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB service")
 	_, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
+		return types.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
 
 	cfg.GetLoggerOrDefault().Info("MariaDB port change complete")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("MariaDB port changed to %s", newPort),
 		Details: map[string]string{
@@ -127,9 +127,9 @@ func (m *ChangePort) Run() playbook.Result {
 }
 
 // NewChangePort creates a new mariadb-change-port playbook.
-func NewChangePort() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbChangePort)
+func NewChangePort() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbChangePort)
 	pb.SetDescription("Change the MariaDB server port from default 3306")
 	return &ChangePort{BasePlaybook: pb}
 }

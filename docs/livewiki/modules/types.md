@@ -1,26 +1,175 @@
 ---
 path: modules/types.md
 page-type: module
-summary: Shared result types for operation outcomes across all Ork packages.
+summary: Shared types including PlaybookInterface, Registry, Command, and result types for operation outcomes across all Ork packages.
 tags: [module, types, results]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-14
+version: 1.1.0
 ---
 
 # types Package
 
-Shared types for operation results across all Ork packages.
+Shared types for playbooks, registries, commands, and operation results across all Ork packages.
 
 ## Purpose
 
-The `types` package provides common result types used by the `ork`, `playbook`, and other packages. It defines the data structures for representing operation outcomes from commands and playbooks.
+The `types` package provides:
+- `PlaybookInterface`: The interface all playbooks must implement
+- `Registry`: For registering and looking up playbooks by ID
+- `Command`: Struct for shell commands with descriptions
+- `PlaybookOptions`: Configuration options for playbook execution
+- `Result`, `Results`, `Summary`: Operation outcome types
 
 ## Key Files
 
 | File | Purpose |
 |------|---------|
+| `registry.go` | PlaybookInterface, PlaybookOptions, Registry |
+| `command.go` | Command struct with description |
 | `results.go` | Result, Results, and Summary types |
+
+## PlaybookInterface
+
+All automation playbooks must implement this interface.
+
+```go
+type PlaybookInterface interface {
+    // Identification
+    GetID() string
+    SetID(id string) PlaybookInterface
+    GetDescription() string
+    SetDescription(description string) PlaybookInterface
+    
+    // Configuration
+    GetNodeConfig() config.NodeConfig
+    SetNodeConfig(cfg config.NodeConfig) PlaybookInterface
+    
+    // Arguments
+    GetArg(key string) string
+    SetArg(key, value string) PlaybookInterface
+    GetArgs() map[string]string
+    SetArgs(args map[string]string) PlaybookInterface
+    
+    // Execution options
+    IsDryRun() bool
+    SetDryRun(dryRun bool) PlaybookInterface
+    GetTimeout() time.Duration
+    SetTimeout(timeout time.Duration) PlaybookInterface
+    
+    // Core operations
+    Check() (bool, error)
+    Run() Result
+}
+```
+
+### Check
+
+Determines if the playbook needs to make changes.
+
+```go
+func (p PlaybookInterface) Check() (bool, error)
+```
+
+- Returns `true` if changes are needed
+- Returns `false` if system is already in desired state
+- Returns error if the check itself fails
+
+### Run
+
+Executes the playbook and returns the result.
+
+```go
+func (p PlaybookInterface) Run() Result
+```
+
+The `Result.Changed` field indicates whether any modifications were made.
+
+## PlaybookOptions
+
+Configuration options for playbook execution.
+
+```go
+type PlaybookOptions struct {
+    Args    map[string]string  // Override node-level args
+    DryRun  bool               // Override dry-run mode
+    Timeout time.Duration      // Execution timeout
+}
+```
+
+Used with `RunPlaybookByID()` for per-execution overrides.
+
+## Registry
+
+Playbook registry for ID-based lookup.
+
+```go
+type Registry struct {
+    playbooks map[string]PlaybookInterface
+    mu        sync.RWMutex
+}
+```
+
+### Constructor
+
+```go
+func NewRegistry() *Registry
+```
+
+### Methods
+
+```go
+// Register a playbook
+func (r *Registry) PlaybookRegister(p PlaybookInterface) error
+
+// Find playbook by ID
+func (r *Registry) PlaybookFindByID(id string) (PlaybookInterface, bool)
+
+// List all registered playbooks
+func (r *Registry) PlaybookList() []PlaybookInterface
+
+// Get all playbook IDs
+func (r *Registry) GetPlaybookIDs() []string
+```
+
+### Usage
+
+```go
+// Create registry
+registry := types.NewRegistry()
+
+// Register playbooks
+registry.PlaybookRegister(playbooks.NewPing())
+registry.PlaybookRegister(playbooks.NewAptUpdate())
+
+// Lookup by ID
+pb, ok := registry.PlaybookFindByID("ping")
+if ok {
+    result := pb.Run()
+}
+```
+
+## Command
+
+Represents a shell command with its description.
+
+```go
+type Command struct {
+    Command     string
+    Description string
+}
+```
+
+Used to display and execute shell commands in a structured way, especially useful in dry-run mode to show what commands would be executed.
+
+### Example
+
+```go
+cmd := types.Command{
+    Command: "ls -la",
+    Description: "List all files in long format",
+}
+```
 
 ## Result
 
@@ -305,6 +454,14 @@ if result.Changed {
 ```
 
 ## Design Notes
+
+### Why PlaybookInterface in types Package?
+
+Package isolation prevents circular dependencies:
+- `types` package defines `PlaybookInterface` and `Registry`
+- `playbook` package provides `BasePlaybook` implementation
+- `ork` package uses types.PlaybookInterface for type safety
+- This allows the registry to be in a lower-level package
 
 ### Why Separate types.Result and playbook.Result?
 

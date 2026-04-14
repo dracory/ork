@@ -4,8 +4,8 @@ page-type: module
 summary: Main ork package providing Node, Group, and Inventory interfaces for SSH-based server automation.
 tags: [module, ork, node, group, inventory]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-14
+version: 1.1.0
 ---
 
 # ork Package
@@ -36,7 +36,7 @@ The `ork` package is the primary entry point for users of the framework. It prov
 | `inventory_implementation_test.go` | Inventory tests |
 | `runnable_interface.go` | `RunnableInterface` base interface |
 | `constants.go` | Playbook ID aliases |
-| `registry.go` | Global playbook registry initialization |
+| `registry.go` | Global registry + NewDefaultRegistry factory |
 
 ## NodeInterface
 
@@ -68,7 +68,7 @@ type NodeInterface interface {
     IsConnected() bool
     
     // Deprecated: Use RunPlaybook instead
-    RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results
+    RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
 }
 ```
 
@@ -192,9 +192,9 @@ Base interface for all executable entities (Node, Group, Inventory).
 ```go
 type RunnableInterface interface {
     RunCommand(cmd string) types.Results
-    RunPlaybook(pb playbook.PlaybookInterface) types.Results
-    RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results
-    CheckPlaybook(pb playbook.PlaybookInterface) types.Results
+    RunPlaybook(pb types.PlaybookInterface) types.Results
+    RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
+    CheckPlaybook(pb types.PlaybookInterface) types.Results
     GetLogger() *slog.Logger
     SetLogger(logger *slog.Logger) RunnableInterface
     SetDryRunMode(dryRun bool) RunnableInterface
@@ -208,12 +208,12 @@ Convenient aliases for playbook IDs:
 
 ```go
 const (
-    PlaybookPing              = playbook.IDPing
-    PlaybookAptUpdate         = playbook.IDAptUpdate
-    PlaybookAptUpgrade        = playbook.IDAptUpgrade
-    PlaybookUserCreate        = playbook.IDUserCreate
-    PlaybookUserDelete        = playbook.IDUserDelete
-    PlaybookSwapCreate        = playbook.IDSwapCreate
+    PlaybookPing              = playbooks.IDPing
+    PlaybookAptUpdate         = playbooks.IDAptUpdate
+    PlaybookAptUpgrade        = playbooks.IDAptUpgrade
+    PlaybookUserCreate        = playbooks.IDUserCreate
+    PlaybookUserDelete        = playbooks.IDUserDelete
+    PlaybookSwapCreate        = playbooks.IDSwapCreate
     // ... see constants.go for full list
 )
 ```
@@ -223,7 +223,7 @@ const (
 Global playbook registry for ID-based playbook lookup:
 
 ```go
-// Get the global registry
+// Get the global registry singleton (lazily initialized)
 registry, err := ork.GetGlobalPlaybookRegistry()
 if err != nil {
     log.Fatal(err)
@@ -234,6 +234,9 @@ pb, ok := registry.PlaybookFindByID("apt-update")
 
 // Register custom playbook
 registry.PlaybookRegister(myPlaybook)
+
+// Create isolated registry for testing
+isolatedRegistry, err := ork.NewDefaultRegistry()
 ```
 
 ## Dependencies
@@ -241,9 +244,9 @@ registry.PlaybookRegister(myPlaybook)
 | Package | Usage |
 |---------|-------|
 | `config` | `NodeConfig` configuration |
-| `playbook` | `PlaybookInterface`, `Result` |
+| `playbook` | `BasePlaybook` implementation |
 | `ssh` | SSH command execution |
-| `types` | `Result`, `Results`, `Summary` |
+| `types` | `PlaybookInterface`, `Registry`, `Command`, `Result`, `Results`, `Summary` |
 
 ## Thread Safety
 

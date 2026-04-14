@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -46,7 +46,7 @@ import (
 //   - mariadb-enable-ssl: Encrypt data in transit
 //   - mariadb-security-audit: Verify encryption is working
 type EnableEncryption struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if encryption needs to be enabled.
@@ -55,7 +55,7 @@ func (m *EnableEncryption) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *EnableEncryption) Run() playbook.Result {
+func (m *EnableEncryption) Run() types.Result {
 	cfg := m.GetNodeConfig()
 
 	// Get configurable paths
@@ -113,7 +113,7 @@ EOF`, configPath, configPath, keyFilePath),
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdPerms.Command, "description", cmdPerms.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdConfigure.Command, "description", cmdConfigure.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would enable MariaDB encryption at rest",
 		}
@@ -141,11 +141,11 @@ EOF`, configPath, configPath, keyFilePath),
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB")
 	_, err := ssh.Run(cfg, cmdRestart)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
+		return types.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
 
 	cfg.GetLoggerOrDefault().Info("MariaDB encryption at rest enabled")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: "Data-at-rest encryption enabled for MariaDB",
 		Details: map[string]string{
@@ -156,9 +156,9 @@ EOF`, configPath, configPath, keyFilePath),
 }
 
 // NewEnableEncryption creates a new mariadb-enable-encryption playbook.
-func NewEnableEncryption() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbEnableEncryption)
+func NewEnableEncryption() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbEnableEncryption)
 	pb.SetDescription("Enable data-at-rest encryption for MariaDB")
 	return &EnableEncryption{BasePlaybook: pb}
 }

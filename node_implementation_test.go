@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/dracory/ork/config"
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
 
@@ -673,20 +673,17 @@ func TestNodeImplementation_Close_MultipleCalls(t *testing.T) {
 
 // TestNodeImplementation_Run_WithoutPersistentConnection verifies that Run creates one-time connection when not connected.
 func TestNodeImplementation_Run_WithoutPersistentConnection(t *testing.T) {
-	// Save original ssh.RunOnce
-	originalRunOnce := sshRunOnce
-	defer func() { sshRunOnce = originalRunOnce }()
-
-	// Mock ssh.RunOnce
+	// Mock ssh.RunSingleCommand via SetRunFunc
 	var capturedHost, capturedPort, capturedUser, capturedKey, capturedCmd string
-	sshRunOnce = func(host, port, user, key string, cmd types.Command) (string, error) {
-		capturedHost = host
-		capturedPort = port
-		capturedUser = user
-		capturedKey = key
+	ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
+		capturedHost = cfg.SSHHost
+		capturedPort = cfg.SSHPort
+		capturedUser = cfg.RootUser
+		capturedKey = cfg.SSHKey
 		capturedCmd = cmd.Command
 		return "output from one-time connection", nil
-	}
+	})
+	defer ssh.SetRunFunc(nil)
 
 	n := &nodeImplementation{
 		cfg: config.NodeConfig{
@@ -709,7 +706,7 @@ func TestNodeImplementation_Run_WithoutPersistentConnection(t *testing.T) {
 		t.Errorf("Expected output=%q, got %q", "output from one-time connection", result.Message)
 	}
 
-	// Verify correct parameters were passed to ssh.RunOnce
+	// Verify correct parameters were passed to ssh.RunSingleCommand
 	if capturedHost != "server.example.com" {
 		t.Errorf("Expected host=%q, got %q", "server.example.com", capturedHost)
 	}
@@ -729,14 +726,11 @@ func TestNodeImplementation_Run_WithoutPersistentConnection(t *testing.T) {
 
 // TestNodeImplementation_Run_OneTimeConnectionError verifies error handling with one-time connection.
 func TestNodeImplementation_Run_OneTimeConnectionError(t *testing.T) {
-	// Save original ssh.RunOnce
-	originalRunOnce := sshRunOnce
-	defer func() { sshRunOnce = originalRunOnce }()
-
-	// Mock ssh.RunOnce to return error
-	sshRunOnce = func(host, port, user, key string, cmd types.Command) (string, error) {
+	// Mock ssh.RunSingleCommand via SetRunFunc to return error
+	ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
 		return "", fmt.Errorf("connection refused")
-	}
+	})
+	defer ssh.SetRunFunc(nil)
 
 	n := &nodeImplementation{
 		cfg: config.NodeConfig{
@@ -930,7 +924,7 @@ func (m *mockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *mockPlaybook) SetID(id string) playbook.PlaybookInterface {
+func (m *mockPlaybook) SetID(id string) types.PlaybookInterface {
 	m.name = id
 	return m
 }
@@ -939,7 +933,7 @@ func (m *mockPlaybook) GetDescription() string {
 	return "Mock playbook for testing"
 }
 
-func (m *mockPlaybook) SetDescription(description string) playbook.PlaybookInterface {
+func (m *mockPlaybook) SetDescription(description string) types.PlaybookInterface {
 	return m
 }
 
@@ -947,7 +941,7 @@ func (m *mockPlaybook) GetNodeConfig() config.NodeConfig {
 	return m.cfg
 }
 
-func (m *mockPlaybook) SetNodeConfig(cfg config.NodeConfig) playbook.PlaybookInterface {
+func (m *mockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.PlaybookInterface {
 	m.cfg = cfg
 	return m
 }
@@ -956,7 +950,7 @@ func (m *mockPlaybook) GetArg(key string) string {
 	return m.args[key]
 }
 
-func (m *mockPlaybook) SetArg(key, value string) playbook.PlaybookInterface {
+func (m *mockPlaybook) SetArg(key, value string) types.PlaybookInterface {
 	if m.args == nil {
 		m.args = make(map[string]string)
 	}
@@ -968,7 +962,7 @@ func (m *mockPlaybook) GetArgs() map[string]string {
 	return m.args
 }
 
-func (m *mockPlaybook) SetArgs(args map[string]string) playbook.PlaybookInterface {
+func (m *mockPlaybook) SetArgs(args map[string]string) types.PlaybookInterface {
 	m.args = args
 	return m
 }
@@ -977,7 +971,7 @@ func (m *mockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }
 
-func (m *mockPlaybook) SetDryRun(dryRun bool) playbook.PlaybookInterface {
+func (m *mockPlaybook) SetDryRun(dryRun bool) types.PlaybookInterface {
 	m.dryRun = dryRun
 	return m
 }
@@ -986,7 +980,7 @@ func (m *mockPlaybook) GetTimeout() time.Duration {
 	return m.timeout
 }
 
-func (m *mockPlaybook) SetTimeout(timeout time.Duration) playbook.PlaybookInterface {
+func (m *mockPlaybook) SetTimeout(timeout time.Duration) types.PlaybookInterface {
 	m.timeout = timeout
 	return m
 }
@@ -998,18 +992,18 @@ func (m *mockPlaybook) Check() (bool, error) {
 	return true, nil
 }
 
-func (m *mockPlaybook) Run() playbook.Result {
+func (m *mockPlaybook) Run() types.Result {
 	if m.runFunc != nil {
 		err := m.runFunc(m.cfg)
 		if err != nil {
-			return playbook.Result{
+			return types.Result{
 				Changed: false,
 				Message: fmt.Sprintf("Playbook '%s' failed", m.name),
 				Error:   fmt.Errorf("playbook '%s': %w", m.name, err),
 			}
 		}
 	}
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("Playbook '%s' executed", m.name),
 	}

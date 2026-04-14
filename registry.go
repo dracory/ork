@@ -3,7 +3,6 @@ package ork
 import (
 	"sync"
 
-	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/playbooks/apt"
 	"github.com/dracory/ork/playbooks/fail2ban"
 	"github.com/dracory/ork/playbooks/mariadb"
@@ -13,6 +12,7 @@ import (
 	"github.com/dracory/ork/playbooks/swap"
 	"github.com/dracory/ork/playbooks/ufw"
 	"github.com/dracory/ork/playbooks/user"
+	"github.com/dracory/ork/types"
 )
 
 // globalPlaybookRegistry is the global playbook registry that holds all built-in
@@ -20,7 +20,7 @@ import (
 //
 // The registry is used by Node.Playbook() to look up and execute playbooks.
 var (
-	globalPlaybookRegistry     *playbook.Registry
+	globalPlaybookRegistry     *types.Registry
 	globalPlaybookRegistryOnce sync.Once
 )
 
@@ -34,7 +34,7 @@ var (
 // The registry is lazily initialized on first call using sync.Once to ensure
 // thread-safe singleton behavior.
 // Returns an error if initialization fails.
-func GetGlobalPlaybookRegistry() (*playbook.Registry, error) {
+func GetGlobalPlaybookRegistry() (*types.Registry, error) {
 	var initErr error
 	globalPlaybookRegistryOnce.Do(func() {
 		globalPlaybookRegistry, initErr = NewDefaultRegistry()
@@ -45,6 +45,18 @@ func GetGlobalPlaybookRegistry() (*playbook.Registry, error) {
 	return globalPlaybookRegistry, nil
 }
 
+// NewPlaybookRegistry creates a new empty playbook registry.
+// This is a convenience method (sugar) for types.NewRegistry() with a more intuitive name.
+// This creates a fresh empty registry instance, which is useful for:
+// - Testing with isolated registries
+// - Custom configurations with selective playbook registration
+// - Multiple independent registries in the same application
+//
+// Returns an empty registry ready for custom playbook registration.
+func NewPlaybookRegistry() *types.Registry {
+	return types.NewRegistry()
+}
+
 // NewDefaultRegistry creates a new playbook registry with all built-in playbooks registered.
 // This creates a fresh registry instance (not a singleton), which is useful for:
 // - Testing with isolated registries
@@ -53,10 +65,10 @@ func GetGlobalPlaybookRegistry() (*playbook.Registry, error) {
 //
 // For most production use cases, use GetGlobalPlaybookRegistry() instead for convenience.
 // Returns an error if any playbook registration fails.
-func NewDefaultRegistry() (*playbook.Registry, error) {
-	reg := playbook.NewRegistry()
+func NewDefaultRegistry() (*types.Registry, error) {
+	reg := NewPlaybookRegistry()
 
-	playbooks := []playbook.PlaybookInterface{
+	playbooks := []types.PlaybookInterface{
 		ping.NewPing(),
 		apt.NewAptUpdate(),
 		apt.NewAptUpgrade(),
@@ -67,6 +79,7 @@ func NewDefaultRegistry() (*playbook.Registry, error) {
 		swap.NewSwapStatus(),
 		user.NewUserCreate(),
 		user.NewUserDelete(),
+		user.NewUserList(),
 		user.NewUserStatus(),
 		fail2ban.NewFail2banInstall(),
 		fail2ban.NewFail2banStatus(),

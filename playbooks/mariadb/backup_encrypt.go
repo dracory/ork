@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -30,7 +30,7 @@ import (
 // Related Playbooks:
 //   - mariadb-backup: Standard (non-encrypted) backup
 type BackupEncrypt struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if backup can be created.
@@ -39,13 +39,13 @@ func (b *BackupEncrypt) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (b *BackupEncrypt) Run() playbook.Result {
+func (b *BackupEncrypt) Run() types.Result {
 	cfg := b.GetNodeConfig()
 	rootPassword := cfg.GetArg(ArgRootPassword)
 	dbName := cfg.GetArg(ArgDBName)
 
 	if dbName == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Database name is required",
 			Error:   fmt.Errorf("use --arg=dbname=<database_name>"),
@@ -55,7 +55,7 @@ func (b *BackupEncrypt) Run() playbook.Result {
 	// Validate database name
 	validDBName := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 	if !validDBName.MatchString(dbName) {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Invalid database name",
 			Error:   fmt.Errorf("only alphanumeric characters, underscores, and hyphens allowed"),
@@ -63,7 +63,7 @@ func (b *BackupEncrypt) Run() playbook.Result {
 	}
 
 	if rootPassword == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "MariaDB root password not provided",
 			Error:   fmt.Errorf("root-password is required"),
@@ -84,7 +84,7 @@ func (b *BackupEncrypt) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdMkdir.Command, "description", cmdMkdir.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCheckOpenSSL.Command, "description", cmdCheckOpenSSL.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command, "description", cmdBackup.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would create encrypted backup for database '%s'", dbName),
 		}
@@ -97,11 +97,11 @@ func (b *BackupEncrypt) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("creating encrypted backup")
 	_, err := ssh.Run(cfg, cmdBackup)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to create backup", Error: err}
+		return types.Result{Changed: false, Message: "Failed to create backup", Error: err}
 	}
 
 	cfg.GetLoggerOrDefault().Info("encrypted backup complete")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("Encrypted backup created: %s/%s_%s.sql.gz.enc", backupDir, dbName, timestamp),
 		Details: map[string]string{
@@ -111,9 +111,9 @@ func (b *BackupEncrypt) Run() playbook.Result {
 }
 
 // NewBackupEncrypt creates a new mariadb-backup-encrypt playbook.
-func NewBackupEncrypt() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbBackupEncrypt)
+func NewBackupEncrypt() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbBackupEncrypt)
 	pb.SetDescription("Create an encrypted backup of a MariaDB database")
 	return &BackupEncrypt{BasePlaybook: pb}
 }

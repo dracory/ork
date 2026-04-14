@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -47,7 +47,7 @@ const (
 //   - ssh-harden: Disable password auth, root login
 //   - ufw-install: Configure firewall
 type SshChangePort struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if port change is needed.
@@ -56,12 +56,12 @@ func (s *SshChangePort) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (s *SshChangePort) Run() playbook.Result {
+func (s *SshChangePort) Run() types.Result {
 	cfg := s.GetNodeConfig()
 	newPort := s.GetArg(ArgPort)
 
 	if newPort == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Port parameter is required",
 			Error:   fmt.Errorf("use --arg=port=<port_number>"),
@@ -71,7 +71,7 @@ func (s *SshChangePort) Run() playbook.Result {
 	// Validate port
 	portNum, err := strconv.Atoi(newPort)
 	if err != nil || portNum < 1024 || portNum > 65535 {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Invalid port number",
 			Error:   fmt.Errorf("port must be between 1024 and 65535"),
@@ -97,7 +97,7 @@ func (s *SshChangePort) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpdatePort.Command, "description", cmdUpdatePort.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdValidate.Command, "description", cmdValidate.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would change SSH port to %s", newPort),
 		}
@@ -107,7 +107,7 @@ func (s *SshChangePort) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
 	_, err = ssh.Run(cfg, cmdBackup)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
+		return types.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
 	}
 
 	// Update UFW if active
@@ -123,17 +123,17 @@ func (s *SshChangePort) Run() playbook.Result {
 	_, err = ssh.Run(cfg, cmdValidate)
 	if err != nil {
 		_, _ = ssh.Run(cfg, cmdRestore)
-		return playbook.Result{Changed: false, Message: "SSH configuration validation failed, backup restored", Error: err}
+		return types.Result{Changed: false, Message: "SSH configuration validation failed, backup restored", Error: err}
 	}
 
 	// Restart SSH
 	_, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
+		return types.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}
 
 	cfg.GetLoggerOrDefault().Info("SSH port change complete")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("SSH port changed to %s", newPort),
 		Details: map[string]string{
@@ -143,9 +143,9 @@ func (s *SshChangePort) Run() playbook.Result {
 }
 
 // NewSshChangePort creates a new ssh-change-port playbook.
-func NewSshChangePort() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDSshChangePort)
+func NewSshChangePort() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDSshChangePort)
 	pb.SetDescription("Change the SSH port to reduce automated scanning")
 	return &SshChangePort{BasePlaybook: pb}
 }

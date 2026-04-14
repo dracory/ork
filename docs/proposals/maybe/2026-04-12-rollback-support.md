@@ -1,7 +1,7 @@
 # Proposal: Rollback Support
 
 **Date:** 2026-04-12  
-**Status:** Not Implemented  
+**Status:** Rejected. Out of scope for now. May be implement in the future.
 **Author:** System Review
 
 > **Note:** Complex feature for undoing changes. Note: Return types now use `types.Results`.

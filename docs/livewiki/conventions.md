@@ -45,8 +45,8 @@ type groupImplementation struct { }
 func NewNodeForHost(host string) NodeInterface
 func NewGroup(name string) GroupInterface
 func NewInventory() InventoryInterface
-func NewPing() playbook.PlaybookInterface
-func NewAptUpdate() playbook.PlaybookInterface
+func NewPing() types.PlaybookInterface
+func NewAptUpdate() types.PlaybookInterface
 ```
 
 ### Constants
@@ -71,7 +71,7 @@ func NewAptUpdate() playbook.PlaybookInterface
 
 - **Ork package aliases**: `Playbook` prefix
   ```go
-  const PlaybookAptUpdate = playbook.IDAptUpdate
+  const PlaybookAptUpdate = playbooks.IDAptUpdate
   ```
 
 ## File Organization
@@ -242,9 +242,9 @@ func (m *MyPlaybook) Run() playbook.Result {
 }
 
 // NewMyPlaybook creates a new instance.
-func NewMyPlaybook() playbook.PlaybookInterface {
+func NewMyPlaybook() types.PlaybookInterface {
     pb := playbook.NewBasePlaybook()
-    pb.SetID(playbook.IDMyPlaybook)
+    pb.SetID(playbooks.IDMyPlaybook)
     pb.SetDescription("Does something useful")
     return &MyPlaybook{BasePlaybook: pb}
 }
@@ -311,15 +311,12 @@ func TestAptUpdate_Check(t *testing.T)
 
 ```go
 func TestSomething(t *testing.T) {
-    // Save original
-    original := sshRunOnce
-    defer func() { sshRunOnce = original }()
-    
-    // Mock
-    sshRunOnce = func(host, port, user, key, cmd string) (string, error) {
+    // Mock SSH via SetRunFunc
+    ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
         return "mocked", nil
-    }
-    
+    })
+    defer ssh.SetRunFunc(nil)
+
     // Test
     // ...
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -49,7 +49,7 @@ import (
 //   - Safely removes fstab entry with sed pattern matching
 //   - Idempotent - safe to run multiple times
 type SwapDelete struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if swap needs to be removed.
@@ -74,7 +74,7 @@ func (s *SwapDelete) Check() (bool, error) {
 //
 // Result.Details contains:
 //   - file: Path to the removed swap file
-func (s *SwapDelete) Run() playbook.Result {
+func (s *SwapDelete) Run() types.Result {
 	cfg := s.GetNodeConfig()
 	swapFilePath := s.GetArg(ArgSwapFilePath)
 	if swapFilePath == "" {
@@ -84,7 +84,7 @@ func (s *SwapDelete) Run() playbook.Result {
 	// Check if swap exists
 	needsDelete, err := s.Check()
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to check swap status",
 			Error:   err,
@@ -92,7 +92,7 @@ func (s *SwapDelete) Run() playbook.Result {
 	}
 
 	if !needsDelete {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "No swap file to remove",
 		}
@@ -109,7 +109,7 @@ func (s *SwapDelete) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSwapoff.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdFstab.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRm.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would remove swap file at %s", swapFilePath),
 		}
@@ -124,7 +124,7 @@ func (s *SwapDelete) Run() playbook.Result {
 	// Delete file
 	_, err = ssh.Run(cfg, cmdRm)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to remove swap file",
 			Error:   fmt.Errorf("failed to remove swap file: %w", err),
@@ -132,7 +132,7 @@ func (s *SwapDelete) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("swap file removed", "path", swapFilePath)
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: "Swap file removed",
 		Details: map[string]string{
@@ -147,9 +147,9 @@ func (s *SwapDelete) Run() playbook.Result {
 //
 //	A PlaybookInterface implementation configured with IDSwapDelete identifier
 //	and description "Remove the swap file".
-func NewSwapDelete() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDSwapDelete)
+func NewSwapDelete() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDSwapDelete)
 	pb.SetDescription("Remove the swap file")
 	return &SwapDelete{BasePlaybook: pb}
 }

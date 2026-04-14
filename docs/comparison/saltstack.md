@@ -9,7 +9,7 @@
 | **Execution** | Push or Pull | Push |
 | **Speed** | Very fast (ZeroMQ) | Standard SSH speed |
 | **Scalability** | 10,000+ nodes | Smaller scale |
-| **Model** | Procedural + Declarative | Procedural |
+| **Parallel** | Limited | Inventory (sequential) |
 | **Server Required** | Yes (Salt Master) | No |
 | **Learning Curve** | Medium | Low |
 
@@ -85,13 +85,20 @@ salt -G 'os:Ubuntu' state.apply
 
 ### Ork (Standard SSH)
 ```go
-// Sequential execution (for now)
+// Sequential execution
 for _, host := range hosts {
     node := ork.NewNodeForHost(host)
-    node.RunCommand("uptime")  // One at a time
+    results := node.RunCommand("uptime")  // One at a time
+    result := results.Results[host]
+    fmt.Printf("%s: %s\n", host, result.Message)
 }
 
-// Inventory executes across all nodes (sequential for now, parallel planned)
+// Inventory executes across all nodes (sequential)
+inv := ork.NewInventory()
+for _, host := range hosts {
+    inv.AddNode(ork.NewNodeForHost(host))
+}
+results := inv.RunCommand("uptime")
 ```
 
 ## Configuration Model
@@ -140,12 +147,12 @@ create_user:
 node := ork.NewNodeForHost("server.example.com")
 
 // Run playbooks
-node.RunPlaybook(playbooks.NewAptUpdate())
-node.RunPlaybook(playbooks.NewAptUpgrade())
+results := node.RunPlaybook(playbooks.NewAptUpdate())
+results = node.RunPlaybook(playbooks.NewAptUpgrade())
 
 // Custom logic in Go
-if node.GetConfig().SSHHost == "production" {
-    node.RunPlaybook(playbooks.NewFail2banInstall())
+if node.GetHost() == "production" {
+    results = node.RunPlaybook(playbooks.NewFail2banInstall())
 }
 ```
 
@@ -186,14 +193,15 @@ update_db:
 ```go
 // One node at a time
 node := ork.NewNodeForHost("server.example.com")
-result := node.RunPlaybook(playbooks.NewPing())
+results := node.RunPlaybook(playbooks.NewPing())
+result := results.Results["server.example.com"]
 
 // Inventory executes across all nodes
 inv := ork.NewInventory()
 webGroup := ork.NewGroup("webservers")
 webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 inv.AddGroup(webGroup)
-results := inv.RunPlaybook(playbooks.NewPing())  // Runs on all nodes
+results = inv.RunPlaybook(playbooks.NewPing())  // Runs on all nodes
 ```
 
 ## Targeting / Inventory
@@ -227,7 +235,7 @@ inv := ork.NewInventory()
 webGroup := ork.NewGroup("webservers")
 webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 inv.AddGroup(webGroup)
-results := inv.GetGroupByName("webservers").RunPlaybook(playbooks.NewPing())
+results = inv.GetGroupByName("webservers").RunPlaybook(playbooks.NewPing())
 
 // Access per-node results
 for host, result := range results.Results {

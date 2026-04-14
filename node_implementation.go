@@ -5,7 +5,6 @@ import (
 	"log/slog"
 
 	"github.com/dracory/ork/config"
-	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -310,7 +309,7 @@ func (n *nodeImplementation) RunCommand(cmd string) types.Results {
 			err = fmt.Errorf("failed to execute command '%s': %w", cmd, err)
 		}
 	} else {
-		output, err = sshRunOnce(n.cfg.SSHHost, n.cfg.SSHPort, n.cfg.RootUser, n.cfg.SSHKey, types.Command{Command: cmd})
+		output, err = ssh.Run(n.cfg, types.Command{Command: cmd})
 		if err != nil {
 			err = fmt.Errorf("failed to execute command '%s': %w", cmd, err)
 		}
@@ -329,7 +328,7 @@ func (n *nodeImplementation) RunCommand(cmd string) types.Results {
 //
 // The playbook is configured with the node's settings and executed immediately.
 // This method allows running custom or programmatically created playbooks without registry lookup.
-func (n *nodeImplementation) RunPlaybook(pb playbook.PlaybookInterface) types.Results {
+func (n *nodeImplementation) RunPlaybook(pb types.PlaybookInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -353,7 +352,7 @@ func (n *nodeImplementation) RunPlaybook(pb playbook.PlaybookInterface) types.Re
 //
 // Optional PlaybookOptions can be provided to override node-level arguments for this
 // specific execution. Playbook-level args take precedence over node-level args.
-func (n *nodeImplementation) RunPlaybookByID(id string, opts ...playbook.PlaybookOptions) types.Results {
+func (n *nodeImplementation) RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -399,7 +398,7 @@ func (n *nodeImplementation) RunPlaybookByID(id string, opts ...playbook.Playboo
 
 // CheckPlaybook implements RunnableInterface.
 // Runs playbook in dry-run mode to check if changes are needed.
-func (n *nodeImplementation) CheckPlaybook(pb playbook.PlaybookInterface) types.Results {
+func (n *nodeImplementation) CheckPlaybook(pb types.PlaybookInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}

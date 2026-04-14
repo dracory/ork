@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -56,7 +56,7 @@ import (
 // Related Playbooks:
 //   - user-create: Create non-root user before disabling root login
 type SshHarden struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns true since we want to verify and apply security settings.
@@ -65,7 +65,7 @@ func (s *SshHarden) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (s *SshHarden) Run() playbook.Result {
+func (s *SshHarden) Run() types.Result {
 	cfg := s.GetNodeConfig()
 	nonRootUser := s.GetArg(ArgNonRootUser)
 	if nonRootUser == "" {
@@ -125,7 +125,7 @@ func (s *SshHarden) Run() playbook.Result {
 		}
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdValidate.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would harden SSH security configuration",
 		}
@@ -135,7 +135,7 @@ func (s *SshHarden) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
 	_, err := ssh.Run(cfg, cmdBackup)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
+		return types.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
 	}
 
 	// Step 2: Verify non-root user
@@ -143,7 +143,7 @@ func (s *SshHarden) Run() playbook.Result {
 	output, err := ssh.Run(cfg, cmdVerifyUser)
 	_ = output
 	if err != nil || !strings.Contains(output, "OK") {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Non-root user not configured properly",
 			Error:   fmt.Errorf("user '%s' doesn't exist or lacks sudo privileges", nonRootUser),
@@ -161,7 +161,7 @@ func (s *SshHarden) Run() playbook.Result {
 	if err != nil {
 		// Restore backup
 		_, _ = ssh.Run(cfg, cmdRestore)
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "SSH configuration validation failed, backup restored",
 			Error:   err,
@@ -172,11 +172,11 @@ func (s *SshHarden) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("restarting SSH service")
 	_, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
+		return types.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}
 
 	cfg.GetLoggerOrDefault().Info("SSH hardening complete")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: "SSH security hardening applied successfully",
 		Details: map[string]string{
@@ -191,9 +191,9 @@ func (s *SshHarden) Run() playbook.Result {
 }
 
 // NewSshHarden creates a new ssh-harden playbook.
-func NewSshHarden() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDSshHarden)
+func NewSshHarden() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDSshHarden)
 	pb.SetDescription("Apply security hardening to SSH server configuration")
 	return &SshHarden{BasePlaybook: pb}
 }

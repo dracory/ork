@@ -40,7 +40,7 @@ graph TD
     D --> C
     E --> D
     F --> G[Remote Server]
-    C --> H[playbook.PlaybookInterface]
+    C --> H[types.PlaybookInterface]
     H --> I[playbooks Package]
 ```
 
@@ -88,7 +88,7 @@ Playbooks are reusable automation tasks:
 results := node.RunPlaybook(playbooks.NewAptUpdate())
 
 // Run by ID (registry lookup)
-results := node.RunPlaybookByID(playbook.IDPing)
+results := node.RunPlaybookByID(playbooks.IDPing)
 ```
 
 ## Built-in Playbooks

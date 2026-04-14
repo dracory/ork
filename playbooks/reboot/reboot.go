@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -54,7 +54,7 @@ import (
 // Note: By default, WaitForReconnect is false. The caller must explicitly
 // enable waiting by setting WaitForReconnect=true on the returned instance.
 type Reboot struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 	// WaitForReconnect if true, will poll until server is back online
 	WaitForReconnect bool
 	// MaxWaitTime is the maximum time to wait for reconnection (default: 5m)
@@ -81,14 +81,14 @@ func (r *Reboot) Check() (bool, error) {
 // Result.Details contains:
 //   - wait_for_reconnect: "true" or "false"
 //   - max_wait: Maximum wait duration string (when wait is enabled)
-func (r *Reboot) Run() playbook.Result {
+func (r *Reboot) Run() types.Result {
 	cfg := r.GetNodeConfig()
 	cmdReboot := types.Command{Command: "reboot", Description: "Reboot server"}
 
 	// Check for dry-run mode - display actual command
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdReboot.Command, "host", cfg.SSHHost)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would reboot %s", cfg.SSHHost),
 		}
@@ -105,7 +105,7 @@ func (r *Reboot) Run() playbook.Result {
 
 	if !r.WaitForReconnect {
 		cfg.GetLoggerOrDefault().Info("reboot initiated, not waiting", "host", cfg.SSHHost)
-		return playbook.Result{
+		return types.Result{
 			Changed: true, // Reboot was initiated
 			Message: fmt.Sprintf("Reboot initiated on %s", cfg.SSHHost),
 			Details: map[string]string{
@@ -131,7 +131,7 @@ func (r *Reboot) Run() playbook.Result {
 		_, err := ssh.Run(cfg, cmdUptime)
 		if err == nil {
 			cfg.GetLoggerOrDefault().Info("server is back online", "host", cfg.SSHHost)
-			return playbook.Result{
+			return types.Result{
 				Changed: true,
 				Message: fmt.Sprintf("Reboot completed on %s, server is back online", cfg.SSHHost),
 				Details: map[string]string{
@@ -142,7 +142,7 @@ func (r *Reboot) Run() playbook.Result {
 		}
 	}
 
-	return playbook.Result{
+	return types.Result{
 		Changed: true, // Reboot was initiated even if we timed out waiting
 		Message: fmt.Sprintf("Reboot initiated on %s, but timeout waiting for reconnect", cfg.SSHHost),
 		Error:   fmt.Errorf("timeout waiting for server to come back online after %v", maxWait),
@@ -170,9 +170,9 @@ func (r *Reboot) Run() playbook.Result {
 //		pb.MaxWaitTime = 10 * time.Minute
 //
 // Note: MaxWaitTime only applies when WaitForReconnect is true.
-func NewReboot() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDReboot)
+func NewReboot() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDReboot)
 	pb.SetDescription("Reboot the remote server")
 	return &Reboot{
 		BasePlaybook:     pb,

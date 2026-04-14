@@ -3,7 +3,7 @@ package ork
 import (
 	"testing"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 )
 
 func TestNewDefaultRegistry_Initialized(t *testing.T) {
@@ -113,7 +113,7 @@ func TestGetGlobalPlaybookRegistry(t *testing.T) {
 	}
 
 	// Test that we can use it to register a playbook
-	customPb := playbook.NewBasePlaybook()
+	customPb := playbooks.NewBasePlaybook()
 	customPb.SetID("test-get-registry-playbook")
 	customPb.SetDescription("Test playbook via NewDefaultRegistry")
 
@@ -168,7 +168,7 @@ func TestNewDefaultRegistry_DuplicateID(t *testing.T) {
 	}
 
 	// Try to register a playbook with a duplicate ID
-	duplicatePb := playbook.NewBasePlaybook()
+	duplicatePb := playbooks.NewBasePlaybook()
 	duplicatePb.SetID("ping") // "ping" is already registered
 	duplicatePb.SetDescription("Duplicate ping playbook")
 

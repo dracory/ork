@@ -12,13 +12,13 @@
 //   - ufw: Uncomplicated Firewall management (status, enable, disable)
 //   - user: User management (create, delete, status)
 //
-// All playbooks implement the playbook.PlaybookInterface and can be used
-// with the ork.Node.Playbook() method or registered with a playbook.Registry.
+// All playbooks implement the types.PlaybookInterface and can be used
+// with the ork.Node.Playbook() method or registered with a types.Registry.
 //
 // Example usage:
 //
 //	node := ork.NewNodeForHost("server.example.com")
-//	result := node.Playbook(playbook.IDAptUpdate)
+//	result := node.Playbook(playbooks.IDAptUpdate)
 //
 // Or with explicit playbook creation:
 //

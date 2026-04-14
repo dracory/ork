@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -39,7 +39,7 @@ import (
 // Related Playbooks:
 //   - mariadb-list-dbs: List available databases
 type Backup struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns true since we always want to create a fresh backup.
@@ -48,13 +48,13 @@ func (m *Backup) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *Backup) Run() playbook.Result {
+func (m *Backup) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 	dbName := m.GetArg(ArgDbName)
 
 	if dbName == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Database name is required",
 			Error:   fmt.Errorf("db-name argument is required"),
@@ -62,7 +62,7 @@ func (m *Backup) Run() playbook.Result {
 	}
 
 	if rootPassword == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "MariaDB root password not provided",
 			Error:   fmt.Errorf("root-password is required"),
@@ -91,7 +91,7 @@ func (m *Backup) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdDump.Command, "description", cmdDump.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCompress.Command, "description", cmdCompress.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdChecksum.Command, "description", cmdChecksum.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would create backup for database '%s'", dbName),
 		}
@@ -105,7 +105,7 @@ func (m *Backup) Run() playbook.Result {
 	// Create backup
 	output, err := ssh.Run(cfg, cmdDump)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to create backup",
 			Error:   fmt.Errorf("failed to create backup: %w\nOutput: %s", err, output),
@@ -118,7 +118,7 @@ func (m *Backup) Run() playbook.Result {
 	// Generate checksum
 	_, _ = ssh.Run(cfg, cmdChecksum)
 
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("Backup created: %s.gz", backupPath),
 		Details: map[string]string{
@@ -129,9 +129,9 @@ func (m *Backup) Run() playbook.Result {
 }
 
 // NewBackup creates a new mariadb-backup playbook.
-func NewBackup() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbBackup)
+func NewBackup() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbBackup)
 	pb.SetDescription("Create a compressed SQL dump of a MariaDB database")
 	return &Backup{BasePlaybook: pb}
 }

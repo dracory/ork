@@ -3,7 +3,7 @@ package mariadb
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -39,7 +39,7 @@ import (
 //   - mariadb-create-user: Create a new user
 //   - mariadb-secure: Remove insecure default users
 type ListUsers struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns false since this is a read-only playbook.
@@ -48,12 +48,12 @@ func (m *ListUsers) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *ListUsers) Run() playbook.Result {
+func (m *ListUsers) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 
 	if rootPassword == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "MariaDB root password not provided",
 			Error:   fmt.Errorf("root-password is required"),
@@ -65,7 +65,7 @@ func (m *ListUsers) Run() playbook.Result {
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdList.Command, "description", cmdList.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Would list all database users",
 		}
@@ -75,7 +75,7 @@ func (m *ListUsers) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdList)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to list users",
 			Error:   fmt.Errorf("failed to list users: %w", err),
@@ -83,7 +83,7 @@ func (m *ListUsers) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("database users", "output", output)
-	return playbook.Result{
+	return types.Result{
 		Changed: false,
 		Message: "User list retrieved",
 		Details: map[string]string{
@@ -93,9 +93,9 @@ func (m *ListUsers) Run() playbook.Result {
 }
 
 // NewListUsers creates a new mariadb-list-users playbook.
-func NewListUsers() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbListUsers)
+func NewListUsers() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbListUsers)
 	pb.SetDescription("Display all database user accounts and their allowed hosts (read-only)")
 	return &ListUsers{BasePlaybook: pb}
 }

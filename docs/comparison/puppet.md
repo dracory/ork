@@ -91,16 +91,16 @@ node 'webserver01.example.com' {
 node := ork.NewNodeForHost("webserver01.example.com")
 
 // Install nginx
-result := node.RunPlaybook(playbooks.NewAptInstall())
+results := node.RunPlaybook(playbooks.NewAptInstall())
 
 // Configure user
 userPb := playbooks.NewUserCreate()
 userPb.SetArg("username", "deploy")
 userPb.SetArg("shell", "/bin/bash")
-node.RunPlaybook(userPb)
+results = node.RunPlaybook(userPb)
 
 // Direct command execution
-node.RunCommand("sudo systemctl enable nginx")
+results = node.RunCommand("sudo systemctl enable nginx")
 ```
 
 ## Execution Flow

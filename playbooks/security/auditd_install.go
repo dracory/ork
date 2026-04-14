@@ -1,7 +1,7 @@
 package security
 
 import (
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -51,7 +51,7 @@ import (
 // Related Playbooks:
 //   - aide-install: File integrity monitoring
 type AuditdInstall struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if auditd needs to be installed.
@@ -63,7 +63,7 @@ func (a *AuditdInstall) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (a *AuditdInstall) Run() playbook.Result {
+func (a *AuditdInstall) Run() types.Result {
 	cfg := a.GetNodeConfig()
 
 	// Define commands
@@ -132,7 +132,7 @@ EOF`, Description: "Create audit rules"}
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdLoadRules.Command, "description", cmdLoadRules.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdEnable.Command, "description", cmdEnable.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStart.Command, "description", cmdStart.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would install and configure auditd",
 		}
@@ -144,7 +144,7 @@ EOF`, Description: "Create audit rules"}
 	cfg.GetLoggerOrDefault().Info("installing auditd package")
 	_, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to install auditd", Error: err}
+		return types.Result{Changed: false, Message: "Failed to install auditd", Error: err}
 	}
 
 	// Create audit rules
@@ -160,16 +160,16 @@ EOF`, Description: "Create audit rules"}
 	_, _ = ssh.Run(cfg, cmdStart)
 
 	cfg.GetLoggerOrDefault().Info("auditd installation complete")
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: "Auditd installed and configured successfully",
 	}
 }
 
 // NewAuditdInstall creates a new auditd-install playbook.
-func NewAuditdInstall() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDAuditdInstall)
+func NewAuditdInstall() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDAuditdInstall)
 	pb.SetDescription("Install and configure the Linux Audit Framework")
 	return &AuditdInstall{BasePlaybook: pb}
 }

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -38,7 +38,7 @@ import (
 //   - mariadb-create-db: Create a database for this user
 //   - mariadb-list-users: Verify user was created
 type CreateUser struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if the user already exists.
@@ -61,7 +61,7 @@ func (m *CreateUser) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *CreateUser) Run() playbook.Result {
+func (m *CreateUser) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 	username := m.GetArg(ArgUsername)
@@ -73,21 +73,21 @@ func (m *CreateUser) Run() playbook.Result {
 	}
 
 	if username == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Username is required",
 			Error:   fmt.Errorf("username argument is required"),
 		}
 	}
 	if password == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Password is required",
 			Error:   fmt.Errorf("password argument is required"),
 		}
 	}
 	if rootPassword == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "MariaDB root password not provided",
 			Error:   fmt.Errorf("root-password is required"),
@@ -120,7 +120,7 @@ func (m *CreateUser) Run() playbook.Result {
 			}
 		}
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdFlush.Command, "description", cmdFlush.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would create user '%s'@'%s'", username, host),
 		}
@@ -128,7 +128,7 @@ func (m *CreateUser) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdCreate)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to create user",
 			Error:   fmt.Errorf("failed to create user: %w\nOutput: %s", err, output),
@@ -164,7 +164,7 @@ func (m *CreateUser) Run() playbook.Result {
 	// Flush privileges
 	_, _ = ssh.Run(cfg, cmdFlush)
 
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("User '%s'@'%s' created successfully", username, host),
 		Details: map[string]string{
@@ -174,9 +174,9 @@ func (m *CreateUser) Run() playbook.Result {
 }
 
 // NewCreateUser creates a new mariadb-create-user playbook.
-func NewCreateUser() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbCreateUser)
+func NewCreateUser() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbCreateUser)
 	pb.SetDescription("Create a new MariaDB user with configurable privileges")
 	return &CreateUser{BasePlaybook: pb}
 }

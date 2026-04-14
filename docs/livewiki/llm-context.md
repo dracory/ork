@@ -4,8 +4,8 @@ page-type: overview
 summary: Complete codebase summary optimized for LLM consumption.
 tags: [llm, context, summary]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-14
+version: 1.1.0
 ---
 
 # LLM Context: Ork
@@ -43,33 +43,38 @@ ork/
 ├── inventory_interface.go        # InventoryInterface definition
 ├── runnable_interface.go         # RunnableInterface base
 ├── constants.go                  # Playbook ID constants (ork package)
-├── registry.go                   # Playbook registry initialization
+├── registry.go                   # Global registry + NewDefaultRegistry factory
 ├── registry_test.go
 ├── config/
 │   └── node_config.go            # NodeConfig struct + methods
 ├── ssh/
 │   ├── ssh.go                    # SSH Client wrapper
-│   ├── functions.go              # RunOnce, Run, PrivateKeyPath
+│   ├── functions.go              # Run, PrivateKeyPath
 │   └── ssh_test.go
 ├── playbook/
-│   ├── playbook.go               # PlaybookInterface
+│   ├── playbook.go               # BasePlaybook implementation
 │   ├── base_playbook.go          # BasePlaybook default implementation
 │   ├── constants.go              # Playbook ID constants
-│   ├── functions.go              # Utility functions
-│   └── registry.go               # Registry implementation
+│   └── functions.go              # Utility functions
 ├── playbooks/
 │   ├── doc.go                    # Package documentation
 │   ├── apt/                      # apt-update, apt-upgrade, apt-status
 │   ├── ping/                     # ping connectivity check
 │   ├── reboot/                   # server reboot
 │   ├── swap/                     # swap-create, swap-delete, swap-status
-│   ├── user/                     # user-create, user-delete, user-status
-│   ├── mariadb/                  # 11 MariaDB playbooks
-│   ├── security/                 # ssh-harden, kernel-harden, aide-install, auditd-install
+│   ├── user/                     # user-create, user-delete, user-list, user-status
+│   ├── mariadb/                  # 13 MariaDB playbooks
+│   ├── security/                 # ssh-harden, kernel-harden, aide-install, auditd-install, ssh-change-port
 │   ├── ufw/                      # ufw-install, ufw-status, ufw-allow-mariadb
 │   └── fail2ban/                 # fail2ban-install, fail2ban-status
 ├── types/
+│   ├── registry.go               # Registry, PlaybookInterface, PlaybookOptions
+│   ├── command.go                # Command struct with description
 │   └── results.go                # Result, Results, Summary types
+├── internal/
+│   ├── playbooktest/             # Test helpers for playbook testing
+│   ├── sshtest/                  # Mock SSH client for testing
+│   └── README.md                 # Testing framework documentation
 └── docs/
     └── livewiki/                 # This documentation
 ```
@@ -112,10 +117,10 @@ type InventoryInterface interface {
     SetMaxConcurrency(max int) InventoryInterface
 }
 
-// PlaybookInterface - Automation tasks
+// PlaybookInterface (in types package) - Automation tasks
 type PlaybookInterface interface {
     GetID() string
-    SetConfig(cfg config.NodeConfig) PlaybookInterface
+    SetNodeConfig(cfg config.NodeConfig) PlaybookInterface
     Check() (bool, error)
     Run() Result
     // ...
@@ -124,8 +129,7 @@ type PlaybookInterface interface {
 // RunnableInterface - Common operations
 type RunnableInterface interface {
     RunCommand(cmd string) types.Results
-    RunPlaybook(pb playbook.PlaybookInterface) types.Results
-    CheckPlaybook(pb playbook.PlaybookInterface) types.Results
+    RunPlaybook(pb types.PlaybookInterface) types.Results
     SetDryRunMode(dryRun bool) RunnableInterface
 }
 ```
@@ -146,7 +150,7 @@ node := ork.NewNodeForHost("server.com").
 results := node.RunPlaybook(playbooks.NewAptUpdate())
 
 // By ID (registry lookup)
-results := node.RunPlaybookByID(playbook.IDAptUpdate)
+results := node.RunPlaybookByID(playbooks.IDAptUpdate)
 
 // Check mode (dry-run for single playbook)
 results := node.CheckPlaybook(playbooks.NewAptUpgrade())
@@ -185,18 +189,21 @@ node.SetDryRunMode(true)
 | `runnable_interface.go:11-45` | RunnableInterface - base for all executables |
 | `inventory_interface.go:5-29` | InventoryInterface definition |
 | `group_implementation.go:13-174` | Group implementation with dry-run propagation |
-| `playbook/playbook.go:47-117` | PlaybookInterface definition |
+| `types/registry.go:27-97` | PlaybookInterface, PlaybookOptions, Registry |
+| `types/command.go:13-18` | Command struct with description |
 | `playbook/base_playbook.go` | BasePlaybook default implementation |
 | `config/node_config.go:6-67` | NodeConfig with SSHAddr(), GetArgOr() |
 | `ssh/functions.go:39-47` | Run() with dry-run safety check |
 | `types/results.go:6-52` | Result, Results, Summary types |
-| `registry.go:29-67` | Built-in playbook registration |
+| `registry.go:37-46` | GetGlobalPlaybookRegistry, NewDefaultRegistry |
+| `internal/playbooktest/helpers.go` | Test helpers for playbook testing |
+| `internal/sshtest/mock_client.go` | Mock SSH client for testing |
 
 ## Playbook IDs (for registry lookup)
 
 System: `ping`, `apt-update`, `apt-upgrade`, `apt-status`, `reboot`
 
-Users: `user-create`, `user-delete`, `user-status`
+Users: `user-create`, `user-delete`, `user-list`, `user-status`
 
 Swap: `swap-create`, `swap-delete`, `swap-status`
 
@@ -215,17 +222,23 @@ MariaDB: `mariadb-install`, `mariadb-secure`, `mariadb-create-db`, `mariadb-crea
 3. **Result aggregation**: Results map keyed by hostname for multi-node operations
 4. **Concurrent inventory**: Parallel execution with configurable concurrency
 5. **Fluent API**: Method chaining for readable configuration
-6. **Playbook registry**: Global registry for ID-based playbook lookup
+6. **Playbook registry**: Global registry (types.Registry) for ID-based playbook lookup with GetGlobalPlaybookRegistry() singleton
 7. **Config propagation**: Dry-run mode propagates Inventory -> Group -> Node -> Playbook
+8. **Registry factory pattern**: NewDefaultRegistry() for isolated registries in testing
+9. **Command struct**: types.Command wraps shell commands with descriptions for better dry-run output
+10. **Internal testing framework**: playbooktest and sshtest packages for comprehensive unit testing
 
 ## Testing Approach
 
-- **Unit tests**: Mock SSH via `sshRunOnce` variable
+- **Unit tests**: Mock SSH via `internal/sshtest.MockClient` or `ssh.SetRunFunc()`
+- **Test helpers**: `internal/playbooktest` provides comprehensive test utilities
 - **Integration tests**: Use testcontainers-go with real SSH containers
 - **Thread safety**: Group uses `sync.RWMutex` for dry-run mode
+- **Mock SSH**: `internal/sshtest` provides expectation-based mock client for testing without SSH servers
 
 ## Extension Points
 
-- **Custom playbooks**: Implement PlaybookInterface, register in registry
-- **SSH mocking**: Override `sshRunOnce` variable in tests
+- **Custom playbooks**: Implement types.PlaybookInterface, register in registry
+- **SSH mocking**: Use `internal/sshtest.MockClient` or `ssh.SetRunFunc()` in tests
 - **Custom logger**: Implement slog.Handler, set via SetLogger()
+- **Isolated registries**: Use `NewDefaultRegistry()` for testing without global state

@@ -3,7 +3,7 @@ package mariadb
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -41,7 +41,7 @@ import (
 //   - mariadb-secure: Remove default insecure settings
 //   - mariadb-status: Verify installation is working
 type Install struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if MariaDB needs to be installed.
@@ -53,7 +53,7 @@ func (m *Install) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *Install) Run() playbook.Result {
+func (m *Install) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 
@@ -78,7 +78,7 @@ func (m *Install) Run() playbook.Result {
 		}
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBindAddr.Command, "description", cmdBindAddr.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: "Would install and configure MariaDB",
 		}
@@ -89,7 +89,7 @@ func (m *Install) Run() playbook.Result {
 	// Update package list and install MariaDB
 	output, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to install MariaDB",
 			Error:   fmt.Errorf("failed to install MariaDB: %w\nOutput: %s", err, output),
@@ -99,7 +99,7 @@ func (m *Install) Run() playbook.Result {
 	// Start and enable MariaDB
 	output, err = ssh.Run(cfg, cmdStartEnable)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to start MariaDB",
 			Error:   fmt.Errorf("failed to start MariaDB: %w\nOutput: %s", err, output),
@@ -126,14 +126,14 @@ func (m *Install) Run() playbook.Result {
 	// Restart MariaDB to apply config changes
 	output, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to restart MariaDB",
 			Error:   fmt.Errorf("failed to restart MariaDB: %w\nOutput: %s", err, output),
 		}
 	}
 
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: "MariaDB installed and configured successfully",
 		Details: map[string]string{
@@ -143,9 +143,9 @@ func (m *Install) Run() playbook.Result {
 }
 
 // NewInstall creates a new mariadb-install playbook.
-func NewInstall() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbInstall)
+func NewInstall() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbInstall)
 	pb.SetDescription("Install and configure MariaDB database server")
 	return &Install{BasePlaybook: pb}
 }

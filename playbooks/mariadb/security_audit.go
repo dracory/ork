@@ -3,7 +3,7 @@ package mariadb
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -34,7 +34,7 @@ import (
 //   - mariadb-secure: Fix identified security issues
 //   - mariadb-enable-ssl: Enable SSL/TLS encryption
 type SecurityAudit struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns false since this is a read-only playbook.
@@ -43,12 +43,12 @@ func (m *SecurityAudit) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *SecurityAudit) Run() playbook.Result {
+func (m *SecurityAudit) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 
 	if rootPassword == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "MariaDB root password not provided",
 			Error:   fmt.Errorf("root-password is required"),
@@ -67,7 +67,7 @@ func (m *SecurityAudit) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdTestDb.Command, "description", cmdTestDb.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSsl.Command, "description", cmdSsl.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdWildcard.Command, "description", cmdWildcard.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Would perform MariaDB security audit",
 		}
@@ -81,7 +81,7 @@ func (m *SecurityAudit) Run() playbook.Result {
 	wildcardOutput, _ := ssh.Run(cfg, cmdWildcard)
 
 	cfg.GetLoggerOrDefault().Info("MariaDB security audit complete")
-	return playbook.Result{
+	return types.Result{
 		Changed: false,
 		Message: "Security audit completed",
 		Details: map[string]string{
@@ -94,9 +94,9 @@ func (m *SecurityAudit) Run() playbook.Result {
 }
 
 // NewSecurityAudit creates a new mariadb-security-audit playbook.
-func NewSecurityAudit() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbSecurityAudit)
+func NewSecurityAudit() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbSecurityAudit)
 	pb.SetDescription("Perform a comprehensive security audit of MariaDB (read-only)")
 	return &SecurityAudit{BasePlaybook: pb}
 }

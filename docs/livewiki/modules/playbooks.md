@@ -428,7 +428,7 @@ results := node.RunPlaybook(playbooks.NewMariadbBackupEncrypt())
 results := node.RunPlaybook(playbooks.NewAptUpdate())
 
 // By ID via registry
-results := node.RunPlaybookByID(playbook.IDAptUpdate)
+results := node.RunPlaybookByID(playbooks.IDAptUpdate)
 
 // Check mode (preview changes)
 results := node.CheckPlaybook(playbooks.NewAptUpgrade())

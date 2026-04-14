@@ -3,7 +3,7 @@ package mariadb
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -33,7 +33,7 @@ import (
 //   - mariadb-create-user: Create a user and grant access to this database
 //   - mariadb-list-dbs: Verify database was created
 type CreateDB struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if the database already exists.
@@ -52,13 +52,13 @@ func (m *CreateDB) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (m *CreateDB) Run() playbook.Result {
+func (m *CreateDB) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 	dbName := m.GetArg(ArgDbName)
 
 	if dbName == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Database name is required",
 			Error:   fmt.Errorf("db-name argument is required"),
@@ -66,7 +66,7 @@ func (m *CreateDB) Run() playbook.Result {
 	}
 
 	if rootPassword == "" {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "MariaDB root password not provided",
 			Error:   fmt.Errorf("root-password is required"),
@@ -80,7 +80,7 @@ func (m *CreateDB) Run() playbook.Result {
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCreate.Command, "description", cmdCreate.Description)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would create database '%s'", dbName),
 		}
@@ -88,23 +88,23 @@ func (m *CreateDB) Run() playbook.Result {
 
 	output, err := ssh.Run(cfg, cmdCreate)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to create database",
 			Error:   fmt.Errorf("failed to create database: %w\nOutput: %s", err, output),
 		}
 	}
 
-	return playbook.Result{
+	return types.Result{
 		Changed: true,
 		Message: fmt.Sprintf("Database '%s' created successfully", dbName),
 	}
 }
 
 // NewCreateDB creates a new mariadb-create-db playbook.
-func NewCreateDB() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDMariadbCreateDB)
+func NewCreateDB() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDMariadbCreateDB)
 	pb.SetDescription("Create a new MariaDB database with UTF-8 encoding")
 	return &CreateDB{BasePlaybook: pb}
 }

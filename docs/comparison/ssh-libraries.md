@@ -63,7 +63,7 @@ fab -H user@host -i /path/to/key.pem diskspace
 | **SSH Handling** | Built-in (Invoke+Paramiko) | Built-in (custom) |
 | **Idempotency** | Manual | Built into playbooks |
 | **Type Safety** | No | Yes (Go) |
-| **Parallel** | Limited | Inventory (sequential now, planned parallel) |
+| **Parallel** | Limited | Inventory (sequential) |
 | **Library/CLI** | Both CLI and library | Library |
 
 ### Fabric with Multiple Hosts
@@ -88,7 +88,7 @@ for _, host := range hosts {
     fmt.Printf("%s: %s\n", host, result.Message)
 }
 
-// Inventory (runs on all nodes, parallel planned)
+// Inventory (runs on all nodes, sequential)
 inv := ork.NewInventory()
 webGroup := ork.NewGroup("webservers")
 for _, host := range hosts {
@@ -160,13 +160,14 @@ transport.close()
 // Ork doesn't expose low-level SFTP
 // Focus on higher-level operations
 node := ork.NewNodeForHost("server.example.com")
-result := node.RunCommand("cat /remote/file.txt")
+results := node.RunCommand("cat /remote/file.txt")
+result := results.Results["server.example.com"]
 
 // Or use playbooks for file operations
 filePb := playbooks.NewFileDeploy()
 filePb.SetArg("source", "/local/file.txt")
 filePb.SetArg("destination", "/remote/file.txt")
-node.RunPlaybook(filePb)
+results = node.RunPlaybook(filePb)
 ```
 
 ---
@@ -264,20 +265,20 @@ deploy:started
 // Manual deployment flow
 func deploy(node ork.NodeInterface, version string) {
     // Git operations
-    node.RunCommand("git fetch origin")
-    node.RunCommand("git checkout " + version)
+    results := node.RunCommand("git fetch origin")
+    results = node.RunCommand("git checkout " + version)
 
     // Install dependencies
-    node.RunCommand("pip install -r requirements.txt")
+    results = node.RunCommand("pip install -r requirements.txt")
 
     // Run migrations
-    node.RunCommand("python manage.py migrate")
+    results = node.RunCommand("python manage.py migrate")
 
     // Symlink (manual)
-    node.RunCommand("ln -sfn releases/" + version + " current")
+    results = node.RunCommand("ln -sfn releases/" + version + " current")
 
     // Restart
-    node.RunCommand("sudo systemctl restart myapp")
+    results = node.RunCommand("sudo systemctl restart myapp")
 }
 ```
 
@@ -408,12 +409,13 @@ for _, host := range hosts {
         SetUser("root").
         SetKey("id_rsa")
 
-    output, err := node.RunCommand("uptime")
-    if err != nil {
-        log.Printf("%s: error: %v", host, err)
+    results := node.RunCommand("uptime")
+    result := results.Results[host]
+    if result.Error != nil {
+        log.Printf("%s: error: %v", host, result.Error)
         continue
     }
-    fmt.Printf("%s: %s\n", host, output)
+    fmt.Printf("%s: %s\n", host, result.Message)
 }
 ```
 

@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/dracory/ork/config"
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 	"github.com/samber/lo"
@@ -51,7 +51,7 @@ import (
 //   - ufw-install: Install UFW firewall
 //   - ufw-status: Verify MariaDB rules are active
 type AllowMariaDB struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check determines if UFW rules need to be configured.
@@ -60,7 +60,7 @@ func (u *AllowMariaDB) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (u *AllowMariaDB) Run() playbook.Result {
+func (u *AllowMariaDB) Run() types.Result {
 	cfg := u.GetNodeConfig()
 	ip := cfg.GetArgOr(ArgIP, "")
 	mariaDBPort := cfg.GetArgOr(ArgPort, "3306")
@@ -68,7 +68,7 @@ func (u *AllowMariaDB) Run() playbook.Result {
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {
 		allowedIPs, _ := u.allowIPs(cfg, ip, mariaDBPort, true)
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would configure UFW for MariaDB port %s", mariaDBPort),
 			Details: map[string]string{
@@ -80,19 +80,19 @@ func (u *AllowMariaDB) Run() playbook.Result {
 	// Execute for real
 	allowedIPs, err := u.allowIPs(cfg, ip, mariaDBPort, false)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Failed to allow MariaDB access", Error: err}
 	}
 
 	if ip == "" || ip == "any" {
-		return playbook.Result{
+		return types.Result{
 			Changed: true,
 			Message: fmt.Sprintf("MariaDB port %s is now open to all IPs", mariaDBPort),
 		}
 	}
 
-	return playbook.Result{
+	return types.Result{
 		Changed: len(allowedIPs) > 0,
 		Message: fmt.Sprintf("Allowed %d IPs to access MariaDB port %s", len(allowedIPs), mariaDBPort),
 		Details: map[string]string{
@@ -167,9 +167,9 @@ func (u *AllowMariaDB) allowSpecificIPs(cfg config.NodeConfig, ips []string, mar
 }
 
 // NewAllowMariaDB creates a new ufw-allow-mariadb playbook.
-func NewAllowMariaDB() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDUfwAllowMariaDB)
+func NewAllowMariaDB() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDUfwAllowMariaDB)
 	pb.SetDescription("Configure UFW firewall rules for MariaDB access")
 	return &AllowMariaDB{BasePlaybook: pb}
 }

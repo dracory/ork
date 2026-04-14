@@ -3,7 +3,7 @@ package fail2ban
 import (
 	"fmt"
 
-	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/playbooks"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -52,7 +52,7 @@ import (
 // Related Playbooks:
 //   - fail2ban-install: Install fail2ban
 type Fail2banStatus struct {
-	*playbook.BasePlaybook
+	*playbooks.BasePlaybook
 }
 
 // Check always returns false since this is a read-only playbook.
@@ -61,7 +61,7 @@ func (f *Fail2banStatus) Check() (bool, error) {
 }
 
 // Run executes the playbook and returns detailed result.
-func (f *Fail2banStatus) Run() playbook.Result {
+func (f *Fail2banStatus) Run() types.Result {
 	cfg := f.GetNodeConfig()
 	cmdStatus := types.Command{Command: "systemctl status fail2ban --no-pager", Description: "Check fail2ban status"}
 	cmdJail := types.Command{Command: "fail2ban-client status sshd 2>/dev/null || echo 'No SSH jail configured'", Description: "Check fail2ban SSH jail"}
@@ -70,7 +70,7 @@ func (f *Fail2banStatus) Run() playbook.Result {
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStatus.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdJail.Command)
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Would check fail2ban status",
 		}
@@ -79,7 +79,7 @@ func (f *Fail2banStatus) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("checking fail2ban status")
 	output, err := ssh.Run(cfg, cmdStatus)
 	if err != nil {
-		return playbook.Result{
+		return types.Result{
 			Changed: false,
 			Message: "Fail2ban is not running",
 			Error:   fmt.Errorf("fail2ban is not running: %w", err),
@@ -90,7 +90,7 @@ func (f *Fail2banStatus) Run() playbook.Result {
 	jailOutput, _ := ssh.Run(cfg, cmdJail)
 	cfg.GetLoggerOrDefault().Info("ssh jail status", "output", jailOutput)
 
-	return playbook.Result{
+	return types.Result{
 		Changed: false,
 		Message: "Fail2ban status retrieved",
 		Details: map[string]string{
@@ -101,9 +101,9 @@ func (f *Fail2banStatus) Run() playbook.Result {
 }
 
 // NewFail2banStatus creates a new fail2ban-status playbook.
-func NewFail2banStatus() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDFail2banStatus)
+func NewFail2banStatus() types.PlaybookInterface {
+	pb := playbooks.NewBasePlaybook()
+	pb.SetID(playbooks.IDFail2banStatus)
 	pb.SetDescription("Display fail2ban service status and SSH jail information (read-only)")
 	return &Fail2banStatus{BasePlaybook: pb}
 }
