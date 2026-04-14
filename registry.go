@@ -1,6 +1,8 @@
 package ork
 
 import (
+	"sync"
+
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/playbooks/apt"
 	"github.com/dracory/ork/playbooks/fail2ban"
@@ -13,55 +15,89 @@ import (
 	"github.com/dracory/ork/playbooks/user"
 )
 
-// defaultRegistry is the global playbook registry that holds all built-in
-// and user-registered playbooks. It is initialized at package load time
-// with all 11 built-in playbooks pre-registered.
+// globalPlaybookRegistry is the global playbook registry that holds all built-in
+// and user-registered playbooks. It is lazily initialized on first use as a singleton.
 //
 // The registry is used by Node.Playbook() to look up and execute playbooks.
-var defaultRegistry *playbook.Registry
+var (
+	globalPlaybookRegistry     *playbook.Registry
+	globalPlaybookRegistryOnce sync.Once
+)
 
-// GetDefaultRegistry returns the global default playbook registry.
-// This allows external packages to query and register playbooks.
-func GetDefaultRegistry() *playbook.Registry {
-	return defaultRegistry
+// GetGlobalPlaybookRegistry returns the global playbook registry singleton.
+// This is syntactic sugar for user convenience - it lazily initializes and returns
+// the global registry with all built-in playbooks pre-registered.
+//
+// For most use cases, users should call this function. For testing or custom
+// configurations, use NewDefaultRegistry() to create isolated registries.
+//
+// The registry is lazily initialized on first call using sync.Once to ensure
+// thread-safe singleton behavior.
+// Returns an error if initialization fails.
+func GetGlobalPlaybookRegistry() (*playbook.Registry, error) {
+	var initErr error
+	globalPlaybookRegistryOnce.Do(func() {
+		globalPlaybookRegistry, initErr = NewDefaultRegistry()
+	})
+	if initErr != nil {
+		return nil, initErr
+	}
+	return globalPlaybookRegistry, nil
 }
 
-func init() {
-	defaultRegistry = playbook.NewRegistry()
+// NewDefaultRegistry creates a new playbook registry with all built-in playbooks registered.
+// This creates a fresh registry instance (not a singleton), which is useful for:
+// - Testing with isolated registries
+// - Custom configurations without global state
+// - Multiple independent registries in the same application
+//
+// For most production use cases, use GetGlobalPlaybookRegistry() instead for convenience.
+// Returns an error if any playbook registration fails.
+func NewDefaultRegistry() (*playbook.Registry, error) {
+	reg := playbook.NewRegistry()
 
-	// Register all 11 built-in playbooks
-	_ = defaultRegistry.PlaybookRegister(ping.NewPing())
-	_ = defaultRegistry.PlaybookRegister(apt.NewAptUpdate())
-	_ = defaultRegistry.PlaybookRegister(apt.NewAptUpgrade())
-	_ = defaultRegistry.PlaybookRegister(apt.NewAptStatus())
-	_ = defaultRegistry.PlaybookRegister(reboot.NewReboot())
-	_ = defaultRegistry.PlaybookRegister(swap.NewSwapCreate())
-	_ = defaultRegistry.PlaybookRegister(swap.NewSwapDelete())
-	_ = defaultRegistry.PlaybookRegister(swap.NewSwapStatus())
-	_ = defaultRegistry.PlaybookRegister(user.NewUserCreate())
-	_ = defaultRegistry.PlaybookRegister(user.NewUserDelete())
-	_ = defaultRegistry.PlaybookRegister(user.NewUserStatus())
-	_ = defaultRegistry.PlaybookRegister(fail2ban.NewFail2banInstall())
-	_ = defaultRegistry.PlaybookRegister(fail2ban.NewFail2banStatus())
-	_ = defaultRegistry.PlaybookRegister(ufw.NewUfwInstall())
-	_ = defaultRegistry.PlaybookRegister(ufw.NewUfwStatus())
-	_ = defaultRegistry.PlaybookRegister(ufw.NewAllowMariaDB())
-	_ = defaultRegistry.PlaybookRegister(security.NewSshHarden())
-	_ = defaultRegistry.PlaybookRegister(security.NewKernelHarden())
-	_ = defaultRegistry.PlaybookRegister(security.NewAideInstall())
-	_ = defaultRegistry.PlaybookRegister(security.NewAuditdInstall())
-	_ = defaultRegistry.PlaybookRegister(security.NewSshChangePort())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewInstall())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewSecure())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewCreateDB())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewCreateUser())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewStatus())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewListDBs())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewListUsers())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewBackup())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewSecurityAudit())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewChangePort())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewEnableSSL())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewEnableEncryption())
-	_ = defaultRegistry.PlaybookRegister(mariadb.NewBackupEncrypt())
+	playbooks := []playbook.PlaybookInterface{
+		ping.NewPing(),
+		apt.NewAptUpdate(),
+		apt.NewAptUpgrade(),
+		apt.NewAptStatus(),
+		reboot.NewReboot(),
+		swap.NewSwapCreate(),
+		swap.NewSwapDelete(),
+		swap.NewSwapStatus(),
+		user.NewUserCreate(),
+		user.NewUserDelete(),
+		user.NewUserStatus(),
+		fail2ban.NewFail2banInstall(),
+		fail2ban.NewFail2banStatus(),
+		ufw.NewUfwInstall(),
+		ufw.NewUfwStatus(),
+		ufw.NewAllowMariaDB(),
+		security.NewSshHarden(),
+		security.NewKernelHarden(),
+		security.NewAideInstall(),
+		security.NewAuditdInstall(),
+		security.NewSshChangePort(),
+		mariadb.NewInstall(),
+		mariadb.NewSecure(),
+		mariadb.NewCreateDB(),
+		mariadb.NewCreateUser(),
+		mariadb.NewStatus(),
+		mariadb.NewListDBs(),
+		mariadb.NewListUsers(),
+		mariadb.NewBackup(),
+		mariadb.NewSecurityAudit(),
+		mariadb.NewChangePort(),
+		mariadb.NewEnableSSL(),
+		mariadb.NewEnableEncryption(),
+		mariadb.NewBackupEncrypt(),
+	}
+
+	for _, pb := range playbooks {
+		if err := reg.PlaybookRegister(pb); err != nil {
+			return nil, err
+		}
+	}
+
+	return reg, nil
 }

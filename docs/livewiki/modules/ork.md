@@ -224,7 +224,10 @@ Global playbook registry for ID-based playbook lookup:
 
 ```go
 // Get the global registry
-registry := ork.GetDefaultRegistry()
+registry, err := ork.GetGlobalPlaybookRegistry()
+if err != nil {
+    log.Fatal(err)
+}
 
 // Find playbook by ID
 pb, ok := registry.PlaybookFindByID("apt-update")

@@ -457,7 +457,11 @@ func (p *MyPlaybook) Check() (bool, error) { ... }
 func (p *MyPlaybook) Run() playbook.Result { ... }
 
 // Register globally
-ork.GetDefaultRegistry().PlaybookRegister(myPlaybook)
+registry, err := ork.GetGlobalPlaybookRegistry()
+if err != nil {
+    log.Fatal(err)
+}
+registry.PlaybookRegister(myPlaybook)
 ```
 
 ### Custom SSH Logic

@@ -330,7 +330,11 @@ customPb.SetID("install-docker")
 customPb.SetDescription("Install Docker on the server")
 
 // Register it globally
-if err := ork.GetDefaultRegistry().PlaybookRegister(customPb); err != nil {
+registry, err := ork.GetGlobalPlaybookRegistry()
+if err != nil {
+    log.Fatalf("Failed to get registry: %v", err)
+}
+if err := registry.PlaybookRegister(customPb); err != nil {
     log.Fatalf("Failed to register playbook: %v", err)
 }
 

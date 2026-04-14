@@ -137,8 +137,8 @@ type RunnableInterface interface {
 ### Registry Functions
 
 ```go
-// Get the global playbook registry
-func GetDefaultRegistry() *playbook.Registry
+// Get the global playbook registry singleton
+func GetGlobalPlaybookRegistry() (*playbook.Registry, error)
 ```
 
 ### Playbook Constants

@@ -6,13 +6,21 @@ import (
 	"github.com/dracory/ork/playbook"
 )
 
-func TestDefaultRegistry_Initialized(t *testing.T) {
-	if defaultRegistry == nil {
-		t.Fatal("defaultRegistry should be initialized")
+func TestNewDefaultRegistry_Initialized(t *testing.T) {
+	reg, err := NewDefaultRegistry()
+	if err != nil {
+		t.Fatalf("NewDefaultRegistry() failed: %v", err)
+	}
+	if reg == nil {
+		t.Fatal("NewDefaultRegistry() should return a non-nil registry")
 	}
 }
 
-func TestDefaultRegistry_AllBuiltInPlaybooksRegistered(t *testing.T) {
+func TestNewDefaultRegistry_AllBuiltInPlaybooksRegistered(t *testing.T) {
+	reg, err := NewDefaultRegistry()
+	if err != nil {
+		t.Fatalf("NewDefaultRegistry() failed: %v", err)
+	}
 	expectedPlaybooks := []string{
 		"ping",
 		"apt-update",
@@ -28,7 +36,7 @@ func TestDefaultRegistry_AllBuiltInPlaybooksRegistered(t *testing.T) {
 	}
 
 	for _, id := range expectedPlaybooks {
-		pb, ok := defaultRegistry.PlaybookFindByID(id)
+		pb, ok := reg.PlaybookFindByID(id)
 		if !ok {
 			t.Errorf("expected playbook '%s' to be registered, but it was not found", id)
 			continue
@@ -39,12 +47,14 @@ func TestDefaultRegistry_AllBuiltInPlaybooksRegistered(t *testing.T) {
 	}
 }
 
-func TestDefaultRegistry_ContainsExpectedPlaybookIDs(t *testing.T) {
-	ids := defaultRegistry.GetPlaybookIDs()
+func TestNewDefaultRegistry_ContainsExpectedPlaybookIDs(t *testing.T) {
+	reg, err := NewDefaultRegistry()
+	if err != nil {
+		t.Fatalf("NewDefaultRegistry() failed: %v", err)
+	}
+	ids := reg.GetPlaybookIDs()
 
 	// Verify all expected built-in playbook IDs are present
-	// Note: The registry may contain additional test playbooks from other tests,
-	// so we only verify that the built-in playbooks exist, not the exact count.
 	expectedIDs := []string{
 		"ping",
 		"apt-update",
@@ -78,8 +88,12 @@ func TestDefaultRegistry_ContainsExpectedPlaybookIDs(t *testing.T) {
 	}
 }
 
-func TestDefaultRegistry_PlaybooksHaveDescriptions(t *testing.T) {
-	playbooks := defaultRegistry.PlaybookList()
+func TestNewDefaultRegistry_PlaybooksHaveDescriptions(t *testing.T) {
+	reg, err := NewDefaultRegistry()
+	if err != nil {
+		t.Fatalf("NewDefaultRegistry() failed: %v", err)
+	}
+	playbooks := reg.PlaybookList()
 
 	for _, pb := range playbooks {
 		if pb.GetDescription() == "" {
@@ -88,18 +102,22 @@ func TestDefaultRegistry_PlaybooksHaveDescriptions(t *testing.T) {
 	}
 }
 
-func TestGetDefaultRegistry(t *testing.T) {
-	reg := GetDefaultRegistry()
+func TestGetGlobalPlaybookRegistry(t *testing.T) {
+	// Create a fresh registry for this test to avoid polluting the global registry
+	reg, err := NewDefaultRegistry()
+	if err != nil {
+		t.Fatalf("NewDefaultRegistry() failed: %v", err)
+	}
 	if reg == nil {
-		t.Fatal("GetDefaultRegistry() returned nil")
+		t.Fatal("NewDefaultRegistry() returned nil")
 	}
 
 	// Test that we can use it to register a playbook
 	customPb := playbook.NewBasePlaybook()
 	customPb.SetID("test-get-registry-playbook")
-	customPb.SetDescription("Test playbook via GetDefaultRegistry")
+	customPb.SetDescription("Test playbook via NewDefaultRegistry")
 
-	err := reg.PlaybookRegister(customPb)
+	err = reg.PlaybookRegister(customPb)
 	if err != nil {
 		t.Fatalf("failed to register playbook: %v", err)
 	}
@@ -107,9 +125,55 @@ func TestGetDefaultRegistry(t *testing.T) {
 	// Verify it can be found
 	foundPb, ok := reg.PlaybookFindByID("test-get-registry-playbook")
 	if !ok {
-		t.Fatal("custom playbook not found after registration via GetDefaultRegistry")
+		t.Fatal("custom playbook not found after registration")
 	}
 	if foundPb.GetID() != "test-get-registry-playbook" {
 		t.Errorf("expected ID 'test-get-registry-playbook', got '%s'", foundPb.GetID())
+	}
+}
+
+func TestGetGlobalPlaybookRegistry_LazyInitialization(t *testing.T) {
+	// Test that GetGlobalPlaybookRegistry() initializes the global registry on first call
+	reg, err := GetGlobalPlaybookRegistry()
+	if err != nil {
+		t.Fatalf("GetGlobalPlaybookRegistry() failed: %v", err)
+	}
+	if reg == nil {
+		t.Fatal("GetGlobalPlaybookRegistry() returned nil")
+	}
+
+	// Verify it has built-in playbooks
+	pb, ok := reg.PlaybookFindByID("ping")
+	if !ok {
+		t.Fatal("expected 'ping' playbook in global registry")
+	}
+	if pb.GetID() != "ping" {
+		t.Errorf("expected ID 'ping', got '%s'", pb.GetID())
+	}
+
+	// Test that subsequent calls return the same instance
+	reg2, err := GetGlobalPlaybookRegistry()
+	if err != nil {
+		t.Fatalf("GetGlobalPlaybookRegistry() failed on second call: %v", err)
+	}
+	if reg != reg2 {
+		t.Error("GetGlobalPlaybookRegistry() should return the same instance on subsequent calls")
+	}
+}
+
+func TestNewDefaultRegistry_DuplicateID(t *testing.T) {
+	reg, err := NewDefaultRegistry()
+	if err != nil {
+		t.Fatalf("NewDefaultRegistry() failed: %v", err)
+	}
+
+	// Try to register a playbook with a duplicate ID
+	duplicatePb := playbook.NewBasePlaybook()
+	duplicatePb.SetID("ping") // "ping" is already registered
+	duplicatePb.SetDescription("Duplicate ping playbook")
+
+	err = reg.PlaybookRegister(duplicatePb)
+	if err == nil {
+		t.Error("expected error when registering duplicate playbook ID, got nil")
 	}
 }

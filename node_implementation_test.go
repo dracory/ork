@@ -783,7 +783,13 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 	}
 
 	// Register mock playbook
-	_ = defaultRegistry.PlaybookRegister(mockPlaybook)
+	reg, err := GetGlobalPlaybookRegistry()
+	if err != nil {
+		t.Fatalf("GetGlobalPlaybookRegistry() failed: %v", err)
+	}
+	if err := reg.PlaybookRegister(mockPlaybook); err != nil {
+		t.Fatalf("failed to register mock playbook: %v", err)
+	}
 	defer func() {
 		// Clean up: remove mock playbook from registry
 		// Note: Registry doesn't have Remove method, so we'll just leave it
@@ -871,7 +877,13 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 	}
 
 	// Register mock playbook
-	_ = defaultRegistry.PlaybookRegister(mockPlaybook)
+	reg, err := GetGlobalPlaybookRegistry()
+	if err != nil {
+		t.Fatalf("GetGlobalPlaybookRegistry() failed: %v", err)
+	}
+	if err := reg.PlaybookRegister(mockPlaybook); err != nil {
+		t.Fatalf("failed to register mock playbook: %v", err)
+	}
 
 	n := &nodeImplementation{
 		cfg: config.NodeConfig{

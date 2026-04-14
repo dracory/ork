@@ -452,7 +452,11 @@ func NewMyTask() playbook.PlaybookInterface {
 
 ```go
 // Register custom playbook
-ork.GetDefaultRegistry().PlaybookRegister(myplaybook.NewMyTask())
+registry, err := ork.GetGlobalPlaybookRegistry()
+if err != nil {
+    log.Fatal(err)
+}
+registry.PlaybookRegister(myplaybook.NewMyTask())
 
 // Run by ID
 results := node.RunPlaybookByID("my-task")

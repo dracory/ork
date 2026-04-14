@@ -358,7 +358,17 @@ func (n *nodeImplementation) RunPlaybookByID(id string, opts ...playbook.Playboo
 		Results: make(map[string]types.Result),
 	}
 
-	pb, ok := defaultRegistry.PlaybookFindByID(id)
+	registry, err := GetGlobalPlaybookRegistry()
+	if err != nil {
+		results.Results[n.GetHost()] = types.Result{
+			Changed: false,
+			Message: fmt.Sprintf("failed to get playbook registry: %v", err),
+			Error:   fmt.Errorf("failed to get playbook registry: %w", err),
+		}
+		return results
+	}
+
+	pb, ok := registry.PlaybookFindByID(id)
 	if !ok {
 		results.Results[n.GetHost()] = types.Result{
 			Changed: false,
