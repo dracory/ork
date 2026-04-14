@@ -52,7 +52,8 @@ type UfwInstall struct {
 // Check determines if UFW needs to be installed.
 func (u *UfwInstall) Check() (bool, error) {
 	cfg := u.GetNodeConfig()
-	_, err := ssh.Run(cfg, types.Command{Command: "which ufw", Description: "Check if UFW is installed"})
+	cmdCheck := types.Command{Command: "which ufw", Description: "Check if UFW is installed"}
+	_, err := ssh.Run(cfg, cmdCheck)
 	return err != nil, nil
 }
 
@@ -61,10 +62,34 @@ func (u *UfwInstall) Run() playbook.Result {
 	cfg := u.GetNodeConfig()
 
 	// Define commands
-	cmdInstall := "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y ufw"
-	cmdReset := "ufw --force reset"
-	cmdDefaults := "ufw default deny incoming && ufw default allow outgoing"
-	cmdEnable := "echo 'y' | ufw enable"
+	cmdInstall := types.Command{
+		Command:     "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y ufw",
+		Description: "Install UFW package",
+	}
+	cmdReset := types.Command{
+		Command:     "ufw --force reset",
+		Description: "Reset UFW to defaults",
+	}
+	cmdDefaults := types.Command{
+		Command:     "ufw default deny incoming && ufw default allow outgoing",
+		Description: "Set UFW default policies",
+	}
+	cmdEnable := types.Command{
+		Command:     "echo 'y' | ufw enable",
+		Description: "Enable UFW firewall",
+	}
+	cmdAllowSSH := types.Command{
+		Command:     "ufw allow ssh",
+		Description: "Allow SSH access",
+	}
+	cmdAllowHTTP := types.Command{
+		Command:     "ufw allow 80/tcp",
+		Description: "Allow HTTP access",
+	}
+	cmdAllowHTTPS := types.Command{
+		Command:     "ufw allow 443/tcp",
+		Description: "Allow HTTPS access",
+	}
 
 	// Parse arguments for conditional commands
 	allowSSH := u.GetArg(ArgAllowSSH)
@@ -83,17 +108,17 @@ func (u *UfwInstall) Run() playbook.Result {
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdReset)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdDefaults)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall.Command)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdReset.Command)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdDefaults.Command)
 		if allowSSH == "true" {
-			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", "ufw allow ssh")
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAllowSSH.Command)
 		}
 		if allowHTTP == "true" {
-			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", "ufw allow 80/tcp")
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAllowHTTP.Command)
 		}
 		if allowHTTPS == "true" {
-			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", "ufw allow 443/tcp")
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAllowHTTPS.Command)
 		}
 		if allowPorts != "" {
 			ports := strings.Split(allowPorts, ",")
@@ -104,7 +129,7 @@ func (u *UfwInstall) Run() playbook.Result {
 				}
 			}
 		}
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdEnable)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdEnable.Command)
 		return playbook.Result{
 			Changed: true,
 			Message: "Would install and configure UFW firewall",
@@ -114,7 +139,7 @@ func (u *UfwInstall) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("installing UFW firewall")
 
 	// Install UFW
-	output, err := ssh.Run(cfg, types.Command{Command: cmdInstall, Description: "Install UFW package"})
+	output, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -124,10 +149,10 @@ func (u *UfwInstall) Run() playbook.Result {
 	}
 
 	// Reset UFW to defaults
-	_, _ = ssh.Run(cfg, types.Command{Command: cmdReset, Description: "Reset UFW to defaults"})
+	_, _ = ssh.Run(cfg, cmdReset)
 
 	// Set default policies
-	_, _ = ssh.Run(cfg, types.Command{Command: cmdDefaults, Description: "Set UFW default policies"})
+	_, _ = ssh.Run(cfg, cmdDefaults)
 
 	// Re-parse arguments (already defined in dry-run block)
 	allowSSH = u.GetArg(ArgAllowSSH)
@@ -148,19 +173,19 @@ func (u *UfwInstall) Run() playbook.Result {
 
 	// Allow SSH if requested
 	if allowSSH == "true" {
-		_, _ = ssh.Run(cfg, types.Command{Command: "ufw allow ssh", Description: "Allow SSH access"})
+		_, _ = ssh.Run(cfg, cmdAllowSSH)
 		allowedServices = append(allowedServices, "SSH")
 	}
 
 	// Allow HTTP if requested
 	if allowHTTP == "true" {
-		_, _ = ssh.Run(cfg, types.Command{Command: "ufw allow 80/tcp", Description: "Allow HTTP access"})
+		_, _ = ssh.Run(cfg, cmdAllowHTTP)
 		allowedServices = append(allowedServices, "HTTP")
 	}
 
 	// Allow HTTPS if requested
 	if allowHTTPS == "true" {
-		_, _ = ssh.Run(cfg, types.Command{Command: "ufw allow 443/tcp", Description: "Allow HTTPS access"})
+		_, _ = ssh.Run(cfg, cmdAllowHTTPS)
 		allowedServices = append(allowedServices, "HTTPS")
 	}
 
@@ -170,14 +195,15 @@ func (u *UfwInstall) Run() playbook.Result {
 		for _, port := range ports {
 			port = strings.TrimSpace(port)
 			if port != "" {
-				_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf("ufw allow %s/tcp", port), Description: "Allow custom port"})
+				cmdAllowPort := types.Command{Command: fmt.Sprintf("ufw allow %s/tcp", port), Description: "Allow custom port"}
+				_, _ = ssh.Run(cfg, cmdAllowPort)
 				allowedServices = append(allowedServices, fmt.Sprintf("port %s", port))
 			}
 		}
 	}
 
 	// Enable UFW (non-interactive)
-	output, err = ssh.Run(cfg, types.Command{Command: cmdEnable, Description: "Enable UFW firewall"})
+	output, err = ssh.Run(cfg, cmdEnable)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

@@ -24,7 +24,8 @@ func (u *UserCreate) Check() (bool, error) {
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
 	}
-	output, _ := ssh.Run(cfg, types.Command{Command: fmt.Sprintf("id %s", username), Description: "Check if user exists"})
+	cmdCheck := types.Command{Command: fmt.Sprintf("id %s", username), Description: "Check if user exists"}
+	output, _ := ssh.Run(cfg, cmdCheck)
 	return !strings.Contains(output, username), nil
 }
 
@@ -101,35 +102,41 @@ func (u *UserCreate) Run() playbook.Result {
 	if group != "" {
 		useraddOpts = fmt.Sprintf("%s -g %s", useraddOpts, group)
 	}
-	cmdCreate := fmt.Sprintf("id %s &>/dev/null || useradd %s %s", username, useraddOpts, username)
-	cmdSudo := fmt.Sprintf("usermod -aG %s %s", sudoGroup, username)
+	cmdCreateStr := fmt.Sprintf("id %s &>/dev/null || useradd %s %s", username, useraddOpts, username)
+	cmdSudoStr := fmt.Sprintf("usermod -aG %s %s", sudoGroup, username)
+	cmdCreate := types.Command{Command: cmdCreateStr, Description: "Create user"}
+	cmdSudo := types.Command{Command: cmdSudoStr, Description: "Add user to sudo group"}
 
 	// Determine home directory and SSH key commands (if needed)
 	homeDir := u.GetArg(ArgHomeDir)
 	if homeDir == "" {
 		homeDir = fmt.Sprintf("/home/%s", username)
 	}
-	var cmdPass, cmdSSHDir, cmdAuthKey, cmdSSHPerms string
+	var cmdPass, cmdSSHDir, cmdAuthKey, cmdSSHPerms types.Command
 	if password != "" {
-		cmdPass = fmt.Sprintf("echo '%s:%s' | chpasswd", username, password)
+		passStr := fmt.Sprintf("echo '%s:%s' | chpasswd", username, password)
+		cmdPass = types.Command{Command: passStr, Description: "Set user password"}
 	}
 	if sshKey != "" {
-		cmdSSHDir = fmt.Sprintf("mkdir -p %s/.ssh && chmod 700 %s/.ssh", homeDir, homeDir)
-		cmdAuthKey = fmt.Sprintf("echo '%s' > %s/.ssh/authorized_keys", sshKey, homeDir)
-		cmdSSHPerms = fmt.Sprintf("chmod 600 %s/.ssh/authorized_keys && chown -R %s:%s %s/.ssh", homeDir, username, username, homeDir)
+		sshDirStr := fmt.Sprintf("mkdir -p %s/.ssh && chmod 700 %s/.ssh", homeDir, homeDir)
+		authKeyStr := fmt.Sprintf("echo '%s' > %s/.ssh/authorized_keys", sshKey, homeDir)
+		sshPermsStr := fmt.Sprintf("chmod 600 %s/.ssh/authorized_keys && chown -R %s:%s %s/.ssh", homeDir, username, username, homeDir)
+		cmdSSHDir = types.Command{Command: sshDirStr, Description: "Create SSH directory"}
+		cmdAuthKey = types.Command{Command: authKeyStr, Description: "Add SSH authorized key"}
+		cmdSSHPerms = types.Command{Command: sshPermsStr, Description: "Set SSH key permissions"}
 	}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCreate)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSudo)
-		if cmdPass != "" {
-			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdPass)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCreate.Command)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSudo.Command)
+		if cmdPass.Command != "" {
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdPass.Command)
 		}
-		if cmdSSHDir != "" {
-			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSSHDir)
-			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAuthKey)
-			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSSHPerms)
+		if cmdSSHDir.Command != "" {
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSSHDir.Command)
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAuthKey.Command)
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSSHPerms.Command)
 		}
 		return playbook.Result{
 			Changed: true,
@@ -137,7 +144,7 @@ func (u *UserCreate) Run() playbook.Result {
 		}
 	}
 
-	output, err := ssh.Run(cfg, types.Command{Command: cmdCreate, Description: "Create user"})
+	output, err := ssh.Run(cfg, cmdCreate)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -147,11 +154,11 @@ func (u *UserCreate) Run() playbook.Result {
 	}
 
 	// Add to sudo group
-	_, _ = ssh.Run(cfg, types.Command{Command: cmdSudo, Description: "Add user to sudo group"})
+	_, _ = ssh.Run(cfg, cmdSudo)
 
 	// Set password if provided
-	if cmdPass != "" {
-		output, err = ssh.Run(cfg, types.Command{Command: cmdPass, Description: "Set user password"})
+	if cmdPass.Command != "" {
+		output, err = ssh.Run(cfg, cmdPass)
 		if err != nil {
 			cfg.GetLoggerOrDefault().Warn("failed to set password", "username", username, "error", err)
 		}
@@ -160,7 +167,7 @@ func (u *UserCreate) Run() playbook.Result {
 	// Setup SSH key if provided
 	if sshKey != "" {
 		// Create .ssh directory with proper permissions
-		output, err = ssh.Run(cfg, types.Command{Command: cmdSSHDir, Description: "Create .ssh directory"})
+		output, err = ssh.Run(cfg, cmdSSHDir)
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -170,7 +177,7 @@ func (u *UserCreate) Run() playbook.Result {
 		}
 
 		// Add SSH public key to authorized_keys
-		output, err = ssh.Run(cfg, types.Command{Command: cmdAuthKey, Description: "Add SSH key to authorized_keys"})
+		output, err = ssh.Run(cfg, cmdAuthKey)
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -180,7 +187,7 @@ func (u *UserCreate) Run() playbook.Result {
 		}
 
 		// Set permissions and ownership on .ssh directory
-		output, err = ssh.Run(cfg, types.Command{Command: cmdSSHPerms, Description: "Set .ssh permissions"})
+		output, err = ssh.Run(cfg, cmdSSHPerms)
 		if err != nil {
 			cfg.GetLoggerOrDefault().Warn("failed to set permissions on .ssh directory", "username", username, "error", err)
 		}

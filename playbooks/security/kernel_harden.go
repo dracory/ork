@@ -73,8 +73,8 @@ func (k *KernelHarden) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Warn("this will disable IPv6 system-wide")
 
 	// Define commands
-	cmdBackup := fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sysctlConfigPath, sysctlConfigPath)
-	cmdCreateConfig := fmt.Sprintf(`cat >> %s << 'EOF'
+	cmdBackup := types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sysctlConfigPath, sysctlConfigPath), Description: "Backup sysctl config"}
+	cmdCreateConfig := types.Command{Command: fmt.Sprintf(`cat >> %s << 'EOF'
 # IP Spoofing protection
 net.ipv4.conf.all.rp_filter = 1
 net.ipv4.conf.default.rp_filter = 1
@@ -144,14 +144,14 @@ kernel.dmesg_restrict = 1
 
 # Restrict access to kernel logs
 kernel.printk = 3 3 3 3
-EOF`, sysctlDropInPath)
-	cmdApply := fmt.Sprintf(`sysctl -p %s`, sysctlDropInPath)
+EOF`, sysctlDropInPath), Description: "Create kernel hardening config"}
+	cmdApply := types.Command{Command: fmt.Sprintf(`sysctl -p %s`, sysctlDropInPath), Description: "Apply sysctl settings"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would create kernel hardening config", "path", sysctlDropInPath)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdApply)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdApply.Command)
 		return playbook.Result{
 			Changed: true,
 			Message: "Would harden kernel security parameters",
@@ -160,21 +160,21 @@ EOF`, sysctlDropInPath)
 
 	// Step 1: Backup
 	cfg.GetLoggerOrDefault().Info("backing up sysctl configuration")
-	_, err := ssh.Run(cfg, types.Command{Command: cmdBackup, Description: "Backup sysctl config"})
+	_, err := ssh.Run(cfg, cmdBackup)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup sysctl config", Error: err}
 	}
 
 	// Step 2: Create security configuration
 	cfg.GetLoggerOrDefault().Info("creating security hardening configuration", "path", sysctlDropInPath)
-	_, err = ssh.Run(cfg, types.Command{Command: cmdCreateConfig, Description: "Create kernel hardening config"})
+	_, err = ssh.Run(cfg, cmdCreateConfig)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to create hardening config", Error: err}
 	}
 
 	// Step 3: Apply parameters
 	cfg.GetLoggerOrDefault().Info("applying kernel parameters")
-	output, err := ssh.Run(cfg, types.Command{Command: cmdApply, Description: "Apply kernel parameters"})
+	output, err := ssh.Run(cfg, cmdApply)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to apply kernel parameters", Error: err}
 	}

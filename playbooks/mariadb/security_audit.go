@@ -58,20 +58,20 @@ func (m *SecurityAudit) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("MariaDB security audit started")
 
 	// Check for anonymous users
-	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE User='';"`, rootPassword)
-	anonOutput, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check for anonymous users"})
+	cmdAnon := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE User='';"`, rootPassword), Description: "Check for anonymous users"}
+	anonOutput, _ := ssh.Run(cfg, cmdAnon)
 
 	// Check for test database
-	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES LIKE 'test';"`, rootPassword)
-	testOutput, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check for test database"})
+	cmdTestDb := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES LIKE 'test';"`, rootPassword), Description: "Check for test database"}
+	testOutput, _ := ssh.Run(cfg, cmdTestDb)
 
 	// Check SSL
-	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW VARIABLES LIKE 'have_ssl';"`, rootPassword)
-	sslOutput, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check SSL status"})
+	cmdSsl := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW VARIABLES LIKE 'have_ssl';"`, rootPassword), Description: "Check SSL status"}
+	sslOutput, _ := ssh.Run(cfg, cmdSsl)
 
 	// Check wildcard hosts
-	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE Host='%%';"`, rootPassword)
-	wildcardOutput, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check wildcard hosts"})
+	cmdWildcard := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE Host='%%';"`, rootPassword), Description: "Check wildcard hosts"}
+	wildcardOutput, _ := ssh.Run(cfg, cmdWildcard)
 
 	cfg.GetLoggerOrDefault().Info("MariaDB security audit complete")
 	return playbook.Result{

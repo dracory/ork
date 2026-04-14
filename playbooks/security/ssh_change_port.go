@@ -82,31 +82,36 @@ func (s *SshChangePort) Run() playbook.Result {
 
 	// Backup
 	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
-	_, err = ssh.Run(cfg, types.Command{Command: `cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)`, Description: "Backup SSH config"})
+	cmdBackup := types.Command{Command: `cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)`, Description: "Backup SSH config"}
+	_, err = ssh.Run(cfg, cmdBackup)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
 	}
 
 	// Update UFW if active
-	ufwOutput, _ := ssh.Run(cfg, types.Command{Command: `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`, Description: "Check UFW status"})
+	cmdCheckUfw := types.Command{Command: `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`, Description: "Check UFW status"}
+	ufwOutput, _ := ssh.Run(cfg, cmdCheckUfw)
 	if ufwOutput == "ACTIVE" {
-		cmd := fmt.Sprintf(`ufw allow %s/tcp comment 'SSH on custom port'`, newPort)
-		_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Allow SSH on custom port in UFW"})
+		cmdAllowPort := types.Command{Command: fmt.Sprintf(`ufw allow %s/tcp comment 'SSH on custom port'`, newPort), Description: "Allow SSH on custom port in UFW"}
+		_, _ = ssh.Run(cfg, cmdAllowPort)
 	}
 
 	// Update SSH port
-	cmd := fmt.Sprintf(`sed -i 's/^#*Port .*/Port %s/' /etc/ssh/sshd_config`, newPort)
-	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Update SSH port in config"})
+	cmdUpdatePort := types.Command{Command: fmt.Sprintf(`sed -i 's/^#*Port .*/Port %s/' /etc/ssh/sshd_config`, newPort), Description: "Update SSH port in config"}
+	_, _ = ssh.Run(cfg, cmdUpdatePort)
 
 	// Validate
-	_, err = ssh.Run(cfg, types.Command{Command: `sshd -t`, Description: "Validate SSH config"})
+	cmdValidate := types.Command{Command: `sshd -t`, Description: "Validate SSH config"}
+	_, err = ssh.Run(cfg, cmdValidate)
 	if err != nil {
-		_, _ = ssh.Run(cfg, types.Command{Command: `ls -t /etc/ssh/sshd_config.backup.* | head -1 | xargs -I {} cp {} /etc/ssh/sshd_config`, Description: "Restore SSH config backup"})
+		cmdRestore := types.Command{Command: `ls -t /etc/ssh/sshd_config.backup.* | head -1 | xargs -I {} cp {} /etc/ssh/sshd_config`, Description: "Restore SSH config backup"}
+		_, _ = ssh.Run(cfg, cmdRestore)
 		return playbook.Result{Changed: false, Message: "SSH configuration validation failed, backup restored", Error: err}
 	}
 
 	// Restart SSH
-	_, err = ssh.Run(cfg, types.Command{Command: `systemctl restart sshd`, Description: "Restart SSH service"})
+	cmdRestart := types.Command{Command: `systemctl restart sshd`, Description: "Restart SSH service"}
+	_, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}

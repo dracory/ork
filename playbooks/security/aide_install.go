@@ -56,7 +56,8 @@ type AideInstall struct {
 // Check determines if AIDE needs to be installed.
 func (a *AideInstall) Check() (bool, error) {
 	cfg := a.GetNodeConfig()
-	_, err := ssh.Run(cfg, types.Command{Command: "which aide", Description: "Check if AIDE is installed"})
+	cmdCheck := types.Command{Command: "which aide", Description: "Check if AIDE is installed"}
+	_, err := ssh.Run(cfg, cmdCheck)
 	return err != nil, nil
 }
 
@@ -68,14 +69,15 @@ func (a *AideInstall) Run() playbook.Result {
 
 	// Install AIDE
 	cfg.GetLoggerOrDefault().Info("installing AIDE package")
-	_, err := ssh.Run(cfg, types.Command{Command: `DEBIAN_FRONTEND=noninteractive apt-get install -y aide aide-common`, Description: "Install AIDE package"})
+	cmdInstall := types.Command{Command: `DEBIAN_FRONTEND=noninteractive apt-get install -y aide aide-common`, Description: "Install AIDE package"}
+	_, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to install AIDE", Error: err}
 	}
 
 	// Configure AIDE
 	cfg.GetLoggerOrDefault().Info("configuring AIDE to monitor critical paths")
-	cmd := `cat >> /etc/aide/aide.conf << 'EOF'
+	cmdConfigure := types.Command{Command: `cat >> /etc/aide/aide.conf << 'EOF'
 
 # Custom monitoring rules
 /etc/ssh p+i+n+u+g+s+b+acl+xattrs+sha256
@@ -83,23 +85,26 @@ func (a *AideInstall) Run() playbook.Result {
 /var/lib/mysql p+i+n+u+g+s+b+acl+xattrs+sha256
 /root/.ssh p+i+n+u+g+s+b+acl+xattrs+sha256
 /home p+i+n+u+g+s+b+acl+xattrs+sha256
-EOF`
-	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Configure AIDE monitoring rules"})
+EOF`, Description: "Configure AIDE monitoring rules"}
+	_, _ = ssh.Run(cfg, cmdConfigure)
 
 	// Initialize AIDE database
 	cfg.GetLoggerOrDefault().Info("initializing AIDE database")
-	_, _ = ssh.Run(cfg, types.Command{Command: `aideinit`, Description: "Initialize AIDE database"})
+	cmdInit := types.Command{Command: `aideinit`, Description: "Initialize AIDE database"}
+	_, _ = ssh.Run(cfg, cmdInit)
 
 	// Move database to active location
-	_, _ = ssh.Run(cfg, types.Command{Command: `mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db`, Description: "Move AIDE database to active location"})
+	cmdMoveDb := types.Command{Command: `mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db`, Description: "Move AIDE database to active location"}
+	_, _ = ssh.Run(cfg, cmdMoveDb)
 
 	// Create daily cron job
-	cmd = `cat > /etc/cron.daily/aide-check << 'EOF'
+	cmdCron := types.Command{Command: `cat > /etc/cron.daily/aide-check << 'EOF'
 #!/bin/bash
 /usr/bin/aide --check | mail -s "AIDE Daily Report - $(hostname)" root
-EOF`
-	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Create AIDE daily cron job"})
-	_, _ = ssh.Run(cfg, types.Command{Command: `chmod +x /etc/cron.daily/aide-check`, Description: "Make AIDE cron job executable"})
+EOF`, Description: "Create AIDE daily cron job"}
+	_, _ = ssh.Run(cfg, cmdCron)
+	cmdChmod := types.Command{Command: `chmod +x /etc/cron.daily/aide-check`, Description: "Make AIDE cron job executable"}
+	_, _ = ssh.Run(cfg, cmdChmod)
 
 	cfg.GetLoggerOrDefault().Info("AIDE installation complete")
 	return playbook.Result{

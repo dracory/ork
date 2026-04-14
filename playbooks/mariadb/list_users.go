@@ -62,8 +62,8 @@ func (m *ListUsers) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("listing all database users")
 
-	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user;"`, rootPassword)
-	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "List all database users"})
+	cmdList := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user;"`, rootPassword), Description: "List all database users"}
+	output, err := ssh.Run(cfg, cmdList)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

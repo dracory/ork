@@ -65,29 +65,34 @@ func (m *EnableSSL) Run() playbook.Result {
 
 	// Generate SSL certificates
 	cfg.GetLoggerOrDefault().Info("generating SSL certificates")
-	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`mysql_ssl_rsa_setup --datadir=%s`, dataDir), Description: "Generate SSL certificates"})
+	cmdGenCert := types.Command{Command: fmt.Sprintf(`mysql_ssl_rsa_setup --datadir=%s`, dataDir), Description: "Generate SSL certificates"}
+	_, _ = ssh.Run(cfg, cmdGenCert)
 
 	// Set ownership and permissions
-	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`chown mysql:mysql %s/*.pem`, dataDir), Description: "Set SSL cert ownership"})
-	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`chmod 600 %s/*-key.pem && chmod 644 %s/*.pem`, dataDir, dataDir), Description: "Set SSL cert permissions"})
+	cmdChown := types.Command{Command: fmt.Sprintf(`chown mysql:mysql %s/*.pem`, dataDir), Description: "Set SSL cert ownership"}
+	_, _ = ssh.Run(cfg, cmdChown)
+	cmdChmod := types.Command{Command: fmt.Sprintf(`chmod 600 %s/*-key.pem && chmod 644 %s/*.pem`, dataDir, dataDir), Description: "Set SSL cert permissions"}
+	_, _ = ssh.Run(cfg, cmdChmod)
 
 	// Backup config
-	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, configPath, configPath), Description: "Backup MariaDB config"})
+	cmdBackup := types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, configPath, configPath), Description: "Backup MariaDB config"}
+	_, _ = ssh.Run(cfg, cmdBackup)
 
 	// Configure SSL
 	cfg.GetLoggerOrDefault().Info("configuring MariaDB to use SSL")
-	cmd := fmt.Sprintf(`grep -q "ssl-ca" %s || cat >> %s << 'EOF'
+	cmdConfigure := types.Command{Command: fmt.Sprintf(`grep -q "ssl-ca" %s || cat >> %s << 'EOF'
 
 # SSL/TLS Configuration
 ssl-ca=%s/ca.pem
 ssl-cert=%s/server-cert.pem
 ssl-key=%s/server-key.pem
-EOF`, configPath, configPath, dataDir, dataDir, dataDir)
-	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Configure SSL in MariaDB"})
+EOF`, configPath, configPath, dataDir, dataDir, dataDir), Description: "Configure SSL in MariaDB"}
+	_, _ = ssh.Run(cfg, cmdConfigure)
 
 	// Restart MariaDB
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB service")
-	_, err := ssh.Run(cfg, types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB"})
+	cmdRestart := types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB"}
+	_, err := ssh.Run(cfg, cmdRestart)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}

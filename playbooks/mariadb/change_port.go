@@ -74,25 +74,28 @@ func (m *ChangePort) Run() playbook.Result {
 
 	// Backup
 	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
-	_, err = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath), Description: "Backup MariaDB config"})
+	cmdBackup := types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath), Description: "Backup MariaDB config"}
+	_, err = ssh.Run(cfg, cmdBackup)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup config", Error: err}
 	}
 
 	// Update UFW if active
-	ufwOutput, _ := ssh.Run(cfg, types.Command{Command: `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`, Description: "Check UFW status"})
+	cmdCheckUfw := types.Command{Command: `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`, Description: "Check UFW status"}
+	ufwOutput, _ := ssh.Run(cfg, cmdCheckUfw)
 	if ufwOutput == "ACTIVE" {
-		cmd := fmt.Sprintf(`ufw allow %s/tcp comment 'MariaDB on custom port'`, newPort)
-		_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Allow MariaDB custom port in UFW"})
+		cmdAllowPort := types.Command{Command: fmt.Sprintf(`ufw allow %s/tcp comment 'MariaDB on custom port'`, newPort), Description: "Allow MariaDB custom port in UFW"}
+		_, _ = ssh.Run(cfg, cmdAllowPort)
 	}
 
 	// Update MariaDB port
-	cmd := fmt.Sprintf(`sed -i 's/^#*port[[:space:]]*=.*/port = %s/' %s`, newPort, configPath)
-	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Update MariaDB port in config"})
+	cmdUpdatePort := types.Command{Command: fmt.Sprintf(`sed -i 's/^#*port[[:space:]]*=.*/port = %s/' %s`, newPort, configPath), Description: "Update MariaDB port in config"}
+	_, _ = ssh.Run(cfg, cmdUpdatePort)
 
 	// Restart MariaDB
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB service")
-	_, err = ssh.Run(cfg, types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB service"})
+	cmdRestart := types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB service"}
+	_, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}

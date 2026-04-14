@@ -59,8 +59,8 @@ func (m *Secure) Run() playbook.Result {
 	actions := []string{}
 
 	// Remove anonymous users
-	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='';"`, rootPassword)
-	_, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Remove anonymous users"})
+	cmdAnon := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='';"`, rootPassword), Description: "Remove anonymous users"}
+	_, err := ssh.Run(cfg, cmdAnon)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not remove anonymous users", "error", err)
 	} else {
@@ -69,8 +69,8 @@ func (m *Secure) Run() playbook.Result {
 	}
 
 	// Remove remote root access (only localhost allowed for root)
-	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"`, rootPassword)
-	_, err = ssh.Run(cfg, types.Command{Command: cmd, Description: "Restrict root remote access"})
+	cmdRoot := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"`, rootPassword), Description: "Restrict root remote access"}
+	_, err = ssh.Run(cfg, cmdRoot)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not restrict root remote access", "error", err)
 	} else {
@@ -79,8 +79,8 @@ func (m *Secure) Run() playbook.Result {
 	}
 
 	// Remove test database
-	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DROP DATABASE IF EXISTS test;"`, rootPassword)
-	_, err = ssh.Run(cfg, types.Command{Command: cmd, Description: "Remove test database"})
+	cmdTestDb := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DROP DATABASE IF EXISTS test;"`, rootPassword), Description: "Remove test database"}
+	_, err = ssh.Run(cfg, cmdTestDb)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not remove test database", "error", err)
 	} else {
@@ -89,12 +89,12 @@ func (m *Secure) Run() playbook.Result {
 	}
 
 	// Remove test database privileges
-	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%%';"`, rootPassword)
-	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Remove test database privileges"})
+	cmdTestPriv := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%%';"`, rootPassword), Description: "Remove test database privileges"}
+	_, _ = ssh.Run(cfg, cmdTestPriv)
 
 	// Reload privileges
-	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword)
-	_, err = ssh.Run(cfg, types.Command{Command: cmd, Description: "Flush privileges"})
+	cmdFlush := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword), Description: "Flush privileges"}
+	_, err = ssh.Run(cfg, cmdFlush)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not flush privileges", "error", err)
 	} else {

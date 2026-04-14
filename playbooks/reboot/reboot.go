@@ -83,11 +83,11 @@ func (r *Reboot) Check() (bool, error) {
 //   - max_wait: Maximum wait duration string (when wait is enabled)
 func (r *Reboot) Run() playbook.Result {
 	cfg := r.GetNodeConfig()
-	cmdReboot := "reboot"
+	cmdReboot := types.Command{Command: "reboot", Description: "Reboot server"}
 
 	// Check for dry-run mode - display actual command
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdReboot, "host", cfg.SSHHost)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdReboot.Command, "host", cfg.SSHHost)
 		return playbook.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would reboot %s", cfg.SSHHost),
@@ -97,7 +97,7 @@ func (r *Reboot) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("rebooting server", "host", cfg.SSHHost)
 
 	// Trigger reboot (non-blocking, command returns immediately)
-	_, err := ssh.Run(cfg, types.Command{Command: cmdReboot, Description: "Reboot server"})
+	_, err := ssh.Run(cfg, cmdReboot)
 	if err != nil {
 		// reboot command often returns connection error since it kills the SSH session
 		cfg.GetLoggerOrDefault().Info("reboot command sent", "host", cfg.SSHHost, "expected_error", err)
@@ -127,7 +127,8 @@ func (r *Reboot) Run() playbook.Result {
 	for time.Now().Before(deadline) {
 		time.Sleep(5 * time.Second)
 
-		_, err := ssh.Run(cfg, types.Command{Command: "uptime", Description: "Check if server is back online"})
+		cmdUptime := types.Command{Command: "uptime", Description: "Check if server is back online"}
+		_, err := ssh.Run(cfg, cmdUptime)
 		if err == nil {
 			cfg.GetLoggerOrDefault().Info("server is back online", "host", cfg.SSHHost)
 			return playbook.Result{

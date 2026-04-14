@@ -95,36 +95,36 @@ func (s *SshHarden) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("SSH security hardening started")
 
 	// Define commands
-	cmdBackup := fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sshConfigPath, sshConfigPath)
-	cmdVerifyUser := fmt.Sprintf(`id %s >/dev/null 2>&1 && sudo -l -U %s >/dev/null 2>&1 && echo "OK" || echo "FAIL"`, nonRootUser, nonRootUser)
-	cmdValidate := fmt.Sprintf(`sshd -t -f %s`, sshConfigPath)
-	cmdRestore := fmt.Sprintf(`cp %s.backup.$(date +%%Y%%m%%d) %s`, sshConfigPath, sshConfigPath)
-	cmdRestart := "systemctl restart sshd"
+	cmdBackup := types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sshConfigPath, sshConfigPath), Description: "Backup SSH config"}
+	cmdVerifyUser := types.Command{Command: fmt.Sprintf(`id %s && groups %s | grep -q sudo`, nonRootUser, nonRootUser), Description: "Verify non-root user exists"}
+	cmdValidate := types.Command{Command: fmt.Sprintf(`sshd -t -f %s`, sshConfigPath), Description: "Validate SSH config"}
+	cmdRestore := types.Command{Command: fmt.Sprintf(`cp %s.backup.$(date +%%Y%%m%%d) %s`, sshConfigPath, sshConfigPath), Description: "Restore SSH config backup"}
+	cmdRestart := types.Command{Command: "systemctl restart sshd", Description: "Restart SSH service"}
 
 	// Apply security settings
 	settings := []struct {
 		name string
-		cmd  string
+		cmd  types.Command
 	}{
-		{"Disable root login", fmt.Sprintf(`sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' %s`, sshConfigPath)},
-		{"Disable password auth", fmt.Sprintf(`sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' %s`, sshConfigPath)},
-		{"Enable pubkey auth", fmt.Sprintf(`sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' %s`, sshConfigPath)},
-		{"Disable empty passwords", fmt.Sprintf(`sed -i 's/^#*PermitEmptyPasswords.*/PermitEmptyPasswords no/' %s`, sshConfigPath)},
-		{"Set max auth tries", fmt.Sprintf(`grep -q "^MaxAuthTries" %s && sed -i 's/^MaxAuthTries.*/MaxAuthTries %s/' %s || echo "MaxAuthTries %s" >> %s`, sshConfigPath, maxAuthTries, sshConfigPath, maxAuthTries, sshConfigPath)},
-		{"Disable X11 forwarding", fmt.Sprintf(`sed -i 's/^#*X11Forwarding.*/X11Forwarding no/' %s`, sshConfigPath)},
-		{"Set client alive interval", fmt.Sprintf(`grep -q "^ClientAliveInterval" %s && sed -i 's/^ClientAliveInterval.*/ClientAliveInterval %s/' %s || echo "ClientAliveInterval %s" >> %s`, sshConfigPath, clientAliveInterval, sshConfigPath, clientAliveInterval, sshConfigPath)},
-		{"Set client alive count", fmt.Sprintf(`grep -q "^ClientAliveCountMax" %s && sed -i 's/^ClientAliveCountMax.*/ClientAliveCountMax %s/' %s || echo "ClientAliveCountMax %s" >> %s`, sshConfigPath, clientAliveCountMax, sshConfigPath, clientAliveCountMax, sshConfigPath)},
+		{"Disable root login", types.Command{Command: fmt.Sprintf(`sed -i 's/^#*PermitRootLogin.*/PermitRootLogin no/' %s`, sshConfigPath), Description: "Disable root login"}},
+		{"Disable password auth", types.Command{Command: fmt.Sprintf(`sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' %s`, sshConfigPath), Description: "Disable password auth"}},
+		{"Enable pubkey auth", types.Command{Command: fmt.Sprintf(`sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' %s`, sshConfigPath), Description: "Enable pubkey auth"}},
+		{"Disable empty passwords", types.Command{Command: fmt.Sprintf(`sed -i 's/^#*PermitEmptyPasswords.*/PermitEmptyPasswords no/' %s`, sshConfigPath), Description: "Disable empty passwords"}},
+		{"Set max auth tries", types.Command{Command: fmt.Sprintf(`grep -q "^MaxAuthTries" %s && sed -i 's/^MaxAuthTries.*/MaxAuthTries %s/' %s || echo "MaxAuthTries %s" >> %s`, sshConfigPath, maxAuthTries, sshConfigPath, maxAuthTries, sshConfigPath), Description: "Set max auth tries"}},
+		{"Disable X11 forwarding", types.Command{Command: fmt.Sprintf(`sed -i 's/^#*X11Forwarding.*/X11Forwarding no/' %s`, sshConfigPath), Description: "Disable X11 forwarding"}},
+		{"Set client alive interval", types.Command{Command: fmt.Sprintf(`grep -q "^ClientAliveInterval" %s && sed -i 's/^ClientAliveInterval.*/ClientAliveInterval %s/' %s || echo "ClientAliveInterval %s" >> %s`, sshConfigPath, clientAliveInterval, sshConfigPath, clientAliveInterval, sshConfigPath), Description: "Set client alive interval"}},
+		{"Set client alive count", types.Command{Command: fmt.Sprintf(`grep -q "^ClientAliveCountMax" %s && sed -i 's/^ClientAliveCountMax.*/ClientAliveCountMax %s/' %s || echo "ClientAliveCountMax %s" >> %s`, sshConfigPath, clientAliveCountMax, sshConfigPath, clientAliveCountMax, sshConfigPath), Description: "Set client alive count"}},
 	}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdVerifyUser)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdVerifyUser.Command)
 		for _, setting := range settings {
-			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "setting", setting.name, "cmd", setting.cmd)
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "setting", setting.name, "cmd", setting.cmd.Command)
 		}
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdValidate)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdValidate.Command)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command)
 		return playbook.Result{
 			Changed: true,
 			Message: "Would harden SSH security configuration",
@@ -133,14 +133,14 @@ func (s *SshHarden) Run() playbook.Result {
 
 	// Step 1: Backup
 	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
-	_, err := ssh.Run(cfg, types.Command{Command: cmdBackup, Description: "Backup SSH config"})
+	_, err := ssh.Run(cfg, cmdBackup)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
 	}
 
 	// Step 2: Verify non-root user
 	cfg.GetLoggerOrDefault().Info("verifying non-root user exists")
-	output, err := ssh.Run(cfg, types.Command{Command: cmdVerifyUser, Description: "Verify non-root user exists"})
+	output, err := ssh.Run(cfg, cmdVerifyUser)
 	_ = output
 	if err != nil || !strings.Contains(output, "OK") {
 		return playbook.Result{
@@ -152,15 +152,15 @@ func (s *SshHarden) Run() playbook.Result {
 
 	for _, setting := range settings {
 		cfg.GetLoggerOrDefault().Info("applying SSH setting", "setting", setting.name)
-		_, _ = ssh.Run(cfg, types.Command{Command: setting.cmd, Description: "Apply SSH setting: " + setting.name})
+		_, _ = ssh.Run(cfg, setting.cmd)
 	}
 
 	// Validate configuration
 	cfg.GetLoggerOrDefault().Info("validating SSH configuration")
-	_, err = ssh.Run(cfg, types.Command{Command: cmdValidate, Description: "Validate SSH config"})
+	_, err = ssh.Run(cfg, cmdValidate)
 	if err != nil {
 		// Restore backup
-		_, _ = ssh.Run(cfg, types.Command{Command: cmdRestore, Description: "Restore SSH config backup"})
+		_, _ = ssh.Run(cfg, cmdRestore)
 		return playbook.Result{
 			Changed: false,
 			Message: "SSH configuration validation failed, backup restored",
@@ -170,7 +170,7 @@ func (s *SshHarden) Run() playbook.Result {
 
 	// Restart SSH
 	cfg.GetLoggerOrDefault().Info("restarting SSH service")
-	_, err = ssh.Run(cfg, types.Command{Command: cmdRestart, Description: "Restart SSH service"})
+	_, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}

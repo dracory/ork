@@ -53,20 +53,25 @@ type Fail2banInstall struct {
 // Check determines if fail2ban needs to be installed.
 func (f *Fail2banInstall) Check() (bool, error) {
 	cfg := f.GetNodeConfig()
-	_, err := ssh.Run(cfg, types.Command{Command: "which fail2ban-server", Description: "Check if fail2ban is installed"})
+	cmdCheck := types.Command{
+		Command:     "which fail2ban-server",
+		Description: "Check if fail2ban is installed",
+	}
+
+	_, err := ssh.Run(cfg, cmdCheck)
 	return err != nil, nil
 }
 
 // Run executes the playbook and returns detailed result.
 func (f *Fail2banInstall) Run() playbook.Result {
 	cfg := f.GetNodeConfig()
-	cmdInstall := "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban"
-	cmdEnable := "systemctl enable fail2ban && systemctl start fail2ban"
+	cmdInstall := types.Command{Command: "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban", Description: "Install fail2ban"}
+	cmdEnable := types.Command{Command: "systemctl enable fail2ban && systemctl start fail2ban", Description: "Enable and start fail2ban"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdEnable)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall.Command)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdEnable.Command)
 		return playbook.Result{
 			Changed: true,
 			Message: "Would install and enable fail2ban",
@@ -75,7 +80,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("installing fail2ban")
 
-	output, err := ssh.Run(cfg, types.Command{Command: cmdInstall, Description: "Install fail2ban"})
+	output, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -85,7 +90,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 	}
 
 	// Enable and start fail2ban
-	output, err = ssh.Run(cfg, types.Command{Command: cmdEnable, Description: "Enable and start fail2ban"})
+	output, err = ssh.Run(cfg, cmdEnable)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

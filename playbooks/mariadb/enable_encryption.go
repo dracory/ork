@@ -72,23 +72,39 @@ func (m *EnableEncryption) Run() playbook.Result {
 
 	// Backup config
 	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
-	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath), Description: "Backup MariaDB config"})
+	cmdBackup := types.Command{
+		Command:     fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath),
+		Description: "Backup MariaDB config",
+	}
+	_, _ = ssh.Run(cfg, cmdBackup)
 
 	// Create key directory
 	keyDir := filepath.Dir(keyFilePath)
-	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`mkdir -p %s`, keyDir), Description: "Create key directory"})
+	cmdMkdir := types.Command{
+		Command:     fmt.Sprintf(`mkdir -p %s`, keyDir),
+		Description: "Create key directory",
+	}
+	_, _ = ssh.Run(cfg, cmdMkdir)
 
 	// Generate encryption key
 	cfg.GetLoggerOrDefault().Info("generating encryption key file")
-	cmd := fmt.Sprintf(`echo "1;$(openssl rand -hex 32)" > %s`, keyFilePath)
-	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Generate encryption key"})
+	cmdGenKey := types.Command{
+		Command:     fmt.Sprintf(`echo "1;$(openssl rand -hex 32)" > %s`, keyFilePath),
+		Description: "Generate encryption key",
+	}
+	_, _ = ssh.Run(cfg, cmdGenKey)
 
 	// Set permissions
-	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`chown mysql:mysql %s && chmod 600 %s`, keyFilePath, keyFilePath), Description: "Set key file permissions"})
+	cmdPerms := types.Command{
+		Command:     fmt.Sprintf(`chown mysql:mysql %s && chmod 600 %s`, keyFilePath, keyFilePath),
+		Description: "Set key file permissions",
+	}
+	_, _ = ssh.Run(cfg, cmdPerms)
 
 	// Configure encryption
 	cfg.GetLoggerOrDefault().Info("configuring encryption in MariaDB")
-	cmd = fmt.Sprintf(`grep -q "file_key_management_filename" %s || cat >> %s << 'EOF'
+	cmdConfigure := types.Command{
+		Command: fmt.Sprintf(`grep -q "file_key_management_filename" %s || cat >> %s << 'EOF'
 
 # Encryption at Rest Configuration
 plugin_load_add = file_key_management
@@ -97,12 +113,17 @@ file_key_management_encryption_algorithm = AES_CBC
 innodb_encrypt_tables = ON
 innodb_encrypt_log = ON
 encrypt_tmp_files = ON
-EOF`, configPath, configPath, keyFilePath)
-	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Configure encryption"})
+EOF`, configPath, configPath, keyFilePath),
+		Description: "Configure encryption"}
+	_, _ = ssh.Run(cfg, cmdConfigure)
 
 	// Restart MariaDB
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB")
-	_, err := ssh.Run(cfg, types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB"})
+	cmdRestart := types.Command{
+		Command:     `systemctl restart mariadb`,
+		Description: "Restart MariaDB",
+	}
+	_, err := ssh.Run(cfg, cmdRestart)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}

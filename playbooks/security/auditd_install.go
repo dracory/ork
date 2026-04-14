@@ -57,7 +57,8 @@ type AuditdInstall struct {
 // Check determines if auditd needs to be installed.
 func (a *AuditdInstall) Check() (bool, error) {
 	cfg := a.GetNodeConfig()
-	_, err := ssh.Run(cfg, types.Command{Command: "which auditd", Description: "Check if auditd is installed"})
+	cmdCheck := types.Command{Command: "which auditd", Description: "Check if auditd is installed"}
+	_, err := ssh.Run(cfg, cmdCheck)
 	return err != nil, nil
 }
 
@@ -69,14 +70,15 @@ func (a *AuditdInstall) Run() playbook.Result {
 
 	// Install auditd
 	cfg.GetLoggerOrDefault().Info("installing auditd package")
-	_, err := ssh.Run(cfg, types.Command{Command: `DEBIAN_FRONTEND=noninteractive apt-get install -y auditd audispd-plugins`, Description: "Install auditd package"})
+	cmdInstall := types.Command{Command: `DEBIAN_FRONTEND=noninteractive apt-get install -y auditd audispd-plugins`, Description: "Install auditd package"}
+	_, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to install auditd", Error: err}
 	}
 
 	// Create audit rules
 	cfg.GetLoggerOrDefault().Info("creating audit rules")
-	cmd := `cat > /etc/audit/rules.d/audit.rules << 'EOF'
+	cmdRules := types.Command{Command: `cat > /etc/audit/rules.d/audit.rules << 'EOF'
 # Remove any existing rules
 -D
 
@@ -128,16 +130,19 @@ func (a *AuditdInstall) Run() playbook.Result {
 
 # Make configuration immutable (requires reboot to change)
 -e 2
-EOF`
-	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Create audit rules"})
+EOF`, Description: "Create audit rules"}
+	_, _ = ssh.Run(cfg, cmdRules)
 
 	// Load audit rules
 	cfg.GetLoggerOrDefault().Info("installing auditd rules")
-	_, _ = ssh.Run(cfg, types.Command{Command: `augenrules --load`, Description: "Load audit rules"})
+	cmdLoadRules := types.Command{Command: `augenrules --load`, Description: "Load audit rules"}
+	_, _ = ssh.Run(cfg, cmdLoadRules)
 
 	// Enable and start auditd
-	_, _ = ssh.Run(cfg, types.Command{Command: `systemctl enable auditd`, Description: "Enable auditd service"})
-	_, _ = ssh.Run(cfg, types.Command{Command: `systemctl start auditd`, Description: "Start auditd service"})
+	cmdEnable := types.Command{Command: `systemctl enable auditd`, Description: "Enable auditd service"}
+	cmdStart := types.Command{Command: `systemctl start auditd`, Description: "Start auditd service"}
+	_, _ = ssh.Run(cfg, cmdEnable)
+	_, _ = ssh.Run(cfg, cmdStart)
 
 	cfg.GetLoggerOrDefault().Info("auditd installation complete")
 	return playbook.Result{

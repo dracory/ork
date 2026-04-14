@@ -58,8 +58,8 @@ func (m *ListDBs) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("listing all databases")
 
-	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES;"`, rootPassword)
-	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "List all databases"})
+	cmdList := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES;"`, rootPassword), Description: "List all databases"}
+	output, err := ssh.Run(cfg, cmdList)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

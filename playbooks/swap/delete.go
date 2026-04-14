@@ -60,7 +60,8 @@ type SwapDelete struct {
 // Non-empty output indicates swap is active and can be removed.
 func (s *SwapDelete) Check() (bool, error) {
 	cfg := s.GetNodeConfig()
-	output, err := ssh.Run(cfg, types.Command{Command: "swapon --show=NAME --noheadings", Description: "Check if swap exists"})
+	cmdCheck := types.Command{Command: "swapon --show=NAME --noheadings", Description: "Check if swap exists"}
+	output, err := ssh.Run(cfg, cmdCheck)
 	if err != nil {
 		return false, err
 	}
@@ -97,17 +98,17 @@ func (s *SwapDelete) Run() playbook.Result {
 		}
 	}
 
-	cmdSwapoff := fmt.Sprintf("swapoff %s 2>/dev/null || true", swapFilePath)
-	cmdFstab := fmt.Sprintf(`sed -i '/%s/d' /etc/fstab`, swapFilePath)
-	cmdRm := fmt.Sprintf("rm -f %s", swapFilePath)
+	cmdSwapoff := types.Command{Command: fmt.Sprintf("swapoff %s 2>/dev/null || true", swapFilePath), Description: "Disable swap"}
+	cmdFstab := types.Command{Command: fmt.Sprintf(`sed -i '/%s/d' /etc/fstab`, swapFilePath), Description: "Remove swap from fstab"}
+	cmdRm := types.Command{Command: fmt.Sprintf("rm -f %s", swapFilePath), Description: "Delete swap file"}
 
 	cfg.GetLoggerOrDefault().Info("removing swap file", "path", swapFilePath)
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSwapoff)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdFstab)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRm)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSwapoff.Command)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdFstab.Command)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRm.Command)
 		return playbook.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would remove swap file at %s", swapFilePath),
@@ -115,13 +116,13 @@ func (s *SwapDelete) Run() playbook.Result {
 	}
 
 	// Turn off swap
-	_, _ = ssh.Run(cfg, types.Command{Command: cmdSwapoff, Description: "Disable swap"})
+	_, _ = ssh.Run(cfg, cmdSwapoff)
 
 	// Remove from fstab
-	_, _ = ssh.Run(cfg, types.Command{Command: cmdFstab, Description: "Remove swap from fstab"})
+	_, _ = ssh.Run(cfg, cmdFstab)
 
 	// Delete file
-	_, err = ssh.Run(cfg, types.Command{Command: cmdRm, Description: "Delete swap file"})
+	_, err = ssh.Run(cfg, cmdRm)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

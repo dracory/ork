@@ -55,13 +55,15 @@ type AptUpgrade struct {
 func (a *AptUpgrade) Check() (bool, error) {
 	cfg := a.GetNodeConfig()
 	// First ensure package lists are updated
-	_, err := ssh.Run(cfg, types.Command{Command: "apt-get update -qq", Description: "Update package lists"})
+	cmdUpdate := types.Command{Command: "apt-get update -qq", Description: "Update package lists"}
+	_, err := ssh.Run(cfg, cmdUpdate)
 	if err != nil {
 		return false, fmt.Errorf("failed to update package lists: %w", err)
 	}
 
 	// Check for upgradable packages
-	output, err := ssh.Run(cfg, types.Command{Command: "apt list --upgradable 2>/dev/null | grep -c '\\[upgradable from:' || echo 0", Description: "Check for upgradable packages"})
+	cmdCheck := types.Command{Command: "apt list --upgradable 2>/dev/null | grep -c '\\[upgradable from:' || echo 0", Description: "Check for upgradable packages"}
+	output, err := ssh.Run(cfg, cmdCheck)
 	if err != nil {
 		return false, fmt.Errorf("failed to check for upgrades: %w", err)
 	}
@@ -94,19 +96,19 @@ func (a *AptUpgrade) Run() playbook.Result {
 	}
 
 	cfg := a.GetNodeConfig()
-	cmd := "apt-get upgrade -y"
+	cmdUpgrade := types.Command{Command: "apt-get upgrade -y", Description: "Upgrade packages"}
 
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmd)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpgrade.Command)
 		return playbook.Result{
 			Changed: true,
-			Message: "Would upgrade packages: " + cmd,
+			Message: "Would upgrade packages: " + cmdUpgrade.Command,
 		}
 	}
 
 	cfg.GetLoggerOrDefault().Info("running apt upgrade")
-	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Upgrade packages"})
+	output, err := ssh.Run(cfg, cmdUpgrade)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

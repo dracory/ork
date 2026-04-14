@@ -46,8 +46,8 @@ func (m *CreateDB) Check() (bool, error) {
 		return true, nil
 	}
 
-	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 1 FROM information_schema.schemata WHERE schema_name = '%s';"`, rootPassword, dbName)
-	output, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check if database exists"})
+	cmdCheck := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 1 FROM information_schema.schemata WHERE schema_name = '%s';"`, rootPassword, dbName), Description: "Check if database exists"}
+	output, _ := ssh.Run(cfg, cmdCheck)
 	return output == "", nil
 }
 
@@ -75,8 +75,8 @@ func (m *CreateDB) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("creating database", "database", dbName)
 
-	cmd := fmt.Sprintf("mysql -u root -p\"%s\" -e \"CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"", rootPassword, dbName)
-	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Create database"})
+	cmdCreate := types.Command{Command: fmt.Sprintf("mysql -u root -p\"%s\" -e \"CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"", rootPassword, dbName), Description: "Create database"}
+	output, err := ssh.Run(cfg, cmdCreate)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

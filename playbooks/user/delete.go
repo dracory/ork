@@ -24,7 +24,8 @@ func (u *UserDelete) Check() (bool, error) {
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
 	}
-	output, _ := ssh.Run(cfg, types.Command{Command: fmt.Sprintf("id %s", username), Description: "Check if user exists"})
+	cmdCheck := types.Command{Command: fmt.Sprintf("id %s", username), Description: "Check if user exists"}
+	output, _ := ssh.Run(cfg, cmdCheck)
 	return strings.Contains(output, username), nil
 }
 
@@ -80,18 +81,18 @@ func (u *UserDelete) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("deleting user", "username", username)
 
 	// Delete user and home directory (try -r first, then without)
-	cmd := fmt.Sprintf("userdel -r %s 2>/dev/null || userdel %s", username, username)
+	cmdDelete := types.Command{Command: fmt.Sprintf("userdel -r %s 2>/dev/null || userdel %s", username, username), Description: "Delete user"}
 
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmd)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdDelete.Command)
 		return playbook.Result{
 			Changed: true,
 			Message: fmt.Sprintf("Would delete user: %s", username),
 		}
 	}
 
-	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Delete user"})
+	output, err := ssh.Run(cfg, cmdDelete)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

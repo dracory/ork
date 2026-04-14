@@ -53,11 +53,11 @@ func (u *UfwStatus) Check() (bool, error) {
 // Run executes the playbook and returns detailed result.
 func (u *UfwStatus) Run() playbook.Result {
 	cfg := u.GetNodeConfig()
-	cmdStatus := "ufw status verbose"
+	cmdStatus := types.Command{Command: "ufw status verbose", Description: "Check UFW status"}
 
 	// Check for dry-run mode - display actual command
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStatus)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStatus.Command)
 		return playbook.Result{
 			Changed: false,
 			Message: "Would check UFW firewall status",
@@ -66,7 +66,7 @@ func (u *UfwStatus) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("checking UFW status")
 
-	output, err := ssh.Run(cfg, types.Command{Command: cmdStatus, Description: "Check UFW status"})
+	output, err := ssh.Run(cfg, cmdStatus)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
