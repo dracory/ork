@@ -8,6 +8,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // UserCreate creates a new non-root user with sudo access.
@@ -23,7 +24,7 @@ func (u *UserCreate) Check() (bool, error) {
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
 	}
-	output, _ := ssh.Run(cfg, fmt.Sprintf("id %s", username))
+	output, _ := ssh.Run(cfg, types.Command{Command: fmt.Sprintf("id %s", username), Description: "Check if user exists"})
 	return !strings.Contains(output, username), nil
 }
 
@@ -136,7 +137,7 @@ func (u *UserCreate) Run() playbook.Result {
 		}
 	}
 
-	output, err := ssh.Run(cfg, cmdCreate)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdCreate, Description: "Create user"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -146,11 +147,11 @@ func (u *UserCreate) Run() playbook.Result {
 	}
 
 	// Add to sudo group
-	_, _ = ssh.Run(cfg, cmdSudo)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmdSudo, Description: "Add user to sudo group"})
 
 	// Set password if provided
 	if cmdPass != "" {
-		output, err = ssh.Run(cfg, cmdPass)
+		output, err = ssh.Run(cfg, types.Command{Command: cmdPass, Description: "Set user password"})
 		if err != nil {
 			cfg.GetLoggerOrDefault().Warn("failed to set password", "username", username, "error", err)
 		}
@@ -159,7 +160,7 @@ func (u *UserCreate) Run() playbook.Result {
 	// Setup SSH key if provided
 	if sshKey != "" {
 		// Create .ssh directory with proper permissions
-		output, err = ssh.Run(cfg, cmdSSHDir)
+		output, err = ssh.Run(cfg, types.Command{Command: cmdSSHDir, Description: "Create .ssh directory"})
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -169,7 +170,7 @@ func (u *UserCreate) Run() playbook.Result {
 		}
 
 		// Add SSH public key to authorized_keys
-		output, err = ssh.Run(cfg, cmdAuthKey)
+		output, err = ssh.Run(cfg, types.Command{Command: cmdAuthKey, Description: "Add SSH key to authorized_keys"})
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -179,7 +180,7 @@ func (u *UserCreate) Run() playbook.Result {
 		}
 
 		// Set permissions and ownership on .ssh directory
-		output, err = ssh.Run(cfg, cmdSSHPerms)
+		output, err = ssh.Run(cfg, types.Command{Command: cmdSSHPerms, Description: "Set .ssh permissions"})
 		if err != nil {
 			cfg.GetLoggerOrDefault().Warn("failed to set permissions on .ssh directory", "username", username, "error", err)
 		}

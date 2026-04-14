@@ -310,7 +310,7 @@ func (n *nodeImplementation) RunCommand(cmd string) types.Results {
 			err = fmt.Errorf("failed to execute command '%s': %w", cmd, err)
 		}
 	} else {
-		output, err = sshRunOnce(n.cfg.SSHHost, n.cfg.SSHPort, n.cfg.RootUser, n.cfg.SSHKey, cmd)
+		output, err = sshRunOnce(n.cfg.SSHHost, n.cfg.SSHPort, n.cfg.RootUser, n.cfg.SSHKey, types.Command{Command: cmd})
 		if err != nil {
 			err = fmt.Errorf("failed to execute command '%s': %w", cmd, err)
 		}

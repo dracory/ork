@@ -8,6 +8,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // UserDelete removes a user.
@@ -23,7 +24,7 @@ func (u *UserDelete) Check() (bool, error) {
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
 	}
-	output, _ := ssh.Run(cfg, fmt.Sprintf("id %s", username))
+	output, _ := ssh.Run(cfg, types.Command{Command: fmt.Sprintf("id %s", username), Description: "Check if user exists"})
 	return strings.Contains(output, username), nil
 }
 
@@ -90,7 +91,7 @@ func (u *UserDelete) Run() playbook.Result {
 		}
 	}
 
-	output, err := ssh.Run(cfg, cmd)
+	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Delete user"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

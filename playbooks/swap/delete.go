@@ -8,6 +8,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // SwapDelete removes the swap file.
@@ -59,7 +60,7 @@ type SwapDelete struct {
 // Non-empty output indicates swap is active and can be removed.
 func (s *SwapDelete) Check() (bool, error) {
 	cfg := s.GetNodeConfig()
-	output, err := ssh.Run(cfg, "swapon --show=NAME --noheadings")
+	output, err := ssh.Run(cfg, types.Command{Command: "swapon --show=NAME --noheadings", Description: "Check if swap exists"})
 	if err != nil {
 		return false, err
 	}
@@ -114,13 +115,13 @@ func (s *SwapDelete) Run() playbook.Result {
 	}
 
 	// Turn off swap
-	_, _ = ssh.Run(cfg, cmdSwapoff)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmdSwapoff, Description: "Disable swap"})
 
 	// Remove from fstab
-	_, _ = ssh.Run(cfg, cmdFstab)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmdFstab, Description: "Remove swap from fstab"})
 
 	// Delete file
-	_, err = ssh.Run(cfg, cmdRm)
+	_, err = ssh.Run(cfg, types.Command{Command: cmdRm, Description: "Delete swap file"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

@@ -10,6 +10,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // SwapCreate creates a swap file of the specified size.
@@ -73,7 +74,7 @@ type SwapCreate struct {
 // An empty output indicates no swap is active.
 func (s *SwapCreate) Check() (bool, error) {
 	cfg := s.GetNodeConfig()
-	output, err := ssh.Run(cfg, "swapon --show=NAME --noheadings")
+	output, err := ssh.Run(cfg, types.Command{Command: "swapon --show=NAME --noheadings", Description: "Check if swap exists"})
 	if err != nil {
 		return false, err
 	}
@@ -183,7 +184,7 @@ func (s *SwapCreate) Run() playbook.Result {
 		}
 	}
 
-	output, err := ssh.Run(cfg, cmdCreate)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdCreate, Description: "Create swap file"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -193,22 +194,22 @@ func (s *SwapCreate) Run() playbook.Result {
 	}
 
 	// Add to fstab if not already there using tee for visibility
-	output, _ = ssh.Run(cfg, cmdCheckFstab)
+	output, _ = ssh.Run(cfg, types.Command{Command: cmdCheckFstab, Description: "Check if swap in fstab"})
 	if strings.TrimSpace(output) == "missing" {
-		_, err = ssh.Run(cfg, cmdAddFstab)
+		_, err = ssh.Run(cfg, types.Command{Command: cmdAddFstab, Description: "Add swap to fstab"})
 		if err != nil {
 			cfg.GetLoggerOrDefault().Warn("failed to add swap to fstab", "error", err)
 		}
 	}
 
 	// Configure swappiness
-	_, err = ssh.Run(cfg, cmdSwappiness)
+	_, err = ssh.Run(cfg, types.Command{Command: cmdSwappiness, Description: "Configure swappiness"})
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("failed to set swappiness", "error", err)
 	}
 
 	// Get final swap status
-	status, _ := ssh.Run(cfg, cmdStatus)
+	status, _ := ssh.Run(cfg, types.Command{Command: cmdStatus, Description: "Get swap status"})
 
 	cfg.GetLoggerOrDefault().Info("swap file created", "size", sizeDesc, "path", swapFilePath)
 	return playbook.Result{

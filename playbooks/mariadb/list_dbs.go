@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // ListDBs displays all databases in the MariaDB server.
@@ -58,7 +59,7 @@ func (m *ListDBs) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("listing all databases")
 
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES;"`, rootPassword)
-	output, err := ssh.Run(cfg, cmd)
+	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "List all databases"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

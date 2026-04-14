@@ -7,6 +7,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // AptUpdate refreshes the package database.
@@ -72,7 +73,7 @@ func (a *AptUpdate) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("running apt update")
-	output, err := ssh.Run(cfg, cmd)
+	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Update package database"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

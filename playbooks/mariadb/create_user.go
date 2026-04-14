@@ -6,6 +6,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // CreateUser creates a new database user with configurable privileges.
@@ -55,7 +56,7 @@ func (m *CreateUser) Check() (bool, error) {
 	}
 
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 1 FROM mysql.user WHERE user='%s' AND host='%s';"`, rootPassword, username, host)
-	output, _ := ssh.Run(cfg, cmd)
+	output, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check if user exists"})
 	return output == "", nil
 }
 
@@ -98,7 +99,7 @@ func (m *CreateUser) Run() playbook.Result {
 	// Create user
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "CREATE USER IF NOT EXISTS '%s'@'%s' IDENTIFIED BY '%s';"`,
 		rootPassword, username, host, password)
-	output, err := ssh.Run(cfg, cmd)
+	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Create database user"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -113,7 +114,7 @@ func (m *CreateUser) Run() playbook.Result {
 		if dbName == "*" {
 			cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "GRANT ALL PRIVILEGES ON *.* TO '%s'@'%s';"`,
 				rootPassword, username, host)
-			_, _ = ssh.Run(cfg, cmd)
+			_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Grant all privileges"})
 			grantedDBs = append(grantedDBs, "*")
 			cfg.GetLoggerOrDefault().Info("granted all privileges", "username", username, "host", host)
 		} else {
@@ -122,7 +123,7 @@ func (m *CreateUser) Run() playbook.Result {
 				db = strings.TrimSpace(db)
 				cmd = fmt.Sprintf("mysql -u root -p\"%s\" -e \"GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%s';\"",
 					rootPassword, db, username, host)
-				_, err = ssh.Run(cfg, cmd)
+				_, err = ssh.Run(cfg, types.Command{Command: cmd, Description: "Grant database privileges"})
 				if err != nil {
 					cfg.GetLoggerOrDefault().Warn("could not grant privileges", "database", db, "error", err)
 				} else {
@@ -135,7 +136,7 @@ func (m *CreateUser) Run() playbook.Result {
 
 	// Flush privileges
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword)
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Flush privileges"})
 
 	return playbook.Result{
 		Changed: true,

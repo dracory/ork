@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // Fail2banStatus displays the fail2ban service status and SSH jail information.
@@ -76,7 +77,7 @@ func (f *Fail2banStatus) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("checking fail2ban status")
-	output, err := ssh.Run(cfg, cmdStatus)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdStatus, Description: "Check fail2ban status"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -86,7 +87,7 @@ func (f *Fail2banStatus) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("fail2ban status", "output", output)
-	jailOutput, _ := ssh.Run(cfg, cmdJail)
+	jailOutput, _ := ssh.Run(cfg, types.Command{Command: cmdJail, Description: "Check fail2ban SSH jail"})
 	cfg.GetLoggerOrDefault().Info("ssh jail status", "output", jailOutput)
 
 	return playbook.Result{

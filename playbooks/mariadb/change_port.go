@@ -6,6 +6,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // ChangePort changes the MariaDB server port from the default 3306.
@@ -73,25 +74,25 @@ func (m *ChangePort) Run() playbook.Result {
 
 	// Backup
 	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
-	_, err = ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath))
+	_, err = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath), Description: "Backup MariaDB config"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup config", Error: err}
 	}
 
 	// Update UFW if active
-	ufwOutput, _ := ssh.Run(cfg, `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`)
+	ufwOutput, _ := ssh.Run(cfg, types.Command{Command: `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`, Description: "Check UFW status"})
 	if ufwOutput == "ACTIVE" {
 		cmd := fmt.Sprintf(`ufw allow %s/tcp comment 'MariaDB on custom port'`, newPort)
-		_, _ = ssh.Run(cfg, cmd)
+		_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Allow MariaDB custom port in UFW"})
 	}
 
 	// Update MariaDB port
 	cmd := fmt.Sprintf(`sed -i 's/^#*port[[:space:]]*=.*/port = %s/' %s`, newPort, configPath)
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Update MariaDB port in config"})
 
 	// Restart MariaDB
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB service")
-	_, err = ssh.Run(cfg, `systemctl restart mariadb`)
+	_, err = ssh.Run(cfg, types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB service"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}

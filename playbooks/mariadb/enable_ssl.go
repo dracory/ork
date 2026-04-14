@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // EnableSSL configures SSL/TLS encryption for MariaDB connections.
@@ -64,14 +65,14 @@ func (m *EnableSSL) Run() playbook.Result {
 
 	// Generate SSL certificates
 	cfg.GetLoggerOrDefault().Info("generating SSL certificates")
-	_, _ = ssh.Run(cfg, fmt.Sprintf(`mysql_ssl_rsa_setup --datadir=%s`, dataDir))
+	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`mysql_ssl_rsa_setup --datadir=%s`, dataDir), Description: "Generate SSL certificates"})
 
 	// Set ownership and permissions
-	_, _ = ssh.Run(cfg, fmt.Sprintf(`chown mysql:mysql %s/*.pem`, dataDir))
-	_, _ = ssh.Run(cfg, fmt.Sprintf(`chmod 600 %s/*-key.pem && chmod 644 %s/*.pem`, dataDir, dataDir))
+	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`chown mysql:mysql %s/*.pem`, dataDir), Description: "Set SSL cert ownership"})
+	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`chmod 600 %s/*-key.pem && chmod 644 %s/*.pem`, dataDir, dataDir), Description: "Set SSL cert permissions"})
 
 	// Backup config
-	_, _ = ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, configPath, configPath))
+	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, configPath, configPath), Description: "Backup MariaDB config"})
 
 	// Configure SSL
 	cfg.GetLoggerOrDefault().Info("configuring MariaDB to use SSL")
@@ -82,11 +83,11 @@ ssl-ca=%s/ca.pem
 ssl-cert=%s/server-cert.pem
 ssl-key=%s/server-key.pem
 EOF`, configPath, configPath, dataDir, dataDir, dataDir)
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Configure SSL in MariaDB"})
 
 	// Restart MariaDB
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB service")
-	_, err := ssh.Run(cfg, `systemctl restart mariadb`)
+	_, err := ssh.Run(cfg, types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}

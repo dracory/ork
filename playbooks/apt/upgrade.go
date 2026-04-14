@@ -8,6 +8,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // AptUpgrade installs available package updates.
@@ -54,13 +55,13 @@ type AptUpgrade struct {
 func (a *AptUpgrade) Check() (bool, error) {
 	cfg := a.GetNodeConfig()
 	// First ensure package lists are updated
-	_, err := ssh.Run(cfg, "apt-get update -qq")
+	_, err := ssh.Run(cfg, types.Command{Command: "apt-get update -qq", Description: "Update package lists"})
 	if err != nil {
 		return false, fmt.Errorf("failed to update package lists: %w", err)
 	}
 
 	// Check for upgradable packages
-	output, err := ssh.Run(cfg, "apt list --upgradable 2>/dev/null | grep -c '\\[upgradable from:' || echo 0")
+	output, err := ssh.Run(cfg, types.Command{Command: "apt list --upgradable 2>/dev/null | grep -c '\\[upgradable from:' || echo 0", Description: "Check for upgradable packages"})
 	if err != nil {
 		return false, fmt.Errorf("failed to check for upgrades: %w", err)
 	}
@@ -105,7 +106,7 @@ func (a *AptUpgrade) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("running apt upgrade")
-	output, err := ssh.Run(cfg, cmd)
+	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Upgrade packages"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

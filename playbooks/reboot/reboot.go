@@ -9,6 +9,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // Reboot reboots the remote server and optionally waits for it to come back.
@@ -96,7 +97,7 @@ func (r *Reboot) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("rebooting server", "host", cfg.SSHHost)
 
 	// Trigger reboot (non-blocking, command returns immediately)
-	_, err := ssh.Run(cfg, cmdReboot)
+	_, err := ssh.Run(cfg, types.Command{Command: cmdReboot, Description: "Reboot server"})
 	if err != nil {
 		// reboot command often returns connection error since it kills the SSH session
 		cfg.GetLoggerOrDefault().Info("reboot command sent", "host", cfg.SSHHost, "expected_error", err)
@@ -126,7 +127,7 @@ func (r *Reboot) Run() playbook.Result {
 	for time.Now().Before(deadline) {
 		time.Sleep(5 * time.Second)
 
-		_, err := ssh.Run(cfg, "uptime")
+		_, err := ssh.Run(cfg, types.Command{Command: "uptime", Description: "Check if server is back online"})
 		if err == nil {
 			cfg.GetLoggerOrDefault().Info("server is back online", "host", cfg.SSHHost)
 			return playbook.Result{

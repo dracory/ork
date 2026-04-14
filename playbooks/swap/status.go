@@ -8,6 +8,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // SwapStatus shows current swap usage.
@@ -71,7 +72,7 @@ func (s *SwapStatus) Run() playbook.Result {
 		}
 	}
 
-	output, err := ssh.Run(cfg, cmdStatus)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdStatus, Description: "Check swap status"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

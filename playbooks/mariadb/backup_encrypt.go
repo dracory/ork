@@ -7,6 +7,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // BackupEncrypt creates an encrypted backup of a MariaDB database.
@@ -73,13 +74,13 @@ func (b *BackupEncrypt) Run() playbook.Result {
 	timestamp := time.Now().Format("20060102_150405")
 
 	cfg.GetLoggerOrDefault().Info("creating encrypted database backup", "database", dbName)
-	_, _ = ssh.Run(cfg, fmt.Sprintf(`mkdir -p %s`, backupDir))
-	_, _ = ssh.Run(cfg, `which openssl || DEBIAN_FRONTEND=noninteractive apt-get install -y openssl`)
+	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`mkdir -p %s`, backupDir), Description: "Create backup directory"})
+	_, _ = ssh.Run(cfg, types.Command{Command: `which openssl || DEBIAN_FRONTEND=noninteractive apt-get install -y openssl`, Description: "Ensure openssl is installed"})
 
 	cfg.GetLoggerOrDefault().Info("creating encrypted backup")
 	cmd := fmt.Sprintf(`(umask 077 && MYSQL_PWD='%s' mysqldump -u root --single-transaction --routines --triggers --events '%s' | gzip | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:MYSQL_PWD -out %s/%s_%s.sql.gz.enc)`,
 		rootPassword, dbName, backupDir, dbName, timestamp)
-	_, err := ssh.Run(cfg, cmd)
+	_, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Create encrypted backup"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to create backup", Error: err}
 	}

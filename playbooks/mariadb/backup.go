@@ -6,6 +6,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // Backup creates a compressed SQL dump of a MariaDB database.
@@ -79,13 +80,13 @@ func (m *Backup) Run() playbook.Result {
 
 	// Create backup directory
 	cmd := fmt.Sprintf("mkdir -p %s", backupDir)
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Create backup directory"})
 
 	// Create backup
 	backupPath := fmt.Sprintf("%s/%s", backupDir, backupFile)
 	cmd = fmt.Sprintf(`mysqldump -u root -p"%s" --single-transaction --routines --triggers "%s" > "%s"`,
 		rootPassword, dbName, backupPath)
-	output, err := ssh.Run(cfg, cmd)
+	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Create database backup"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -96,11 +97,11 @@ func (m *Backup) Run() playbook.Result {
 
 	// Compress backup
 	cmd = fmt.Sprintf("gzip -f %s", backupPath)
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Compress backup"})
 
 	// Generate checksum
 	cmd = fmt.Sprintf("sha256sum %s.gz > %s.gz.sha256", backupPath, backupPath)
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Generate backup checksum"})
 
 	return playbook.Result{
 		Changed: true,

@@ -3,6 +3,7 @@ package security
 import (
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // AideInstall installs and configures AIDE (Advanced Intrusion Detection Environment).
@@ -55,7 +56,7 @@ type AideInstall struct {
 // Check determines if AIDE needs to be installed.
 func (a *AideInstall) Check() (bool, error) {
 	cfg := a.GetNodeConfig()
-	_, err := ssh.Run(cfg, "which aide")
+	_, err := ssh.Run(cfg, types.Command{Command: "which aide", Description: "Check if AIDE is installed"})
 	return err != nil, nil
 }
 
@@ -67,7 +68,7 @@ func (a *AideInstall) Run() playbook.Result {
 
 	// Install AIDE
 	cfg.GetLoggerOrDefault().Info("installing AIDE package")
-	_, err := ssh.Run(cfg, `DEBIAN_FRONTEND=noninteractive apt-get install -y aide aide-common`)
+	_, err := ssh.Run(cfg, types.Command{Command: `DEBIAN_FRONTEND=noninteractive apt-get install -y aide aide-common`, Description: "Install AIDE package"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to install AIDE", Error: err}
 	}
@@ -83,22 +84,22 @@ func (a *AideInstall) Run() playbook.Result {
 /root/.ssh p+i+n+u+g+s+b+acl+xattrs+sha256
 /home p+i+n+u+g+s+b+acl+xattrs+sha256
 EOF`
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Configure AIDE monitoring rules"})
 
 	// Initialize AIDE database
 	cfg.GetLoggerOrDefault().Info("initializing AIDE database")
-	_, _ = ssh.Run(cfg, `aideinit`)
+	_, _ = ssh.Run(cfg, types.Command{Command: `aideinit`, Description: "Initialize AIDE database"})
 
 	// Move database to active location
-	_, _ = ssh.Run(cfg, `mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db`)
+	_, _ = ssh.Run(cfg, types.Command{Command: `mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db`, Description: "Move AIDE database to active location"})
 
 	// Create daily cron job
 	cmd = `cat > /etc/cron.daily/aide-check << 'EOF'
 #!/bin/bash
 /usr/bin/aide --check | mail -s "AIDE Daily Report - $(hostname)" root
 EOF`
-	_, _ = ssh.Run(cfg, cmd)
-	_, _ = ssh.Run(cfg, `chmod +x /etc/cron.daily/aide-check`)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Create AIDE daily cron job"})
+	_, _ = ssh.Run(cfg, types.Command{Command: `chmod +x /etc/cron.daily/aide-check`, Description: "Make AIDE cron job executable"})
 
 	cfg.GetLoggerOrDefault().Info("AIDE installation complete")
 	return playbook.Result{

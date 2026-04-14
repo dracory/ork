@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // Fail2banInstall installs and enables the fail2ban intrusion prevention system.
@@ -52,7 +53,7 @@ type Fail2banInstall struct {
 // Check determines if fail2ban needs to be installed.
 func (f *Fail2banInstall) Check() (bool, error) {
 	cfg := f.GetNodeConfig()
-	_, err := ssh.Run(cfg, "which fail2ban-server")
+	_, err := ssh.Run(cfg, types.Command{Command: "which fail2ban-server", Description: "Check if fail2ban is installed"})
 	return err != nil, nil
 }
 
@@ -74,7 +75,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("installing fail2ban")
 
-	output, err := ssh.Run(cfg, cmdInstall)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdInstall, Description: "Install fail2ban"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -84,7 +85,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 	}
 
 	// Enable and start fail2ban
-	output, err = ssh.Run(cfg, cmdEnable)
+	output, err = ssh.Run(cfg, types.Command{Command: cmdEnable, Description: "Enable and start fail2ban"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

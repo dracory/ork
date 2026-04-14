@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // Secure performs basic security hardening on a fresh MariaDB installation.
@@ -59,7 +60,7 @@ func (m *Secure) Run() playbook.Result {
 
 	// Remove anonymous users
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='';"`, rootPassword)
-	_, err := ssh.Run(cfg, cmd)
+	_, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Remove anonymous users"})
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not remove anonymous users", "error", err)
 	} else {
@@ -69,7 +70,7 @@ func (m *Secure) Run() playbook.Result {
 
 	// Remove remote root access (only localhost allowed for root)
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"`, rootPassword)
-	_, err = ssh.Run(cfg, cmd)
+	_, err = ssh.Run(cfg, types.Command{Command: cmd, Description: "Restrict root remote access"})
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not restrict root remote access", "error", err)
 	} else {
@@ -79,7 +80,7 @@ func (m *Secure) Run() playbook.Result {
 
 	// Remove test database
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DROP DATABASE IF EXISTS test;"`, rootPassword)
-	_, err = ssh.Run(cfg, cmd)
+	_, err = ssh.Run(cfg, types.Command{Command: cmd, Description: "Remove test database"})
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not remove test database", "error", err)
 	} else {
@@ -89,11 +90,11 @@ func (m *Secure) Run() playbook.Result {
 
 	// Remove test database privileges
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%%';"`, rootPassword)
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Remove test database privileges"})
 
 	// Reload privileges
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword)
-	_, err = ssh.Run(cfg, cmd)
+	_, err = ssh.Run(cfg, types.Command{Command: cmd, Description: "Flush privileges"})
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not flush privileges", "error", err)
 	} else {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // CreateDB creates a new MariaDB database with UTF-8 encoding.
@@ -46,7 +47,7 @@ func (m *CreateDB) Check() (bool, error) {
 	}
 
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 1 FROM information_schema.schemata WHERE schema_name = '%s';"`, rootPassword, dbName)
-	output, _ := ssh.Run(cfg, cmd)
+	output, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check if database exists"})
 	return output == "", nil
 }
 
@@ -75,7 +76,7 @@ func (m *CreateDB) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("creating database", "database", dbName)
 
 	cmd := fmt.Sprintf("mysql -u root -p\"%s\" -e \"CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"", rootPassword, dbName)
-	output, err := ssh.Run(cfg, cmd)
+	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Create database"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

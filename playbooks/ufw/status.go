@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // UfwStatus displays the current UFW firewall configuration and state.
@@ -65,7 +66,7 @@ func (u *UfwStatus) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("checking UFW status")
 
-	output, err := ssh.Run(cfg, cmdStatus)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdStatus, Description: "Check UFW status"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

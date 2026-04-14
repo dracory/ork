@@ -6,6 +6,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // Argument key constants for SSH port change.
@@ -81,31 +82,31 @@ func (s *SshChangePort) Run() playbook.Result {
 
 	// Backup
 	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
-	_, err = ssh.Run(cfg, `cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)`)
+	_, err = ssh.Run(cfg, types.Command{Command: `cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)`, Description: "Backup SSH config"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
 	}
 
 	// Update UFW if active
-	ufwOutput, _ := ssh.Run(cfg, `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`)
+	ufwOutput, _ := ssh.Run(cfg, types.Command{Command: `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`, Description: "Check UFW status"})
 	if ufwOutput == "ACTIVE" {
 		cmd := fmt.Sprintf(`ufw allow %s/tcp comment 'SSH on custom port'`, newPort)
-		_, _ = ssh.Run(cfg, cmd)
+		_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Allow SSH on custom port in UFW"})
 	}
 
 	// Update SSH port
 	cmd := fmt.Sprintf(`sed -i 's/^#*Port .*/Port %s/' /etc/ssh/sshd_config`, newPort)
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Update SSH port in config"})
 
 	// Validate
-	_, err = ssh.Run(cfg, `sshd -t`)
+	_, err = ssh.Run(cfg, types.Command{Command: `sshd -t`, Description: "Validate SSH config"})
 	if err != nil {
-		_, _ = ssh.Run(cfg, `ls -t /etc/ssh/sshd_config.backup.* | head -1 | xargs -I {} cp {} /etc/ssh/sshd_config`)
+		_, _ = ssh.Run(cfg, types.Command{Command: `ls -t /etc/ssh/sshd_config.backup.* | head -1 | xargs -I {} cp {} /etc/ssh/sshd_config`, Description: "Restore SSH config backup"})
 		return playbook.Result{Changed: false, Message: "SSH configuration validation failed, backup restored", Error: err}
 	}
 
 	// Restart SSH
-	_, err = ssh.Run(cfg, `systemctl restart sshd`)
+	_, err = ssh.Run(cfg, types.Command{Command: `systemctl restart sshd`, Description: "Restart SSH service"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}

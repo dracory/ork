@@ -1,12 +1,15 @@
-// Package playbooks provides reusable playbook implementations for common
-// server automation tasks.
+// Package playbooks provides built-in reusable playbook implementations
+// for common server automation tasks.
 //
 // Each subpackage contains playbooks for a specific domain:
 //
 //   - apt: Package management (update, upgrade, status)
+//   - fail2ban: Fail2ban service management (status, start, stop)
+//   - mariadb: MariaDB database management (status, start, stop)
 //   - ping: SSH connectivity checks
 //   - reboot: Server reboot with optional reconnection wait
 //   - swap: Swap file management (create, delete, status)
+//   - ufw: Uncomplicated Firewall management (status, enable, disable)
 //   - user: User management (create, delete, status)
 //
 // All playbooks implement the playbook.PlaybookInterface and can be used

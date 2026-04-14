@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // Status displays comprehensive MariaDB server status information.
@@ -47,7 +48,7 @@ func (m *Status) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("checking MariaDB status")
 
 	// Check service status
-	serviceOutput, err := ssh.Run(cfg, "systemctl status mariadb --no-pager")
+	serviceOutput, err := ssh.Run(cfg, types.Command{Command: "systemctl status mariadb --no-pager", Description: "Check MariaDB service status"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -58,18 +59,18 @@ func (m *Status) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("MariaDB service status", "output", serviceOutput)
 
 	// Check if MariaDB is listening
-	netOutput, _ := ssh.Run(cfg, fmt.Sprintf("ss -tlnp | grep :%s || netstat -tlnp | grep :%s || echo 'Port %s not found'", mariaDBPort, mariaDBPort, mariaDBPort))
+	netOutput, _ := ssh.Run(cfg, types.Command{Command: fmt.Sprintf("ss -tlnp | grep :%s || netstat -tlnp | grep :%s || echo 'Port %s not found'", mariaDBPort, mariaDBPort, mariaDBPort), Description: "Check MariaDB network status"})
 	cfg.GetLoggerOrDefault().Info("MariaDB network status", "output", netOutput)
 
 	// Check version
-	versionOutput, _ := ssh.Run(cfg, "mysql --version")
+	versionOutput, _ := ssh.Run(cfg, types.Command{Command: "mysql --version", Description: "Check MariaDB version"})
 	cfg.GetLoggerOrDefault().Info("MariaDB version", "output", versionOutput)
 
 	// Check connection
 	connectionStatus := "not tested"
 	if rootPassword != "" {
 		cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 'MariaDB is working' as status;"`, rootPassword)
-		connOutput, err := ssh.Run(cfg, cmd)
+		connOutput, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Test MariaDB connection"})
 		if err != nil {
 			connectionStatus = "failed"
 			cfg.GetLoggerOrDefault().Warn("could not connect to MariaDB", "error", err)

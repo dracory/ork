@@ -6,6 +6,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // EnableEncryption configures data-at-rest encryption for MariaDB.
@@ -71,19 +72,19 @@ func (m *EnableEncryption) Run() playbook.Result {
 
 	// Backup config
 	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
-	_, _ = ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath))
+	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath), Description: "Backup MariaDB config"})
 
 	// Create key directory
 	keyDir := filepath.Dir(keyFilePath)
-	_, _ = ssh.Run(cfg, fmt.Sprintf(`mkdir -p %s`, keyDir))
+	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`mkdir -p %s`, keyDir), Description: "Create key directory"})
 
 	// Generate encryption key
 	cfg.GetLoggerOrDefault().Info("generating encryption key file")
 	cmd := fmt.Sprintf(`echo "1;$(openssl rand -hex 32)" > %s`, keyFilePath)
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Generate encryption key"})
 
 	// Set permissions
-	_, _ = ssh.Run(cfg, fmt.Sprintf(`chown mysql:mysql %s && chmod 600 %s`, keyFilePath, keyFilePath))
+	_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf(`chown mysql:mysql %s && chmod 600 %s`, keyFilePath, keyFilePath), Description: "Set key file permissions"})
 
 	// Configure encryption
 	cfg.GetLoggerOrDefault().Info("configuring encryption in MariaDB")
@@ -97,11 +98,11 @@ innodb_encrypt_tables = ON
 innodb_encrypt_log = ON
 encrypt_tmp_files = ON
 EOF`, configPath, configPath, keyFilePath)
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Configure encryption"})
 
 	// Restart MariaDB
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB")
-	_, err := ssh.Run(cfg, `systemctl restart mariadb`)
+	_, err := ssh.Run(cfg, types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}

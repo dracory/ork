@@ -8,6 +8,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // UserStatus shows user information.
@@ -108,7 +109,7 @@ func (u *UserStatus) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("checking user", "username", username)
 
 		cmdID := fmt.Sprintf("id %s", username)
-		output, err := ssh.Run(cfg, cmdID)
+		output, err := ssh.Run(cfg, types.Command{Command: cmdID, Description: "Get user info"})
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -120,7 +121,7 @@ func (u *UserStatus) Run() playbook.Result {
 
 		// Check if user has sudo
 		cmdGroups := fmt.Sprintf("groups %s", username)
-		groupsOutput, err := ssh.Run(cfg, cmdGroups)
+		groupsOutput, err := ssh.Run(cfg, types.Command{Command: cmdGroups, Description: "Get user groups"})
 		if err == nil {
 			cfg.GetLoggerOrDefault().Info("user groups", "groups", groupsOutput)
 		}
@@ -135,7 +136,7 @@ func (u *UserStatus) Run() playbook.Result {
 	// List all non-system users
 	cfg.GetLoggerOrDefault().Info("listing all system users")
 
-	output, err := ssh.Run(cfg, cmdListAll)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdListAll, Description: "List all non-system users"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

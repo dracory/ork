@@ -3,6 +3,7 @@ package security
 import (
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // AuditdInstall installs and configures the Linux Audit Framework.
@@ -56,7 +57,7 @@ type AuditdInstall struct {
 // Check determines if auditd needs to be installed.
 func (a *AuditdInstall) Check() (bool, error) {
 	cfg := a.GetNodeConfig()
-	_, err := ssh.Run(cfg, "which auditd")
+	_, err := ssh.Run(cfg, types.Command{Command: "which auditd", Description: "Check if auditd is installed"})
 	return err != nil, nil
 }
 
@@ -68,7 +69,7 @@ func (a *AuditdInstall) Run() playbook.Result {
 
 	// Install auditd
 	cfg.GetLoggerOrDefault().Info("installing auditd package")
-	_, err := ssh.Run(cfg, `DEBIAN_FRONTEND=noninteractive apt-get install -y auditd audispd-plugins`)
+	_, err := ssh.Run(cfg, types.Command{Command: `DEBIAN_FRONTEND=noninteractive apt-get install -y auditd audispd-plugins`, Description: "Install auditd package"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to install auditd", Error: err}
 	}
@@ -128,15 +129,15 @@ func (a *AuditdInstall) Run() playbook.Result {
 # Make configuration immutable (requires reboot to change)
 -e 2
 EOF`
-	_, _ = ssh.Run(cfg, cmd)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmd, Description: "Create audit rules"})
 
 	// Load audit rules
 	cfg.GetLoggerOrDefault().Info("installing auditd rules")
-	_, _ = ssh.Run(cfg, `augenrules --load`)
+	_, _ = ssh.Run(cfg, types.Command{Command: `augenrules --load`, Description: "Load audit rules"})
 
 	// Enable and start auditd
-	_, _ = ssh.Run(cfg, `systemctl enable auditd`)
-	_, _ = ssh.Run(cfg, `systemctl start auditd`)
+	_, _ = ssh.Run(cfg, types.Command{Command: `systemctl enable auditd`, Description: "Enable auditd service"})
+	_, _ = ssh.Run(cfg, types.Command{Command: `systemctl start auditd`, Description: "Start auditd service"})
 
 	cfg.GetLoggerOrDefault().Info("auditd installation complete")
 	return playbook.Result{

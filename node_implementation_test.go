@@ -7,6 +7,7 @@ import (
 
 	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/playbook"
+	"github.com/dracory/ork/types"
 )
 
 // TestNodeStruct verifies that the nodeImplementation struct has the correct fields.
@@ -678,12 +679,12 @@ func TestNodeImplementation_Run_WithoutPersistentConnection(t *testing.T) {
 
 	// Mock ssh.RunOnce
 	var capturedHost, capturedPort, capturedUser, capturedKey, capturedCmd string
-	sshRunOnce = func(host, port, user, key, cmd string) (string, error) {
+	sshRunOnce = func(host, port, user, key string, cmd types.Command) (string, error) {
 		capturedHost = host
 		capturedPort = port
 		capturedUser = user
 		capturedKey = key
-		capturedCmd = cmd
+		capturedCmd = cmd.Command
 		return "output from one-time connection", nil
 	}
 
@@ -733,7 +734,7 @@ func TestNodeImplementation_Run_OneTimeConnectionError(t *testing.T) {
 	defer func() { sshRunOnce = originalRunOnce }()
 
 	// Mock ssh.RunOnce to return error
-	sshRunOnce = func(host, port, user, key, cmd string) (string, error) {
+	sshRunOnce = func(host, port, user, key string, cmd types.Command) (string, error) {
 		return "", fmt.Errorf("connection refused")
 	}
 

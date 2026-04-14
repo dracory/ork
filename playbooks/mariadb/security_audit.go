@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // SecurityAudit performs a comprehensive security audit of MariaDB configuration.
@@ -58,19 +59,19 @@ func (m *SecurityAudit) Run() playbook.Result {
 
 	// Check for anonymous users
 	cmd := fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE User='';"`, rootPassword)
-	anonOutput, _ := ssh.Run(cfg, cmd)
+	anonOutput, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check for anonymous users"})
 
 	// Check for test database
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES LIKE 'test';"`, rootPassword)
-	testOutput, _ := ssh.Run(cfg, cmd)
+	testOutput, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check for test database"})
 
 	// Check SSL
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW VARIABLES LIKE 'have_ssl';"`, rootPassword)
-	sslOutput, _ := ssh.Run(cfg, cmd)
+	sslOutput, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check SSL status"})
 
 	// Check wildcard hosts
 	cmd = fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE Host='%%';"`, rootPassword)
-	wildcardOutput, _ := ssh.Run(cfg, cmd)
+	wildcardOutput, _ := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check wildcard hosts"})
 
 	cfg.GetLoggerOrDefault().Info("MariaDB security audit complete")
 	return playbook.Result{

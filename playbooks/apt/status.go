@@ -9,6 +9,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // AptStatus shows available package updates without installing them.
@@ -71,7 +72,7 @@ func (a *AptStatus) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("checking for available updates")
-	_, err := ssh.Run(cfg, cmdUpdate)
+	_, err := ssh.Run(cfg, types.Command{Command: cmdUpdate, Description: "Update package lists"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -80,7 +81,7 @@ func (a *AptStatus) Run() playbook.Result {
 		}
 	}
 
-	output, err := ssh.Run(cfg, cmdList)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdList, Description: "List upgradable packages"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

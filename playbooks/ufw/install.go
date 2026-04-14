@@ -6,6 +6,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // UfwInstall installs and configures the Uncomplicated Firewall (UFW).
@@ -51,7 +52,7 @@ type UfwInstall struct {
 // Check determines if UFW needs to be installed.
 func (u *UfwInstall) Check() (bool, error) {
 	cfg := u.GetNodeConfig()
-	_, err := ssh.Run(cfg, "which ufw")
+	_, err := ssh.Run(cfg, types.Command{Command: "which ufw", Description: "Check if UFW is installed"})
 	return err != nil, nil
 }
 
@@ -113,7 +114,7 @@ func (u *UfwInstall) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("installing UFW firewall")
 
 	// Install UFW
-	output, err := ssh.Run(cfg, cmdInstall)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdInstall, Description: "Install UFW package"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -123,10 +124,10 @@ func (u *UfwInstall) Run() playbook.Result {
 	}
 
 	// Reset UFW to defaults
-	_, _ = ssh.Run(cfg, cmdReset)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmdReset, Description: "Reset UFW to defaults"})
 
 	// Set default policies
-	_, _ = ssh.Run(cfg, cmdDefaults)
+	_, _ = ssh.Run(cfg, types.Command{Command: cmdDefaults, Description: "Set UFW default policies"})
 
 	// Re-parse arguments (already defined in dry-run block)
 	allowSSH = u.GetArg(ArgAllowSSH)
@@ -147,19 +148,19 @@ func (u *UfwInstall) Run() playbook.Result {
 
 	// Allow SSH if requested
 	if allowSSH == "true" {
-		_, _ = ssh.Run(cfg, "ufw allow ssh")
+		_, _ = ssh.Run(cfg, types.Command{Command: "ufw allow ssh", Description: "Allow SSH access"})
 		allowedServices = append(allowedServices, "SSH")
 	}
 
 	// Allow HTTP if requested
 	if allowHTTP == "true" {
-		_, _ = ssh.Run(cfg, "ufw allow 80/tcp")
+		_, _ = ssh.Run(cfg, types.Command{Command: "ufw allow 80/tcp", Description: "Allow HTTP access"})
 		allowedServices = append(allowedServices, "HTTP")
 	}
 
 	// Allow HTTPS if requested
 	if allowHTTPS == "true" {
-		_, _ = ssh.Run(cfg, "ufw allow 443/tcp")
+		_, _ = ssh.Run(cfg, types.Command{Command: "ufw allow 443/tcp", Description: "Allow HTTPS access"})
 		allowedServices = append(allowedServices, "HTTPS")
 	}
 
@@ -169,14 +170,14 @@ func (u *UfwInstall) Run() playbook.Result {
 		for _, port := range ports {
 			port = strings.TrimSpace(port)
 			if port != "" {
-				_, _ = ssh.Run(cfg, fmt.Sprintf("ufw allow %s/tcp", port))
+				_, _ = ssh.Run(cfg, types.Command{Command: fmt.Sprintf("ufw allow %s/tcp", port), Description: "Allow custom port"})
 				allowedServices = append(allowedServices, fmt.Sprintf("port %s", port))
 			}
 		}
 	}
 
 	// Enable UFW (non-interactive)
-	output, err = ssh.Run(cfg, cmdEnable)
+	output, err = ssh.Run(cfg, types.Command{Command: cmdEnable, Description: "Enable UFW firewall"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

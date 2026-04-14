@@ -6,6 +6,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // AllowMariaDB configures UFW firewall rules for MariaDB database access.
@@ -65,7 +66,7 @@ func (u *AllowMariaDB) Run() playbook.Result {
 	if ip == "" || ip == "any" {
 		cfg.GetLoggerOrDefault().Warn("allowing MariaDB access from ANY IP")
 		cmd := fmt.Sprintf("ufw allow %s/tcp", mariaDBPort)
-		output, err := ssh.Run(cfg, cmd)
+		output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Allow MariaDB access from any IP"})
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -86,7 +87,7 @@ func (u *AllowMariaDB) Run() playbook.Result {
 		singleIP = strings.TrimSpace(singleIP)
 		cfg.GetLoggerOrDefault().Info("allowing MariaDB access", "ip", singleIP)
 		cmd := fmt.Sprintf("ufw allow from %s to any port %s", singleIP, mariaDBPort)
-		output, err := ssh.Run(cfg, cmd)
+		output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Allow MariaDB access from specific IP"})
 		if err != nil {
 			cfg.GetLoggerOrDefault().Warn("could not allow IP", "ip", singleIP, "error", err)
 		} else {

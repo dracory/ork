@@ -9,6 +9,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // PlaybookPing tests SSH connectivity to the remote server.
@@ -48,7 +49,7 @@ func (p *Ping) Check() (bool, error) {
 	// Ping never changes the system, so we always return false
 	// The error indicates if the check itself failed (connection issue)
 	cfg := p.GetNodeConfig()
-	_, err := ssh.Run(cfg, "uptime")
+	_, err := ssh.Run(cfg, types.Command{Command: "uptime", Description: "Check server uptime"})
 	if err != nil {
 		return false, err
 	}
@@ -72,7 +73,7 @@ func (p *Ping) Run() playbook.Result {
 		}
 	}
 
-	output, err := ssh.Run(cfg, cmd)
+	output, err := ssh.Run(cfg, types.Command{Command: cmd, Description: "Check server uptime"})
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

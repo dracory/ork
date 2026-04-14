@@ -6,6 +6,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // SshHarden applies security hardening to SSH server configuration.
@@ -132,14 +133,14 @@ func (s *SshHarden) Run() playbook.Result {
 
 	// Step 1: Backup
 	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
-	_, err := ssh.Run(cfg, cmdBackup)
+	_, err := ssh.Run(cfg, types.Command{Command: cmdBackup, Description: "Backup SSH config"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
 	}
 
 	// Step 2: Verify non-root user
 	cfg.GetLoggerOrDefault().Info("verifying non-root user exists")
-	output, err := ssh.Run(cfg, cmdVerifyUser)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdVerifyUser, Description: "Verify non-root user exists"})
 	_ = output
 	if err != nil || !strings.Contains(output, "OK") {
 		return playbook.Result{
@@ -151,15 +152,15 @@ func (s *SshHarden) Run() playbook.Result {
 
 	for _, setting := range settings {
 		cfg.GetLoggerOrDefault().Info("applying SSH setting", "setting", setting.name)
-		_, _ = ssh.Run(cfg, setting.cmd)
+		_, _ = ssh.Run(cfg, types.Command{Command: setting.cmd, Description: "Apply SSH setting: " + setting.name})
 	}
 
 	// Validate configuration
 	cfg.GetLoggerOrDefault().Info("validating SSH configuration")
-	_, err = ssh.Run(cfg, cmdValidate)
+	_, err = ssh.Run(cfg, types.Command{Command: cmdValidate, Description: "Validate SSH config"})
 	if err != nil {
 		// Restore backup
-		_, _ = ssh.Run(cfg, cmdRestore)
+		_, _ = ssh.Run(cfg, types.Command{Command: cmdRestore, Description: "Restore SSH config backup"})
 		return playbook.Result{
 			Changed: false,
 			Message: "SSH configuration validation failed, backup restored",
@@ -169,7 +170,7 @@ func (s *SshHarden) Run() playbook.Result {
 
 	// Restart SSH
 	cfg.GetLoggerOrDefault().Info("restarting SSH service")
-	_, err = ssh.Run(cfg, cmdRestart)
+	_, err = ssh.Run(cfg, types.Command{Command: cmdRestart, Description: "Restart SSH service"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}

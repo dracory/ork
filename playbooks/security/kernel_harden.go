@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
+	"github.com/dracory/ork/types"
 )
 
 // KernelHarden applies security-focused kernel parameters via sysctl.
@@ -159,21 +160,21 @@ EOF`, sysctlDropInPath)
 
 	// Step 1: Backup
 	cfg.GetLoggerOrDefault().Info("backing up sysctl configuration")
-	_, err := ssh.Run(cfg, cmdBackup)
+	_, err := ssh.Run(cfg, types.Command{Command: cmdBackup, Description: "Backup sysctl config"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup sysctl config", Error: err}
 	}
 
 	// Step 2: Create security configuration
 	cfg.GetLoggerOrDefault().Info("creating security hardening configuration", "path", sysctlDropInPath)
-	_, err = ssh.Run(cfg, cmdCreateConfig)
+	_, err = ssh.Run(cfg, types.Command{Command: cmdCreateConfig, Description: "Create kernel hardening config"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to create hardening config", Error: err}
 	}
 
 	// Step 3: Apply parameters
 	cfg.GetLoggerOrDefault().Info("applying kernel parameters")
-	output, err := ssh.Run(cfg, cmdApply)
+	output, err := ssh.Run(cfg, types.Command{Command: cmdApply, Description: "Apply kernel parameters"})
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to apply kernel parameters", Error: err}
 	}
