@@ -56,10 +56,29 @@ func (m *Secure) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("securing MariaDB installation")
 
+	// Define commands
+	cmdAnon := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='';"`, rootPassword), Description: "Remove anonymous users"}
+	cmdRoot := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"`, rootPassword), Description: "Restrict root remote access"}
+	cmdTestDb := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DROP DATABASE IF EXISTS test;"`, rootPassword), Description: "Remove test database"}
+	cmdTestPriv := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%%';"`, rootPassword), Description: "Remove test database privileges"}
+	cmdFlush := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword), Description: "Flush privileges"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAnon.Command, "description", cmdAnon.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRoot.Command, "description", cmdRoot.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdTestDb.Command, "description", cmdTestDb.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdTestPriv.Command, "description", cmdTestPriv.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdFlush.Command, "description", cmdFlush.Description)
+		return playbook.Result{
+			Changed: true,
+			Message: "Would secure MariaDB installation",
+		}
+	}
+
 	actions := []string{}
 
 	// Remove anonymous users
-	cmdAnon := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='';"`, rootPassword), Description: "Remove anonymous users"}
 	_, err := ssh.Run(cfg, cmdAnon)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not remove anonymous users", "error", err)
@@ -69,7 +88,6 @@ func (m *Secure) Run() playbook.Result {
 	}
 
 	// Remove remote root access (only localhost allowed for root)
-	cmdRoot := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"`, rootPassword), Description: "Restrict root remote access"}
 	_, err = ssh.Run(cfg, cmdRoot)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not restrict root remote access", "error", err)
@@ -79,7 +97,6 @@ func (m *Secure) Run() playbook.Result {
 	}
 
 	// Remove test database
-	cmdTestDb := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DROP DATABASE IF EXISTS test;"`, rootPassword), Description: "Remove test database"}
 	_, err = ssh.Run(cfg, cmdTestDb)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not remove test database", "error", err)
@@ -89,11 +106,9 @@ func (m *Secure) Run() playbook.Result {
 	}
 
 	// Remove test database privileges
-	cmdTestPriv := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%%';"`, rootPassword), Description: "Remove test database privileges"}
 	_, _ = ssh.Run(cfg, cmdTestPriv)
 
 	// Reload privileges
-	cmdFlush := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword), Description: "Flush privileges"}
 	_, err = ssh.Run(cfg, cmdFlush)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not flush privileges", "error", err)

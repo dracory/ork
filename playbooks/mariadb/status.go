@@ -45,10 +45,31 @@ func (m *Status) Run() playbook.Result {
 		mariaDBPort = DefaultPort
 	}
 
-	cfg.GetLoggerOrDefault().Info("checking MariaDB status")
-
 	// Check service status
 	cmdService := types.Command{Command: "systemctl status mariadb --no-pager", Description: "Check MariaDB service status"}
+	cmdNet := types.Command{Command: fmt.Sprintf("ss -tlnp | grep :%s || netstat -tlnp | grep :%s || echo 'Port %s not found'", mariaDBPort, mariaDBPort, mariaDBPort), Description: "Check MariaDB network status"}
+	cmdVersion := types.Command{Command: "mysql --version", Description: "Check MariaDB version"}
+	var cmdConn types.Command
+	if rootPassword != "" {
+		cmdConn = types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 'MariaDB is working' as status;"`, rootPassword), Description: "Test MariaDB connection"}
+	}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdService.Command, "description", cmdService.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdNet.Command, "description", cmdNet.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdVersion.Command, "description", cmdVersion.Description)
+		if rootPassword != "" {
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdConn.Command, "description", cmdConn.Description)
+		}
+		return playbook.Result{
+			Changed: false,
+			Message: "Would check MariaDB status",
+		}
+	}
+
+	cfg.GetLoggerOrDefault().Info("checking MariaDB status")
+
 	serviceOutput, err := ssh.Run(cfg, cmdService)
 	if err != nil {
 		return playbook.Result{
@@ -60,19 +81,16 @@ func (m *Status) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("MariaDB service status", "output", serviceOutput)
 
 	// Check if MariaDB is listening
-	cmdNet := types.Command{Command: fmt.Sprintf("ss -tlnp | grep :%s || netstat -tlnp | grep :%s || echo 'Port %s not found'", mariaDBPort, mariaDBPort, mariaDBPort), Description: "Check MariaDB network status"}
 	netOutput, _ := ssh.Run(cfg, cmdNet)
 	cfg.GetLoggerOrDefault().Info("MariaDB network status", "output", netOutput)
 
 	// Check version
-	cmdVersion := types.Command{Command: "mysql --version", Description: "Check MariaDB version"}
 	versionOutput, _ := ssh.Run(cfg, cmdVersion)
 	cfg.GetLoggerOrDefault().Info("MariaDB version", "output", versionOutput)
 
 	// Check connection
 	connectionStatus := "not tested"
 	if rootPassword != "" {
-		cmdConn := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 'MariaDB is working' as status;"`, rootPassword), Description: "Test MariaDB connection"}
 		connOutput, err := ssh.Run(cfg, cmdConn)
 		if err != nil {
 			connectionStatus = "failed"

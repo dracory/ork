@@ -8,6 +8,14 @@ import (
 	"github.com/dracory/ork/types"
 )
 
+// NewFail2banInstall creates a new fail2ban-install playbook.
+func NewFail2banInstall() playbook.PlaybookInterface {
+	pb := playbook.NewBasePlaybook()
+	pb.SetID(playbook.IDFail2banInstall)
+	pb.SetDescription("Install and enable fail2ban intrusion prevention system")
+	return &Fail2banInstall{BasePlaybook: pb}
+}
+
 // Fail2banInstall installs and enables the fail2ban intrusion prevention system.
 // Fail2ban monitors log files for suspicious activity (like brute-force login attempts)
 // and automatically bans IPs that show malicious patterns.
@@ -65,13 +73,25 @@ func (f *Fail2banInstall) Check() (bool, error) {
 // Run executes the playbook and returns detailed result.
 func (f *Fail2banInstall) Run() playbook.Result {
 	cfg := f.GetNodeConfig()
-	cmdInstall := types.Command{Command: "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban", Description: "Install fail2ban"}
-	cmdEnable := types.Command{Command: "systemctl enable fail2ban && systemctl start fail2ban", Description: "Enable and start fail2ban"}
+
+	cmdInstall := types.Command{
+		Command:     "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban",
+		Description: "Install fail2ban",
+	}
+	cmdEnable := types.Command{
+		Command:     "systemctl enable fail2ban && systemctl start fail2ban",
+		Description: "Enable and start fail2ban",
+	}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall.Command)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdEnable.Command)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command",
+			"cmd:", cmdInstall.Command,
+			"description:", cmdInstall.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command",
+			"cmd:", cmdEnable.Command,
+			"description:", cmdEnable.Description)
+
 		return playbook.Result{
 			Changed: true,
 			Message: "Would install and enable fail2ban",
@@ -104,12 +124,4 @@ func (f *Fail2banInstall) Run() playbook.Result {
 		Changed: true,
 		Message: "Fail2ban installed and enabled",
 	}
-}
-
-// NewFail2banInstall creates a new fail2ban-install playbook.
-func NewFail2banInstall() playbook.PlaybookInterface {
-	pb := playbook.NewBasePlaybook()
-	pb.SetID(playbook.IDFail2banInstall)
-	pb.SetDescription("Install and enable fail2ban intrusion prevention system")
-	return &Fail2banInstall{BasePlaybook: pb}
 }

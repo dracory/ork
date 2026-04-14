@@ -76,16 +76,33 @@ func (m *Backup) Run() playbook.Result {
 	timestamp := time.Now().Format("20060102_150405")
 	backupFile := fmt.Sprintf("%s_%s.sql", dbName, timestamp)
 
+	backupPath := fmt.Sprintf("%s/%s", backupDir, backupFile)
+
+	// Define commands
+	cmdMkdir := types.Command{Command: fmt.Sprintf("mkdir -p %s", backupDir), Description: "Create backup directory"}
+	cmdDump := types.Command{Command: fmt.Sprintf(`mysqldump -u root -p"%s" --single-transaction --routines --triggers "%s" > "%s"`,
+		rootPassword, dbName, backupPath), Description: "Create database backup"}
+	cmdCompress := types.Command{Command: fmt.Sprintf("gzip -f %s", backupPath), Description: "Compress backup"}
+	cmdChecksum := types.Command{Command: fmt.Sprintf("sha256sum %s.gz > %s.gz.sha256", backupPath, backupPath), Description: "Generate backup checksum"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdMkdir.Command, "description", cmdMkdir.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdDump.Command, "description", cmdDump.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCompress.Command, "description", cmdCompress.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdChecksum.Command, "description", cmdChecksum.Description)
+		return playbook.Result{
+			Changed: true,
+			Message: fmt.Sprintf("Would create backup for database '%s'", dbName),
+		}
+	}
+
 	cfg.GetLoggerOrDefault().Info("creating database backup", "database", dbName)
 
 	// Create backup directory
-	cmdMkdir := types.Command{Command: fmt.Sprintf("mkdir -p %s", backupDir), Description: "Create backup directory"}
 	_, _ = ssh.Run(cfg, cmdMkdir)
 
 	// Create backup
-	backupPath := fmt.Sprintf("%s/%s", backupDir, backupFile)
-	cmdDump := types.Command{Command: fmt.Sprintf(`mysqldump -u root -p"%s" --single-transaction --routines --triggers "%s" > "%s"`,
-		rootPassword, dbName, backupPath), Description: "Create database backup"}
 	output, err := ssh.Run(cfg, cmdDump)
 	if err != nil {
 		return playbook.Result{
@@ -96,11 +113,9 @@ func (m *Backup) Run() playbook.Result {
 	}
 
 	// Compress backup
-	cmdCompress := types.Command{Command: fmt.Sprintf("gzip -f %s", backupPath), Description: "Compress backup"}
 	_, _ = ssh.Run(cfg, cmdCompress)
 
 	// Generate checksum
-	cmdChecksum := types.Command{Command: fmt.Sprintf("sha256sum %s.gz > %s.gz.sha256", backupPath, backupPath), Description: "Generate backup checksum"}
 	_, _ = ssh.Run(cfg, cmdChecksum)
 
 	return playbook.Result{

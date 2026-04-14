@@ -99,6 +99,33 @@ func (m *CreateUser) Run() playbook.Result {
 	// Create user
 	cmdCreate := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "CREATE USER IF NOT EXISTS '%s'@'%s' IDENTIFIED BY '%s';"`,
 		rootPassword, username, host, password), Description: "Create database user"}
+	cmdFlush := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword), Description: "Flush privileges"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCreate.Command, "description", cmdCreate.Description)
+		if dbName != "" {
+			if dbName == "*" {
+				cmdGrantAll := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "GRANT ALL PRIVILEGES ON *.* TO '%s'@'%s';"`,
+					rootPassword, username, host), Description: "Grant all privileges"}
+				cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdGrantAll.Command, "description", cmdGrantAll.Description)
+			} else {
+				databases := strings.Split(dbName, ",")
+				for _, db := range databases {
+					db = strings.TrimSpace(db)
+					cmdGrantDb := types.Command{Command: fmt.Sprintf("mysql -u root -p\"%s\" -e \"GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%s';\"",
+						rootPassword, db, username, host), Description: "Grant database privileges"}
+					cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdGrantDb.Command, "description", cmdGrantDb.Description)
+				}
+			}
+		}
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdFlush.Command, "description", cmdFlush.Description)
+		return playbook.Result{
+			Changed: true,
+			Message: fmt.Sprintf("Would create user '%s'@'%s'", username, host),
+		}
+	}
+
 	output, err := ssh.Run(cfg, cmdCreate)
 	if err != nil {
 		return playbook.Result{
@@ -135,7 +162,6 @@ func (m *CreateUser) Run() playbook.Result {
 	}
 
 	// Flush privileges
-	cmdFlush := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword), Description: "Flush privileges"}
 	_, _ = ssh.Run(cfg, cmdFlush)
 
 	return playbook.Result{

@@ -76,6 +76,16 @@ func (m *CreateDB) Run() playbook.Result {
 	cfg.GetLoggerOrDefault().Info("creating database", "database", dbName)
 
 	cmdCreate := types.Command{Command: fmt.Sprintf("mysql -u root -p\"%s\" -e \"CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"", rootPassword, dbName), Description: "Create database"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCreate.Command, "description", cmdCreate.Description)
+		return playbook.Result{
+			Changed: true,
+			Message: fmt.Sprintf("Would create database '%s'", dbName),
+		}
+	}
+
 	output, err := ssh.Run(cfg, cmdCreate)
 	if err != nil {
 		return playbook.Result{

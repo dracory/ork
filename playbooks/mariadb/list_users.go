@@ -60,9 +60,19 @@ func (m *ListUsers) Run() playbook.Result {
 		}
 	}
 
+	cmdList := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user;"`, rootPassword), Description: "List all database users"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdList.Command, "description", cmdList.Description)
+		return playbook.Result{
+			Changed: false,
+			Message: "Would list all database users",
+		}
+	}
+
 	cfg.GetLoggerOrDefault().Info("listing all database users")
 
-	cmdList := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user;"`, rootPassword), Description: "List all database users"}
 	output, err := ssh.Run(cfg, cmdList)
 	if err != nil {
 		return playbook.Result{

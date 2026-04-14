@@ -70,31 +70,46 @@ func (m *ChangePort) Run() playbook.Result {
 		}
 	}
 
+	// Define commands
+	cmdBackup := types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath), Description: "Backup MariaDB config"}
+	cmdCheckUfw := types.Command{Command: `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`, Description: "Check UFW status"}
+	cmdAllowPort := types.Command{Command: fmt.Sprintf(`ufw allow %s/tcp comment 'MariaDB on custom port'`, newPort), Description: "Allow MariaDB custom port in UFW"}
+	cmdUpdatePort := types.Command{Command: fmt.Sprintf(`sed -i 's/^#*port[[:space:]]*=.*/port = %s/' %s`, newPort, configPath), Description: "Update MariaDB port in config"}
+	cmdRestart := types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB service"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command, "description", cmdBackup.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCheckUfw.Command, "description", cmdCheckUfw.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAllowPort.Command, "description", cmdAllowPort.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpdatePort.Command, "description", cmdUpdatePort.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
+		return playbook.Result{
+			Changed: true,
+			Message: fmt.Sprintf("Would change MariaDB port to %s", newPort),
+		}
+	}
+
 	cfg.GetLoggerOrDefault().Info("changing MariaDB port", "port", newPort)
 
 	// Backup
 	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
-	cmdBackup := types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath), Description: "Backup MariaDB config"}
 	_, err = ssh.Run(cfg, cmdBackup)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to backup config", Error: err}
 	}
 
 	// Update UFW if active
-	cmdCheckUfw := types.Command{Command: `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`, Description: "Check UFW status"}
 	ufwOutput, _ := ssh.Run(cfg, cmdCheckUfw)
 	if ufwOutput == "ACTIVE" {
-		cmdAllowPort := types.Command{Command: fmt.Sprintf(`ufw allow %s/tcp comment 'MariaDB on custom port'`, newPort), Description: "Allow MariaDB custom port in UFW"}
 		_, _ = ssh.Run(cfg, cmdAllowPort)
 	}
 
 	// Update MariaDB port
-	cmdUpdatePort := types.Command{Command: fmt.Sprintf(`sed -i 's/^#*port[[:space:]]*=.*/port = %s/' %s`, newPort, configPath), Description: "Update MariaDB port in config"}
 	_, _ = ssh.Run(cfg, cmdUpdatePort)
 
 	// Restart MariaDB
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB service")
-	cmdRestart := types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB service"}
 	_, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}

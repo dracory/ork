@@ -70,39 +70,24 @@ func (m *EnableEncryption) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("enabling MariaDB encryption at rest")
 
-	// Backup config
-	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
+	// Define commands
 	cmdBackup := types.Command{
 		Command:     fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath),
 		Description: "Backup MariaDB config",
 	}
-	_, _ = ssh.Run(cfg, cmdBackup)
-
-	// Create key directory
 	keyDir := filepath.Dir(keyFilePath)
 	cmdMkdir := types.Command{
 		Command:     fmt.Sprintf(`mkdir -p %s`, keyDir),
 		Description: "Create key directory",
 	}
-	_, _ = ssh.Run(cfg, cmdMkdir)
-
-	// Generate encryption key
-	cfg.GetLoggerOrDefault().Info("generating encryption key file")
 	cmdGenKey := types.Command{
 		Command:     fmt.Sprintf(`echo "1;$(openssl rand -hex 32)" > %s`, keyFilePath),
 		Description: "Generate encryption key",
 	}
-	_, _ = ssh.Run(cfg, cmdGenKey)
-
-	// Set permissions
 	cmdPerms := types.Command{
 		Command:     fmt.Sprintf(`chown mysql:mysql %s && chmod 600 %s`, keyFilePath, keyFilePath),
 		Description: "Set key file permissions",
 	}
-	_, _ = ssh.Run(cfg, cmdPerms)
-
-	// Configure encryption
-	cfg.GetLoggerOrDefault().Info("configuring encryption in MariaDB")
 	cmdConfigure := types.Command{
 		Command: fmt.Sprintf(`grep -q "file_key_management_filename" %s || cat >> %s << 'EOF'
 
@@ -115,14 +100,45 @@ innodb_encrypt_log = ON
 encrypt_tmp_files = ON
 EOF`, configPath, configPath, keyFilePath),
 		Description: "Configure encryption"}
-	_, _ = ssh.Run(cfg, cmdConfigure)
-
-	// Restart MariaDB
-	cfg.GetLoggerOrDefault().Info("restarting MariaDB")
 	cmdRestart := types.Command{
 		Command:     `systemctl restart mariadb`,
 		Description: "Restart MariaDB",
 	}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command, "description", cmdBackup.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdMkdir.Command, "description", cmdMkdir.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdGenKey.Command, "description", cmdGenKey.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdPerms.Command, "description", cmdPerms.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdConfigure.Command, "description", cmdConfigure.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
+		return playbook.Result{
+			Changed: true,
+			Message: "Would enable MariaDB encryption at rest",
+		}
+	}
+
+	// Backup config
+	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
+	_, _ = ssh.Run(cfg, cmdBackup)
+
+	// Create key directory
+	_, _ = ssh.Run(cfg, cmdMkdir)
+
+	// Generate encryption key
+	cfg.GetLoggerOrDefault().Info("generating encryption key file")
+	_, _ = ssh.Run(cfg, cmdGenKey)
+
+	// Set permissions
+	_, _ = ssh.Run(cfg, cmdPerms)
+
+	// Configure encryption
+	cfg.GetLoggerOrDefault().Info("configuring encryption in MariaDB")
+	_, _ = ssh.Run(cfg, cmdConfigure)
+
+	// Restart MariaDB
+	cfg.GetLoggerOrDefault().Info("restarting MariaDB")
 	_, err := ssh.Run(cfg, cmdRestart)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}

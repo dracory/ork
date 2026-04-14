@@ -65,18 +65,8 @@ func (a *AideInstall) Check() (bool, error) {
 func (a *AideInstall) Run() playbook.Result {
 	cfg := a.GetNodeConfig()
 
-	cfg.GetLoggerOrDefault().Info("installing AIDE")
-
-	// Install AIDE
-	cfg.GetLoggerOrDefault().Info("installing AIDE package")
+	// Define commands
 	cmdInstall := types.Command{Command: `DEBIAN_FRONTEND=noninteractive apt-get install -y aide aide-common`, Description: "Install AIDE package"}
-	_, err := ssh.Run(cfg, cmdInstall)
-	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to install AIDE", Error: err}
-	}
-
-	// Configure AIDE
-	cfg.GetLoggerOrDefault().Info("configuring AIDE to monitor critical paths")
 	cmdConfigure := types.Command{Command: `cat >> /etc/aide/aide.conf << 'EOF'
 
 # Custom monitoring rules
@@ -86,24 +76,50 @@ func (a *AideInstall) Run() playbook.Result {
 /root/.ssh p+i+n+u+g+s+b+acl+xattrs+sha256
 /home p+i+n+u+g+s+b+acl+xattrs+sha256
 EOF`, Description: "Configure AIDE monitoring rules"}
-	_, _ = ssh.Run(cfg, cmdConfigure)
-
-	// Initialize AIDE database
-	cfg.GetLoggerOrDefault().Info("initializing AIDE database")
 	cmdInit := types.Command{Command: `aideinit`, Description: "Initialize AIDE database"}
-	_, _ = ssh.Run(cfg, cmdInit)
-
-	// Move database to active location
 	cmdMoveDb := types.Command{Command: `mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db`, Description: "Move AIDE database to active location"}
-	_, _ = ssh.Run(cfg, cmdMoveDb)
-
-	// Create daily cron job
 	cmdCron := types.Command{Command: `cat > /etc/cron.daily/aide-check << 'EOF'
 #!/bin/bash
 /usr/bin/aide --check | mail -s "AIDE Daily Report - $(hostname)" root
 EOF`, Description: "Create AIDE daily cron job"}
-	_, _ = ssh.Run(cfg, cmdCron)
 	cmdChmod := types.Command{Command: `chmod +x /etc/cron.daily/aide-check`, Description: "Make AIDE cron job executable"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall.Command, "description", cmdInstall.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would configure AIDE monitoring rules")
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInit.Command, "description", cmdInit.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdMoveDb.Command, "description", cmdMoveDb.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCron.Command, "description", cmdCron.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdChmod.Command, "description", cmdChmod.Description)
+		return playbook.Result{
+			Changed: true,
+			Message: "Would install and configure AIDE",
+		}
+	}
+
+	cfg.GetLoggerOrDefault().Info("installing AIDE")
+
+	// Install AIDE
+	cfg.GetLoggerOrDefault().Info("installing AIDE package")
+	_, err := ssh.Run(cfg, cmdInstall)
+	if err != nil {
+		return playbook.Result{Changed: false, Message: "Failed to install AIDE", Error: err}
+	}
+
+	// Configure AIDE
+	cfg.GetLoggerOrDefault().Info("configuring AIDE to monitor critical paths")
+	_, _ = ssh.Run(cfg, cmdConfigure)
+
+	// Initialize AIDE database
+	cfg.GetLoggerOrDefault().Info("initializing AIDE database")
+	_, _ = ssh.Run(cfg, cmdInit)
+
+	// Move database to active location
+	_, _ = ssh.Run(cfg, cmdMoveDb)
+
+	// Create daily cron job
+	_, _ = ssh.Run(cfg, cmdCron)
 	_, _ = ssh.Run(cfg, cmdChmod)
 
 	cfg.GetLoggerOrDefault().Info("AIDE installation complete")

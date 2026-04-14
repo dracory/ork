@@ -66,18 +66,8 @@ func (a *AuditdInstall) Check() (bool, error) {
 func (a *AuditdInstall) Run() playbook.Result {
 	cfg := a.GetNodeConfig()
 
-	cfg.GetLoggerOrDefault().Info("installing auditd")
-
-	// Install auditd
-	cfg.GetLoggerOrDefault().Info("installing auditd package")
+	// Define commands
 	cmdInstall := types.Command{Command: `DEBIAN_FRONTEND=noninteractive apt-get install -y auditd audispd-plugins`, Description: "Install auditd package"}
-	_, err := ssh.Run(cfg, cmdInstall)
-	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to install auditd", Error: err}
-	}
-
-	// Create audit rules
-	cfg.GetLoggerOrDefault().Info("creating audit rules")
 	cmdRules := types.Command{Command: `cat > /etc/audit/rules.d/audit.rules << 'EOF'
 # Remove any existing rules
 -D
@@ -131,16 +121,41 @@ func (a *AuditdInstall) Run() playbook.Result {
 # Make configuration immutable (requires reboot to change)
 -e 2
 EOF`, Description: "Create audit rules"}
+	cmdLoadRules := types.Command{Command: `augenrules --load`, Description: "Load audit rules"}
+	cmdEnable := types.Command{Command: `systemctl enable auditd`, Description: "Enable auditd service"}
+	cmdStart := types.Command{Command: `systemctl start auditd`, Description: "Start auditd service"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall.Command, "description", cmdInstall.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would create audit rules")
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdLoadRules.Command, "description", cmdLoadRules.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdEnable.Command, "description", cmdEnable.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStart.Command, "description", cmdStart.Description)
+		return playbook.Result{
+			Changed: true,
+			Message: "Would install and configure auditd",
+		}
+	}
+
+	cfg.GetLoggerOrDefault().Info("installing auditd")
+
+	// Install auditd
+	cfg.GetLoggerOrDefault().Info("installing auditd package")
+	_, err := ssh.Run(cfg, cmdInstall)
+	if err != nil {
+		return playbook.Result{Changed: false, Message: "Failed to install auditd", Error: err}
+	}
+
+	// Create audit rules
+	cfg.GetLoggerOrDefault().Info("creating audit rules")
 	_, _ = ssh.Run(cfg, cmdRules)
 
 	// Load audit rules
 	cfg.GetLoggerOrDefault().Info("installing auditd rules")
-	cmdLoadRules := types.Command{Command: `augenrules --load`, Description: "Load audit rules"}
 	_, _ = ssh.Run(cfg, cmdLoadRules)
 
 	// Enable and start auditd
-	cmdEnable := types.Command{Command: `systemctl enable auditd`, Description: "Enable auditd service"}
-	cmdStart := types.Command{Command: `systemctl start auditd`, Description: "Start auditd service"}
 	_, _ = ssh.Run(cfg, cmdEnable)
 	_, _ = ssh.Run(cfg, cmdStart)
 

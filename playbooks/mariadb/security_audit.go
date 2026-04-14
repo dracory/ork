@@ -55,22 +55,29 @@ func (m *SecurityAudit) Run() playbook.Result {
 		}
 	}
 
+	// Define commands
+	cmdAnon := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE User='';"`, rootPassword), Description: "Check for anonymous users"}
+	cmdTestDb := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES LIKE 'test';"`, rootPassword), Description: "Check for test database"}
+	cmdSsl := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW VARIABLES LIKE 'have_ssl';"`, rootPassword), Description: "Check SSL status"}
+	cmdWildcard := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE Host='%%';"`, rootPassword), Description: "Check wildcard hosts"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAnon.Command, "description", cmdAnon.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdTestDb.Command, "description", cmdTestDb.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSsl.Command, "description", cmdSsl.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdWildcard.Command, "description", cmdWildcard.Description)
+		return playbook.Result{
+			Changed: false,
+			Message: "Would perform MariaDB security audit",
+		}
+	}
+
 	cfg.GetLoggerOrDefault().Info("MariaDB security audit started")
 
-	// Check for anonymous users
-	cmdAnon := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE User='';"`, rootPassword), Description: "Check for anonymous users"}
 	anonOutput, _ := ssh.Run(cfg, cmdAnon)
-
-	// Check for test database
-	cmdTestDb := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES LIKE 'test';"`, rootPassword), Description: "Check for test database"}
 	testOutput, _ := ssh.Run(cfg, cmdTestDb)
-
-	// Check SSL
-	cmdSsl := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW VARIABLES LIKE 'have_ssl';"`, rootPassword), Description: "Check SSL status"}
 	sslOutput, _ := ssh.Run(cfg, cmdSsl)
-
-	// Check wildcard hosts
-	cmdWildcard := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE Host='%%';"`, rootPassword), Description: "Check wildcard hosts"}
 	wildcardOutput, _ := ssh.Run(cfg, cmdWildcard)
 
 	cfg.GetLoggerOrDefault().Info("MariaDB security audit complete")

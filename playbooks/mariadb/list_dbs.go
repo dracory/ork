@@ -56,9 +56,22 @@ func (m *ListDBs) Run() playbook.Result {
 		}
 	}
 
+	cmdList := types.Command{
+		Command:     fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES;"`, rootPassword),
+		Description: "List all databases",
+	}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdList.Command, "description", cmdList.Description)
+		return playbook.Result{
+			Changed: false,
+			Message: "Would list all databases",
+		}
+	}
+
 	cfg.GetLoggerOrDefault().Info("listing all databases")
 
-	cmdList := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES;"`, rootPassword), Description: "List all databases"}
 	output, err := ssh.Run(cfg, cmdList)
 	if err != nil {
 		return playbook.Result{

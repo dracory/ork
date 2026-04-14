@@ -57,10 +57,36 @@ func (m *Install) Run() playbook.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 
+	// Define commands
+	cmdInstall := types.Command{Command: `apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client`, Description: "Install MariaDB packages"}
+	cmdStartEnable := types.Command{Command: "systemctl start mariadb && systemctl enable mariadb", Description: "Start and enable MariaDB"}
+	cmdWaitReady := types.Command{Command: "until mysqladmin ping --silent; do sleep 1; done", Description: "Wait for MariaDB to be ready"}
+	var cmdSetPassword types.Command
+	if rootPassword != "" {
+		cmdSetPassword = types.Command{Command: fmt.Sprintf(`mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '%s';"`, rootPassword), Description: "Set root password"}
+	}
+	cmdBindAddr := types.Command{Command: `sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mariadb.conf.d/50-server.cnf || sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/my.cnf.d/mariadb-server.cnf || true`, Description: "Configure bind address"}
+	cmdRestart := types.Command{Command: "systemctl restart mariadb", Description: "Restart MariaDB"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall.Command, "description", cmdInstall.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStartEnable.Command, "description", cmdStartEnable.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdWaitReady.Command, "description", cmdWaitReady.Description)
+		if rootPassword != "" {
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSetPassword.Command, "description", cmdSetPassword.Description)
+		}
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBindAddr.Command, "description", cmdBindAddr.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
+		return playbook.Result{
+			Changed: true,
+			Message: "Would install and configure MariaDB",
+		}
+	}
+
 	cfg.GetLoggerOrDefault().Info("installing MariaDB server")
 
 	// Update package list and install MariaDB
-	cmdInstall := types.Command{Command: `apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client`, Description: "Install MariaDB packages"}
 	output, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
 		return playbook.Result{
@@ -71,7 +97,6 @@ func (m *Install) Run() playbook.Result {
 	}
 
 	// Start and enable MariaDB
-	cmdStartEnable := types.Command{Command: "systemctl start mariadb && systemctl enable mariadb", Description: "Start and enable MariaDB"}
 	output, err = ssh.Run(cfg, cmdStartEnable)
 	if err != nil {
 		return playbook.Result{
@@ -82,12 +107,10 @@ func (m *Install) Run() playbook.Result {
 	}
 
 	// Wait for MariaDB to be ready
-	cmdWaitReady := types.Command{Command: "until mysqladmin ping --silent; do sleep 1; done", Description: "Wait for MariaDB to be ready"}
 	_, _ = ssh.Run(cfg, cmdWaitReady)
 
 	// Set root password if provided
 	if rootPassword != "" {
-		cmdSetPassword := types.Command{Command: fmt.Sprintf(`mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '%s';"`, rootPassword), Description: "Set root password"}
 		_, err = ssh.Run(cfg, cmdSetPassword)
 		if err != nil {
 			cfg.GetLoggerOrDefault().Warn("could not set root password", "error", err)
@@ -98,11 +121,9 @@ func (m *Install) Run() playbook.Result {
 
 	// Configure MariaDB to listen on all interfaces for public access
 	cfg.GetLoggerOrDefault().Info("configuring MariaDB to listen on all interfaces")
-	cmdBindAddr := types.Command{Command: `sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mariadb.conf.d/50-server.cnf || sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/my.cnf.d/mariadb-server.cnf || true`, Description: "Configure bind address"}
 	_, _ = ssh.Run(cfg, cmdBindAddr)
 
 	// Restart MariaDB to apply config changes
-	cmdRestart := types.Command{Command: "systemctl restart mariadb", Description: "Restart MariaDB"}
 	output, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
 		return playbook.Result{

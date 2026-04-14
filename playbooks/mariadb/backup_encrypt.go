@@ -73,15 +73,28 @@ func (b *BackupEncrypt) Run() playbook.Result {
 	backupDir := cfg.GetArgOr(ArgBackupDir, "/root/backups")
 	timestamp := time.Now().Format("20060102_150405")
 
-	cfg.GetLoggerOrDefault().Info("creating encrypted database backup", "database", dbName)
+	// Define commands
 	cmdMkdir := types.Command{Command: fmt.Sprintf(`mkdir -p %s`, backupDir), Description: "Create backup directory"}
-	_, _ = ssh.Run(cfg, cmdMkdir)
 	cmdCheckOpenSSL := types.Command{Command: `which openssl || DEBIAN_FRONTEND=noninteractive apt-get install -y openssl`, Description: "Ensure openssl is installed"}
+	cmdBackup := types.Command{Command: fmt.Sprintf(`(umask 077 && MYSQL_PWD='%s' mysqldump -u root --single-transaction --routines --triggers --events '%s' | gzip | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:MYSQL_PWD -out %s/%s_%s.sql.gz.enc)`,
+		rootPassword, dbName, backupDir, dbName, timestamp), Description: "Create encrypted backup"}
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdMkdir.Command, "description", cmdMkdir.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCheckOpenSSL.Command, "description", cmdCheckOpenSSL.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command, "description", cmdBackup.Description)
+		return playbook.Result{
+			Changed: true,
+			Message: fmt.Sprintf("Would create encrypted backup for database '%s'", dbName),
+		}
+	}
+
+	cfg.GetLoggerOrDefault().Info("creating encrypted database backup", "database", dbName)
+	_, _ = ssh.Run(cfg, cmdMkdir)
 	_, _ = ssh.Run(cfg, cmdCheckOpenSSL)
 
 	cfg.GetLoggerOrDefault().Info("creating encrypted backup")
-	cmdBackup := types.Command{Command: fmt.Sprintf(`(umask 077 && MYSQL_PWD='%s' mysqldump -u root --single-transaction --routines --triggers --events '%s' | gzip | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:MYSQL_PWD -out %s/%s_%s.sql.gz.enc)`,
-		rootPassword, dbName, backupDir, dbName, timestamp), Description: "Create encrypted backup"}
 	_, err := ssh.Run(cfg, cmdBackup)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to create backup", Error: err}

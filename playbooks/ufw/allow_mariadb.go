@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/playbook"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
+	"github.com/samber/lo"
 )
 
 // AllowMariaDB configures UFW firewall rules for MariaDB database access.
@@ -63,36 +65,30 @@ func (u *AllowMariaDB) Run() playbook.Result {
 	ip := cfg.GetArgOr(ArgIP, "")
 	mariaDBPort := cfg.GetArgOr(ArgPort, "3306")
 
-	if ip == "" || ip == "any" {
-		cfg.GetLoggerOrDefault().Warn("allowing MariaDB access from ANY IP")
-		cmdAllowAny := types.Command{Command: fmt.Sprintf("ufw allow %s/tcp", mariaDBPort), Description: "Allow MariaDB access from any IP"}
-		output, err := ssh.Run(cfg, cmdAllowAny)
-		if err != nil {
-			return playbook.Result{
-				Changed: false,
-				Message: "Failed to allow MariaDB access",
-				Error:   fmt.Errorf("failed to allow MariaDB: %w\nOutput: %s", err, output),
-			}
-		}
+	// Check for dry-run mode
+	if cfg.IsDryRunMode {
+		allowedIPs, _ := u.allowIPs(cfg, ip, mariaDBPort, true)
 		return playbook.Result{
 			Changed: true,
-			Message: fmt.Sprintf("MariaDB port %s is now open to all IPs", mariaDBPort),
+			Message: fmt.Sprintf("Would configure UFW for MariaDB port %s", mariaDBPort),
+			Details: map[string]string{
+				"allowed_ips": strings.Join(allowedIPs, ","),
+			},
 		}
 	}
 
-	// Allow from specific IP(s)
-	ips := strings.Split(ip, ",")
-	allowedIPs := []string{}
-	for _, singleIP := range ips {
-		singleIP = strings.TrimSpace(singleIP)
-		cfg.GetLoggerOrDefault().Info("allowing MariaDB access", "ip", singleIP)
-		cmdAllowIP := types.Command{Command: fmt.Sprintf("ufw allow from %s to any port %s", singleIP, mariaDBPort), Description: "Allow MariaDB access from specific IP"}
-		output, err := ssh.Run(cfg, cmdAllowIP)
-		if err != nil {
-			cfg.GetLoggerOrDefault().Warn("could not allow IP", "ip", singleIP, "error", err)
-		} else {
-			allowedIPs = append(allowedIPs, singleIP)
-			cfg.GetLoggerOrDefault().Info("UFW output", "output", output)
+	// Execute for real
+	allowedIPs, err := u.allowIPs(cfg, ip, mariaDBPort, false)
+	if err != nil {
+		return playbook.Result{
+			Changed: false,
+			Message: "Failed to allow MariaDB access", Error: err}
+	}
+
+	if ip == "" || ip == "any" {
+		return playbook.Result{
+			Changed: true,
+			Message: fmt.Sprintf("MariaDB port %s is now open to all IPs", mariaDBPort),
 		}
 	}
 
@@ -103,6 +99,71 @@ func (u *AllowMariaDB) Run() playbook.Result {
 			"allowed_ips": strings.Join(allowedIPs, ","),
 		},
 	}
+}
+
+// allowIPs executes IP processing with the appropriate method based on IP value
+func (u *AllowMariaDB) allowIPs(cfg config.NodeConfig, ip string, mariaDBPort string, isDryRun bool) ([]string, error) {
+	if ip == "" || ip == "any" {
+		return u.allowAnyIP(cfg, mariaDBPort, isDryRun)
+	}
+
+	ips := lo.Filter(
+		lo.Map(strings.Split(ip, ","), func(item string, index int) string {
+			return strings.TrimSpace(item)
+		}),
+		func(item string, index int) bool {
+			return item != ""
+		},
+	)
+
+	return u.allowSpecificIPs(cfg, ips, mariaDBPort, isDryRun)
+}
+
+// allowAnyIP handles allowing MariaDB access from any IP
+func (u *AllowMariaDB) allowAnyIP(cfg config.NodeConfig, mariaDBPort string, isDryRun bool) ([]string, error) {
+	cmd := types.Command{
+		Command:     fmt.Sprintf("ufw allow %s/tcp", mariaDBPort),
+		Description: "Allow MariaDB access from any IP",
+	}
+
+	if isDryRun {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmd.Command, "description", cmd.Description)
+		return []string{"any"}, nil
+	}
+	cfg.GetLoggerOrDefault().Warn("allowing MariaDB access from ANY IP")
+	output, err := ssh.Run(cfg, cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to allow MariaDB: %w\nOutput: %s", err, output)
+	}
+	return []string{"any"}, nil
+}
+
+// allowSpecificIPs handles allowing MariaDB access from specific IP addresses
+func (u *AllowMariaDB) allowSpecificIPs(cfg config.NodeConfig, ips []string, mariaDBPort string, isDryRun bool) ([]string, error) {
+	allowedIPs := []string{}
+	for _, singleIP := range ips {
+		cmd := types.Command{
+			Command:     fmt.Sprintf("ufw allow from %s to any port %s", singleIP, mariaDBPort),
+			Description: "Allow MariaDB access from IP: " + singleIP,
+		}
+
+		if isDryRun {
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmd.Command, "description", cmd.Description)
+			allowedIPs = append(allowedIPs, singleIP)
+			continue
+		}
+
+		cfg.GetLoggerOrDefault().Info("allowing MariaDB access", "ip", singleIP)
+
+		output, err := ssh.Run(cfg, cmd)
+		if err != nil {
+			cfg.GetLoggerOrDefault().Warn("could not allow IP", "ip", singleIP, "error", err)
+		} else {
+			allowedIPs = append(allowedIPs, singleIP)
+			cfg.GetLoggerOrDefault().Info("UFW output", "output", output)
+		}
+	}
+	return allowedIPs, nil
 }
 
 // NewAllowMariaDB creates a new ufw-allow-mariadb playbook.
