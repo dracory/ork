@@ -551,11 +551,11 @@ func (m *groupTestMockPlaybook) SetDescription(desc string) playbook.PlaybookInt
 	return m
 }
 
-func (m *groupTestMockPlaybook) GetConfig() config.NodeConfig {
+func (m *groupTestMockPlaybook) GetNodeConfig() config.NodeConfig {
 	return m.cfg
 }
 
-func (m *groupTestMockPlaybook) SetConfig(cfg config.NodeConfig) playbook.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) playbook.PlaybookInterface {
 	m.cfg = cfg
 	return m
 }

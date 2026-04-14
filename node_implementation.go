@@ -334,7 +334,7 @@ func (n *nodeImplementation) RunPlaybook(pb playbook.PlaybookInterface) types.Re
 		Results: make(map[string]types.Result),
 	}
 
-	pb.SetConfig(n.cfg)
+	pb.SetNodeConfig(n.cfg)
 	// Propagate node's dry-run mode to playbook
 	pb.SetDryRun(n.cfg.IsDryRunMode)
 	result := pb.Run()
@@ -368,7 +368,7 @@ func (n *nodeImplementation) RunPlaybookByID(id string, opts ...playbook.Playboo
 		return results
 	}
 
-	pb.SetConfig(n.cfg)
+	pb.SetNodeConfig(n.cfg)
 	// Start with node's dry-run mode, allow opts to override
 	pb.SetDryRun(n.cfg.IsDryRunMode)
 	if len(opts) > 0 {

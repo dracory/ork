@@ -59,8 +59,19 @@ func (s *SwapStatus) Check() (bool, error) {
 //   - active: "true" when swap exists, "false" when no swap active
 //   - status: Full output from swapon --show command (when swap active)
 func (s *SwapStatus) Run() playbook.Result {
-	cfg := s.GetConfig()
-	output, err := ssh.Run(cfg, "swapon --show")
+	cfg := s.GetNodeConfig()
+	cmdStatus := "swapon --show"
+
+	// Check for dry-run mode - display actual command
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStatus)
+		return playbook.Result{
+			Changed: false,
+			Message: "Would check swap status",
+		}
+	}
+
+	output, err := ssh.Run(cfg, cmdStatus)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

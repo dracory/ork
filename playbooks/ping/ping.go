@@ -47,7 +47,7 @@ type Ping struct {
 func (p *Ping) Check() (bool, error) {
 	// Ping never changes the system, so we always return false
 	// The error indicates if the check itself failed (connection issue)
-	cfg := p.GetConfig()
+	cfg := p.GetNodeConfig()
 	_, err := ssh.Run(cfg, "uptime")
 	if err != nil {
 		return false, err
@@ -60,8 +60,19 @@ func (p *Ping) Check() (bool, error) {
 // On success, Result.Details contains an 'uptime' key with the server's
 // uptime/load string from the remote command execution.
 func (p *Ping) Run() playbook.Result {
-	cfg := p.GetConfig()
-	output, err := ssh.Run(cfg, "uptime")
+	cfg := p.GetNodeConfig()
+	cmd := "uptime"
+
+	// Check for dry-run mode
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmd)
+		return playbook.Result{
+			Changed: false,
+			Message: fmt.Sprintf("Would ping: %s", cfg.SSHHost),
+		}
+	}
+
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

@@ -51,18 +51,30 @@ type Fail2banInstall struct {
 
 // Check determines if fail2ban needs to be installed.
 func (f *Fail2banInstall) Check() (bool, error) {
-	cfg := f.GetConfig()
+	cfg := f.GetNodeConfig()
 	_, err := ssh.Run(cfg, "which fail2ban-server")
 	return err != nil, nil
 }
 
 // Run executes the playbook and returns detailed result.
 func (f *Fail2banInstall) Run() playbook.Result {
-	cfg := f.GetConfig()
+	cfg := f.GetNodeConfig()
+	cmdInstall := "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban"
+	cmdEnable := "systemctl enable fail2ban && systemctl start fail2ban"
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdEnable)
+		return playbook.Result{
+			Changed: true,
+			Message: "Would install and enable fail2ban",
+		}
+	}
 
 	cfg.GetLoggerOrDefault().Info("installing fail2ban")
 
-	output, err := ssh.Run(cfg, "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban")
+	output, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -72,7 +84,7 @@ func (f *Fail2banInstall) Run() playbook.Result {
 	}
 
 	// Enable and start fail2ban
-	output, err = ssh.Run(cfg, "systemctl enable fail2ban && systemctl start fail2ban")
+	output, err = ssh.Run(cfg, cmdEnable)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

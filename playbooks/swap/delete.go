@@ -58,7 +58,7 @@ type SwapDelete struct {
 // This method runs swapon --show to detect active swap devices.
 // Non-empty output indicates swap is active and can be removed.
 func (s *SwapDelete) Check() (bool, error) {
-	cfg := s.GetConfig()
+	cfg := s.GetNodeConfig()
 	output, err := ssh.Run(cfg, "swapon --show=NAME --noheadings")
 	if err != nil {
 		return false, err
@@ -73,7 +73,7 @@ func (s *SwapDelete) Check() (bool, error) {
 // Result.Details contains:
 //   - file: Path to the removed swap file
 func (s *SwapDelete) Run() playbook.Result {
-	cfg := s.GetConfig()
+	cfg := s.GetNodeConfig()
 	swapFilePath := s.GetArg(ArgSwapFilePath)
 	if swapFilePath == "" {
 		swapFilePath = DefaultSwapFilePath
@@ -96,16 +96,31 @@ func (s *SwapDelete) Run() playbook.Result {
 		}
 	}
 
+	cmdSwapoff := fmt.Sprintf("swapoff %s 2>/dev/null || true", swapFilePath)
+	cmdFstab := fmt.Sprintf(`sed -i '/%s/d' /etc/fstab`, swapFilePath)
+	cmdRm := fmt.Sprintf("rm -f %s", swapFilePath)
+
 	cfg.GetLoggerOrDefault().Info("removing swap file", "path", swapFilePath)
 
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSwapoff)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdFstab)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRm)
+		return playbook.Result{
+			Changed: true,
+			Message: fmt.Sprintf("Would remove swap file at %s", swapFilePath),
+		}
+	}
+
 	// Turn off swap
-	_, _ = ssh.Run(cfg, fmt.Sprintf("swapoff %s 2>/dev/null || true", swapFilePath))
+	_, _ = ssh.Run(cfg, cmdSwapoff)
 
 	// Remove from fstab
-	_, _ = ssh.Run(cfg, fmt.Sprintf(`sed -i '/%s/d' /etc/fstab`, swapFilePath))
+	_, _ = ssh.Run(cfg, cmdFstab)
 
 	// Delete file
-	_, err = ssh.Run(cfg, fmt.Sprintf("rm -f %s", swapFilePath))
+	_, err = ssh.Run(cfg, cmdRm)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

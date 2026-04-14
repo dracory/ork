@@ -44,7 +44,7 @@ func (m *ChangePort) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (m *ChangePort) Run() playbook.Result {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	newPort := m.GetArg(ArgPort)
 	configPath := m.GetArg(ArgConfigPath)
 	if configPath == "" {

@@ -72,7 +72,7 @@ type SwapCreate struct {
 // This method runs swapon --show to detect active swap devices.
 // An empty output indicates no swap is active.
 func (s *SwapCreate) Check() (bool, error) {
-	cfg := s.GetConfig()
+	cfg := s.GetNodeConfig()
 	output, err := ssh.Run(cfg, "swapon --show=NAME --noheadings")
 	if err != nil {
 		return false, err
@@ -94,7 +94,7 @@ func (s *SwapCreate) Check() (bool, error) {
 //   - swappiness: Configured kernel swappiness value
 //   - status: Output from swapon --show showing active swap
 func (s *SwapCreate) Run() playbook.Result {
-	cfg := s.GetConfig()
+	cfg := s.GetNodeConfig()
 
 	// Arguments
 	sizeStr := s.GetArg(ArgSize)
@@ -163,9 +163,27 @@ func (s *SwapCreate) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("creating swap file", "size", sizeDesc, "path", swapFilePath)
 
-	// Create swap file
-	cmd := fmt.Sprintf("fallocate -l %d%s %s && chmod 600 %s && mkswap %s && swapon %s", size, sizeFlag, swapFilePath, swapFilePath, swapFilePath, swapFilePath)
-	output, err := ssh.Run(cfg, cmd)
+	// Define all commands
+	cmdCreate := fmt.Sprintf("fallocate -l %d%s %s && chmod 600 %s && mkswap %s && swapon %s", size, sizeFlag, swapFilePath, swapFilePath, swapFilePath, swapFilePath)
+	cmdCheckFstab := fmt.Sprintf("grep -q '%s' /etc/fstab && echo 'exists' || echo 'missing'", swapFilePath)
+	cmdAddFstab := fmt.Sprintf("echo '%s none swap sw 0 0' | tee -a /etc/fstab", swapFilePath)
+	cmdSwappiness := fmt.Sprintf("sysctl vm.swappiness=%s && grep -q 'vm.swappiness' /etc/sysctl.conf && sed -i 's/vm.swappiness=.*/vm.swappiness=%s/' /etc/sysctl.conf || echo 'vm.swappiness=%s' | tee -a /etc/sysctl.conf", swappiness, swappiness, swappiness)
+	cmdStatus := "swapon --show"
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCreate)
+		cfg.GetLoggerOrDefault().Info("dry-run: would check fstab", "cmd", cmdCheckFstab)
+		cfg.GetLoggerOrDefault().Info("dry-run: would add to fstab", "cmd", cmdAddFstab)
+		cfg.GetLoggerOrDefault().Info("dry-run: would configure swappiness", "cmd", cmdSwappiness)
+		cfg.GetLoggerOrDefault().Info("dry-run: would get swap status", "cmd", cmdStatus)
+		return playbook.Result{
+			Changed: true,
+			Message: fmt.Sprintf("Would create %s swap file at %s", sizeDesc, swapFilePath),
+		}
+	}
+
+	output, err := ssh.Run(cfg, cmdCreate)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -175,24 +193,22 @@ func (s *SwapCreate) Run() playbook.Result {
 	}
 
 	// Add to fstab if not already there using tee for visibility
-	output, _ = ssh.Run(cfg, fmt.Sprintf("grep -q '%s' /etc/fstab && echo 'exists' || echo 'missing'", swapFilePath))
+	output, _ = ssh.Run(cfg, cmdCheckFstab)
 	if strings.TrimSpace(output) == "missing" {
-		_, err = ssh.Run(cfg, fmt.Sprintf("echo '%s none swap sw 0 0' | tee -a /etc/fstab", swapFilePath))
+		_, err = ssh.Run(cfg, cmdAddFstab)
 		if err != nil {
 			cfg.GetLoggerOrDefault().Warn("failed to add swap to fstab", "error", err)
 		}
 	}
 
 	// Configure swappiness
-	_, err = ssh.Run(cfg,
-		fmt.Sprintf("sysctl vm.swappiness=%s && grep -q 'vm.swappiness' /etc/sysctl.conf && sed -i 's/vm.swappiness=.*/vm.swappiness=%s/' /etc/sysctl.conf || echo 'vm.swappiness=%s' | tee -a /etc/sysctl.conf",
-			swappiness, swappiness, swappiness))
+	_, err = ssh.Run(cfg, cmdSwappiness)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("failed to set swappiness", "error", err)
 	}
 
 	// Get final swap status
-	status, _ := ssh.Run(cfg, "swapon --show")
+	status, _ := ssh.Run(cfg, cmdStatus)
 
 	cfg.GetLoggerOrDefault().Info("swap file created", "size", sizeDesc, "path", swapFilePath)
 	return playbook.Result{

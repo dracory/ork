@@ -42,7 +42,7 @@ type CreateUser struct {
 
 // Check determines if the user already exists.
 func (m *CreateUser) Check() (bool, error) {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 	username := m.GetArg(ArgUsername)
 	host := m.GetArg(ArgHost)
@@ -61,7 +61,7 @@ func (m *CreateUser) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (m *CreateUser) Run() playbook.Result {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 	username := m.GetArg(ArgUsername)
 	password := m.GetArg(ArgPassword)

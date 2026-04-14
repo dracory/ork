@@ -55,7 +55,7 @@ func (m *EnableEncryption) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (m *EnableEncryption) Run() playbook.Result {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 
 	// Get configurable paths
 	configPath := m.GetArg(ArgConfigPath)

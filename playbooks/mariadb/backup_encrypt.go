@@ -39,7 +39,7 @@ func (b *BackupEncrypt) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (b *BackupEncrypt) Run() playbook.Result {
-	cfg := b.GetConfig()
+	cfg := b.GetNodeConfig()
 	rootPassword := cfg.GetArg(ArgRootPassword)
 	dbName := cfg.GetArg(ArgDBName)
 

@@ -65,7 +65,7 @@ func (s *SshHarden) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (s *SshHarden) Run() playbook.Result {
-	cfg := s.GetConfig()
+	cfg := s.GetNodeConfig()
 	nonRootUser := s.GetArg(ArgNonRootUser)
 	if nonRootUser == "" {
 		nonRootUser = DefaultNonRootUser
@@ -93,24 +93,12 @@ func (s *SshHarden) Run() playbook.Result {
 
 	cfg.GetLoggerOrDefault().Info("SSH security hardening started")
 
-	// Step 1: Backup
-	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
-	_, err := ssh.Run(cfg, fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sshConfigPath, sshConfigPath))
-	if err != nil {
-		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
-	}
-
-	// Step 2: Verify non-root user
-	cfg.GetLoggerOrDefault().Info("verifying non-root user exists")
-	cmd := fmt.Sprintf(`id %s >/dev/null 2>&1 && sudo -l -U %s >/dev/null 2>&1 && echo "OK" || echo "FAIL"`, nonRootUser, nonRootUser)
-	output, err := ssh.Run(cfg, cmd)
-	if err != nil || !strings.Contains(output, "OK") {
-		return playbook.Result{
-			Changed: false,
-			Message: "Non-root user not configured properly",
-			Error:   fmt.Errorf("user '%s' doesn't exist or lacks sudo privileges", nonRootUser),
-		}
-	}
+	// Define commands
+	cmdBackup := fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sshConfigPath, sshConfigPath)
+	cmdVerifyUser := fmt.Sprintf(`id %s >/dev/null 2>&1 && sudo -l -U %s >/dev/null 2>&1 && echo "OK" || echo "FAIL"`, nonRootUser, nonRootUser)
+	cmdValidate := fmt.Sprintf(`sshd -t -f %s`, sshConfigPath)
+	cmdRestore := fmt.Sprintf(`cp %s.backup.$(date +%%Y%%m%%d) %s`, sshConfigPath, sshConfigPath)
+	cmdRestart := "systemctl restart sshd"
 
 	// Apply security settings
 	settings := []struct {
@@ -127,6 +115,40 @@ func (s *SshHarden) Run() playbook.Result {
 		{"Set client alive count", fmt.Sprintf(`grep -q "^ClientAliveCountMax" %s && sed -i 's/^ClientAliveCountMax.*/ClientAliveCountMax %s/' %s || echo "ClientAliveCountMax %s" >> %s`, sshConfigPath, clientAliveCountMax, sshConfigPath, clientAliveCountMax, sshConfigPath)},
 	}
 
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdVerifyUser)
+		for _, setting := range settings {
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "setting", setting.name, "cmd", setting.cmd)
+		}
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdValidate)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart)
+		return playbook.Result{
+			Changed: true,
+			Message: "Would harden SSH security configuration",
+		}
+	}
+
+	// Step 1: Backup
+	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
+	_, err := ssh.Run(cfg, cmdBackup)
+	if err != nil {
+		return playbook.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
+	}
+
+	// Step 2: Verify non-root user
+	cfg.GetLoggerOrDefault().Info("verifying non-root user exists")
+	output, err := ssh.Run(cfg, cmdVerifyUser)
+	_ = output
+	if err != nil || !strings.Contains(output, "OK") {
+		return playbook.Result{
+			Changed: false,
+			Message: "Non-root user not configured properly",
+			Error:   fmt.Errorf("user '%s' doesn't exist or lacks sudo privileges", nonRootUser),
+		}
+	}
+
 	for _, setting := range settings {
 		cfg.GetLoggerOrDefault().Info("applying SSH setting", "setting", setting.name)
 		_, _ = ssh.Run(cfg, setting.cmd)
@@ -134,10 +156,10 @@ func (s *SshHarden) Run() playbook.Result {
 
 	// Validate configuration
 	cfg.GetLoggerOrDefault().Info("validating SSH configuration")
-	_, err = ssh.Run(cfg, fmt.Sprintf(`sshd -t -f %s`, sshConfigPath))
+	_, err = ssh.Run(cfg, cmdValidate)
 	if err != nil {
 		// Restore backup
-		_, _ = ssh.Run(cfg, fmt.Sprintf(`cp %s.backup.$(date +%%Y%%m%%d) %s`, sshConfigPath, sshConfigPath))
+		_, _ = ssh.Run(cfg, cmdRestore)
 		return playbook.Result{
 			Changed: false,
 			Message: "SSH configuration validation failed, backup restored",
@@ -147,7 +169,7 @@ func (s *SshHarden) Run() playbook.Result {
 
 	// Restart SSH
 	cfg.GetLoggerOrDefault().Info("restarting SSH service")
-	_, err = ssh.Run(cfg, `systemctl restart sshd`)
+	_, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
 		return playbook.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
 	}

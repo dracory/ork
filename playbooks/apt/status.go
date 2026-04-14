@@ -55,9 +55,23 @@ func (a *AptStatus) Check() (bool, error) {
 //   - upgradable_count: Number of packages available for upgrade
 //   - packages: Full output from apt list --upgradable (when packages exist)
 func (a *AptStatus) Run() playbook.Result {
-	cfg := a.GetConfig()
+	cfg := a.GetNodeConfig()
+
+	cmdUpdate := "apt-get update -qq"
+	cmdList := "apt list --upgradable 2>/dev/null | tail -n +2"
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpdate)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdList)
+		return playbook.Result{
+			Changed: false,
+			Message: "Would check for available package updates",
+		}
+	}
+
 	cfg.GetLoggerOrDefault().Info("checking for available updates")
-	_, err := ssh.Run(cfg, "apt-get update -qq")
+	_, err := ssh.Run(cfg, cmdUpdate)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -66,7 +80,7 @@ func (a *AptStatus) Run() playbook.Result {
 		}
 	}
 
-	output, err := ssh.Run(cfg, "apt list --upgradable 2>/dev/null | tail -n +2")
+	output, err := ssh.Run(cfg, cmdList)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

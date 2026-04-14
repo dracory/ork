@@ -48,7 +48,7 @@ func (m *EnableSSL) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (m *EnableSSL) Run() playbook.Result {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 
 	// Get configurable paths
 	dataDir := m.GetArg(ArgDataDir)

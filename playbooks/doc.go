@@ -20,7 +20,7 @@
 // Or with explicit playbook creation:
 //
 //	pb := apt.NewAptUpdate()
-//	pb.SetConfig(node.GetConfig())
+//	pb.SetNodeConfig(node.GetNodeConfig())
 //	result := pb.Run()
 //
 // Playbooks follow the idempotency principle: Check() determines if changes

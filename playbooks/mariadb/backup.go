@@ -48,7 +48,7 @@ func (m *Backup) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (m *Backup) Run() playbook.Result {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 	dbName := m.GetArg(ArgDbName)
 

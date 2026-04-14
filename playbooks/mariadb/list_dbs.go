@@ -44,7 +44,7 @@ func (m *ListDBs) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (m *ListDBs) Run() playbook.Result {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 
 	if rootPassword == "" {

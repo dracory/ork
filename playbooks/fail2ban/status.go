@@ -61,10 +61,22 @@ func (f *Fail2banStatus) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (f *Fail2banStatus) Run() playbook.Result {
-	cfg := f.GetConfig()
+	cfg := f.GetNodeConfig()
+	cmdStatus := "systemctl status fail2ban --no-pager"
+	cmdJail := "fail2ban-client status sshd 2>/dev/null || echo 'No SSH jail configured'"
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStatus)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdJail)
+		return playbook.Result{
+			Changed: false,
+			Message: "Would check fail2ban status",
+		}
+	}
 
 	cfg.GetLoggerOrDefault().Info("checking fail2ban status")
-	output, err := ssh.Run(cfg, "systemctl status fail2ban --no-pager")
+	output, err := ssh.Run(cfg, cmdStatus)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,
@@ -74,7 +86,7 @@ func (f *Fail2banStatus) Run() playbook.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("fail2ban status", "output", output)
-	jailOutput, _ := ssh.Run(cfg, "fail2ban-client status sshd 2>/dev/null || echo 'No SSH jail configured'")
+	jailOutput, _ := ssh.Run(cfg, cmdJail)
 	cfg.GetLoggerOrDefault().Info("ssh jail status", "output", jailOutput)
 
 	return playbook.Result{

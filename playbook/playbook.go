@@ -51,7 +51,7 @@ type Result struct {
 // Usage:
 //
 //	pb := playbooks.NewUserCreate().
-//	    SetConfig(cfg).
+//	    SetNodeConfig(cfg).
 //	    SetOptions(&playbook.PlaybookOptions{Args: map[string]string{"username": "alice"}})
 //
 //	needsRun, _ := pb.Check()
@@ -69,12 +69,12 @@ type PlaybookInterface interface {
 	// SetDescription sets a short description of what the playbook does.
 	SetDescription(description string) PlaybookInterface
 
-	// GetConfig returns the current node configuration for this playbook.
-	GetConfig() config.NodeConfig
+	// GetNodeConfig returns the current node configuration for this playbook.
+	GetNodeConfig() config.NodeConfig
 
-	// SetConfig sets the node configuration for this playbook execution.
+	// SetNodeConfig sets the node configuration for this playbook execution.
 	// Returns the PlaybookInterface for fluent method chaining.
-	SetConfig(cfg config.NodeConfig) PlaybookInterface
+	SetNodeConfig(cfg config.NodeConfig) PlaybookInterface
 
 	// GetArg retrieves a single argument value by key.
 	GetArg(key string) string

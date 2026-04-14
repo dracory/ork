@@ -37,7 +37,7 @@ type CreateDB struct {
 
 // Check determines if the database already exists.
 func (m *CreateDB) Check() (bool, error) {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 	dbName := m.GetArg(ArgDbName)
 
@@ -52,7 +52,7 @@ func (m *CreateDB) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (m *CreateDB) Run() playbook.Result {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 	dbName := m.GetArg(ArgDbName)
 

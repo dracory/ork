@@ -55,14 +55,14 @@ type AuditdInstall struct {
 
 // Check determines if auditd needs to be installed.
 func (a *AuditdInstall) Check() (bool, error) {
-	cfg := a.GetConfig()
+	cfg := a.GetNodeConfig()
 	_, err := ssh.Run(cfg, "which auditd")
 	return err != nil, nil
 }
 
 // Run executes the playbook and returns detailed result.
 func (a *AuditdInstall) Run() playbook.Result {
-	cfg := a.GetConfig()
+	cfg := a.GetNodeConfig()
 
 	cfg.GetLoggerOrDefault().Info("installing auditd")
 

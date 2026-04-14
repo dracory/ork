@@ -74,14 +74,14 @@ func (b *BasePlaybook) SetDescription(description string) PlaybookInterface {
 	return b
 }
 
-// GetConfig returns the current node configuration for this playbook.
-func (b *BasePlaybook) GetConfig() config.NodeConfig {
+// GetNodeConfig returns the current node configuration for this playbook.
+func (b *BasePlaybook) GetNodeConfig() config.NodeConfig {
 	return b.nodeCfg
 }
 
-// SetConfig sets the node configuration for this playbook execution.
+// SetNodeConfig sets the node configuration for this playbook execution.
 // Returns PlaybookInterface for fluent method chaining with embedding types.
-func (b *BasePlaybook) SetConfig(cfg config.NodeConfig) PlaybookInterface {
+func (b *BasePlaybook) SetNodeConfig(cfg config.NodeConfig) PlaybookInterface {
 	b.nodeCfg = cfg
 	return b
 }

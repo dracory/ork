@@ -59,10 +59,20 @@ func (a *AptUpdate) Check() (bool, error) {
 // Result.Details contains:
 //   - output: Full output from apt-get update command
 func (a *AptUpdate) Run() playbook.Result {
-	cfg := a.GetConfig()
-	cfg.GetLoggerOrDefault().Info("running apt update")
+	cfg := a.GetNodeConfig()
+	cmd := "apt-get update -y"
 
-	output, err := ssh.Run(cfg, "apt-get update -y")
+	// Check for dry-run mode
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmd)
+		return playbook.Result{
+			Changed: true,
+			Message: "Would update package database: " + cmd,
+		}
+	}
+
+	cfg.GetLoggerOrDefault().Info("running apt update")
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

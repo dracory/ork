@@ -81,11 +81,22 @@ func (r *Reboot) Check() (bool, error) {
 //   - wait_for_reconnect: "true" or "false"
 //   - max_wait: Maximum wait duration string (when wait is enabled)
 func (r *Reboot) Run() playbook.Result {
-	cfg := r.GetConfig()
+	cfg := r.GetNodeConfig()
+	cmdReboot := "reboot"
+
+	// Check for dry-run mode - display actual command
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdReboot, "host", cfg.SSHHost)
+		return playbook.Result{
+			Changed: true,
+			Message: fmt.Sprintf("Would reboot %s", cfg.SSHHost),
+		}
+	}
+
 	cfg.GetLoggerOrDefault().Info("rebooting server", "host", cfg.SSHHost)
 
 	// Trigger reboot (non-blocking, command returns immediately)
-	_, err := ssh.Run(cfg, "reboot")
+	_, err := ssh.Run(cfg, cmdReboot)
 	if err != nil {
 		// reboot command often returns connection error since it kills the SSH session
 		cfg.GetLoggerOrDefault().Info("reboot command sent", "host", cfg.SSHHost, "expected_error", err)

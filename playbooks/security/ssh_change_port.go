@@ -56,7 +56,7 @@ func (s *SshChangePort) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (s *SshChangePort) Run() playbook.Result {
-	cfg := s.GetConfig()
+	cfg := s.GetNodeConfig()
 	newPort := s.GetArg(ArgPort)
 
 	if newPort == "" {

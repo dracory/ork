@@ -54,14 +54,14 @@ type AideInstall struct {
 
 // Check determines if AIDE needs to be installed.
 func (a *AideInstall) Check() (bool, error) {
-	cfg := a.GetConfig()
+	cfg := a.GetNodeConfig()
 	_, err := ssh.Run(cfg, "which aide")
 	return err != nil, nil
 }
 
 // Run executes the playbook and returns detailed result.
 func (a *AideInstall) Run() playbook.Result {
-	cfg := a.GetConfig()
+	cfg := a.GetNodeConfig()
 
 	cfg.GetLoggerOrDefault().Info("installing AIDE")
 

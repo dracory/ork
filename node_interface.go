@@ -95,7 +95,7 @@ type NodeInterface interface {
 	//	node := ork.NewNode("server.example.com").
 	//	    SetPort("2222").
 	//	    SetUser("deploy")
-	//	cfg := node.GetConfig()
+	//	cfg := node.GetNodeConfig()
 	//	fmt.Printf("Connecting to %s\n", cfg.SSHAddr())
 	GetNodeConfig() config.NodeConfig
 

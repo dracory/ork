@@ -37,7 +37,7 @@ func (m *Status) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (m *Status) Run() playbook.Result {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 	mariaDBPort := m.GetArg(ArgPort)
 	if mariaDBPort == "" {

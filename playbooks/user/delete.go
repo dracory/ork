@@ -18,7 +18,7 @@ type UserDelete struct {
 // Check determines if user exists and can be deleted.
 // Returns true if user exists, false if user doesn't exist.
 func (u *UserDelete) Check() (bool, error) {
-	cfg := u.GetConfig()
+	cfg := u.GetNodeConfig()
 	username := u.GetArg(ArgUsername)
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
@@ -57,7 +57,7 @@ func (u *UserDelete) Check() (bool, error) {
 // Args:
 //   - username (string, required): Username to delete
 func (u *UserDelete) Run() playbook.Result {
-	cfg := u.GetConfig()
+	cfg := u.GetNodeConfig()
 	username := u.GetArg(ArgUsername)
 	if username == "" {
 		return playbook.Result{
@@ -80,6 +80,16 @@ func (u *UserDelete) Run() playbook.Result {
 
 	// Delete user and home directory (try -r first, then without)
 	cmd := fmt.Sprintf("userdel -r %s 2>/dev/null || userdel %s", username, username)
+
+	// Check for dry-run mode
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmd)
+		return playbook.Result{
+			Changed: true,
+			Message: fmt.Sprintf("Would delete user: %s", username),
+		}
+	}
+
 	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{

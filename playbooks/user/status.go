@@ -80,15 +80,35 @@ func (u *UserStatus) Check() (bool, error) {
 // Result.Details (all users) contains:
 //   - users: List of all non-system usernames (one per line)
 func (u *UserStatus) Run() playbook.Result {
-	cfg := u.GetConfig()
+	cfg := u.GetNodeConfig()
 	username := u.GetArg(ArgUsername)
+	cmdListAll := "awk -F: '$3 >= 1000 && $3 < 65534 {print $1}' /etc/passwd"
+
+	// Check for dry-run mode - display actual commands
+	if cfg.IsDryRunMode {
+		if username != "" {
+			cmdID := fmt.Sprintf("id %s", username)
+			cmdGroups := fmt.Sprintf("groups %s", username)
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdID)
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdGroups)
+			return playbook.Result{
+				Changed: false,
+				Message: fmt.Sprintf("Would check user status for '%s'", username),
+			}
+		}
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdListAll)
+		return playbook.Result{
+			Changed: false,
+			Message: "Would list all system users",
+		}
+	}
 
 	if username != "" {
 		// Check specific user
 		cfg.GetLoggerOrDefault().Info("checking user", "username", username)
 
-		cmd := fmt.Sprintf("id %s", username)
-		output, err := ssh.Run(cfg, cmd)
+		cmdID := fmt.Sprintf("id %s", username)
+		output, err := ssh.Run(cfg, cmdID)
 		if err != nil {
 			return playbook.Result{
 				Changed: false,
@@ -99,8 +119,8 @@ func (u *UserStatus) Run() playbook.Result {
 		cfg.GetLoggerOrDefault().Info("user info", "output", output)
 
 		// Check if user has sudo
-		cmd = fmt.Sprintf("groups %s", username)
-		groupsOutput, err := ssh.Run(cfg, cmd)
+		cmdGroups := fmt.Sprintf("groups %s", username)
+		groupsOutput, err := ssh.Run(cfg, cmdGroups)
 		if err == nil {
 			cfg.GetLoggerOrDefault().Info("user groups", "groups", groupsOutput)
 		}
@@ -115,8 +135,7 @@ func (u *UserStatus) Run() playbook.Result {
 	// List all non-system users
 	cfg.GetLoggerOrDefault().Info("listing all system users")
 
-	cmd := "awk -F: '$3 >= 1000 && $3 < 65534 {print $1}' /etc/passwd"
-	output, err := ssh.Run(cfg, cmd)
+	output, err := ssh.Run(cfg, cmdListAll)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

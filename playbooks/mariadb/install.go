@@ -45,14 +45,14 @@ type Install struct {
 
 // Check determines if MariaDB needs to be installed.
 func (m *Install) Check() (bool, error) {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	_, err := ssh.Run(cfg, "which mysqld")
 	return err != nil, nil
 }
 
 // Run executes the playbook and returns detailed result.
 func (m *Install) Run() playbook.Result {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 
 	cfg.GetLoggerOrDefault().Info("installing MariaDB server")

@@ -42,7 +42,7 @@ func (m *Secure) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (m *Secure) Run() playbook.Result {
-	cfg := m.GetConfig()
+	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
 
 	if rootPassword == "" {

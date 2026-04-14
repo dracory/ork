@@ -52,7 +52,7 @@ type AptUpgrade struct {
 // This method first runs apt-get update to ensure package lists are current,
 // then counts upgradable packages using apt list --upgradable.
 func (a *AptUpgrade) Check() (bool, error) {
-	cfg := a.GetConfig()
+	cfg := a.GetNodeConfig()
 	// First ensure package lists are updated
 	_, err := ssh.Run(cfg, "apt-get update -qq")
 	if err != nil {
@@ -92,10 +92,20 @@ func (a *AptUpgrade) Run() playbook.Result {
 		}
 	}
 
-	cfg := a.GetConfig()
-	cfg.GetLoggerOrDefault().Info("running apt upgrade")
+	cfg := a.GetNodeConfig()
+	cmd := "apt-get upgrade -y"
 
-	output, err := ssh.Run(cfg, "apt-get upgrade -y")
+	// Check for dry-run mode
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmd)
+		return playbook.Result{
+			Changed: true,
+			Message: "Would upgrade packages: " + cmd,
+		}
+	}
+
+	cfg.GetLoggerOrDefault().Info("running apt upgrade")
+	output, err := ssh.Run(cfg, cmd)
 	if err != nil {
 		return playbook.Result{
 			Changed: false,

@@ -58,7 +58,7 @@ func (u *AllowMariaDB) Check() (bool, error) {
 
 // Run executes the playbook and returns detailed result.
 func (u *AllowMariaDB) Run() playbook.Result {
-	cfg := u.GetConfig()
+	cfg := u.GetNodeConfig()
 	ip := cfg.GetArgOr(ArgIP, "")
 	mariaDBPort := cfg.GetArgOr(ArgPort, "3306")
 
