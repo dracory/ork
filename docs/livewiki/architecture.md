@@ -305,7 +305,7 @@ Node creation methods:
 // Factory methods
 func NewNodeForHost(host string) NodeInterface
 func NewNode() NodeInterface
-func NewNodeFromConfig(cfg config.NodeConfig) NodeInterface
+func NewNodeFromConfig(cfg types.NodeConfig) NodeInterface
 func NewGroup(name string) GroupInterface
 func NewInventory() InventoryInterface
 ```

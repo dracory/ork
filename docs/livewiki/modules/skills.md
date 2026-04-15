@@ -483,6 +483,6 @@ See the [Development Guide](../development.md) for creating custom skills.
 
 ## See Also
 
-- [skill](skill.md) - BasePlaybook and BaseSkill in types package
+- [types](types.md) - BasePlaybook, BaseSkill, and RunnableInterface in types package
 - [API Reference](../api_reference.md) - Complete API
 - [Cheatsheet](../cheatsheet.md) - Quick reference

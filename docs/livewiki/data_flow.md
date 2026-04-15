@@ -4,9 +4,13 @@ page-type: reference
 summary: Detailed data flow diagrams showing how information moves through the Ork system.
 tags: [data-flow, diagrams, internals]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-15
+version: 2.1.0
 ---
+
+## Changelog
+- **v2.1.0** (2026-04-15): Updated terminology from playbooks to skills, RunPlaybook to Run, config package to types package
+- **v1.0.0** (2025-04-14): Initial creation
 
 # Data Flow
 
@@ -33,7 +37,7 @@ graph LR
     A -->|SetUser| D[Update User]
     A -->|SetKey| E[Update Key]
     A -->|SetArg| F[Update Args]
-    B --> G[config.NodeConfig]
+    B --> G[types.NodeConfig]
     C --> G
     D --> G
     E --> G
@@ -115,61 +119,61 @@ sequenceDiagram
     Note over Node: connected = false
 ```
 
-## Playbook Execution Flow
+## Skill Execution Flow
 
-### Direct Playbook Execution
+### Direct Skill Execution
 
 ```mermaid
 sequenceDiagram
-    User->>+Node: RunPlaybook(pb)
+    User->>+Node: Run(skill)
     
-    Node->>Playbook: SetConfig(node.cfg)
-    Note over Node,Playbook: Copy NodeConfig to playbook
+    Node->>Skill: SetConfig(node.cfg)
+    Note over Node,Skill: Copy NodeConfig to skill
     
-    Node->>Playbook: SetDryRun(node.IsDryRunMode)
+    Node->>Skill: SetDryRun(node.IsDryRunMode)
     
     alt Dry Run Mode
-        Playbook->>Playbook: Check if changes needed
-        Playbook->>Logger: Log planned actions
-        Playbook->>Playbook: Return Result{Changed: true/false}
+        Skill->>Skill: Check if changes needed
+        Skill->>Logger: Log planned actions
+        Skill->>Skill: Return Result{Changed: true/false}
     else Normal Execution
-        Playbook->>Playbook: Check()
-        Playbook->>ssh: Run(check command)
+        Skill->>Skill: Check()
+        Skill->>ssh: Run(check command)
         ssh->>Remote: Execute
         Remote-->>ssh: Output
-        ssh-->>Playbook: Output
+        ssh-->>Skill: Output
         
         alt Changes Needed
-            Playbook->>ssh: Run(apply command)
+            Skill->>ssh: Run(apply command)
             ssh->>Remote: Execute
             Remote-->>ssh: Output
-            ssh-->>Playbook: Output
-            Playbook->>Playbook: Build Result{Changed: true}
+            ssh-->>Skill: Output
+            Skill->>Skill: Build Result{Changed: true}
         else No Changes Needed
-            Playbook->>Playbook: Build Result{Changed: false}
+            Skill->>Skill: Build Result{Changed: false}
         end
     end
     
-    Playbook-->>Node: Result
+    Skill-->>Node: Result
     Node->>Node: Wrap in Results map
     Node-->>-User: Results{host: Result}
 ```
 
-### Registry-Based Playbook Execution
+### Registry-Based Skill Execution
 
 ```mermaid
 sequenceDiagram
-    User->>+Node: RunPlaybookByID("apt-update")
+    User->>+Node: RunByID("apt-update")
     
     Node->>Registry: PlaybookFindByID("apt-update")
     Registry->>Registry: Lookup in map
     
     alt Found
-        Registry-->>Node: PlaybookInterface, true
-        Node->>Playbook: SetConfig(node.cfg)
-        Node->>Playbook: SetDryRun(node.IsDryRunMode)
-        Node->>Playbook: Run()
-        Playbook-->>Node: Result
+        Registry-->>Node: RunnableInterface, true
+        Node->>Skill: SetConfig(node.cfg)
+        Node->>Skill: SetDryRun(node.IsDryRunMode)
+        Node->>Skill: Run()
+        Skill-->>Node: Result
         Node-->>User: Results{host: Result}
     else Not Found
         Registry-->>Node: nil, false
@@ -181,7 +185,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    User->>+Group: RunPlaybook(pb)
+    User->>+Group: Run(skill)
     
     Group->>Group: propagateDryRun()
     loop For each node
@@ -191,7 +195,7 @@ sequenceDiagram
     Group->>Group: Create empty Results
     
     loop For each node
-        Group->>Node: RunPlaybook(pb)
+        Group->>Node: Run(skill)
         Node->>Node: Execute
         Node-->>Group: NodeResults
         Group->>Group: Merge into Results
@@ -204,14 +208,14 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    User->>+Inventory: RunPlaybook(pb)
+    User->>+Inventory: Run(skill)
     
     Inventory->>Inventory: Collect all nodes from groups
     Inventory->>Inventory: Apply maxConcurrency limit
     
     par Concurrent Execution
         loop For each node (up to maxConcurrency)
-            Inventory->>Node: RunPlaybook(pb)
+            Inventory->>Node: Run(skill)
             Node->>Node: Execute
             Node-->>Inventory: Results
             Inventory->>Inventory: Aggregate
@@ -243,45 +247,45 @@ graph TD
     D --> I
     E --> L
     
-    L --> M[config.NodeConfig.IsDryRunMode]
+    L --> M[types.NodeConfig.IsDryRunMode]
     
     M --> N{Execution Time}
     N -->|RunCommand| O{IsDryRunMode?}
-    N -->|RunPlaybook| P{IsDryRunMode?}
+    N -->|Run| P{IsDryRunMode?}
     
     O -->|Yes| Q[Log & Return marker]
     O -->|No| R[Execute on Server]
     
     P -->|Yes| S[Log & Return dry-run Result]
-    P -->|No| T[Execute Playbook]
+    P -->|No| T[Execute Skill]
 ```
 
 ## Check Mode Flow
 
 ```mermaid
 sequenceDiagram
-    User->>+Node: CheckPlaybook(pb)
+    User->>+Node: Check(skill)
     
-    Node->>Playbook: SetDryRun(node.IsDryRunMode)
+    Node->>Skill: SetDryRun(node.IsDryRunMode)
     
-    Note over Node,Playbook: Check mode does NOT<br/>automatically enable dry-run
+    Note over Node,Skill: Check mode does NOT<br/>automatically enable dry-run
     
-    Playbook->>Playbook: Run()
+    Skill->>Skill: Run()
     
-    alt Playbook implements Check properly
-        Playbook->>Playbook: Check() internally
-        Playbook->>ssh: Run(check command)
+    alt Skill implements Check properly
+        Skill->>Skill: Check() internally
+        Skill->>ssh: Run(check command)
         ssh->>Remote: Execute
         Remote-->>ssh: Output
-        ssh-->>Playbook: Output
-        Playbook->>Playbook: Determine if changes needed
-        Playbook-->>Node: Result{Changed: true/false}
-    else Playbook just runs
-        Playbook->>ssh: Run(apply command)
+        ssh-->>Skill: Output
+        Skill->>Skill: Determine if changes needed
+        Skill-->>Node: Result{Changed: true/false}
+    else Skill just runs
+        Skill->>ssh: Run(apply command)
         ssh->>Remote: Execute
         Remote-->>ssh: Output
-        ssh-->>Playbook: Output
-        Playbook-->>Node: Result
+        ssh-->>Skill: Output
+        Skill-->>Node: Result
     end
     
     Node-->>User: Results{host: Result}
@@ -377,13 +381,13 @@ graph TD
     B -->|Node| G[node.SetArg]
     G --> H[node.cfg.Args map]
     
-    I[Playbook Execution] --> J{Arg Source}
+    I[Skill Execution] --> J{Arg Source}
     J -->|Node Level| K[GetArg from node.cfg.Args]
-    J -->|Playbook Level| L[GetArg from playbook.cfg.Args]
+    J -->|Skill Level| L[GetArg from skill.cfg.Args]
     
-    M[Node to Playbook] --> N[pb.SetConfig node.cfg]
-    N --> O[Playbook copies Args map]
-    O --> P[Playbook can override args]
+    M[Node to Skill] --> N[skill.SetConfig node.cfg]
+    N --> O[Skill copies Args map]
+    O --> P[Skill can override args]
 ```
 
 ## Error Handling Flow

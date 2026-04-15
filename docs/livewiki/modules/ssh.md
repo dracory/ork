@@ -4,9 +4,13 @@ page-type: module
 summary: SSH client utilities and connection management for remote server operations.
 tags: [module, ssh, connection, remote]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-15
+version: 2.1.0
 ---
+
+## Changelog
+- **v2.1.0** (2026-04-15): Updated config package references to types package, updated terminology from playbooks to skills
+- **v1.0.0** (2025-04-14): Initial creation
 
 # ssh Package
 
@@ -14,7 +18,7 @@ SSH connectivity utilities for remote server automation.
 
 ## Purpose
 
-The `ssh` package wraps `github.com/sfreiberg/simplessh` with a simplified API for playbook-style operations. It provides connection management, command execution, and dry-run safety.
+The `ssh` package wraps `github.com/sfreiberg/simplessh` with a simplified API for skill-style operations. It provides connection management, command execution, and dry-run safety.
 
 ## Key Files
 
@@ -125,10 +129,10 @@ path2 := ssh.PrivateKeyPath("production.prv")
 Connects using `NodeConfig` and executes a command. **Includes dry-run safety check**.
 
 ```go
-func Run(cfg config.NodeConfig, cmd string) (string, error)
+func Run(cfg types.NodeConfig, cmd string) (string, error)
 ```
 
-This is the recommended function for playbooks because it respects `cfg.IsDryRunMode`.
+This is the recommended function for skills because it respects `cfg.IsDryRunMode`.
 
 **SAFETY**: When `cfg.IsDryRunMode` is true, this function will:
 1. Log the command via `cfg.Logger`
@@ -136,7 +140,7 @@ This is the recommended function for playbooks because it respects `cfg.IsDryRun
 3. NOT execute any commands on the server
 
 ```go
-cfg := config.NodeConfig{
+cfg := types.NodeConfig{
     SSHHost:      "server.example.com",
     SSHPort:      "22",
     RootUser:     "root",
@@ -154,16 +158,16 @@ output, err := ssh.Run(cfg, "apt-get upgrade -y")
 
 ### Pattern 1: Using Run() with Config
 
-For playbook development, use Run() with NodeConfig:
+For skill development, use Run() with NodeConfig:
 
 ```go
-cfg := config.NodeConfig{
+cfg := types.NodeConfig{
     SSHHost:  "server.example.com",
     SSHPort:  "22",
     SSHLogin: "root",
     SSHKey:   "id_rsa",
 }
-output, err := ssh.Run(cfg, types.Command{Command: "uptime"})
+output, err := ssh.Run(cfg, "uptime")
 ```
 
 ### Pattern 2: Persistent Connection
@@ -186,10 +190,10 @@ output3, _ := client.Run("free -m")
 
 ### Pattern 3: Config-Based with Dry-Run Safety (Run)
 
-Used by playbooks for automatic dry-run support:
+Used by skills for automatic dry-run support:
 
 ```go
-cfg := config.NodeConfig{
+cfg := types.NodeConfig{
     SSHHost:  "server.example.com",
     SSHPort:  "22",
     SSHLogin: "root",
@@ -219,7 +223,7 @@ Testing uses `SetRunFunc` for mocking:
 
 ```go
 // In tests
-ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
+ssh.SetRunFunc(func(cfg types.NodeConfig, cmd string) (string, error) {
     return "mocked output", nil
 })
 defer ssh.SetRunFunc(nil)
@@ -253,19 +257,18 @@ package main
 import (
     "fmt"
     "log"
-    "github.com/dracory/ork/config"
     "github.com/dracory/ork/ssh"
     "github.com/dracory/ork/types"
 )
 
 func main() {
-    cfg := config.NodeConfig{
+    cfg := types.NodeConfig{
         SSHHost:  "server.example.com",
         SSHPort:  "22",
         SSHLogin: "root",
         SSHKey:   "id_rsa",
     }
-    output, err := ssh.Run(cfg, types.Command{Command: "uptime"})
+    output, err := ssh.Run(cfg, "uptime")
     if err != nil {
         log.Fatal(err)
     }
@@ -293,17 +296,17 @@ for _, cmd := range commands {
 }
 ```
 
-### In a Playbook
+### In a Skill
 
 ```go
-func (p *MyPlaybook) Run() playbook.Result {
-    cfg := p.GetConfig()
+func (s *MySkill) Run() types.Result {
+    cfg := s.GetNodeConfig()
     
     // Check dry-run - ssh.Run handles this automatically
     output, err := ssh.Run(cfg, "my-command")
     
     if err != nil {
-        return playbook.Result{
+        return types.Result{
             Changed: false,
             Error:   err,
         }
@@ -311,13 +314,13 @@ func (p *MyPlaybook) Run() playbook.Result {
     
     // Check for dry-run marker
     if output == "[dry-run]" {
-        return playbook.Result{
+        return types.Result{
             Changed: true,
             Message: "Would execute: my-command",
         }
     }
     
-    return playbook.Result{
+    return types.Result{
         Changed: true,
         Message: "Executed successfully",
         Details: map[string]string{
@@ -330,6 +333,6 @@ func (p *MyPlaybook) Run() playbook.Result {
 ## See Also
 
 - [ork](ork.md) - Uses ssh package internally
-- [playbook](playbook.md) - Playbooks use ssh.Run()
-- [config](config.md) - NodeConfig used by ssh.Run()
+- [skills](skills.md) - Skills use ssh.Run()
+- [types](types.md) - NodeConfig used by ssh.Run()
 - [Troubleshooting](../troubleshooting.md) - SSH connection issues
