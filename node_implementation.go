@@ -366,7 +366,7 @@ func (n *nodeImplementation) RunByID(id string, opts ...types.RunnableOptions) t
 		return results
 	}
 
-	skill, ok := registry.SkillFindByID(id)
+	skill, ok := registry.FindByID(id)
 	if !ok {
 		results.Results[n.GetHost()] = types.Result{
 			Changed: false,

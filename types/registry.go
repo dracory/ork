@@ -5,63 +5,63 @@ import (
 	"sync"
 )
 
-// Registry holds a collection of skills.
+// Registry holds a collection of runnables.
 type Registry struct {
-	skills map[string]RunnableInterface
-	mu     sync.RWMutex
+	runnables map[string]RunnableInterface
+	mu        sync.RWMutex
 }
 
-// NewRegistry creates a new skill registry.
+// NewRegistry creates a new registry.
 func NewRegistry() *Registry {
 	return &Registry{
-		skills: make(map[string]RunnableInterface),
+		runnables: make(map[string]RunnableInterface),
 	}
 }
 
-// SkillRegister adds a skill to the registry.
-// Returns an error if the skill is nil or if a skill with the same ID already exists.
-func (r *Registry) SkillRegister(s RunnableInterface) error {
-	if s == nil {
-		return errors.New("types.Registry: cannot register nil skill")
+// Register adds a runnable to the registry.
+// Returns an error if the runnable is nil or if a runnable with the same ID already exists.
+func (r *Registry) Register(runnable RunnableInterface) error {
+	if runnable == nil {
+		return errors.New("types.Registry: cannot register nil runnable")
 	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	id := s.GetID()
-	if _, exists := r.skills[id]; exists {
-		return errors.New("types.Registry: skill with ID '" + id + "' already exists")
+	id := runnable.GetID()
+	if _, exists := r.runnables[id]; exists {
+		return errors.New("types.Registry: runnable with ID '" + id + "' already exists")
 	}
 
-	r.skills[id] = s
+	r.runnables[id] = runnable
 	return nil
 }
 
-// SkillFindByID retrieves a skill by ID.
-func (r *Registry) SkillFindByID(id string) (RunnableInterface, bool) {
+// FindByID retrieves a runnable by ID.
+func (r *Registry) FindByID(id string) (RunnableInterface, bool) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	s, ok := r.skills[id]
-	return s, ok
+	runnable, ok := r.runnables[id]
+	return runnable, ok
 }
 
-// SkillList returns all registered skills.
-func (r *Registry) SkillList() []RunnableInterface {
+// List returns all registered runnables.
+func (r *Registry) List() []RunnableInterface {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	list := make([]RunnableInterface, 0, len(r.skills))
-	for _, s := range r.skills {
-		list = append(list, s)
+	list := make([]RunnableInterface, 0, len(r.runnables))
+	for _, runnable := range r.runnables {
+		list = append(list, runnable)
 	}
 	return list
 }
 
-// GetSkillIDs returns all registered skill IDs.
-func (r *Registry) GetSkillIDs() []string {
+// GetIDs returns all registered runnable IDs.
+func (r *Registry) GetIDs() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	ids := make([]string, 0, len(r.skills))
-	for id := range r.skills {
+	ids := make([]string, 0, len(r.runnables))
+	for id := range r.runnables {
 		ids = append(ids, id)
 	}
 	return ids

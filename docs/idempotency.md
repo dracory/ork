@@ -1,20 +1,20 @@
 # Idempotency
 
-All skills support idempotent execution. Use `CheckSkill()` to preview changes before running them.
+All skills support idempotent execution. Use `Check()` to preview changes before running them.
 
 ## Check Before Run
 
-Use `CheckSkill()` to determine if changes would be made:
+Use `Check()` to determine if changes would be made:
 
 ```go
-// Check if changes would be made (dry-run)
-results := node.CheckSkill(skills.NewAptUpgrade())
+// Check if changes would be made
+results := node.Check(skills.NewAptUpgrade())
 result := results.Results["server.example.com"]
 
 if result.Changed {
     log.Printf("Would upgrade packages: %s", result.Message)
     // Now actually run it
-    results = node.RunSkill(skills.NewAptUpgrade())
+    results = node.Run(skills.NewAptUpgrade())
 }
 ```
 
@@ -49,7 +49,7 @@ type Summary struct {
 When working with multiple nodes, use the summary to get an overview:
 
 ```go
-results := inv.RunSkill(skills.NewAptUpdate())
+results := inv.Run(skills.NewAptUpdate())
 summary := results.Summary()
 
 fmt.Printf("Total: %d, Changed: %d, Unchanged: %d, Failed: %d\n",
@@ -68,13 +68,12 @@ import (
 
 // Execute directly with config
 aptUpgrade := skills.NewAptUpgrade()
-aptUpgrade.SetConfig(cfg)
+aptUpgrade.SetNodeConfig(cfg)
 result := aptUpgrade.Run()
 
-// Or check before running via CheckSkill
-results := node.CheckSkill(skills.NewSwapCreate())
-result := results.Results["server.example.com"]
-if !result.Changed {
+// Or check before running via Check
+needsChange, _ := skills.NewSwapCreate().SetNodeConfig(cfg).Check()
+if !needsChange {
     log.Println("Swap already exists, skipping...")
     return
 }
@@ -91,14 +90,14 @@ func (s *MyCustomSkill) GetID() string { return "my-task" }
 func (s *MyCustomSkill) Description() string { return "Does something" }
 
 // Check() - returns true if changes needed
-func (s *MyCustomSkill) Check(cfg config.NodeConfig) (bool, error) {
+func (s *MyCustomSkill) Check(cfg types.NodeConfig) (bool, error) {
     // Check if already configured
     output, _ := ssh.Run(cfg, types.Command{Command: "cat /etc/my-config"})
     return !strings.Contains(output, "configured"), nil
 }
 
 // Run() - execute and return Result
-func (s *MyCustomSkill) Run(cfg config.NodeConfig) skill.Result {
+func (s *MyCustomSkill) Run(cfg types.NodeConfig) skill.Result {
     needsChange, _ := s.Check(cfg)
     if !needsChange {
         return skill.Result{

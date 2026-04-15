@@ -9,7 +9,7 @@ Preview what changes would be made without actually executing commands on the se
 ```go
 node := ork.NewNodeForHost("server.example.com").
     SetDryRunMode(true)
-results := node.RunSkill(skills.NewAptUpgrade())
+results := node.Run(skills.NewAptUpgrade())
 // Commands are logged but not executed
 ```
 
@@ -60,7 +60,7 @@ func (s *MySkill) Run() skill.Result {
 ## Best Practices
 
 1. **Always test with dry-run first**: Before running potentially destructive operations
-2. **Use with CheckSkill**: Combine dry-run with idempotency checks for maximum safety
+2. **Use with Check**: Combine dry-run with idempotency checks for maximum safety
 3. **Review output**: Check the dry-run output to ensure it matches expectations
 4. **Document dry-run behavior**: Custom skills should document their dry-run behavior
 
@@ -68,7 +68,7 @@ func (s *MySkill) Run() skill.Result {
 
 ```go
 // Step 1: Check if changes needed
-checkResults := node.CheckSkill(skills.NewAptUpgrade())
+checkResults := node.Check(skills.NewAptUpgrade())
 if !checkResults.Results["server.example.com"].Changed {
     log.Println("No updates needed")
     return
@@ -76,11 +76,11 @@ if !checkResults.Results["server.example.com"].Changed {
 
 // Step 2: Dry-run to preview
 node.SetDryRunMode(true)
-dryRunResults := node.RunSkill(skills.NewAptUpgrade())
+dryRunResults := node.Run(skills.NewAptUpgrade())
 log.Printf("Dry-run output: %s", dryRunResults.Results["server.example.com"].Message)
 
 // Step 3: Disable dry-run and execute
 node.SetDryRunMode(false)
-results := node.RunSkill(skills.NewAptUpgrade())
+results := node.Run(skills.NewAptUpgrade())
 log.Printf("Execution result: %s", results.Results["server.example.com"].Message)
 ```

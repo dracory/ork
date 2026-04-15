@@ -107,7 +107,7 @@ func NewDefaultRegistry() (*types.Registry, error) {
 	}
 
 	for _, s := range skills {
-		if err := reg.SkillRegister(s); err != nil {
+		if err := reg.Register(s); err != nil {
 			return nil, err
 		}
 	}

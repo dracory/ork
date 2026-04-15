@@ -8,7 +8,7 @@ package main
 import (
     "log"
     "github.com/dracory/ork"
-    "github.com/dracory/ork/config"
+    "github.com/dracory/ork/types"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
     node := ork.NewNodeForHost("server.example.com")
     
     // Option 2: From config (useful for complex setups)
-    cfg := config.NodeConfig{
+    cfg := types.NodeConfig{
         SSHHost: "server.example.com",
         SSHPort: "22",
     }
@@ -76,14 +76,14 @@ output2 := results2.Results["server.example.com"].Message
 
 ## Skills
 
-Run pre-built automation tasks (skills) against a node:
+Run pre-built automation tasks (skills) against a node. For a complete list of available skills, see [Skills Documentation](skills.md).
 
 ```go
 node := ork.NewNodeForHost("server.example.com").
     SetArg("username", "alice").
     SetArg("shell", "/bin/bash")
 
-results := node.RunSkill(skills.NewUserCreate())
+results := node.Run(skills.NewUserCreate())
 result := results.Results["server.example.com"]
 if result.Error != nil {
     log.Fatalf("Skill failed: %v", result.Error)
@@ -94,45 +94,6 @@ if result.Changed {
     log.Println("User already exists - no changes made")
 }
 ```
-
-### Available Skills
-
-| `ork` Package | `skill` Package | String | Args | Description |
-|---------------|----------------|--------|------|-------------|
-| `SkillPing` | `IDPing` | `ping` | - | Check SSH connectivity |
-| `SkillAptUpdate` | `IDAptUpdate` | `apt-update` | - | Refresh package database |
-| `SkillAptUpgrade` | `IDAptUpgrade` | `apt-upgrade` | - | Install available updates |
-| `SkillAptStatus` | `IDAptStatus` | `apt-status` | - | Show available updates |
-| `SkillReboot` | `IDReboot` | `reboot` | - | Reboot server |
-| `SkillSwapCreate` | `IDSwapCreate` | `swap-create` | `size` (GB) | Create swap file |
-| `SkillSwapDelete` | `IDSwapDelete` | `swap-delete` | - | Remove swap file |
-| `SkillSwapStatus` | `IDSwapStatus` | `swap-status` | - | Show swap status |
-| `SkillUserCreate` | `IDUserCreate` | `user-create` | `username` | Create user with sudo |
-| `SkillUserDelete` | `IDUserDelete` | `user-delete` | `username` | Delete user |
-| `SkillUserStatus` | `IDUserStatus` | `user-status` | `username` (opt) | Show user info |
-| `SkillFail2banInstall` | `IDFail2banInstall` | `fail2ban-install` | - | Install and configure fail2ban |
-| `SkillFail2banStatus` | `IDFail2banStatus` | `fail2ban-status` | - | Show fail2ban status |
-| `SkillUfwInstall` | `IDUfwInstall` | `ufw-install` | - | Install UFW firewall |
-| `SkillUfwStatus` | `IDUfwStatus` | `ufw-status` | - | Show UFW status |
-| `SkillUfwAllowMariadb` | `IDUfwAllowMariadb` | `ufw-allow-mariadb` | - | Allow MariaDB through UFW |
-| `SkillMariadbInstall` | `IDMariadbInstall` | `mariadb-install` | - | Install MariaDB server |
-| `SkillMariadbStatus` | `IDMariadbStatus` | `mariadb-status` | - | Show MariaDB status |
-| `SkillMariadbSecure` | `IDMariadbSecure` | `mariadb-secure` | - | Secure MariaDB installation |
-| `SkillMariadbBackup` | `IDMariadbBackup` | `mariadb-backup` | `database` (opt) | Backup database |
-| `SkillMariadbBackupEncrypt` | `IDMariadbBackupEncrypt` | `mariadb-backup-encrypt` | - | Encrypted backup |
-| `SkillMariadbChangePort` | `IDMariadbChangePort` | `mariadb-change-port` | `port` | Change MariaDB port |
-| `SkillMariadbCreateDB` | `IDMariadbCreateDB` | `mariadb-create-db` | `database` | Create database |
-| `SkillMariadbCreateUser` | `IDMariadbCreateUser` | `mariadb-create-user` | `username`, `password` | Create DB user |
-| `SkillMariadbEnableEncryption` | `IDMariadbEnableEncryption` | `mariadb-enable-encryption` | - | Enable encryption at rest |
-| `SkillMariadbEnableSSL` | `IDMariadbEnableSSL` | `mariadb-enable-ssl` | - | Enable SSL connections |
-| `SkillMariadbListDBs` | `IDMariadbListDBs` | `mariadb-list-dbs` | - | List databases |
-| `SkillMariadbListUsers` | `IDMariadbListUsers` | `mariadb-list-users` | - | List DB users |
-| `SkillMariadbSecurityAudit` | `IDMariadbSecurityAudit` | `mariadb-security-audit` | - | Run security audit |
-| `SkillSecurityAideInstall` | `IDSecurityAideInstall` | `security-aide-install` | - | Install AIDE IDS |
-| `SkillSecurityAuditdInstall` | `IDSecurityAuditdInstall` | `security-auditd-install` | - | Install audit daemon |
-| `SkillSecurityKernelHarden` | `IDSecurityKernelHarden` | `security-kernel-harden` | - | Apply kernel hardening |
-| `SkillSecuritySSHChangePort` | `IDSecuritySSHChangePort` | `security-ssh-change-port` | `port` | Change SSH port |
-| `SkillSecuritySSHHarden` | `IDSecuritySSHHarden` | `security-ssh-harden` | - | Harden SSH config |
 
 ## Inventory (Multi-Node Operations)
 
@@ -150,7 +111,7 @@ webGroup.SetArg("env", "production")
 inv.AddGroup(webGroup)
 
 // Run skill on entire inventory
-results := inv.RunSkill(skills.NewPing())
+results := inv.Run(skills.NewPing())
 
 // Check summary
 summary := results.Summary()

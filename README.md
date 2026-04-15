@@ -19,7 +19,8 @@ Full documentation is available in the [docs](docs/) directory.
 
 ### Skills
 
-- [Built-in Skills](docs/quick_start.md#available-skills) - All available automation tasks
+- [Built-in Skills](docs/skills.md) - All available automation tasks
+- [Playbooks](docs/playbooks.md) - Complex orchestration with full Go power
 
 ### Features
 

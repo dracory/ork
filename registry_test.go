@@ -36,7 +36,7 @@ func TestNewDefaultRegistry_AllBuiltInSkillsRegistered(t *testing.T) {
 	}
 
 	for _, id := range expectedSkills {
-		skill, ok := reg.SkillFindByID(id)
+		skill, ok := reg.FindByID(id)
 		if !ok {
 			t.Errorf("expected skill '%s' to be registered, but it was not found", id)
 			continue
@@ -52,7 +52,7 @@ func TestNewDefaultRegistry_ContainsExpectedSkillIDs(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewDefaultRegistry() failed: %v", err)
 	}
-	ids := reg.GetSkillIDs()
+	ids := reg.GetIDs()
 
 	// Verify all expected built-in skill IDs are present
 	expectedIDs := []string{
@@ -93,7 +93,7 @@ func TestNewDefaultRegistry_SkillsHaveDescriptions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("NewDefaultRegistry() failed: %v", err)
 	}
-	skills := reg.SkillList()
+	skills := reg.List()
 
 	for _, skill := range skills {
 		if skill.GetDescription() == "" {
@@ -117,13 +117,13 @@ func TestGetGlobalSkillRegistry(t *testing.T) {
 	customSkill.SetID("test-get-registry-skill")
 	customSkill.SetDescription("Test skill via NewDefaultRegistry")
 
-	err = reg.SkillRegister(customSkill)
+	err = reg.Register(customSkill)
 	if err != nil {
 		t.Fatalf("failed to register skill: %v", err)
 	}
 
 	// Verify it can be found
-	foundSkill, ok := reg.SkillFindByID("test-get-registry-skill")
+	foundSkill, ok := reg.FindByID("test-get-registry-skill")
 	if !ok {
 		t.Fatal("custom skill not found after registration")
 	}
@@ -143,7 +143,7 @@ func TestGetGlobalSkillRegistry_LazyInitialization(t *testing.T) {
 	}
 
 	// Verify it has built-in skills
-	skill, ok := reg.SkillFindByID("ping")
+	skill, ok := reg.FindByID("ping")
 	if !ok {
 		t.Fatal("expected 'ping' skill in global registry")
 	}
@@ -172,7 +172,7 @@ func TestNewDefaultRegistry_DuplicateID(t *testing.T) {
 	duplicateSkill.SetID("ping") // "ping" is already registered
 	duplicateSkill.SetDescription("Duplicate ping skill")
 
-	err = reg.SkillRegister(duplicateSkill)
+	err = reg.Register(duplicateSkill)
 	if err == nil {
 		t.Error("expected error when registering duplicate skill ID, got nil")
 	}
