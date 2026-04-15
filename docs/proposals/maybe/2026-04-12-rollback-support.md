@@ -136,7 +136,7 @@ func (u *UserCreate) RunWithContext(ctx *ExecutionContext) error {
             },
             Backward: func() error {
                 _, err := ctx.Run(fmt.Sprintf("deluser %s", username))
-                // Note: Playbooks now return types.Results via RunnableInterface
+                // Note: Playbooks now return types.Results via RunnerInterface
                 return err
             },
         })

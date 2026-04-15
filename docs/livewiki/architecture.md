@@ -25,7 +25,7 @@ graph TB
         C[NodeInterface]
         D[GroupInterface]
         E[InventoryInterface]
-        F[RunnableInterface]
+        F[RunnerInterface]
     end
     
     subgraph "Core Components"
@@ -91,7 +91,7 @@ The public API that users interact with:
 ```go
 // NodeInterface - Single server management
 type NodeInterface interface {
-    RunnableInterface
+    RunnerInterface
     GetHost() string
     SetPort(port string) NodeInterface
     Connect() error
@@ -101,7 +101,7 @@ type NodeInterface interface {
 
 // GroupInterface - Server group management  
 type GroupInterface interface {
-    RunnableInterface
+    RunnerInterface
     GetName() string
     AddNode(node NodeInterface) GroupInterface
     // ...
@@ -109,7 +109,7 @@ type GroupInterface interface {
 
 // InventoryInterface - Multi-group management
 type InventoryInterface interface {
-    RunnableInterface
+    RunnerInterface
     AddGroup(group GroupInterface) InventoryInterface
     SetMaxConcurrency(max int) InventoryInterface
     // ...
@@ -261,7 +261,7 @@ graph TD
     C --> G[Node 4]
 ```
 
-All implement `RunnableInterface` with unified execution.
+All implement `RunnerInterface` with unified execution.
 
 ### 5. Factory Pattern
 
@@ -306,7 +306,7 @@ type groupImplementation struct {
     mu         sync.RWMutex
 }
 
-func (g *groupImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
+func (g *groupImplementation) SetDryRunMode(dryRun bool) RunnerInterface {
     g.mu.Lock()
     g.dryRunMode = dryRun
     g.mu.Unlock()

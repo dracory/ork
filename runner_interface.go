@@ -7,9 +7,9 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// RunnableInterface defines operations that can be performed on either
+// RunnerInterface defines operations that can be performed on either
 // a single Node or an Inventory of nodes.
-type RunnableInterface interface {
+type RunnerInterface interface {
 	// RunCommand executes a shell command and returns the output.
 	// For Inventory, runs concurrently across all nodes.
 	RunCommand(cmd string) types.Results
@@ -30,12 +30,12 @@ type RunnableInterface interface {
 	GetLogger() *slog.Logger
 
 	// SetLogger sets a custom logger. Returns self for chaining.
-	SetLogger(logger *slog.Logger) RunnableInterface
+	SetLogger(logger *slog.Logger) RunnerInterface
 
 	// SetDryRunMode sets whether to simulate execution without making changes.
 	// When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
 	// Returns self for chaining.
-	SetDryRunMode(dryRun bool) RunnableInterface
+	SetDryRunMode(dryRun bool) RunnerInterface
 
 	// GetDryRunMode returns true if dry-run mode is enabled.
 	// When true, commands are logged but not executed on the server.

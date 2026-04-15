@@ -333,8 +333,8 @@ func (i *inventoryImplementation) GetLogger() *slog.Logger {
 	return i.logger
 }
 
-// SetLogger sets a custom logger. Returns RunnableInterface for chaining.
-func (i *inventoryImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
+// SetLogger sets a custom logger. Returns RunnerInterface for chaining.
+func (i *inventoryImplementation) SetLogger(logger *slog.Logger) RunnerInterface {
 	i.logger = logger
 	return i
 }
@@ -342,8 +342,8 @@ func (i *inventoryImplementation) SetLogger(logger *slog.Logger) RunnableInterfa
 // SetDryRunMode sets whether to simulate execution without making changes.
 // When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
 // The dry-run mode is applied to groups/nodes at execution time and when set.
-// Returns RunnableInterface for fluent method chaining.
-func (i *inventoryImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
+// Returns RunnerInterface for fluent method chaining.
+func (i *inventoryImplementation) SetDryRunMode(dryRun bool) RunnerInterface {
 	i.mu.Lock()
 	i.dryRunMode = dryRun
 	i.mu.Unlock()

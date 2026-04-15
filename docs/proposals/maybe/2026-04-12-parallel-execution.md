@@ -43,8 +43,8 @@ func (e *Executor) RunOnHosts(p types.PlaybookInterface, configs []config.Config
 See `2026-04-13-inventory.md` for Inventory system design.
 
 Inventory now provides:
-- `InventoryInterface` with `RunnableInterface`
-- `GroupInterface` with `RunnableInterface`
+- `InventoryInterface` with `RunnerInterface`
+- `GroupInterface` with `RunnerInterface`
 - `SetMaxConcurrency()` for parallel execution control
 - **Worker pool with semaphore-based concurrency** in all operations:
   - `RunCommand()` - executes shell commands across all nodes concurrently
@@ -351,7 +351,7 @@ groups:
 - ✅ Thread-safe result collection with mutex protection
 
 ### Phase 2: Inventory Integration (IMPLEMENTED)
-- ✅ `InventoryInterface` with `RunnableInterface`
+- ✅ `InventoryInterface` with `RunnerInterface`
 - ✅ `SetMaxConcurrency()` method (default: 10, 0 = unlimited)
 - ✅ `types.Results` for unified result collection
 - ✅ Thread-safe `AddNode()`, `AddGroup()`, `GetNodes()` operations

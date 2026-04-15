@@ -396,7 +396,7 @@ func (n *nodeImplementation) RunSkillByID(id string, opts ...types.SkillOptions)
 	return results
 }
 
-// CheckSkill implements RunnableInterface.
+// CheckSkill implements RunnerInterface.
 // Runs skill in dry-run mode to check if changes are needed.
 func (n *nodeImplementation) CheckSkill(skill types.SkillInterface) types.Results {
 	results := types.Results{
@@ -422,16 +422,16 @@ func (n *nodeImplementation) GetLogger() *slog.Logger {
 	return n.cfg.Logger
 }
 
-// SetLogger sets a custom logger. Returns RunnableInterface for chaining.
-func (n *nodeImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
+// SetLogger sets a custom logger. Returns RunnerInterface for chaining.
+func (n *nodeImplementation) SetLogger(logger *slog.Logger) RunnerInterface {
 	n.cfg.Logger = logger
 	return n
 }
 
 // SetDryRunMode sets whether to simulate execution without making changes.
 // When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
-// Returns RunnableInterface for fluent method chaining.
-func (n *nodeImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
+// Returns RunnerInterface for fluent method chaining.
+func (n *nodeImplementation) SetDryRunMode(dryRun bool) RunnerInterface {
 	n.cfg.IsDryRunMode = dryRun
 	return n
 }

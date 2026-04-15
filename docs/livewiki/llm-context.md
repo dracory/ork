@@ -47,7 +47,7 @@ ork/
 ├── inventory_implementation.go     # InventoryInterface implementation
 ├── inventory_implementation_test.go
 ├── inventory_interface.go        # InventoryInterface definition
-├── runnable_interface.go         # RunnableInterface base
+├── runner_interface.go         # RunnerInterface base
 ├── constants.go                  # Playbook ID constants (ork package)
 ├── registry.go                   # Global registry + NewDefaultRegistry factory
 ├── registry_test.go
@@ -95,7 +95,7 @@ ork/
 2. **Group**: Collection of nodes that can be operated on together
 3. **Inventory**: Manages multiple groups for large-scale operations
 4. **Playbook**: Reusable automation task implementing PlaybookInterface
-5. **RunnableInterface**: Base interface for Node, Group, Inventory (RunCommand, RunPlaybook, etc.)
+5. **RunnerInterface**: Base interface for Node, Group, Inventory (RunCommand, RunPlaybook, etc.)
 6. **Dry-run mode**: Safety feature that prevents actual server modifications
 7. **Idempotency**: Check() determines if changes needed, Run() applies them
 8. **Vault**: Secure secrets management using envenc for encrypted vault files
@@ -106,7 +106,7 @@ ork/
 ```go
 // NodeInterface - Single server management
 type NodeInterface interface {
-    RunnableInterface
+    RunnerInterface
     GetHost() string
     SetPort(port string) NodeInterface
     Connect() error
@@ -116,7 +116,7 @@ type NodeInterface interface {
 
 // GroupInterface - Server group management
 type GroupInterface interface {
-    RunnableInterface
+    RunnerInterface
     GetName() string
     AddNode(node NodeInterface) GroupInterface
     // ...
@@ -124,7 +124,7 @@ type GroupInterface interface {
 
 // InventoryInterface - Multi-group management
 type InventoryInterface interface {
-    RunnableInterface
+    RunnerInterface
     AddGroup(group GroupInterface) InventoryInterface
     SetMaxConcurrency(max int) InventoryInterface
 }
@@ -138,11 +138,11 @@ type PlaybookInterface interface {
     // ...
 }
 
-// RunnableInterface - Common operations
-type RunnableInterface interface {
+// RunnerInterface - Common operations
+type RunnerInterface interface {
     RunCommand(cmd string) types.Results
     RunPlaybook(pb types.PlaybookInterface) types.Results
-    SetDryRunMode(dryRun bool) RunnableInterface
+    SetDryRunMode(dryRun bool) RunnerInterface
 }
 ```
 
@@ -198,7 +198,7 @@ node.SetDryRunMode(true)
 |------|---------|
 | `node_interface.go:17-244` | NodeInterface definition with full documentation |
 | `node_implementation.go:28-435` | Node implementation, connection management |
-| `runnable_interface.go:11-45` | RunnableInterface - base for all executables |
+| `runner_interface.go:11-45` | RunnerInterface - base for all executables |
 | `inventory_interface.go:5-29` | InventoryInterface definition |
 | `group_implementation.go:13-174` | Group implementation with dry-run propagation |
 | `types/registry.go:27-97` | PlaybookInterface, PlaybookOptions, Registry |

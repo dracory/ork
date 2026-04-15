@@ -537,9 +537,9 @@ func main() {
 
 ### Package Overview
 
-- `ork` - Main API: `NodeInterface`, `InventoryInterface`, `GroupInterface`, `RunnableInterface`
+- `ork` - Main API: `NodeInterface`, `InventoryInterface`, `GroupInterface`, `RunnerInterface`
 - `types` - Shared types: `Result`, `Results`, `Summary`
-- `runnable` - `RunnableInterface` for Node, Group, and Inventory
+- `runnable` - `RunnerInterface` for Node, Group, and Inventory
 - `config` - Configuration types
 - `ssh` - SSH client with connection management
 - `skill` - Skill interface and registry

@@ -2,12 +2,12 @@
 package ork
 
 // InventoryInterface defines operations for managing a collection of nodes
-// organized into groups. It embeds RunnableInterface for executing operations
+// organized into groups. It embeds RunnerInterface for executing operations
 // across all nodes in the inventory.
 type InventoryInterface interface {
-	// RunnableInterface is embedded for command and playbook execution.
+	// RunnerInterface is embedded for command and playbook execution.
 	// Operations run concurrently across all nodes in the inventory.
-	RunnableInterface
+	RunnerInterface
 
 	// AddGroup adds a group to the inventory.
 	AddGroup(group GroupInterface) InventoryInterface
@@ -29,11 +29,11 @@ type InventoryInterface interface {
 }
 
 // GroupInterface defines operations for managing a group of nodes.
-// It embeds RunnableInterface for executing operations on the group's nodes.
+// It embeds RunnerInterface for executing operations on the group's nodes.
 type GroupInterface interface {
-	// RunnableInterface is embedded for command and playbook execution.
+	// RunnerInterface is embedded for command and playbook execution.
 	// Operations run on all nodes in this group only.
-	RunnableInterface
+	RunnerInterface
 
 	// GetName returns the group's name.
 	GetName() string

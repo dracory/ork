@@ -22,7 +22,7 @@ Coding and documentation standards for Ork.
 ```go
 type NodeInterface interface { }
 type PlaybookInterface interface { }
-type RunnableInterface interface { }
+type RunnerInterface interface { }
 ```
 
 ### Implementations

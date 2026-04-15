@@ -145,8 +145,8 @@ func (g *groupImplementation) GetLogger() *slog.Logger {
 	return g.logger
 }
 
-// SetLogger sets a custom logger. Returns RunnableInterface for chaining.
-func (g *groupImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
+// SetLogger sets a custom logger. Returns RunnerInterface for chaining.
+func (g *groupImplementation) SetLogger(logger *slog.Logger) RunnerInterface {
 	g.logger = logger
 	return g
 }
@@ -154,8 +154,8 @@ func (g *groupImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
 // SetDryRunMode sets whether to simulate execution without making changes.
 // When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
 // The dry-run mode is applied to nodes at execution time (RunSkill, RunCommand, etc.).
-// Returns RunnableInterface for fluent method chaining.
-func (g *groupImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
+// Returns RunnerInterface for fluent method chaining.
+func (g *groupImplementation) SetDryRunMode(dryRun bool) RunnerInterface {
 	g.mu.Lock()
 	g.dryRunMode = dryRun
 	g.mu.Unlock()

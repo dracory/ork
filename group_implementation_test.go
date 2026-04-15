@@ -512,11 +512,11 @@ func (m *groupTestMockNode) GetLogger() *slog.Logger {
 	return slog.Default()
 }
 
-func (m *groupTestMockNode) SetLogger(logger *slog.Logger) RunnableInterface {
+func (m *groupTestMockNode) SetLogger(logger *slog.Logger) RunnerInterface {
 	return m
 }
 
-func (m *groupTestMockNode) SetDryRunMode(dryRun bool) RunnableInterface {
+func (m *groupTestMockNode) SetDryRunMode(dryRun bool) RunnerInterface {
 	return m
 }
 

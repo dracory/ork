@@ -163,7 +163,7 @@ result = results.Results["server.example.com"]
 ```
 
 ### Ork
-- Built into playbooks via `CheckPlaybook()` method (via RunnableInterface)
+- Built into playbooks via `CheckPlaybook()` method (via RunnerInterface)
 - `Result.Changed` field indicates if change occurred
 - Works on Node, Group, and Inventory uniformly
 

@@ -632,11 +632,11 @@ func (m *invTestMockNode) GetLogger() *slog.Logger {
 	return slog.Default()
 }
 
-func (m *invTestMockNode) SetLogger(logger *slog.Logger) RunnableInterface {
+func (m *invTestMockNode) SetLogger(logger *slog.Logger) RunnerInterface {
 	return m
 }
 
-func (m *invTestMockNode) SetDryRunMode(dryRun bool) RunnableInterface {
+func (m *invTestMockNode) SetDryRunMode(dryRun bool) RunnerInterface {
 	return m
 }
 

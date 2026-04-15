@@ -203,7 +203,7 @@ end
 
 ### Ork (Playbook-level)
 ```go
-// Check pattern via RunnableInterface
+// Check pattern via RunnerInterface
 aptUpgrade := playbooks.NewAptUpgrade()
 
 // Check if upgrade needed - works on Node, Group, or Inventory

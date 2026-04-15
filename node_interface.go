@@ -5,8 +5,8 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// check if the interface implements the RunnableInterface
-// var _ types.RunnableInterface = (*nodeImplementation)(nil)
+// check if the interface implements the RunnerInterface
+// var _ types.RunnerInterface = (*nodeImplementation)(nil)
 
 // NodeInterface defines the contract for managing a remote server via SSH.
 // Implementations must support configuration via setter methods, connection
@@ -53,9 +53,9 @@ import (
 //	    log.Fatal(err)
 //	}
 type NodeInterface interface {
-	// RunnableInterface defines operations that can be performed on the node.
-	// NodeInterface embeds RunnableInterface for unified API with Group and Inventory.
-	RunnableInterface
+	// RunnerInterface defines operations that can be performed on the node.
+	// NodeInterface embeds RunnerInterface for unified API with Group and Inventory.
+	RunnerInterface
 
 	// Configuration setters (fluent interface - return self for chaining)
 

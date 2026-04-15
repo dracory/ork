@@ -36,7 +36,7 @@ The primary interface for managing a single remote server.
 
 ```go
 type NodeInterface interface {
-    RunnableInterface
+    RunnerInterface
     
     // Configuration getters
     GetArg(key string) string
@@ -83,7 +83,7 @@ Manages a collection of nodes.
 
 ```go
 type GroupInterface interface {
-    RunnableInterface
+    RunnerInterface
     
     GetName() string
     AddNode(node NodeInterface) GroupInterface
@@ -106,7 +106,7 @@ Manages multiple groups for large-scale operations.
 
 ```go
 type InventoryInterface interface {
-    RunnableInterface
+    RunnerInterface
     
     AddGroup(group GroupInterface) InventoryInterface
     GetGroupByName(name string) GroupInterface
@@ -122,19 +122,19 @@ type InventoryInterface interface {
 func NewInventory() InventoryInterface
 ```
 
-### RunnableInterface
+### RunnerInterface
 
 Base interface for all executable entities.
 
 ```go
-type RunnableInterface interface {
+type RunnerInterface interface {
     RunCommand(cmd string) types.Results
     RunPlaybook(pb types.PlaybookInterface) types.Results
     RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
     CheckPlaybook(pb types.PlaybookInterface) types.Results
     GetLogger() *slog.Logger
-    SetLogger(logger *slog.Logger) RunnableInterface
-    SetDryRunMode(dryRun bool) RunnableInterface
+    SetLogger(logger *slog.Logger) RunnerInterface
+    SetDryRunMode(dryRun bool) RunnerInterface
     GetDryRunMode() bool
 }
 ```

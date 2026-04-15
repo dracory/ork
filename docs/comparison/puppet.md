@@ -142,7 +142,7 @@ file { '/etc/config':
 
 ### Ork (Playbook-level)
 ```go
-// Check pattern via RunnableInterface
+// Check pattern via RunnerInterface
 ping := playbooks.NewPing()
 results := node.CheckPlaybook(ping)
 result := results.Results["server.example.com"]
