@@ -2,13 +2,18 @@
 path: llm-context.md
 page-type: overview
 summary: Complete codebase summary optimized for LLM consumption.
-tags: [llm, context, summary]
+tags: [llm, context, summary, vault, prompts]
 created: 2025-04-14
 updated: 2026-04-14
-version: 1.1.0
+version: 1.2.0
 ---
 
 # LLM Context: Ork
+
+## Changelog
+- **v1.2.0** (2026-04-14): Added vault support for secure secrets management and prompt functions for interactive user input
+- **v1.1.0** (2026-04-14): Updated registry functions and API references
+- **v1.0.0** (2025-04-14): Initial creation
 
 ## Project Summary
 
@@ -25,6 +30,7 @@ Key differentiators:
 
 - **Go 1.25+**: Core language
 - **simplessh**: SSH client wrapper (github.com/sfreiberg/simplessh)
+- **envenc**: Vault encryption/decryption (github.com/dracory/envenc)
 - **testcontainers-go**: Integration testing
 - **slog**: Structured logging (standard library)
 
@@ -45,6 +51,9 @@ ork/
 ├── constants.go                  # Playbook ID constants (ork package)
 ├── registry.go                   # Global registry + NewDefaultRegistry factory
 ├── registry_test.go
+├── vault.go                     # Vault functions for secure secrets management
+├── prompts.go                    # Interactive prompt functions for user input
+├── prompts_test.go
 ├── config/
 │   └── node_config.go            # NodeConfig struct + methods
 ├── ssh/
@@ -70,7 +79,8 @@ ork/
 ├── types/
 │   ├── registry.go               # Registry, PlaybookInterface, PlaybookOptions
 │   ├── command.go                # Command struct with description
-│   └── results.go                # Result, Results, Summary types
+│   ├── results.go                # Result, Results, Summary types
+│   └── prompt.go                 # PromptConfig, PromptResult types
 ├── internal/
 │   ├── playbooktest/             # Test helpers for playbook testing
 │   ├── sshtest/                  # Mock SSH client for testing
@@ -88,6 +98,8 @@ ork/
 5. **RunnableInterface**: Base interface for Node, Group, Inventory (RunCommand, RunPlaybook, etc.)
 6. **Dry-run mode**: Safety feature that prevents actual server modifications
 7. **Idempotency**: Check() determines if changes needed, Run() applies them
+8. **Vault**: Secure secrets management using envenc for encrypted vault files
+9. **Prompts**: Interactive user input functions for configuration and secrets collection
 
 ## Important Interfaces
 
@@ -191,11 +203,14 @@ node.SetDryRunMode(true)
 | `group_implementation.go:13-174` | Group implementation with dry-run propagation |
 | `types/registry.go:27-97` | PlaybookInterface, PlaybookOptions, Registry |
 | `types/command.go:13-18` | Command struct with description |
+| `types/prompt.go:1-16` | PromptConfig, PromptResult types for user input |
 | `playbook/base_playbook.go` | BasePlaybook default implementation |
 | `config/node_config.go:6-67` | NodeConfig with SSHAddr(), GetArgOr() |
 | `ssh/functions.go:39-47` | Run() with dry-run safety check |
 | `types/results.go:6-52` | Result, Results, Summary types |
 | `registry.go:37-46` | GetGlobalPlaybookRegistry, NewDefaultRegistry |
+| `vault.go:1-76` | Vault functions for secure secrets management |
+| `prompts.go:1-241` | Interactive prompt functions for user input |
 | `internal/playbooktest/helpers.go` | Test helpers for playbook testing |
 | `internal/sshtest/mock_client.go` | Mock SSH client for testing |
 
@@ -227,6 +242,8 @@ MariaDB: `mariadb-install`, `mariadb-secure`, `mariadb-create-db`, `mariadb-crea
 8. **Registry factory pattern**: NewDefaultRegistry() for isolated registries in testing
 9. **Command struct**: types.Command wraps shell commands with descriptions for better dry-run output
 10. **Internal testing framework**: playbooktest and sshtest packages for comprehensive unit testing
+11. **Vault integration**: envenc-based encrypted vault files for secure secrets management with dual loading strategies (keys map or environment variables)
+12. **Prompt system**: Comprehensive user input functions with validation, confirmation, and multi-prompt support for interactive configuration
 
 ## Testing Approach
 

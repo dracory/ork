@@ -2,13 +2,18 @@
 path: api_reference.md
 page-type: reference
 summary: Complete API reference for all public interfaces, functions, and types.
-tags: [reference, api, interfaces]
+tags: [reference, api, interfaces, vault, prompts]
 created: 2025-04-14
 updated: 2026-04-14
-version: 1.1.0
+version: 1.2.0
 ---
 
 # API Reference
+
+## Changelog
+- **v1.2.0** (2026-04-14): Added vault functions for secure secrets management and prompt functions for interactive user input
+- **v1.1.0** (2026-04-14): Updated API references from playbook to playbooks package
+- **v1.0.0** (2025-04-14): Initial creation
 
 Complete reference for all public APIs in Ork.
 
@@ -140,8 +145,80 @@ type RunnableInterface interface {
 // Get the global playbook registry singleton (lazily initialized)
 func GetGlobalPlaybookRegistry() (*types.Registry, error)
 
+// Create a new empty registry
+func NewPlaybookRegistry() *types.Registry
+
 // Create a new isolated registry with all built-in playbooks registered
 func NewDefaultRegistry() (*types.Registry, error)
+```
+
+### Vault Functions
+
+Secure vault integration for secrets management using envenc.
+
+```go
+// Load keys from vault content string
+func VaultContentToKeys(vaultContent, vaultPassword string) (map[string]string, error)
+
+// Load keys from vault file
+func VaultFileToKeys(vaultFilePath, vaultPassword string) (map[string]string, error)
+
+// Hydrate environment variables from vault content string
+func VaultContentToEnv(vaultContent, vaultPassword string) error
+
+// Decrypt vault file and hydrate environment variables
+func VaultFileToEnv(vaultFilePath, vaultPassword string) error
+
+// Prompt for password and load keys from vault file
+func VaultFileToKeysWithPrompt(vaultFilePath string) (map[string]string, error)
+
+// Prompt for password and hydrate environment variables from vault file
+func VaultFileToEnvWithPrompt(vaultFilePath string) error
+
+// Prompt for password and load keys from vault content string
+func VaultContentToKeysWithPrompt(vaultContent string) (map[string]string, error)
+
+// Prompt for password and hydrate environment variables from vault content string
+func VaultContentToEnvWithPrompt(vaultContent string) error
+```
+
+### Prompt Functions
+
+Interactive user input functions for configuration and secrets.
+
+```go
+// Prompt for password (hidden input)
+func PromptPassword(prompt string) (string, error)
+
+// Prompt for string value
+func PromptForString(prompt string) (string, error)
+
+// Prompt for string value with default
+func PromptForStringWithDefault(prompt, defaultValue string) (string, error)
+
+// Prompt for password (hidden input)
+func PromptForPassword(prompt string) (string, error)
+
+// Prompt for password with confirmation
+func PromptForPasswordWithConfirmation(prompt string) (string, error)
+
+// Prompt for integer value
+func PromptForInt(prompt string) (int, error)
+
+// Prompt for integer value with default
+func PromptForIntWithDefault(prompt string, defaultValue int) (int, error)
+
+// Prompt for boolean value (yes/no)
+func PromptForBool(prompt string) (bool, error)
+
+// Prompt for boolean value with default
+func PromptForBoolWithDefault(prompt string, defaultValue bool) (bool, error)
+
+// Prompt user to select from list of options
+func PromptWithOptions(prompt string, options []string) (int, error)
+
+// Prompt for multiple variables using configuration
+func PromptMultiple(configs []types.PromptConfig, existingValues ...map[string]string) (types.PromptResult, error)
 ```
 
 ### Playbook Constants

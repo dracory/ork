@@ -1,14 +1,19 @@
 ---
 path: modules/types.md
 page-type: module
-summary: Shared types including PlaybookInterface, Registry, Command, and result types for operation outcomes across all Ork packages.
-tags: [module, types, results]
+summary: Shared types including PlaybookInterface, Registry, Command, PromptConfig, PromptResult, and result types for operation outcomes across all Ork packages.
+tags: [module, types, results, prompts]
 created: 2025-04-14
 updated: 2026-04-14
-version: 1.1.0
+version: 1.2.0
 ---
 
 # types Package
+
+## Changelog
+- **v1.2.0** (2026-04-14): Added PromptConfig and PromptResult types for interactive user input
+- **v1.1.0** (2026-04-14): Updated PlaybookInterface and Registry documentation
+- **v1.0.0** (2025-04-14): Initial creation
 
 Shared types for playbooks, registries, commands, and operation results across all Ork packages.
 
@@ -19,6 +24,7 @@ The `types` package provides:
 - `Registry`: For registering and looking up playbooks by ID
 - `Command`: Struct for shell commands with descriptions
 - `PlaybookOptions`: Configuration options for playbook execution
+- `PromptConfig`, `PromptResult`: Types for interactive user input
 - `Result`, `Results`, `Summary`: Operation outcome types
 
 ## Key Files
@@ -27,6 +33,7 @@ The `types` package provides:
 |------|---------|
 | `registry.go` | PlaybookInterface, PlaybookOptions, Registry |
 | `command.go` | Command struct with description |
+| `prompt.go` | PromptConfig, PromptResult types |
 | `results.go` | Result, Results, and Summary types |
 
 ## PlaybookInterface
@@ -98,6 +105,92 @@ type PlaybookOptions struct {
 ```
 
 Used with `RunPlaybookByID()` for per-execution overrides.
+
+## PromptConfig
+
+Configuration for a single user prompt.
+
+```go
+type PromptConfig struct {
+    Name     string             // Variable name
+    Prompt   string             // Prompt message to display
+    Private  bool               // Hide input (true) or show it (false)
+    Default  string             // Default value if user provides no input
+    Confirm  bool               // Require confirmation (for passwords)
+    Validate func(string) error // Validation function
+    Required bool               // Whether the field is required
+}
+```
+
+### Fields
+
+- **Name**: The variable name for storing the result
+- **Prompt**: The message displayed to the user
+- **Private**: If true, input is hidden (like a password)
+- **Default**: Default value used if user provides no input
+- **Confirm**: If true, requires confirmation (for passwords)
+- **Validate**: Optional validation function that returns an error if invalid
+- **Required**: If true, empty input is rejected
+
+### Example
+
+```go
+cfg := types.PromptConfig{
+    Name:     "email",
+    Prompt:   "Email address",
+    Private:  false,
+    Default:  "user@example.com",
+    Confirm:  false,
+    Required: true,
+    Validate: func(value string) error {
+        if !strings.Contains(value, "@") {
+            return fmt.Errorf("invalid email format")
+        }
+        return nil
+    },
+}
+```
+
+## PromptResult
+
+Contains the results of a prompt session.
+
+```go
+type PromptResult map[string]string
+```
+
+A map of variable names to user-provided values.
+
+### Example
+
+```go
+results := types.PromptResult{
+    "username": "admin",
+    "password": "secret123",
+    "port":     "8080",
+}
+
+// Access values
+username := results["username"]
+password := results["password"]
+```
+
+### With PromptMultiple
+
+```go
+prompts := []types.PromptConfig{
+    {Name: "username", Prompt: "Username", Required: true},
+    {Name: "password", Prompt: "Password", Private: true, Confirm: true, Required: true},
+}
+
+results, err := ork.PromptMultiple(prompts)
+if err != nil {
+    log.Fatal(err)
+}
+
+username := results["username"]
+password := results["password"]
+```
 
 ## Registry
 

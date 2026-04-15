@@ -1,14 +1,19 @@
 ---
 path: modules/ork.md
 page-type: module
-summary: Main ork package providing Node, Group, and Inventory interfaces for SSH-based server automation.
-tags: [module, ork, node, group, inventory]
+summary: Main ork package providing Node, Group, and Inventory interfaces for SSH-based server automation, with vault and prompts support.
+tags: [module, ork, node, group, inventory, vault, prompts]
 created: 2025-04-14
 updated: 2026-04-14
-version: 1.1.0
+version: 1.2.0
 ---
 
 # ork Package
+
+## Changelog
+- **v1.2.0** (2026-04-14): Added vault functions for secure secrets management and prompt functions for interactive user input
+- **v1.1.0** (2026-04-14): Updated registry functions with GetGlobalPlaybookRegistry and NewDefaultRegistry
+- **v1.0.0** (2025-04-14): Initial creation
 
 The main package providing the public API for Ork. This package defines and implements `NodeInterface`, `GroupInterface`, and `InventoryInterface` for SSH-based server automation.
 
@@ -37,6 +42,8 @@ The `ork` package is the primary entry point for users of the framework. It prov
 | `runnable_interface.go` | `RunnableInterface` base interface |
 | `constants.go` | Playbook ID aliases |
 | `registry.go` | Global registry + NewDefaultRegistry factory |
+| `vault.go` | Vault functions for secure secrets management |
+| `prompts.go` | Interactive prompt functions for user input |
 
 ## NodeInterface
 
@@ -235,8 +242,140 @@ pb, ok := registry.PlaybookFindByID("apt-update")
 // Register custom playbook
 registry.PlaybookRegister(myPlaybook)
 
+// Create empty registry for custom configuration
+emptyRegistry := ork.NewPlaybookRegistry()
+
 // Create isolated registry for testing
 isolatedRegistry, err := ork.NewDefaultRegistry()
+```
+
+## Vault Functions
+
+Secure vault integration for secrets management using envenc. These functions allow you to decrypt vault files and load secrets into environment variables or as key-value maps.
+
+### Loading Keys
+
+```go
+// Load keys from vault file with password
+keys, err := ork.VaultFileToKeys("vault.envenc", "my-password")
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Printf("Loaded %d keys\n", len(keys))
+
+// Load keys from vault content string
+keys, err := ork.VaultContentToKeys(vaultContent, "my-password")
+```
+
+### Hydrating Environment Variables
+
+```go
+// Decrypt vault file and set environment variables
+err := ork.VaultFileToEnv("vault.envenc", "my-password")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Decrypt vault content string and set environment variables
+err := ork.VaultContentToEnv(vaultContent, "my-password")
+```
+
+### Interactive Prompts
+
+```go
+// Prompt for password and load keys
+keys, err := ork.VaultFileToKeysWithPrompt("vault.envenc")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Prompt for password and hydrate environment variables
+err := ork.VaultFileToEnvWithPrompt("vault.envenc")
+```
+
+## Prompt Functions
+
+Interactive user input functions for configuration and secrets collection. These provide a consistent interface for collecting various types of input from users.
+
+### Basic Prompts
+
+```go
+// Prompt for string value
+name, err := ork.PromptForString("Enter your name")
+
+// Prompt for string with default
+email, err := ork.PromptForStringWithDefault("Email", "user@example.com")
+
+// Prompt for password (hidden)
+password, err := ork.PromptForPassword("Password")
+
+// Prompt for password with confirmation
+password, err := ork.PromptForPasswordWithConfirmation("Password")
+```
+
+### Type-Specific Prompts
+
+```go
+// Prompt for integer
+port, err := ork.PromptForInt("Port number")
+
+// Prompt for integer with default
+port, err := ork.PromptForIntWithDefault("Port number", 8080)
+
+// Prompt for boolean
+enabled, err := ork.PromptForBool("Enable feature")
+
+// Prompt for boolean with default
+enabled, err := ork.PromptForBoolWithDefault("Enable feature", true)
+```
+
+### Selection Prompts
+
+```go
+// Prompt user to select from options
+options := []string{"Production", "Staging", "Development"}
+selection, err := ork.PromptWithOptions("Select environment", options)
+fmt.Printf("Selected: %s\n", options[selection])
+```
+
+### Multiple Prompts
+
+```go
+// Prompt for multiple variables at once
+prompts := []types.PromptConfig{
+    {Name: "username", Prompt: "Username", Default: "admin", Required: true},
+    {Name: "password", Prompt: "Password", Private: true, Confirm: true, Required: true},
+    {Name: "port", Prompt: "Port", Default: "8080", Required: false},
+}
+
+results, err := ork.PromptMultiple(prompts)
+if err != nil {
+    log.Fatal(err)
+}
+
+username := results["username"]
+password := results["password"]
+port := results["port"]
+```
+
+### With Validation
+
+```go
+prompts := []types.PromptConfig{
+    {
+        Name: "email",
+        Prompt: "Email address",
+        Required: true,
+        Validate: func(value string) error {
+            if !strings.Contains(value, "@") {
+                return fmt.Errorf("invalid email format")
+            }
+            return nil
+        },
+    },
+}
+
+results, err := ork.PromptMultiple(prompts)
 ```
 
 ## Dependencies
@@ -247,6 +386,7 @@ isolatedRegistry, err := ork.NewDefaultRegistry()
 | `playbook` | `BasePlaybook` implementation |
 | `ssh` | SSH command execution |
 | `types` | `PlaybookInterface`, `Registry`, `Command`, `Result`, `Results`, `Summary` |
+| `github.com/dracory/envenc` | Vault encryption/decryption for secrets management |
 
 ## Thread Safety
 
