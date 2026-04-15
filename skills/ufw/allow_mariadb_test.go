@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/types"
 )
 
 // TestAllowMariaDB_Run_DryRun_AnyIP verifies that dry-run mode correctly handles allowing MariaDB from any IP.

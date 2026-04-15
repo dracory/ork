@@ -3,7 +3,6 @@ package examples
 import (
 	"testing"
 
-	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/types"
 )
 

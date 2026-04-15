@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/types"
 	"github.com/dracory/ork/internal/skilltest"
 )
 

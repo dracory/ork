@@ -3,7 +3,7 @@ package ork
 import (
 	"testing"
 
-	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/types"
 )
 
 // TestNewNodeForHost verifies that NewNodeForHost initializes with correct default values.

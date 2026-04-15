@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/types"
 )
 
 // TestSwapStatus_Run_DryRun verifies that dry-run mode correctly handles swap status.

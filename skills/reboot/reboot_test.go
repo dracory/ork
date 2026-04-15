@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/types"
 )
 
 // TestReboot_Run_DryRun verifies that dry-run mode correctly handles reboot.

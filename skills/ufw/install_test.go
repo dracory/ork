@@ -4,7 +4,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/dracory/ork/config"
+	"github.com/dracory/ork/types"
 )
 
 // TestUfwInstall_Run_DryRun_Defaults verifies that dry-run mode correctly handles default configuration.
