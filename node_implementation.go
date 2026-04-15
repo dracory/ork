@@ -335,6 +335,8 @@ func (n *nodeImplementation) Run(skill types.RunnableInterface) types.Results {
 	skill.SetNodeConfig(n.cfg)
 	// Propagate node's dry-run mode to skill
 	skill.SetDryRun(n.cfg.IsDryRunMode)
+	// Propagate node's become user to skill
+	skill.SetBecomeUser(n.cfg.BecomeUser)
 	result := skill.Run()
 
 	results.Results[n.GetHost()] = types.Result{
@@ -379,6 +381,8 @@ func (n *nodeImplementation) RunByID(id string, opts ...types.RunnableOptions) t
 	skill.SetNodeConfig(n.cfg)
 	// Start with node's dry-run mode, allow opts to override
 	skill.SetDryRun(n.cfg.IsDryRunMode)
+	// Start with node's become user, allow skill to override
+	skill.SetBecomeUser(n.cfg.BecomeUser)
 	if len(opts) > 0 {
 		skill.SetArgs(opts[0].Args)
 		skill.SetDryRun(opts[0].DryRun)
@@ -439,4 +443,17 @@ func (n *nodeImplementation) SetDryRunMode(dryRun bool) RunnerInterface {
 // When true, commands are logged but not executed on the server.
 func (n *nodeImplementation) GetDryRunMode() bool {
 	return n.cfg.IsDryRunMode
+}
+
+// SetBecomeUser sets the user to become when executing commands via sudo.
+// Returns RunnerInterface for fluent method chaining.
+func (n *nodeImplementation) SetBecomeUser(user string) types.BecomeInterface {
+	n.cfg.BecomeUser = user
+	return n
+}
+
+// GetBecomeUser returns the configured become user.
+// Returns empty string if not set.
+func (n *nodeImplementation) GetBecomeUser() string {
+	return n.cfg.BecomeUser
 }

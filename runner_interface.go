@@ -10,6 +10,8 @@ import (
 // RunnerInterface defines operations that can be performed on either
 // a single Node or an Inventory of nodes.
 type RunnerInterface interface {
+	// BecomeInterface provides privilege escalation capabilities.
+	types.BecomeInterface
 	// RunCommand executes a shell command and returns the output.
 	// For Inventory, runs concurrently across all nodes.
 	RunCommand(cmd string) types.Results

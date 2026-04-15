@@ -50,6 +50,89 @@ result := node.RunByID("install-docker")
 
 **Note**: For complex orchestration logic with decision making, loops, and custom error handling, see [Playbooks](playbooks.md).
 
+## Privilege Escalation in Custom Skills
+
+When creating custom skills that require elevated privileges, you can configure the become user at multiple levels:
+
+### Skill-Level Configuration
+
+```go
+type MyCustomSkill struct {
+    types.BaseSkill
+}
+
+func (s *MyCustomSkill) Run() types.Result {
+    // The skill inherits SetBecomeUser and GetBecomeUser from BaseBecome
+    // Set it before running:
+    s.SetBecomeUser("root")
+
+    // Commands will run as root
+    output, err := ssh.Run(s.GetNodeConfig(), types.Command{
+        Command: "apt-get update",
+    })
+    // ...
+}
+```
+
+### Dynamic User Selection
+
+```go
+func (s *MyCustomSkill) Run() types.Result {
+    cfg := s.GetNodeConfig()
+
+    // Choose become user based on node configuration
+    becomeUser := "root"
+    if cfg.GetArg("environment") == "production" {
+        becomeUser = "admin"
+    }
+
+    s.SetBecomeUser(becomeUser)
+    // ...
+}
+```
+
+### Combining with Check/Run Pattern
+
+```go
+func (s *MyCustomSkill) Check() (bool, error) {
+    // Run check as the become user
+    s.SetBecomeUser("postgres")
+    output, err := ssh.Run(s.GetNodeConfig(), types.Command{
+        Command: "psql -c 'SELECT 1'",
+    })
+    return err == nil, nil
+}
+
+func (s *MyCustomSkill) Run() types.Result {
+    s.SetBecomeUser("postgres")
+    // Execute as postgres user
+    output, err := ssh.Run(s.GetNodeConfig(), types.Command{
+        Command: "psql -f /path/to/migration.sql",
+    })
+    // ...
+}
+```
+
+### Custom Playbooks with Privilege Escalation
+
+```go
+type MyCustomPlaybook struct {
+    types.BasePlaybook
+}
+
+func (p *MyCustomPlaybook) Run() types.Result {
+    // Set become user for this playbook
+    p.SetBecomeUser("root")
+
+    cfg := p.GetNodeConfig()
+    // All commands in this playbook will run as root
+    _, err := ssh.Run(cfg, types.Command{
+        Command: "systemctl restart nginx",
+    })
+    // ...
+}
+```
+
 ### Custom Playbooks with Full Idempotency
 
 For comprehensive documentation on creating playbooks with complex orchestration logic, see [Playbooks Documentation](playbooks.md).

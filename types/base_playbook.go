@@ -27,6 +27,7 @@ import (
 //	    // Execute the playbook with complex orchestration logic
 //	}
 type BasePlaybook struct {
+	BaseBecome
 	id          string
 	description string
 	nodeCfg     NodeConfig

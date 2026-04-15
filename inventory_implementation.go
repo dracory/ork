@@ -16,6 +16,7 @@ type inventoryImplementation struct {
 	maxConcurrency int
 	logger         *slog.Logger
 	dryRunMode     bool
+	becomeUser     string
 	mu             sync.RWMutex
 }
 
@@ -27,6 +28,10 @@ func (i *inventoryImplementation) AddGroup(group GroupInterface) InventoryInterf
 	// Propagate dry-run mode to new group for consistency
 	if group.GetDryRunMode() != i.GetDryRunMode() {
 		group.SetDryRunMode(i.GetDryRunMode())
+	}
+	// Propagate become user to new group for consistency
+	if group.GetBecomeUser() != i.GetBecomeUser() {
+		group.SetBecomeUser(i.GetBecomeUser())
 	}
 	return i
 }
@@ -46,6 +51,10 @@ func (i *inventoryImplementation) AddNode(node NodeInterface) InventoryInterface
 	// Propagate dry-run mode to new node for consistency
 	if node.GetDryRunMode() != i.GetDryRunMode() {
 		node.SetDryRunMode(i.GetDryRunMode())
+	}
+	// Propagate become user to new node for consistency
+	if node.GetBecomeUser() != i.GetBecomeUser() {
+		node.SetBecomeUser(i.GetBecomeUser())
 	}
 	return i
 }
@@ -357,4 +366,47 @@ func (i *inventoryImplementation) GetDryRunMode() bool {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
 	return i.dryRunMode
+}
+
+// SetBecomeUser sets the user to become when executing commands via sudo.
+// Returns BecomeInterface for fluent method chaining.
+func (i *inventoryImplementation) SetBecomeUser(user string) types.BecomeInterface {
+	i.mu.Lock()
+	i.becomeUser = user
+	i.mu.Unlock()
+	// Propagate to groups and nodes for consistency
+	i.propagateBecomeUser()
+	return i
+}
+
+// GetBecomeUser returns the configured become user.
+// Returns empty string if not set.
+func (i *inventoryImplementation) GetBecomeUser() string {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
+	return i.becomeUser
+}
+
+// propagateBecomeUser applies the inventory's become user to all groups and nodes.
+func (i *inventoryImplementation) propagateBecomeUser() {
+	i.mu.RLock()
+	user := i.becomeUser
+	groupsCopy := make(map[string]GroupInterface, len(i.groups))
+	for k, v := range i.groups {
+		groupsCopy[k] = v
+	}
+	nodesCopy := make([]NodeInterface, len(i.nodes))
+	copy(nodesCopy, i.nodes)
+	i.mu.RUnlock()
+
+	for _, group := range groupsCopy {
+		if group.GetBecomeUser() != user {
+			group.SetBecomeUser(user)
+		}
+	}
+	for _, node := range nodesCopy {
+		if node.GetBecomeUser() != user {
+			node.SetBecomeUser(user)
+		}
+	}
 }

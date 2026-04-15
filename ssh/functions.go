@@ -1,6 +1,7 @@
 package ssh
 
 import (
+	"fmt"
 	"os/user"
 	"sync"
 
@@ -49,6 +50,8 @@ func PrivateKeyPath(sshKey string) string {
 // It extracts SSH connection settings (SSHHost, SSHPort, SSHLogin, SSHKey)
 // from the config and runs the command, returning the output.
 //
+// If cfg.BecomeUser is set, the command is wrapped with sudo -u <user>.
+//
 // SAFETY: When cfg.IsDryRunMode is true, this function will NOT execute
 // any commands on the server. Instead, it logs the command and returns
 // "[dry-run]" as the output. This ensures no accidental changes in dry-run mode.
@@ -71,5 +74,12 @@ func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 		// Return marker that playbook can detect
 		return "[dry-run]", nil
 	}
-	return runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, cmd)
+
+	// Wrap command with sudo if become user is set
+	commandToRun := cmd.Command
+	if cfg.BecomeUser != "" {
+		commandToRun = fmt.Sprintf("sudo -u %s %s", cfg.BecomeUser, cmd.Command)
+	}
+
+	return runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description})
 }

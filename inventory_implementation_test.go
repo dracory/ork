@@ -643,6 +643,14 @@ func (m *invTestMockNode) GetDryRunMode() bool {
 	return false
 }
 
+func (m *invTestMockNode) SetBecomeUser(user string) types.BecomeInterface {
+	return m
+}
+
+func (m *invTestMockNode) GetBecomeUser() string {
+	return ""
+}
+
 // invTestMockPlaybook is a mock implementation of types.RunnableInterface for testing.
 type invTestMockPlaybook struct {
 	name    string
@@ -718,6 +726,14 @@ func (m *invTestMockPlaybook) GetTimeout() time.Duration {
 func (m *invTestMockPlaybook) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	m.timeout = timeout
 	return m
+}
+
+func (m *invTestMockPlaybook) SetBecomeUser(user string) types.BecomeInterface {
+	return m
+}
+
+func (m *invTestMockPlaybook) GetBecomeUser() string {
+	return ""
 }
 
 func (m *invTestMockPlaybook) Check() (bool, error) {

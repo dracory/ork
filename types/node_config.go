@@ -28,6 +28,10 @@ type NodeConfig struct {
 	// IsDryRunMode indicates whether to simulate execution without making changes.
 	// When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
 	IsDryRunMode bool
+
+	// BecomeUser is the user to become when executing commands via sudo.
+	// If empty, no privilege escalation is performed.
+	BecomeUser string
 }
 
 // SSHAddr returns the full SSH address as host:port.

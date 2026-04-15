@@ -523,6 +523,14 @@ func (m *groupTestMockNode) GetDryRunMode() bool {
 	return false
 }
 
+func (m *groupTestMockNode) SetBecomeUser(user string) types.BecomeInterface {
+	return m
+}
+
+func (m *groupTestMockNode) GetBecomeUser() string {
+	return ""
+}
+
 // groupTestMockPlaybook is a mock implementation of types.RunnableInterface for testing.
 type groupTestMockPlaybook struct {
 	name    string
@@ -598,6 +606,14 @@ func (m *groupTestMockPlaybook) GetTimeout() time.Duration {
 func (m *groupTestMockPlaybook) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	m.timeout = timeout
 	return m
+}
+
+func (m *groupTestMockPlaybook) SetBecomeUser(user string) types.BecomeInterface {
+	return m
+}
+
+func (m *groupTestMockPlaybook) GetBecomeUser() string {
+	return ""
 }
 
 func (m *groupTestMockPlaybook) Check() (bool, error) {

@@ -27,6 +27,7 @@ Full documentation is available in the [docs](docs/) directory.
 - [Vault](docs/vault.md) - Secure secrets management
 - [Idempotency](docs/idempotency.md) - Understanding idempotent operations
 - [Dry-Run Mode](docs/dry_run.md) - Preview changes without execution
+- [Privilege Escalation](docs/privilege_escalation.md) - Run commands as different users via sudo
 - [Advanced Usage](docs/advanced_usage.md) - Custom skills and internal packages
 
 ### Reference

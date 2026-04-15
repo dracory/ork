@@ -33,6 +33,8 @@ type RunnableOptions struct {
 //	needsRun, _ := skill.Check()
 //	result := skill.Run()
 type RunnableInterface interface {
+	// BecomeInterface provides privilege escalation capabilities.
+	BecomeInterface
 	// GetID returns the unique identifier for this skill (e.g., "apt-update")
 	GetID() string
 

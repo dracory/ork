@@ -15,6 +15,7 @@ type groupImplementation struct {
 	args       map[string]string
 	logger     *slog.Logger
 	dryRunMode bool
+	becomeUser string
 	mu         sync.RWMutex
 }
 
@@ -38,6 +39,10 @@ func (g *groupImplementation) AddNode(node NodeInterface) GroupInterface {
 	// Propagate dry-run mode to new node for consistency
 	if node.GetDryRunMode() != g.GetDryRunMode() {
 		node.SetDryRunMode(g.GetDryRunMode())
+	}
+	// Propagate become user to new node for consistency
+	if node.GetBecomeUser() != g.GetBecomeUser() {
+		node.SetBecomeUser(g.GetBecomeUser())
 	}
 	return g
 }
@@ -169,4 +174,35 @@ func (g *groupImplementation) GetDryRunMode() bool {
 	g.mu.RLock()
 	defer g.mu.RUnlock()
 	return g.dryRunMode
+}
+
+// SetBecomeUser sets the user to become when executing commands via sudo.
+// Returns BecomeInterface for fluent method chaining.
+func (g *groupImplementation) SetBecomeUser(user string) types.BecomeInterface {
+	g.mu.Lock()
+	g.becomeUser = user
+	g.mu.Unlock()
+	// Propagate to nodes for consistency
+	g.propagateBecomeUser()
+	return g
+}
+
+// GetBecomeUser returns the configured become user.
+// Returns empty string if not set.
+func (g *groupImplementation) GetBecomeUser() string {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	return g.becomeUser
+}
+
+// propagateBecomeUser applies the group's become user to all nodes.
+func (g *groupImplementation) propagateBecomeUser() {
+	g.mu.RLock()
+	user := g.becomeUser
+	g.mu.RUnlock()
+	for _, node := range g.nodes {
+		if node.GetBecomeUser() != user {
+			node.SetBecomeUser(user)
+		}
+	}
 }

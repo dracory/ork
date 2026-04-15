@@ -296,26 +296,26 @@ type RunnableInterface interface {
     SetID(id string) RunnableInterface
     GetDescription() string
     SetDescription(description string) RunnableInterface
-    
+
     // Configuration
     GetNodeConfig() NodeConfig
     SetNodeConfig(cfg NodeConfig) RunnableInterface
-    
+
     // Arguments
     GetArg(key string) string
     SetArg(key, value string) RunnableInterface
     GetArgs() map[string]string
     SetArgs(args map[string]string) RunnableInterface
-    
+
     // Execution options
     IsDryRun() bool
     SetDryRun(dryRun bool) RunnableInterface
     GetTimeout() time.Duration
     SetTimeout(timeout time.Duration) RunnableInterface
-    
+
     // Core operations
     Check() (bool, error)
-    Run() Result
+    Run() types.Result
 }
 ```
 

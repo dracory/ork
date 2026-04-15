@@ -31,6 +31,7 @@ import (
 //	    // Execute the skill
 //	}
 type BaseSkill struct {
+	BaseBecome
 	id          string
 	description string
 	nodeCfg     NodeConfig

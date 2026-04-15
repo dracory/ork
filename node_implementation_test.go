@@ -984,6 +984,14 @@ func (m *mockPlaybook) SetTimeout(timeout time.Duration) types.RunnableInterface
 	return m
 }
 
+func (m *mockPlaybook) SetBecomeUser(user string) types.BecomeInterface {
+	return m
+}
+
+func (m *mockPlaybook) GetBecomeUser() string {
+	return ""
+}
+
 func (m *mockPlaybook) Check() (bool, error) {
 	if m.checkFunc != nil {
 		return m.checkFunc(m.cfg)
