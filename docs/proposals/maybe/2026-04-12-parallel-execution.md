@@ -1,10 +1,10 @@
 # Proposal: Parallel Execution
 
 **Date:** 2026-04-12  
-**Status:** Rejected. Out of scope for now. May be implement in the future.
+**Status:** Implemented  
 **Author:** System Review
 
-> **Note:** Inventory system implemented. Parallel execution foundation ready. Needs worker pool for actual concurrency.
+> **Note:** Parallel execution implemented in `InventoryInterface` using semaphore-based concurrency control with panic recovery.
 
 ## Problem Statement
 
@@ -40,14 +40,19 @@ func (e *Executor) RunOnHosts(p types.PlaybookInterface, configs []config.Config
 
 ### 2. Inventory Management (IMPLEMENTED)
 
-See `2026-04-13-inventory.md` for implemented Inventory system.
+See `2026-04-13-inventory.md` for Inventory system design.
 
 Inventory now provides:
 - `InventoryInterface` with `RunnableInterface`
 - `GroupInterface` with `RunnableInterface`
-- `SetMaxConcurrency()` for parallel execution
-
-Remaining: Worker pool for actual concurrent execution.
+- `SetMaxConcurrency()` for parallel execution control
+- **Worker pool with semaphore-based concurrency** in all operations:
+  - `RunCommand()` - executes shell commands across all nodes concurrently
+  - `RunPlaybook()` - runs playbooks across all nodes concurrently
+  - `RunPlaybookByID()` - executes playbooks by ID with concurrency
+  - `CheckPlaybook()` - runs check mode across all nodes concurrently
+- **Panic recovery** in all goroutines to prevent deadlocks
+- **Thread-safe operations** with mutex protection for inventory state
 
 ### 3. Progress Tracking
 
@@ -65,38 +70,57 @@ func (pt *ProgressTracker) OnComplete(host string, err error)
 func (pt *ProgressTracker) Summary() string
 ```
 
-## Implementation Examples
+## Implementation
 
-### Basic Parallel Execution
+### Actual Implementation Pattern
+
+The parallel execution is implemented directly in `InventoryInterface` methods using Go's semaphore pattern:
 
 ```go
-func main() {
-    // Define hosts
-    hosts := []config.Config{
-        {SSHHost: "web1.example.com", SSHPort: "22", SSHKey: "id_rsa", RootUser: "root"},
-        {SSHHost: "web2.example.com", SSHPort: "22", SSHKey: "id_rsa", RootUser: "root"},
-        {SSHHost: "web3.example.com", SSHPort: "22", SSHKey: "id_rsa", RootUser: "root"},
+func (i *inventoryImplementation) RunPlaybook(pb types.PlaybookInterface) types.Results {
+    results := types.Results{Results: make(map[string]types.Result)}
+    nodes := i.GetNodes()
+
+    // Determine concurrency limit (0 = unlimited)
+    concurrency := i.maxConcurrency
+    if concurrency == 0 {
+        concurrency = len(nodes)
     }
-    
-    // Create executor
-    executor := &Executor{
-        MaxParallel: 5,
-        StopOnError: false,
-        Timeout:     5 * time.Minute,
+
+    // Semaphore for concurrency control
+    sem := make(chan struct{}, concurrency)
+    var wg sync.WaitGroup
+
+    for _, node := range nodes {
+        wg.Add(1)
+        go func(n NodeInterface) {
+            defer func() {
+                // Panic recovery prevents deadlocks
+                if r := recover(); r != nil {
+                    i.GetLogger().Error("panic in goroutine", "error", r)
+                    i.mu.Lock()
+                    results.Results[n.GetHost()] = types.Result{
+                        Changed: false,
+                        Message: fmt.Sprintf("panic: %v", r),
+                    }
+                    i.mu.Unlock()
+                }
+                wg.Done()
+            }()
+
+            sem <- struct{}{}        // Acquire
+            defer func() { <-sem }() // Release
+
+            nodeResults := n.RunPlaybook(pb)
+
+            i.mu.Lock()
+            maps.Copy(results.Results, nodeResults.Results)
+            i.mu.Unlock()
+        }(node)
     }
-    
-    // Run playbook on all hosts
-    playbook := playbooks.NewAptUpgrade()
-    results := executor.RunOnHosts(playbook, hosts)
-    
-    // Process results
-    for _, result := range results {
-        if result.Error != nil {
-            log.Printf("[%s] FAILED: %v", result.Host, result.Error)
-        } else {
-            log.Printf("[%s] SUCCESS: %s (took %v)", result.Host, result.Result.Message, result.Duration)
-        }
-    }
+
+    wg.Wait()
+    return results
 }
 ```
 
@@ -321,19 +345,22 @@ groups:
 
 ## Implementation Plan
 
-### Phase 1: Core Executor
-- Implement `Executor` in `executor` package
-- Goroutine pool with semaphore limiting
-- Progress tracking callbacks
+### Phase 1: Core Executor (IMPLEMENTED)
+- ✅ Semaphore-based worker pool in `InventoryInterface` methods
+- ✅ Panic recovery in all goroutines
+- ✅ Thread-safe result collection with mutex protection
 
-### Phase 2: Inventory Integration (COMPLETE)
+### Phase 2: Inventory Integration (IMPLEMENTED)
 - ✅ `InventoryInterface` with `RunnableInterface`
-- ✅ `SetMaxConcurrency()` method
+- ✅ `SetMaxConcurrency()` method (default: 10, 0 = unlimited)
 - ✅ `types.Results` for unified result collection
+- ✅ Thread-safe `AddNode()`, `AddGroup()`, `GetNodes()` operations
 
-### Phase 3: Advanced Features
+### Phase 3: Advanced Features (FUTURE)
+- Progress tracking callbacks
 - Rolling updates
 - Failure threshold handling
+- Per-operation timeout control
 
 ## Benefits
 

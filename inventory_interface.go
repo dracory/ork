@@ -24,7 +24,7 @@ type InventoryInterface interface {
 	GetNodes() []NodeInterface
 
 	// SetMaxConcurrency sets the maximum number of concurrent operations.
-	// Default is 10. Set to 0 for unlimited.
+	// Default is 1 (sequential execution). Set to 0 for unlimited.
 	SetMaxConcurrency(max int) InventoryInterface
 }
 
@@ -61,6 +61,6 @@ type GroupInterface interface {
 func NewInventory() InventoryInterface {
 	return &inventoryImplementation{
 		groups:         make(map[string]GroupInterface),
-		maxConcurrency: 10,
+		maxConcurrency: 1, // Default to sequential execution for backward compatibility
 	}
 }

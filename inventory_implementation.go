@@ -1,6 +1,7 @@
 package ork
 
 import (
+	"fmt"
 	"log/slog"
 	"maps"
 	"sync"
@@ -20,7 +21,9 @@ type inventoryImplementation struct {
 
 // AddGroup adds a group to the inventory.
 func (i *inventoryImplementation) AddGroup(group GroupInterface) InventoryInterface {
+	i.mu.Lock()
 	i.groups[group.GetName()] = group
+	i.mu.Unlock()
 	// Propagate dry-run mode to new group for consistency
 	if group.GetDryRunMode() != i.GetDryRunMode() {
 		group.SetDryRunMode(i.GetDryRunMode())
@@ -30,12 +33,16 @@ func (i *inventoryImplementation) AddGroup(group GroupInterface) InventoryInterf
 
 // GetGroupByName retrieves a group by name.
 func (i *inventoryImplementation) GetGroupByName(name string) GroupInterface {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
 	return i.groups[name]
 }
 
 // AddNode adds a node directly to the inventory.
 func (i *inventoryImplementation) AddNode(node NodeInterface) InventoryInterface {
+	i.mu.Lock()
 	i.nodes = append(i.nodes, node)
+	i.mu.Unlock()
 	// Propagate dry-run mode to new node for consistency
 	if node.GetDryRunMode() != i.GetDryRunMode() {
 		node.SetDryRunMode(i.GetDryRunMode())
@@ -45,11 +52,17 @@ func (i *inventoryImplementation) AddNode(node NodeInterface) InventoryInterface
 
 // GetNodes returns all nodes in the inventory across all groups.
 func (i *inventoryImplementation) GetNodes() []NodeInterface {
+	i.mu.RLock()
 	result := make([]NodeInterface, 0, len(i.nodes))
 	result = append(result, i.nodes...)
+	groupsCopy := make(map[string]GroupInterface, len(i.groups))
+	for k, v := range i.groups {
+		groupsCopy[k] = v
+	}
+	i.mu.RUnlock()
 
 	// Also include nodes from groups
-	for _, group := range i.groups {
+	for _, group := range groupsCopy {
 		result = append(result, group.GetNodes()...)
 	}
 	return result
@@ -57,7 +70,9 @@ func (i *inventoryImplementation) GetNodes() []NodeInterface {
 
 // SetMaxConcurrency sets the maximum number of concurrent operations.
 func (i *inventoryImplementation) SetMaxConcurrency(max int) InventoryInterface {
+	i.mu.Lock()
 	i.maxConcurrency = max
+	i.mu.Unlock()
 	return i
 }
 
@@ -65,13 +80,20 @@ func (i *inventoryImplementation) SetMaxConcurrency(max int) InventoryInterface 
 func (i *inventoryImplementation) propagateDryRun() {
 	i.mu.RLock()
 	mode := i.dryRunMode
+	groupsCopy := make(map[string]GroupInterface, len(i.groups))
+	for k, v := range i.groups {
+		groupsCopy[k] = v
+	}
+	nodesCopy := make([]NodeInterface, len(i.nodes))
+	copy(nodesCopy, i.nodes)
 	i.mu.RUnlock()
-	for _, group := range i.groups {
+
+	for _, group := range groupsCopy {
 		if group.GetDryRunMode() != mode {
 			group.SetDryRunMode(mode)
 		}
 	}
-	for _, node := range i.nodes {
+	for _, node := range nodesCopy {
 		if node.GetDryRunMode() != mode {
 			node.SetDryRunMode(mode)
 		}
@@ -104,7 +126,19 @@ func (i *inventoryImplementation) RunCommand(cmd string) types.Results {
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(n NodeInterface) {
-			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					// Log panic and record failure in results
+					i.GetLogger().Error("panic in RunCommand goroutine", "error", r)
+					i.mu.Lock()
+					results.Results[n.GetHost()] = types.Result{
+						Changed: false,
+						Message: fmt.Sprintf("panic: %v", r),
+					}
+					i.mu.Unlock()
+				}
+				wg.Done()
+			}()
 
 			// Acquire semaphore
 			sem <- struct{}{}
@@ -148,7 +182,19 @@ func (i *inventoryImplementation) RunPlaybook(pb types.PlaybookInterface) types.
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(n NodeInterface) {
-			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					// Log panic and record failure in results
+					i.GetLogger().Error("panic in RunPlaybook goroutine", "error", r)
+					i.mu.Lock()
+					results.Results[n.GetHost()] = types.Result{
+						Changed: false,
+						Message: fmt.Sprintf("panic: %v", r),
+					}
+					i.mu.Unlock()
+				}
+				wg.Done()
+			}()
 
 			// Acquire semaphore
 			sem <- struct{}{}
@@ -192,7 +238,19 @@ func (i *inventoryImplementation) RunPlaybookByID(id string, opts ...types.Playb
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(n NodeInterface) {
-			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					// Log panic and record failure in results
+					i.GetLogger().Error("panic in RunPlaybookByID goroutine", "error", r)
+					i.mu.Lock()
+					results.Results[n.GetHost()] = types.Result{
+						Changed: false,
+						Message: fmt.Sprintf("panic: %v", r),
+					}
+					i.mu.Unlock()
+				}
+				wg.Done()
+			}()
 
 			// Acquire semaphore
 			sem <- struct{}{}
@@ -236,7 +294,19 @@ func (i *inventoryImplementation) CheckPlaybook(pb types.PlaybookInterface) type
 	for _, node := range nodes {
 		wg.Add(1)
 		go func(n NodeInterface) {
-			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					// Log panic and record failure in results
+					i.GetLogger().Error("panic in CheckPlaybook goroutine", "error", r)
+					i.mu.Lock()
+					results.Results[n.GetHost()] = types.Result{
+						Changed: false,
+						Message: fmt.Sprintf("panic: %v", r),
+					}
+					i.mu.Unlock()
+				}
+				wg.Done()
+			}()
 
 			// Acquire semaphore
 			sem <- struct{}{}
