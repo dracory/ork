@@ -9,7 +9,7 @@
 | **Execution** | Push or Pull | Push |
 | **Speed** | Very fast (ZeroMQ) | Standard SSH speed |
 | **Scalability** | 10,000+ nodes | Smaller scale |
-| **Parallel** | Limited | Inventory (sequential) |
+| **Parallel** | Limited | Inventory (sequential by default, configurable) |
 | **Server Required** | Yes (Salt Master) | No |
 | **Learning Curve** | Medium | Low |
 
@@ -93,11 +93,12 @@ for _, host := range hosts {
     fmt.Printf("%s: %s\n", host, result.Message)
 }
 
-// Inventory executes across all nodes (sequential)
+// Inventory executes across all nodes (configurable concurrency)
 inv := ork.NewInventory()
 for _, host := range hosts {
     inv.AddNode(ork.NewNodeForHost(host))
 }
+inv.SetMaxConcurrency(10)  // Configure parallel execution
 results := inv.RunCommand("uptime")
 ```
 
@@ -286,6 +287,34 @@ beacons:
 salt-ssh '*' test.ping
 salt-ssh 'web*' state.apply
 ```
+
+## Feature Comparison Table
+
+| Feature | SaltStack | Ork | Notes |
+|---------|-----------|-----|-------|
+| **Architecture** | ✅ Master-Minion or Agentless (SSH) | ✅ Agentless (SSH) | SaltStack has both modes; Ork only SSH |
+| **Execution Model** | ✅ Push or Pull | ✅ Push | SaltStack supports both; Ork only push |
+| **Server Required** | ✅ Yes (Salt Master) | ✅ No | SaltStack needs master; Ork standalone |
+| **Parallel Execution** | ✅ Very fast (ZeroMQ) | ✅ Configurable concurrency | SaltStack extremely fast; Ork via SetMaxConcurrency() |
+| **Speed** | ✅ Blazing fast (ZeroMQ) | ⚠️ Standard SSH speed | SaltStack uses pub/sub; Ork SSH overhead |
+| **Scalability** | ✅ 10,000+ nodes | ⚠️ Smaller scale | SaltStack proven at massive scale |
+| **State Model** | ✅ Declarative (YAML + Jinja2) | ✅ Procedural | SaltStack states; Ork explicit execution |
+| **Idempotency** | ✅ Built-in (states) | ✅ Playbook-level | Both support idempotent operations |
+| **Secrets Management** | ✅ Pillars (encrypted) | ✅ envenc vault | SaltStack has Pillars; Ork uses envenc |
+| **Targeting** | ✅ Powerful (grains, pillars, compound) | ⚠️ Manual (groups) | SaltStack advanced targeting; Ork manual groups |
+| **Configuration Language** | ✅ YAML + Jinja2 + Python | ✅ Go | SaltStack uses YAML/Jinja2; Ork uses Go |
+| **Package Management** | ✅ Cross-platform (modules) | ⚠️ Platform-specific playbooks | SaltStack handles OS differences; Ork needs playbooks per OS |
+| **Event System** | ✅ Built-in (reactors, beacons) | ❌ Manual | SaltStack has event-driven automation |
+| **Real-time** | ✅ Yes (ZeroMQ pub/sub) | ❌ No | SaltStack can react in real-time |
+| **Orchestration** | ✅ Built-in orchestration states | ❌ Manual Go code | SaltStack has orchestration engine |
+| **Module Ecosystem** | ✅ Extensive (3000+ modules) | ⚠️ Built-in + custom | SaltStack has large module library |
+| **Ad-hoc Commands** | ✅ Native (salt cmd.run) | ✅ RunCommand | Both support ad-hoc execution |
+| **Formulas** | ✅ Pre-built state collections | ⚠️ Built-in playbooks | SaltStack has community formulas |
+| **Type Safety** | ❌ No | ✅ Yes (Go) | Ork has compile-time type checking |
+| **Learning Curve** | ⚠️ Medium (YAML + Salt concepts) | ✅ Low (Go knowledge) | SaltStack requires learning DSL |
+| **Agentless Mode** | ✅ Yes (Salt SSH) | ✅ Yes (SSH) | Both support agentless mode |
+| **Reactive Automation** | ✅ Yes (beacons, reactors) | ❌ Manual | SaltStack can react to events |
+| **Cloud Integration** | ✅ Extensive (cloud modules) | ❌ Manual | SaltStack has many cloud modules |
 
 ## Summary
 

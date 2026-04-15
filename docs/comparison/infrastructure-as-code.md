@@ -61,12 +61,12 @@ summary := results.Summary()
 
 | Aspect | Pulumi | Ork |
 |--------|--------|-----|
-| **Creates VMs** | Yes | No |
-| **Configures Software** | Limited (user_data) | Yes |
-| **Language** | TS/Python/Go/C# | Go |
-| **State** | State file (backend) | None |
-| **Type Safety** | Yes (your language) | Yes (Go) |
-| **IDE Support** | Excellent | Excellent |
+| **Creates VMs** | ✅ Yes | ❌ No |
+| **Configures Software** | ⚠️ Limited (user_data) | ✅ Yes |
+| **Language** | ✅ TS/Python/Go/C# | ✅ Go |
+| **State** | ✅ State file (backend) | ❌ None |
+| **Type Safety** | ✅ Yes (your language) | ✅ Yes (Go) |
+| **IDE Support** | ✅ Excellent | ✅ Excellent |
 
 **Use together:** Pulumi provisions, Ork configures.
 
@@ -110,11 +110,11 @@ Resources:
 
 | Aspect | CloudFormation | Ork |
 |--------|----------------|-----|
-| **Scope** | AWS only | Any SSH server |
-| **Language** | JSON/YAML | Go |
-| **UserData** | Limited scripting | Full playbook library |
-| **Drift Detection** | Built-in | Manual (via Check) |
-| **Rollback** | Automatic | Manual |
+| **Scope** | ⚠️ AWS only | ✅ Any SSH server |
+| **Language** | ✅ JSON/YAML | ✅ Go |
+| **UserData** | ⚠️ Limited scripting | ✅ Full playbook library |
+| **Drift Detection** | ✅ Built-in | ⚠️ Manual (via Check) |
+| **Rollback** | ✅ Automatic | ⚠️ Manual |
 
 **CloudFormation UserData limitations:**
 - Run once at boot
@@ -160,10 +160,10 @@ resources:
 
 | Aspect | Deployment Manager | Ork |
 |--------|-------------------|-----|
-| **Scope** | GCP only | Any SSH server |
-| **Templates** | Jinja2/Python | Go code |
-| **Configuration** | Limited (startup scripts) | Full playbooks |
-| **Multi-cloud** | No | Yes |
+| **Scope** | ⚠️ GCP only | ✅ Any SSH server |
+| **Templates** | ✅ Jinja2/Python | ✅ Go code |
+| **Configuration** | ⚠️ Limited (startup scripts) | ✅ Full playbooks |
+| **Multi-cloud** | ❌ No | ✅ Yes |
 
 ---
 
@@ -211,11 +211,11 @@ spec:
 
 | Aspect | Crossplane | Ork |
 |--------|------------|-----|
-| **Platform** | Kubernetes | Any Go runtime |
-| **Interface** | YAML/Kubectl | Go API |
-| **Creates Resources** | Yes | No |
-| **Configures VMs** | No | Yes |
-| **GitOps** | Native (ArgoCD/Flux) | User implements |
+| **Platform** | ✅ Kubernetes | ✅ Any Go runtime |
+| **Interface** | ✅ YAML/Kubectl | ✅ Go API |
+| **Creates Resources** | ✅ Yes | ❌ No |
+| **Configures VMs** | ❌ No | ✅ Yes |
+| **GitOps** | ✅ Native (ArgoCD/Flux) | ⚠️ User implements |
 
 ---
 
@@ -244,13 +244,24 @@ Outputs:
 // Read IPs from IaC output
 ips := getCloudFormationOutput("ServerIPs")
 
+// Load secrets from vault (if needed)
+vaultKeys, err := ork.VaultFileToKeysWithPrompt("vault.envenc")
+if err != nil {
+    log.Fatal(err)
+}
+
 // Configure with Ork via Inventory
 inv := ork.NewInventory()
 webGroup := ork.NewGroup("webservers")
 for _, ip := range ips {
-    webGroup.AddNode(ork.NewNodeForHost(ip).
+    node := ork.NewNodeForHost(ip).
         SetUser("ubuntu").
-        SetKey("deploy.pem"))
+        SetKey("deploy.pem")
+    // Set vault secrets as node args
+    for key, value := range vaultKeys {
+        node.SetArg(key, value)
+    }
+    webGroup.AddNode(node)
 }
 inv.AddGroup(webGroup)
 
@@ -290,6 +301,8 @@ for host, result := range results.Results {
 - Running maintenance tasks
 - Application deployment
 - Cross-platform (works on any SSH server)
+- Secure secrets management (vault integration)
+- Interactive configuration (prompt functions)
 
 ### Use Both when:
 ```

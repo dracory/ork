@@ -312,6 +312,26 @@ bundle agent inventory {
 - Self-healing even without connectivity
 - Minimal attack surface (small C binary)
 
+## Feature Comparison Table
+
+| Feature | CFEngine | Ork | Notes |
+|---------|----------|-----|-------|
+| **Architecture** | ✅ Agent-based (C binary) | ✅ Agentless (SSH) | CFEngine has local agent; Ork uses SSH |
+| **Execution Model** | ✅ Pull (continuous) | ✅ Push (on-demand) | CFEngine runs continuously; Ork runs when invoked |
+| **Parallel Execution** | ✅ Native (agent-local) | ✅ Configurable concurrency | CFEngine parallel per-agent; Ork via SetMaxConcurrency() |
+| **Resource Usage** | ✅ Extremely lightweight (~1MB) | ⚠️ Connection-based | CFEngine minimal overhead; Ork uses SSH connections |
+| **Speed** | ✅ Very fast (C code) | ⚠️ Standard SSH speed | CFEngine local execution; Ork network latency |
+| **State Model** | ✅ Declarative (Promise Theory) | ✅ Procedural | CFEngine promises; Ork explicit execution |
+| **Idempotency** | ✅ Built-in (promises) | ✅ Playbook-level | Both support idempotent operations |
+| **Secrets Management** | ❌ Manual | ✅ envenc vault | Ork has built-in vault support |
+| **Configuration Distribution** | ✅ Policy Hub / Git | ⚠️ Go code / external | CFEngine has distribution system; Ork uses Go |
+| **Scalability** | ✅ 10,000+ nodes | ⚠️ Smaller scale | CFEngine proven at massive scale |
+| **Server Required** | ⚠️ Optional (Policy Hub) | ✅ No | CFEngine can run without central server |
+| **Type Safety** | ❌ No | ✅ Yes (Go) | Ork has compile-time type checking |
+| **Learning Curve** | ⚠️ Steep (unique concepts) | ✅ Low (Go knowledge) | CFEngine Promise Theory is unique |
+| **Compliance Reporting** | ✅ Built-in (Enterprise) | ❌ Manual | CFEngine has enterprise reporting |
+| **Drift Detection** | ✅ Built-in (continuous) | ⚠️ Manual (via Check) | CFEngine detects continuously; Ork on-demand |
+
 ## Summary
 
 **CFEngine Philosophy:**

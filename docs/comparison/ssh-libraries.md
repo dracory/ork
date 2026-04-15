@@ -58,13 +58,13 @@ fab -H user@host -i /path/to/key.pem diskspace
 
 | Aspect | Fabric | Ork |
 |--------|--------|-----|
-| **Language** | Python | Go |
-| **Level** | Command execution | Higher-level playbooks |
-| **SSH Handling** | Built-in (Invoke+Paramiko) | Built-in (custom) |
-| **Idempotency** | Manual | Built into playbooks |
-| **Type Safety** | No | Yes (Go) |
-| **Parallel** | Limited | Inventory (sequential) |
-| **Library/CLI** | Both CLI and library | Library |
+| **Language** | ✅ Python | ✅ Go |
+| **Level** | ⚠️ Command execution | ✅ Higher-level playbooks |
+| **SSH Handling** | ✅ Built-in (Invoke+Paramiko) | ✅ Built-in (custom) |
+| **Idempotency** | ❌ Manual | ✅ Built into playbooks |
+| **Type Safety** | ❌ No | ✅ Yes (Go) |
+| **Parallel** | ⚠️ Limited | ✅ Inventory (configurable concurrency) |
+| **Library/CLI** | ✅ Both CLI and library | ✅ Library |
 
 ### Fabric with Multiple Hosts
 ```python
@@ -136,11 +136,11 @@ client.close()
 
 | Aspect | Paramiko | Ork |
 |--------|----------|-----|
-| **Level** | Very low-level | High-level |
-| **Protocol** | SSH protocol implementation | Uses SSH library |
-| **Use Case** | Building SSH tools | End-user automation |
-| **Connection** | Manual management | Managed (persistent option) |
-| **Abstractions** | None | Nodes, Playbooks, Results |
+| **Level** | ⚠️ Very low-level | ✅ High-level |
+| **Protocol** | ✅ SSH protocol implementation | ⚠️ Uses SSH library |
+| **Use Case** | ⚠️ Building SSH tools | ✅ End-user automation |
+| **Connection** | ❌ Manual management | ✅ Managed (persistent option) |
+| **Abstractions** | ❌ None | ✅ Nodes, Playbooks, Results |
 
 ### Paramiko SFTP Example
 ```python
@@ -237,12 +237,12 @@ cap production deploy:check_disk
 
 | Aspect | Capistrano | Ork |
 |--------|------------|-----|
-| **Language** | Ruby | Go |
-| **Focus** | Application deployment | Server automation |
-| **Structure** | Opinionated framework | Flexible library |
-| **Roles** | Built-in | Planned (Inventory groups) |
-| **Workflow** | Deploy-specific (symlink, rollback) | General automation |
-| **Asset Pipeline** | Rails-optimized | Generic |
+| **Language** | ✅ Ruby | ✅ Go |
+| **Focus** | ⚠️ Application deployment | ✅ Server automation |
+| **Structure** | ⚠️ Opinionated framework | ✅ Flexible library |
+| **Roles** | ✅ Built-in | ⚠️ Planned (Inventory groups) |
+| **Workflow** | ⚠️ Deploy-specific (symlink, rollback) | ✅ General automation |
+| **Asset Pipeline** | ⚠️ Rails-optimized | ⚠️ Generic |
 
 ### Capistrano Deployment Flow
 ```
@@ -280,6 +280,52 @@ func deploy(node ork.NodeInterface, version string) {
     // Restart
     results = node.RunCommand("sudo systemctl restart myapp")
 }
+```
+
+---
+
+## Ork-Specific Features
+
+### Vault Support
+
+Ork includes built-in vault integration for secure secrets management using envenc, which is not available in Fabric, Paramiko, or Capistrano.
+
+```go
+// Load secrets from encrypted vault file
+keys, err := ork.VaultFileToKeys("vault.envenc", "password")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Hydrate environment variables from vault
+err = ork.VaultFileToEnv("vault.envenc", "password")
+
+// Interactive password prompt
+keys, err = ork.VaultFileToKeysWithPrompt("vault.envenc")
+```
+
+### Interactive Prompts
+
+Ork provides comprehensive prompt functions for interactive user input, which other SSH libraries lack.
+
+```go
+// Prompt for various input types
+username, _ := ork.PromptForString("Username")
+password, _ := ork.PromptForPasswordWithConfirmation("Password")
+port, _ := ork.PromptForIntWithDefault("Port", 8080)
+enabled, _ := ork.PromptForBool("Enable feature")
+
+// Multi-prompt with validation
+prompts := []types.PromptConfig{
+    {Name: "email", Prompt: "Email", Required: true,
+     Validate: func(v string) error {
+         if !strings.Contains(v, "@") {
+             return fmt.Errorf("invalid email")
+         }
+         return nil
+     }},
+}
+results, _ := ork.PromptMultiple(prompts)
 ```
 
 ---
@@ -431,4 +477,6 @@ for _, host := range hosts {
 | Go server automation | Ork |
 | Type safety + compile-time checks | Ork |
 | Reusable playbooks | Ork |
+| Secure secrets management (vault) | Ork |
+| Interactive user input (prompts) | Ork |
 | Simple, no dependencies | Fabric (Python) or Ork (Go binary) |

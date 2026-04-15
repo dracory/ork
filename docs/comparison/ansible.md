@@ -206,7 +206,7 @@ results = webServers.CheckPlaybook(ping)
 | **Custom Modules** | Python | Go (compile in) |
 | **Module Repository** | Ansible Galaxy | Built-in + custom |
 | **Templating** | Jinja2 | Go templates/text/template |
-| **Secrets** | Ansible Vault | User implements |
+| **Secrets** | Ansible Vault | envenc vault integration |
 | **Callbacks** | Custom callback plugins | Go interfaces |
 
 ## Feature Comparison Table
@@ -214,14 +214,14 @@ results = webServers.CheckPlaybook(ping)
 | Feature | Ansible | Ork | Notes |
 |---------|---------|-----|-------|
 | **Dynamic Inventory** | ✅ Yes (scripts) | ✅ Yes (Go code) | Ansible uses dedicated inventory scripts; Ork queries external sources via Go code (AWS SDK, etc.) |
-| **Parallel Execution** | ✅ Yes (native) | ❌ No (sequential) | Ansible runs tasks in parallel by default; Ork is sequential |
+| **Parallel Execution** | ✅ Yes (native) | ✅ Yes (configurable) | Ansible runs tasks in parallel by default; Ork supports configurable concurrency via SetMaxConcurrency() |
 | **Check Mode (Dry-run)** | ✅ Yes | ✅ Yes | Both support previewing changes without applying |
 | **Handlers** | ✅ Yes | ❌ No | Ansible has notify/handlers for event-driven actions |
 | **Roles** | ✅ Yes | ⚠️ Partial | Ansible has built-in roles; Ork can organize playbooks manually |
 | **Modules** | ✅ 3000+ | ⚠️ Limited | Ansible has vast module library; Ork has built-in playbooks |
 | **Templates** | ✅ Jinja2 | ⚠️ Go templates | Ansible uses Jinja2; Ork uses Go's text/template |
 | **Variables** | ✅ Complex hierarchy | ✅ Args/Config | Ansible has 12-level precedence; Ork has simpler precedence |
-| **Secrets Management** | ✅ Ansible Vault | ❌ Manual | Ansible has built-in encryption; Ork relies on external tools |
+| **Secrets Management** | ✅ Ansible Vault | ✅ envenc vault | Ansible has built-in encryption; Ork uses envenc for encrypted vault files |
 | **Error Handling** | ✅ ignore_errors, failed_when | ✅ Go error handling | Ansible has declarative error handling; Ork uses Go's error patterns |
 | **Retry Mechanisms** | ✅ until/retries | ❌ Manual | Ansible has built-in retries; Ork requires manual implementation |
 | **Windows Support** | ✅ Yes | ⚠️ Limited | Ansible has WinRM modules; Ork SSH-based (limited Windows) |
@@ -233,7 +233,7 @@ results = webServers.CheckPlaybook(ping)
 | **Blocks** | ✅ Yes | ❌ No | Ansible can group tasks with error handling |
 | **Async Tasks** | ✅ Yes | ❌ No | Ansible supports long-running async tasks |
 | **Facts Gathering** | ✅ Yes (automatic) | ❌ Manual | Ansible auto-collects system info; Ork requires manual commands |
-| **Vault Encryption** | ✅ Yes | ❌ No | Ansible encrypts variables at rest |
+| **Vault Encryption** | ✅ Yes | ✅ Yes (envenc) | Ansible encrypts variables at rest; Ork uses envenc for vault encryption |
 | **Galaxy Ecosystem** | ✅ Yes (roles/collections) | ❌ No | Ansible has community repository |
 | **CLI Tool** | ✅ Yes | ⚠️ Planned | Ansible has ansible/ansible-playbook CLI; Ork is library-first |
 | **API/Library** | ⚠️ Python API | ✅ Go API | Ansible is CLI-first with Python API; Ork is Go library |

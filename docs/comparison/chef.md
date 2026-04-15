@@ -229,6 +229,33 @@ if result.Changed {
 | Node | Node |
 | Knife CLI | Go API / future CLI |
 
+## Feature Comparison Table
+
+| Feature | Chef | Ork | Notes |
+|---------|------|-----|-------|
+| **Architecture** | ✅ Agent-based (Chef Client) | ✅ Agentless (SSH) | Chef requires agent installation; Ork uses SSH |
+| **Execution Model** | ✅ Pull (every 30 min) | ✅ Push (on-demand) | Chef runs continuously; Ork runs when invoked |
+| **Server Required** | ✅ Yes (Chef Server) | ✅ No | Chef needs central server; Ork is standalone |
+| **Parallel Execution** | ✅ Native (Chef Server) | ✅ Configurable concurrency | Chef parallel via server; Ork via SetMaxConcurrency() |
+| **State Model** | ✅ Declarative / Convergent | ✅ Procedural | Chef declares desired state; Ork explicit execution |
+| **Idempotency** | ✅ Built-in (resources) | ✅ Playbook-level | Both support idempotent operations |
+| **Secrets Management** | ✅ Chef Vault / Data Bags | ✅ envenc vault | Chef has encrypted data bags; Ork uses envenc |
+| **Inventory** | ✅ Dynamic (node registry) | ✅ Programmatic (structs) | Chef nodes self-register; Ork explicit creation |
+| **Configuration Language** | ✅ Ruby (DSL) | ✅ Go | Chef uses Ruby DSL; Ork uses Go |
+| **Package Management** | ✅ Cross-platform (resource providers) | ⚠️ Platform-specific playbooks | Chef handles OS differences; Ork needs playbooks per OS |
+| **Templates** | ✅ ERB templates | ✅ Go templates | Both support templating |
+| **Search/Query** | ✅ Built-in search API | ❌ Manual filtering | Chef can query node attributes; Ork manual |
+| **Role Management** | ✅ Built-in roles | ⚠️ Manual (groups) | Chef has role system; Ork uses groups |
+| **Environments** | ✅ Built-in environments | ⚠️ Group-level args | Chef has environment concept; Ork uses args |
+| **Data Bags** | ✅ Built-in data storage | ⚠️ Go structs / config | Chef has data bags; Ork uses Go structures |
+| **Cookbook Ecosystem** | ✅ Supermarket (community) | ⚠️ Built-in + custom | Chef has large cookbook repository |
+| **Test Framework** | ✅ Test Kitchen, InSpec | ⚠️ Go testing + testcontainers | Chef has mature testing tools |
+| **Compliance** | ✅ InSpec (built-in) | ❌ Manual | Chef has compliance scanning |
+| **Type Safety** | ❌ No | ✅ Yes (Go) | Ork has compile-time type checking |
+| **Learning Curve** | ⚠️ Steep (Ruby + Chef concepts) | ✅ Low (Go knowledge) | Chef requires Ruby and DSL knowledge |
+| **Scalability** | ✅ Hundreds/thousands of nodes | ⚠️ Smaller scale | Chef designed for large fleets |
+| **Continuous Enforcement** | ✅ Yes (client runs) | ❌ No (on-demand) | Chef enforces continuously; Ork on-demand |
+
 ## When to Choose Each
 
 ### Choose Chef when:

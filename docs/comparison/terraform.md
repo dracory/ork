@@ -282,17 +282,17 @@ for _, ip := range ips {
 
 | Feature | Terraform | Ork |
 |---------|-----------|-----|
-| **Create VMs** | Yes (AWS, Azure, GCP, etc.) | No |
-| **Configure Software** | Limited (user_data) | Yes |
-| **Manage Users** | No | Yes |
-| **Install Packages** | No | Yes |
-| **Deploy Apps** | No | Yes |
-| **Run Commands** | No | Yes |
-| **Parallel Execution** | Resource-level | Inventory-level (planned) |
-| **Rolling Updates** | Via resource lifecycle | Manual |
-| **State Tracking** | Yes (state file) | No |
-| **Drift Detection** | Yes | Manual (via Check) |
-| **Destroy Resources** | Yes | No |
+| **Create VMs** | ✅ Yes (AWS, Azure, GCP, etc.) | ❌ No |
+| **Configure Software** | ⚠️ Limited (user_data) | ✅ Yes |
+| **Manage Users** | ❌ No | ✅ Yes |
+| **Install Packages** | ❌ No | ✅ Yes |
+| **Deploy Apps** | ❌ No | ✅ Yes |
+| **Run Commands** | ❌ No | ✅ Yes |
+| **Parallel Execution** | ✅ Resource-level | ✅ Inventory-level (configurable) |
+| **Rolling Updates** | ✅ Via resource lifecycle | ⚠️ Manual |
+| **State Tracking** | ✅ Yes (state file) | ❌ No |
+| **Drift Detection** | ✅ Yes | ⚠️ Manual (via Check) |
+| **Destroy Resources** | ✅ Yes | ❌ No |
 
 ## When to Use Each
 

@@ -164,6 +164,33 @@ if result.Changed {
 | Node definition | Node instantiation |
 | Hiera (data) | Go structs / config |
 
+## Feature Comparison Table
+
+| Feature | Puppet | Ork | Notes |
+|---------|--------|-----|-------|
+| **Architecture** | ✅ Master-Agent (centralized) | ✅ Agentless (SSH) | Puppet requires master/agent; Ork uses SSH |
+| **Execution Model** | ✅ Pull (every 30 min) | ✅ Push (on-demand) | Puppet runs continuously; Ork runs when invoked |
+| **Server Required** | ✅ Yes (Puppet Master) | ✅ No | Puppet needs master server; Ork is standalone |
+| **Parallel Execution** | ✅ Native (master compiles catalogs) | ✅ Configurable concurrency | Puppet parallel at master level; Ork via SetMaxConcurrency() |
+| **State Model** | ✅ Declarative (catalogs) | ✅ Procedural | Puppet declares desired state; Ork explicit execution |
+| **Idempotency** | ✅ Built-in (resources) | ✅ Playbook-level | Both support idempotent operations |
+| **Secrets Management** | ✅ Hiera (encrypted) | ✅ envenc vault | Puppet has Hiera for data; Ork uses envenc |
+| **Inventory** | ✅ Node registry (PuppetDB) | ✅ Programmatic (structs) | Puppet nodes registered; Ork explicit creation |
+| **Configuration Language** | ✅ Ruby (DSL) | ✅ Go | Puppet uses Ruby DSL; Ork uses Go |
+| **Package Management** | ✅ Cross-platform (resource providers) | ⚠️ Platform-specific playbooks | Puppet handles OS differences; Ork needs playbooks per OS |
+| **Templates** | ✅ ERB templates | ✅ Go templates | Both support templating |
+| **Facts Gathering** | ✅ Built-in (Facter) | ❌ Manual commands | Puppet auto-collects facts; Ork manual |
+| **Catalog Compilation** | ✅ Master compiles for each node | ❌ No catalog | Puppet compiles desired state; Ork executes directly |
+| **Reporting** | ✅ PuppetDB (built-in) | ⚠️ Manual (results map) | Puppet has reporting database; Ork returns results |
+| **Compliance** | ✅ Built-in (PuppetDB reports) | ⚠️ Manual (via Check) | Puppet tracks compliance; Ork on-demand checks |
+| **Module Ecosystem** | ✅ Puppet Forge (community) | ⚠️ Built-in + custom | Puppet has large module repository |
+| **Role/Profile Pattern** | ✅ Built-in pattern | ⚠️ Manual (groups) | Puppet has role/profile concept; Ork uses groups |
+| **Type Safety** | ❌ No | ✅ Yes (Go) | Ork has compile-time type checking |
+| **Learning Curve** | ⚠️ Steep (DSL + Puppet concepts) | ✅ Low (Go knowledge) | Puppet requires DSL knowledge |
+| **Scalability** | ✅ 100+ nodes | ⚠️ Smaller scale | Puppet designed for medium-large fleets |
+| **Continuous Enforcement** | ✅ Yes (agent runs) | ❌ No (on-demand) | Puppet enforces continuously; Ork on-demand |
+| **Drift Detection** | ✅ Built-in (PuppetDB) | ⚠️ Manual (via Check) | Puppet detects drift via reports; Ork on-demand |
+
 ## When to Choose
 
 ### Use Puppet when:
