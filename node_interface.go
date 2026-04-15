@@ -1,8 +1,6 @@
 package ork
 
-import (
-	"github.com/dracory/ork/config"
-)
+import "github.com/dracory/ork/config"
 
 // NodeInterface defines the contract for managing a remote server via SSH.
 // Implementations must support configuration via setter methods, connection

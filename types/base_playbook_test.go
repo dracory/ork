@@ -3,8 +3,6 @@ package types
 import (
 	"testing"
 	"time"
-
-	"github.com/dracory/ork/config"
 )
 
 func TestNewBasePlaybook(t *testing.T) {
@@ -57,7 +55,7 @@ func TestBasePlaybook_Setters(t *testing.T) {
 	}
 
 	// Test SetNodeConfig
-	cfg := config.NodeConfig{
+	cfg := NodeConfig{
 		SSHHost:  "test-host",
 		SSHPort:  "22",
 		SSHLogin: "test-user",

@@ -2,8 +2,6 @@ package types
 
 import (
 	"time"
-
-	"github.com/dracory/ork/config"
 )
 
 // RunnableOptions provides configuration options for runnable execution.
@@ -48,11 +46,11 @@ type RunnableInterface interface {
 	SetDescription(description string) RunnableInterface
 
 	// GetNodeConfig returns the current node configuration for this skill.
-	GetNodeConfig() config.NodeConfig
+	GetNodeConfig() NodeConfig
 
 	// SetNodeConfig sets the node configuration for this skill execution.
 	// Returns the RunnableInterface for fluent method chaining.
-	SetNodeConfig(cfg config.NodeConfig) RunnableInterface
+	SetNodeConfig(cfg NodeConfig) RunnableInterface
 
 	// GetArg retrieves a single argument value by key.
 	GetArg(key string) string

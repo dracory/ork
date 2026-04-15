@@ -1,8 +1,10 @@
-package types
+package ork
 
 import (
 	"fmt"
 	"time"
+
+	"github.com/dracory/ork/types"
 )
 
 // BasePlaybook provides a foundation for playbook development.
@@ -17,19 +19,19 @@ import (
 //
 //	func NewMyPlaybook() *MyPlaybook {
 //	    return &MyPlaybook{
-//	        BasePlaybook: types.NewBasePlaybook().
+//	        BasePlaybook: ork.NewBasePlaybook().
 //	            SetID("my-playbook").
 //	            SetDescription("What this playbook does"),
 //	    }
 //	}
 //
-//	func (m *MyPlaybook) Run() Result {
+//	func (m *MyPlaybook) Run() types.Result {
 //	    // Execute the playbook with complex orchestration logic
 //	}
 type BasePlaybook struct {
 	id          string
 	description string
-	nodeCfg     NodeConfig
+	nodeCfg     types.NodeConfig
 	args        map[string]string
 	dryRun      bool
 	timeout     time.Duration
@@ -50,8 +52,8 @@ func (b *BasePlaybook) GetID() string {
 }
 
 // SetID sets the unique identifier for this playbook.
-// Returns RunnableInterface for fluent method chaining with embedding types.
-func (b *BasePlaybook) SetID(id string) RunnableInterface {
+// Returns types.RunnableInterface for fluent method chaining with embedding types.
+func (b *BasePlaybook) SetID(id string) types.RunnableInterface {
 	b.id = id
 	return b
 }
@@ -62,20 +64,20 @@ func (b *BasePlaybook) GetDescription() string {
 }
 
 // SetDescription sets a short description of what the playbook does.
-// Returns RunnableInterface for fluent method chaining with embedding types.
-func (b *BasePlaybook) SetDescription(description string) RunnableInterface {
+// Returns types.RunnableInterface for fluent method chaining with embedding types.
+func (b *BasePlaybook) SetDescription(description string) types.RunnableInterface {
 	b.description = description
 	return b
 }
 
 // GetNodeConfig returns the current node configuration for this playbook.
-func (b *BasePlaybook) GetNodeConfig() NodeConfig {
+func (b *BasePlaybook) GetNodeConfig() types.NodeConfig {
 	return b.nodeCfg
 }
 
 // SetNodeConfig sets the node configuration for this playbook execution.
-// Returns RunnableInterface for fluent method chaining with embedding types.
-func (b *BasePlaybook) SetNodeConfig(cfg NodeConfig) RunnableInterface {
+// Returns types.RunnableInterface for fluent method chaining with embedding types.
+func (b *BasePlaybook) SetNodeConfig(cfg types.NodeConfig) types.RunnableInterface {
 	b.nodeCfg = cfg
 	return b
 }
@@ -86,8 +88,8 @@ func (b *BasePlaybook) GetArg(key string) string {
 }
 
 // SetArg sets a single argument value.
-// Returns RunnableInterface for fluent method chaining.
-func (b *BasePlaybook) SetArg(key, value string) RunnableInterface {
+// Returns types.RunnableInterface for fluent method chaining.
+func (b *BasePlaybook) SetArg(key, value string) types.RunnableInterface {
 	if b.args == nil {
 		b.args = make(map[string]string)
 	}
@@ -101,8 +103,8 @@ func (b *BasePlaybook) GetArgs() map[string]string {
 }
 
 // SetArgs replaces the entire arguments map.
-// Returns RunnableInterface for fluent method chaining.
-func (b *BasePlaybook) SetArgs(args map[string]string) RunnableInterface {
+// Returns types.RunnableInterface for fluent method chaining.
+func (b *BasePlaybook) SetArgs(args map[string]string) types.RunnableInterface {
 	b.args = args
 	return b
 }
@@ -113,8 +115,8 @@ func (b *BasePlaybook) IsDryRun() bool {
 }
 
 // SetDryRun sets whether to simulate execution without making changes.
-// Returns RunnableInterface for fluent method chaining.
-func (b *BasePlaybook) SetDryRun(dryRun bool) RunnableInterface {
+// Returns types.RunnableInterface for fluent method chaining.
+func (b *BasePlaybook) SetDryRun(dryRun bool) types.RunnableInterface {
 	b.dryRun = dryRun
 	return b
 }
@@ -125,8 +127,8 @@ func (b *BasePlaybook) GetTimeout() time.Duration {
 }
 
 // SetTimeout sets the maximum duration for playbook execution.
-// Returns RunnableInterface for fluent method chaining.
-func (b *BasePlaybook) SetTimeout(timeout time.Duration) RunnableInterface {
+// Returns types.RunnableInterface for fluent method chaining.
+func (b *BasePlaybook) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	b.timeout = timeout
 	return b
 }
@@ -140,8 +142,8 @@ func (b *BasePlaybook) Check() (bool, error) {
 
 // Run must be overridden by playbook implementations.
 // Playbooks implement complex orchestration logic here.
-func (b *BasePlaybook) Run() Result {
-	return Result{
+func (b *BasePlaybook) Run() types.Result {
+	return types.Result{
 		Changed: false,
 		Message: "Run() must be implemented by playbook",
 		Error:   fmt.Errorf("Run() must be implemented by playbook"),

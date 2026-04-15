@@ -1,5 +1,5 @@
-// Package config provides configuration types for SSH-based automation.
-package config
+// Package types provides core types for SSH-based automation.
+package types
 
 import "log/slog"
 

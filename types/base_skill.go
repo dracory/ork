@@ -3,8 +3,6 @@ package types
 import (
 	"fmt"
 	"time"
-
-	"github.com/dracory/ork/config"
 )
 
 // BaseSkill provides default implementations of the RunnableInterface.
@@ -35,7 +33,7 @@ import (
 type BaseSkill struct {
 	id          string
 	description string
-	nodeCfg     config.NodeConfig
+	nodeCfg     NodeConfig
 	args        map[string]string
 	dryRun      bool
 	timeout     time.Duration
@@ -75,13 +73,13 @@ func (b *BaseSkill) SetDescription(description string) RunnableInterface {
 }
 
 // GetNodeConfig returns the current node configuration for this skill.
-func (b *BaseSkill) GetNodeConfig() config.NodeConfig {
+func (b *BaseSkill) GetNodeConfig() NodeConfig {
 	return b.nodeCfg
 }
 
 // SetNodeConfig sets the node configuration for this skill execution.
 // Returns RunnableInterface for fluent method chaining with embedding types.
-func (b *BaseSkill) SetNodeConfig(cfg config.NodeConfig) RunnableInterface {
+func (b *BaseSkill) SetNodeConfig(cfg NodeConfig) RunnableInterface {
 	b.nodeCfg = cfg
 	return b
 }
