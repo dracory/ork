@@ -11,7 +11,7 @@ import (
 func TestEnableEncryption_Run_DryRun(t *testing.T) {
 	pb := NewEnableEncryption()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -39,7 +39,7 @@ func TestEnableEncryption_Run_DryRun(t *testing.T) {
 func TestEnableEncryption_Run_NotDryRun(t *testing.T) {
 	pb := NewEnableEncryption()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},

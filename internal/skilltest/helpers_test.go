@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/types"
 )
 
@@ -84,7 +83,7 @@ func TestSkillTest_Config(t *testing.T) {
 
 func TestSkillTest_SetConfig(t *testing.T) {
 	test := New(t)
-	newCfg := config.NodeConfig{
+	newCfg := types.NodeConfig{
 		SSHHost: "new.example.com",
 	}
 

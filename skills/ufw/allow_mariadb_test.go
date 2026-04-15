@@ -11,7 +11,7 @@ import (
 func TestAllowMariaDB_Run_DryRun_AnyIP(t *testing.T) {
 	pb := NewAllowMariaDB()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -47,7 +47,7 @@ func TestAllowMariaDB_Run_DryRun_AnyIP(t *testing.T) {
 func TestAllowMariaDB_Run_DryRun_SpecificIP(t *testing.T) {
 	pb := NewAllowMariaDB()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -85,7 +85,7 @@ func TestAllowMariaDB_Run_DryRun_SpecificIP(t *testing.T) {
 func TestAllowMariaDB_Run_DryRun_MultipleIPs(t *testing.T) {
 	pb := NewAllowMariaDB()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -124,7 +124,7 @@ func TestAllowMariaDB_Run_DryRun_MultipleIPs(t *testing.T) {
 func TestAllowMariaDB_Run_DryRun_CustomPort(t *testing.T) {
 	pb := NewAllowMariaDB()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -162,7 +162,7 @@ func TestAllowMariaDB_Run_DryRun_CustomPort(t *testing.T) {
 func TestAllowMariaDB_Run_DryRun_SpecificIPAndCustomPort(t *testing.T) {
 	pb := NewAllowMariaDB()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -201,7 +201,7 @@ func TestAllowMariaDB_Run_DryRun_SpecificIPAndCustomPort(t *testing.T) {
 func TestAllowMariaDB_Run_DryRun_IPWithWhitespace(t *testing.T) {
 	pb := NewAllowMariaDB()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -235,7 +235,7 @@ func TestAllowMariaDB_Run_DryRun_IPWithWhitespace(t *testing.T) {
 func TestAllowMariaDB_Run_NotDryRun(t *testing.T) {
 	pb := NewAllowMariaDB()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -258,7 +258,7 @@ func TestAllowMariaDB_Run_NotDryRun(t *testing.T) {
 func TestAllowMariaDB_Check(t *testing.T) {
 	pb := NewAllowMariaDB()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		Logger: slog.Default(),
 	}
 

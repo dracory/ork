@@ -11,7 +11,7 @@ import (
 func TestAptUpgrade_Run_DryRun(t *testing.T) {
 	pb := NewAptUpgrade()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -39,7 +39,7 @@ func TestAptUpgrade_Run_DryRun(t *testing.T) {
 func TestAptUpgrade_Run_NotDryRun(t *testing.T) {
 	pb := NewAptUpgrade()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},

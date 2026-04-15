@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/types"
 )
 
@@ -442,8 +441,8 @@ func (m *groupTestMockNode) GetArgs() map[string]string {
 	return result
 }
 
-func (m *groupTestMockNode) GetNodeConfig() config.NodeConfig {
-	return config.NodeConfig{
+func (m *groupTestMockNode) GetNodeConfig() types.NodeConfig {
+	return types.NodeConfig{
 		SSHHost:  m.host,
 		SSHPort:  "22",
 		RootUser: "root",
@@ -527,7 +526,7 @@ func (m *groupTestMockNode) GetDryRunMode() bool {
 // groupTestMockPlaybook is a mock implementation of types.RunnableInterface for testing.
 type groupTestMockPlaybook struct {
 	name    string
-	cfg     config.NodeConfig
+	cfg     types.NodeConfig
 	dryRun  bool
 	args    map[string]string
 	timeout time.Duration
@@ -550,11 +549,11 @@ func (m *groupTestMockPlaybook) SetDescription(desc string) types.RunnableInterf
 	return m
 }
 
-func (m *groupTestMockPlaybook) GetNodeConfig() config.NodeConfig {
+func (m *groupTestMockPlaybook) GetNodeConfig() types.NodeConfig {
 	return m.cfg
 }
 
-func (m *groupTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.RunnableInterface {
+func (m *groupTestMockPlaybook) SetNodeConfig(cfg types.NodeConfig) types.RunnableInterface {
 	m.cfg = cfg
 	return m
 }

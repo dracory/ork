@@ -4,7 +4,6 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/internal/sshtest"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
@@ -14,7 +13,7 @@ import (
 type SkillTest struct {
 	t          *testing.T
 	mockClient *sshtest.MockClient
-	config     config.NodeConfig
+	config     types.NodeConfig
 }
 
 // New creates a new SkillTest instance with default configuration.
@@ -22,7 +21,7 @@ func New(t *testing.T) *SkillTest {
 	return &SkillTest{
 		t:          t,
 		mockClient: sshtest.NewMockClient(),
-		config: config.NodeConfig{
+		config: types.NodeConfig{
 			SSHHost:  "test.example.com",
 			SSHPort:  "22",
 			SSHLogin: "testuser",
@@ -41,7 +40,7 @@ func (pt *SkillTest) Setup() *SkillTest {
 	pt.mockClient.Connect()
 
 	// Set the SSH override function
-	ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
+	ssh.SetRunFunc(func(cfg types.NodeConfig, cmd types.Command) (string, error) {
 		return pt.mockClient.Run(cmd.Command)
 	})
 
@@ -68,12 +67,12 @@ func (pt *SkillTest) ExpectError(cmd string, err error) *SkillTest {
 }
 
 // Config returns the test configuration.
-func (pt *SkillTest) Config() config.NodeConfig {
+func (pt *SkillTest) Config() types.NodeConfig {
 	return pt.config
 }
 
 // SetConfig sets a custom configuration for the test.
-func (pt *SkillTest) SetConfig(cfg config.NodeConfig) *SkillTest {
+func (pt *SkillTest) SetConfig(cfg types.NodeConfig) *SkillTest {
 	pt.config = cfg
 	return pt
 }

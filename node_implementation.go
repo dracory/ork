@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
 
 // nodeImplementation is the default implementation of NodeInterface.
-// It wraps config.NodeConfig and optionally maintains a persistent SSH connection.
+// It wraps types.NodeConfig and optionally maintains a persistent SSH connection.
 //
-// The nodeImplementation struct stores all configuration in a config.NodeConfig and tracks
+// The nodeImplementation struct stores all configuration in a types.NodeConfig and tracks
 // connection state. When Connect() is called, it establishes a persistent
 // SSH connection that is reused for subsequent operations. When not connected,
 // operations create one-time connections.
@@ -25,7 +24,7 @@ import (
 //	// node.connected is false
 //	// node.sshClient is nil
 type nodeImplementation struct {
-	cfg       config.NodeConfig
+	cfg       types.NodeConfig
 	sshClient *ssh.Client
 	connected bool
 }
@@ -175,7 +174,7 @@ func (n *nodeImplementation) GetArgs() map[string]string {
 	return argsCopy
 }
 
-// GetNodeConfig returns a copy of the underlying config.NodeConfig.
+// GetNodeConfig returns a copy of the underlying types.NodeConfig.
 // This allows integration with code that uses the config package directly.
 // The returned configuration includes all accumulated settings (host, port, user, key, args).
 //
@@ -189,7 +188,7 @@ func (n *nodeImplementation) GetArgs() map[string]string {
 //	    SetUser("deploy")
 //	cfg := node.GetNodeConfig()
 //	fmt.Printf("Connecting to %s\n", cfg.SSHAddr())
-func (n *nodeImplementation) GetNodeConfig() config.NodeConfig {
+func (n *nodeImplementation) GetNodeConfig() types.NodeConfig {
 	cfgCopy := n.cfg
 
 	if n.cfg.Args != nil {

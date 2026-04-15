@@ -4,19 +4,18 @@ import (
 	"os/user"
 	"sync"
 
-	"github.com/dracory/ork/config"
 	"github.com/dracory/ork/types"
 )
 
 // runFunc is the function used to execute SSH commands.
 // Can be overridden for testing.
-var runFunc func(config.NodeConfig, types.Command) (string, error)
+var runFunc func(types.NodeConfig, types.Command) (string, error)
 var runFuncMu sync.RWMutex
 
 // SetRunFunc sets a custom function for executing SSH commands.
 // This is intended for testing purposes only.
 // Call with nil to restore the default behavior.
-func SetRunFunc(fn func(config.NodeConfig, types.Command) (string, error)) {
+func SetRunFunc(fn func(types.NodeConfig, types.Command) (string, error)) {
 	runFuncMu.Lock()
 	defer runFuncMu.Unlock()
 	runFunc = fn
@@ -57,7 +56,7 @@ func PrivateKeyPath(sshKey string) string {
 // IMPORTANT: The callers must not rely on the safety net of this function.
 // They should handle the dry-run mode themselves before calling this function.
 // This is just a final safety net, as a last resort for implementation mistakes.
-func Run(cfg config.NodeConfig, cmd types.Command) (string, error) {
+func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 	// Check if a test override is set
 	runFuncMu.RLock()
 	fn := runFunc

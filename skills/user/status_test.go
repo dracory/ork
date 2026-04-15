@@ -12,7 +12,7 @@ func TestUserStatus_Run_DryRun(t *testing.T) {
 	pb := NewUserStatus()
 	pb.SetArg("username", "testuser")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -40,7 +40,7 @@ func TestUserStatus_Run_DryRun(t *testing.T) {
 func TestUserStatus_Run_RequiresUsername(t *testing.T) {
 	pb := NewUserStatus()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -64,7 +64,7 @@ func TestUserStatus_Run_RequiresUsername(t *testing.T) {
 func TestUserStatus_Check(t *testing.T) {
 	pb := NewUserStatus()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		Logger: slog.Default(),
 	}
 

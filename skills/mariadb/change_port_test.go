@@ -12,7 +12,7 @@ func TestChangePort_Run_DryRun(t *testing.T) {
 	pb := NewChangePort()
 	pb.SetArg("port", "3307")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -39,7 +39,7 @@ func TestChangePort_Run_DryRun(t *testing.T) {
 func TestChangePort_Run_DryRun_NoPort(t *testing.T) {
 	pb := NewChangePort()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -63,7 +63,7 @@ func TestChangePort_Run_DryRun_InvalidPort(t *testing.T) {
 	pb := NewChangePort()
 	pb.SetArg("port", "3306")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -87,7 +87,7 @@ func TestChangePort_Run_NotDryRun(t *testing.T) {
 	pb := NewChangePort()
 	pb.SetArg("port", "3307")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 	}

@@ -11,7 +11,7 @@ import (
 func TestBackupEncrypt_Run_DryRun(t *testing.T) {
 	pb := NewBackupEncrypt()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -42,7 +42,7 @@ func TestBackupEncrypt_Run_DryRun(t *testing.T) {
 func TestBackupEncrypt_Run_DryRun_NoDbName(t *testing.T) {
 	pb := NewBackupEncrypt()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -68,7 +68,7 @@ func TestBackupEncrypt_Run_DryRun_NoDbName(t *testing.T) {
 func TestBackupEncrypt_Run_NotDryRun(t *testing.T) {
 	pb := NewBackupEncrypt()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args: map[string]string{

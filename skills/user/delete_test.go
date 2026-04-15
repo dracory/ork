@@ -12,7 +12,7 @@ func TestUserDelete_Run_DryRun(t *testing.T) {
 	pb := NewUserDelete()
 	pb.SetArg("username", "testuser")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -39,7 +39,7 @@ func TestUserDelete_Run_DryRun(t *testing.T) {
 func TestUserDelete_Run_DryRun_NoUsername(t *testing.T) {
 	pb := NewUserDelete()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -64,7 +64,7 @@ func TestUserDelete_Run_DryRun_RootUser(t *testing.T) {
 	pb := NewUserDelete()
 	pb.SetArg("username", "root")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -88,7 +88,7 @@ func TestUserDelete_Run_NotDryRun(t *testing.T) {
 	pb := NewUserDelete()
 	pb.SetArg("username", "testuser")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 	}

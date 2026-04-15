@@ -102,7 +102,7 @@ func (u *AllowMariaDB) Run() types.Result {
 }
 
 // allowIPs executes IP processing with the appropriate method based on IP value
-func (u *AllowMariaDB) allowIPs(cfg config.NodeConfig, ip string, mariaDBPort string, isDryRun bool) ([]string, error) {
+func (u *AllowMariaDB) allowIPs(cfg types.NodeConfig, ip string, mariaDBPort string, isDryRun bool) ([]string, error) {
 	if ip == "" || ip == "any" {
 		return u.allowAnyIP(cfg, mariaDBPort, isDryRun)
 	}
@@ -120,7 +120,7 @@ func (u *AllowMariaDB) allowIPs(cfg config.NodeConfig, ip string, mariaDBPort st
 }
 
 // allowAnyIP handles allowing MariaDB access from any IP
-func (u *AllowMariaDB) allowAnyIP(cfg config.NodeConfig, mariaDBPort string, isDryRun bool) ([]string, error) {
+func (u *AllowMariaDB) allowAnyIP(cfg types.NodeConfig, mariaDBPort string, isDryRun bool) ([]string, error) {
 	cmd := types.Command{
 		Command:     fmt.Sprintf("ufw allow %s/tcp", mariaDBPort),
 		Description: "Allow MariaDB access from any IP",
@@ -139,7 +139,7 @@ func (u *AllowMariaDB) allowAnyIP(cfg config.NodeConfig, mariaDBPort string, isD
 }
 
 // allowSpecificIPs handles allowing MariaDB access from specific IP addresses
-func (u *AllowMariaDB) allowSpecificIPs(cfg config.NodeConfig, ips []string, mariaDBPort string, isDryRun bool) ([]string, error) {
+func (u *AllowMariaDB) allowSpecificIPs(cfg types.NodeConfig, ips []string, mariaDBPort string, isDryRun bool) ([]string, error) {
 	allowedIPs := []string{}
 	for _, singleIP := range ips {
 		cmd := types.Command{

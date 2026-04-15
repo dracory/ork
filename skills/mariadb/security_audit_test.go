@@ -12,7 +12,7 @@ func TestSecurityAudit_Run_DryRun(t *testing.T) {
 	pb := NewSecurityAudit()
 	pb.SetArg("root-password", "testpass123")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -40,7 +40,7 @@ func TestSecurityAudit_Run_DryRun(t *testing.T) {
 func TestSecurityAudit_Run_DryRun_NoPassword(t *testing.T) {
 	pb := NewSecurityAudit()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -64,7 +64,7 @@ func TestSecurityAudit_Run_NotDryRun(t *testing.T) {
 	pb := NewSecurityAudit()
 	pb.SetArg("root-password", "testpass123")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 	}
@@ -89,7 +89,7 @@ func TestSecurityAudit_Run_NotDryRun(t *testing.T) {
 func TestSecurityAudit_Check(t *testing.T) {
 	pb := NewSecurityAudit()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		Logger: slog.Default(),
 	}
 

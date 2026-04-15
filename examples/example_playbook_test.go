@@ -26,7 +26,7 @@ func TestNewExamplePlaybook(t *testing.T) {
 func TestExamplePlaybook_Run(t *testing.T) {
 	playbook := NewExamplePlaybook()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		SSHHost:      "test-host",
 		SSHPort:      "22",
 		SSHLogin:     "test-user",
@@ -67,7 +67,7 @@ func TestExamplePlaybook_ImplementsRunnableInterface(t *testing.T) {
 	var ri types.RunnableInterface
 	ri = playbook.SetID("test")
 	ri = playbook.SetDescription("test")
-	ri = playbook.SetNodeConfig(config.NodeConfig{})
+	ri = playbook.SetNodeConfig(types.NodeConfig{})
 	ri = playbook.SetArg("key", "value")
 	ri = playbook.SetArgs(map[string]string{"key": "value"})
 	ri = playbook.SetDryRun(true)

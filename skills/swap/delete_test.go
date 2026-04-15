@@ -11,7 +11,7 @@ import (
 func TestSwapDelete_Run_DryRun(t *testing.T) {
 	pb := NewSwapDelete()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -35,7 +35,7 @@ func TestSwapDelete_Run_DryRun(t *testing.T) {
 func TestSwapDelete_Run_NotDryRun(t *testing.T) {
 	pb := NewSwapDelete()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},

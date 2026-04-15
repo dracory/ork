@@ -11,7 +11,7 @@ import (
 func TestInstall_Run_DryRun(t *testing.T) {
 	pb := NewInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -40,7 +40,7 @@ func TestInstall_Run_DryRun_WithPassword(t *testing.T) {
 	pb := NewInstall()
 	pb.SetArg("root-password", "testpass123")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -67,7 +67,7 @@ func TestInstall_Run_DryRun_WithPassword(t *testing.T) {
 func TestInstall_Run_NotDryRun(t *testing.T) {
 	pb := NewInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},

@@ -13,7 +13,7 @@ func TestCreateDB_Run_DryRun(t *testing.T) {
 	pb.SetArg("db-name", "testdb")
 	pb.SetArg("root-password", "testpass123")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -41,7 +41,7 @@ func TestCreateDB_Run_DryRun_NoDbName(t *testing.T) {
 	pb := NewCreateDB()
 	pb.SetArg("root-password", "testpass123")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -65,7 +65,7 @@ func TestCreateDB_Run_DryRun_NoPassword(t *testing.T) {
 	pb := NewCreateDB()
 	pb.SetArg("db-name", "testdb")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -90,7 +90,7 @@ func TestCreateDB_Run_NotDryRun(t *testing.T) {
 	pb.SetArg("db-name", "testdb")
 	pb.SetArg("root-password", "testpass123")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 	}

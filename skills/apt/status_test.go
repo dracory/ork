@@ -13,7 +13,7 @@ import (
 func TestAptStatus_Run_DryRun(t *testing.T) {
 	pb := NewAptStatus()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -42,7 +42,7 @@ func TestAptStatus_Run_DryRun(t *testing.T) {
 func TestAptStatus_Run_NotDryRun(t *testing.T) {
 	pb := NewAptStatus()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -68,7 +68,7 @@ func TestAptStatus_Run_NotDryRun(t *testing.T) {
 func TestAptStatus_Check(t *testing.T) {
 	pb := NewAptStatus()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		Logger: slog.Default(),
 	}
 

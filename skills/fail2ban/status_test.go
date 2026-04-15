@@ -11,7 +11,7 @@ import (
 func TestFail2banStatus_Run_DryRun(t *testing.T) {
 	pb := NewFail2banStatus()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -40,7 +40,7 @@ func TestFail2banStatus_Run_DryRun(t *testing.T) {
 func TestFail2banStatus_Run_NotDryRun(t *testing.T) {
 	pb := NewFail2banStatus()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -66,7 +66,7 @@ func TestFail2banStatus_Run_NotDryRun(t *testing.T) {
 func TestFail2banStatus_Check(t *testing.T) {
 	pb := NewFail2banStatus()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		Logger: slog.Default(),
 	}
 

@@ -93,7 +93,7 @@ func TestNewNode(t *testing.T) {
 
 // TestNewNodeFromConfig verifies that NewNodeFromConfig creates a node from existing config.
 func TestNewNodeFromConfig(t *testing.T) {
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		SSHHost:  "server.example.com",
 		SSHPort:  "2222",
 		RootUser: "deploy",
@@ -145,7 +145,7 @@ func TestNewNodeFromConfig(t *testing.T) {
 
 // TestNewNodeFromConfig_DeepCopy verifies that NewNodeFromConfig creates a deep copy of the config.
 func TestNewNodeFromConfig_DeepCopy(t *testing.T) {
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		SSHHost:  "server.example.com",
 		SSHPort:  "22",
 		RootUser: "root",

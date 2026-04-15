@@ -11,7 +11,7 @@ import (
 func TestPing_Run_DryRun(t *testing.T) {
 	pb := NewPing()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -41,7 +41,7 @@ func TestPing_Run_DryRun(t *testing.T) {
 func TestPing_Run_NotDryRun(t *testing.T) {
 	pb := NewPing()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -68,7 +68,7 @@ func TestPing_Run_NotDryRun(t *testing.T) {
 func TestPing_Check(t *testing.T) {
 	pb := NewPing()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		Logger:  slog.Default(),
 		SSHHost: "test.example.com",
 	}

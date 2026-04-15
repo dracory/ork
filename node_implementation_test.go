@@ -15,7 +15,7 @@ func TestNodeStruct(t *testing.T) {
 	// Create a nodeImplementation directly to test the struct definition
 	host := "server.example.com"
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  host,
 			SSHPort:  "22",
 			RootUser: "root",
@@ -62,7 +62,7 @@ func TestNodeStruct(t *testing.T) {
 // TestNodeImplementation_SetPort verifies that SetPort updates the SSH port configuration.
 func TestNodeImplementation_SetPort(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -88,7 +88,7 @@ func TestNodeImplementation_SetPort(t *testing.T) {
 // TestNodeImplementation_SetUser verifies that SetUser updates the SSH user configuration.
 func TestNodeImplementation_SetUser(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -114,7 +114,7 @@ func TestNodeImplementation_SetUser(t *testing.T) {
 // TestNodeImplementation_SetKey verifies that SetKey updates the SSH key configuration.
 func TestNodeImplementation_SetKey(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -140,7 +140,7 @@ func TestNodeImplementation_SetKey(t *testing.T) {
 // TestNodeImplementation_SetArg verifies that SetArg adds individual arguments.
 func TestNodeImplementation_SetArg(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -188,7 +188,7 @@ func TestNodeImplementation_SetArg(t *testing.T) {
 // TestNodeImplementation_SetArg_NilArgs verifies that SetArg initializes Args if nil.
 func TestNodeImplementation_SetArg_NilArgs(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -212,7 +212,7 @@ func TestNodeImplementation_SetArg_NilArgs(t *testing.T) {
 // TestNodeImplementation_SetArgs verifies that SetArgs replaces the entire arguments map.
 func TestNodeImplementation_SetArgs(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -250,7 +250,7 @@ func TestNodeImplementation_SetArgs(t *testing.T) {
 // TestNodeImplementation_SetterChaining verifies that all setter methods can be chained.
 func TestNodeImplementation_SetterChaining(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -292,7 +292,7 @@ func TestNodeImplementation_SetterChaining(t *testing.T) {
 // TestNodeImplementation_GetHost verifies that GetHost returns the configured SSH host.
 func TestNodeImplementation_GetHost(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -321,7 +321,7 @@ func TestNodeImplementation_GetPort(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := &nodeImplementation{
-				cfg: config.NodeConfig{
+				cfg: types.NodeConfig{
 					SSHHost:  "server.example.com",
 					SSHPort:  tt.port,
 					RootUser: "root",
@@ -352,7 +352,7 @@ func TestNodeImplementation_GetUser(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := &nodeImplementation{
-				cfg: config.NodeConfig{
+				cfg: types.NodeConfig{
 					SSHHost:  "server.example.com",
 					SSHPort:  "22",
 					RootUser: tt.user,
@@ -383,7 +383,7 @@ func TestNodeImplementation_GetKey(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			n := &nodeImplementation{
-				cfg: config.NodeConfig{
+				cfg: types.NodeConfig{
 					SSHHost:  "server.example.com",
 					SSHPort:  "22",
 					RootUser: "root",
@@ -403,7 +403,7 @@ func TestNodeImplementation_GetKey(t *testing.T) {
 // TestNodeImplementation_GetConfig verifies that GetConfig returns a complete copy of the configuration.
 func TestNodeImplementation_GetConfig(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "2222",
 			RootUser: "deploy",
@@ -441,7 +441,7 @@ func TestNodeImplementation_GetConfig(t *testing.T) {
 // TestNodeImplementation_GetConfig_DeepCopy verifies that GetConfig returns a deep copy.
 func TestNodeImplementation_GetConfig_DeepCopy(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -492,7 +492,7 @@ func TestNodeImplementation_GetConfig_DeepCopy(t *testing.T) {
 // TestNodeImplementation_GetConfig_NilArgs verifies that GetConfig handles nil Args correctly.
 func TestNodeImplementation_GetConfig_NilArgs(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -512,7 +512,7 @@ func TestNodeImplementation_GetConfig_NilArgs(t *testing.T) {
 // TestNodeImplementation_GetConfig_EmptyArgs verifies that GetConfig handles empty Args correctly.
 func TestNodeImplementation_GetConfig_EmptyArgs(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -543,7 +543,7 @@ func TestNodeImplementation_GetConfig_EmptyArgs(t *testing.T) {
 // TestNodeImplementation_GettersAfterSetters verifies that getters return updated values after setters.
 func TestNodeImplementation_GettersAfterSetters(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -591,7 +591,7 @@ func TestNodeImplementation_GettersAfterSetters(t *testing.T) {
 // TestNodeImplementation_IsConnected_Initial verifies that IsConnected returns false initially.
 func TestNodeImplementation_IsConnected_Initial(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -609,7 +609,7 @@ func TestNodeImplementation_IsConnected_Initial(t *testing.T) {
 // TestNodeImplementation_Close_NotConnected verifies that Close is safe to call when not connected.
 func TestNodeImplementation_Close_NotConnected(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -638,7 +638,7 @@ func TestNodeImplementation_Close_NotConnected(t *testing.T) {
 // TestNodeImplementation_Close_MultipleCalls verifies that Close can be called multiple times safely.
 func TestNodeImplementation_Close_MultipleCalls(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -675,7 +675,7 @@ func TestNodeImplementation_Close_MultipleCalls(t *testing.T) {
 func TestNodeImplementation_Run_WithoutPersistentConnection(t *testing.T) {
 	// Mock ssh.RunSingleCommand via SetRunFunc
 	var capturedHost, capturedPort, capturedUser, capturedKey, capturedCmd string
-	ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
+	ssh.SetRunFunc(func(cfg types.NodeConfig, cmd types.Command) (string, error) {
 		capturedHost = cfg.SSHHost
 		capturedPort = cfg.SSHPort
 		capturedUser = cfg.RootUser
@@ -686,7 +686,7 @@ func TestNodeImplementation_Run_WithoutPersistentConnection(t *testing.T) {
 	defer ssh.SetRunFunc(nil)
 
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "2222",
 			RootUser: "deploy",
@@ -727,13 +727,13 @@ func TestNodeImplementation_Run_WithoutPersistentConnection(t *testing.T) {
 // TestNodeImplementation_Run_OneTimeConnectionError verifies error handling with one-time connection.
 func TestNodeImplementation_Run_OneTimeConnectionError(t *testing.T) {
 	// Mock ssh.RunSingleCommand via SetRunFunc to return error
-	ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
+	ssh.SetRunFunc(func(cfg types.NodeConfig, cmd types.Command) (string, error) {
 		return "", fmt.Errorf("connection refused")
 	})
 	defer ssh.SetRunFunc(nil)
 
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -767,10 +767,10 @@ func TestNodeImplementation_Run_OneTimeConnectionError(t *testing.T) {
 // TestNodeImplementation_Playbook_Success verifies successful playbook execution.
 func TestNodeImplementation_Playbook_Success(t *testing.T) {
 	// Create a mock playbook
-	var capturedConfig config.NodeConfig
+	var capturedConfig types.NodeConfig
 	mockPlaybook := &mockPlaybook{
 		name: "test-playbook",
-		runFunc: func(cfg config.NodeConfig) error {
+		runFunc: func(cfg types.NodeConfig) error {
 			capturedConfig = cfg
 			return nil
 		},
@@ -790,7 +790,7 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 	}()
 
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "2222",
 			RootUser: "deploy",
@@ -833,7 +833,7 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 // TestNodeImplementation_Playbook_NotFound verifies error when playbook is not in registry.
 func TestNodeImplementation_Playbook_NotFound(t *testing.T) {
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -865,7 +865,7 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 	// Create a mock playbook that fails
 	mockPlaybook := &mockPlaybook{
 		name: "failing-playbook",
-		runFunc: func(cfg config.NodeConfig) error {
+		runFunc: func(cfg types.NodeConfig) error {
 			return fmt.Errorf("playbook execution failed")
 		},
 	}
@@ -880,7 +880,7 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 	}
 
 	n := &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  "server.example.com",
 			SSHPort:  "22",
 			RootUser: "root",
@@ -912,12 +912,12 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 // mockPlaybook is a mock implementation of playbook.Playbook for testing.
 type mockPlaybook struct {
 	name      string
-	cfg       config.NodeConfig
+	cfg       types.NodeConfig
 	args      map[string]string
 	dryRun    bool
 	timeout   time.Duration
-	runFunc   func(config.NodeConfig) error
-	checkFunc func(config.NodeConfig) (bool, error)
+	runFunc   func(types.NodeConfig) error
+	checkFunc func(types.NodeConfig) (bool, error)
 }
 
 func (m *mockPlaybook) GetID() string {
@@ -937,11 +937,11 @@ func (m *mockPlaybook) SetDescription(description string) types.RunnableInterfac
 	return m
 }
 
-func (m *mockPlaybook) GetNodeConfig() config.NodeConfig {
+func (m *mockPlaybook) GetNodeConfig() types.NodeConfig {
 	return m.cfg
 }
 
-func (m *mockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.RunnableInterface {
+func (m *mockPlaybook) SetNodeConfig(cfg types.NodeConfig) types.RunnableInterface {
 	m.cfg = cfg
 	return m
 }

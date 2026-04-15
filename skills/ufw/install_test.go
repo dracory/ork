@@ -11,7 +11,7 @@ import (
 func TestUfwInstall_Run_DryRun_Defaults(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -39,7 +39,7 @@ func TestUfwInstall_Run_DryRun_Defaults(t *testing.T) {
 func TestUfwInstall_Run_DryRun_AllSSH(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -69,7 +69,7 @@ func TestUfwInstall_Run_DryRun_AllSSH(t *testing.T) {
 func TestUfwInstall_Run_DryRun_DisableSSH(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -99,7 +99,7 @@ func TestUfwInstall_Run_DryRun_DisableSSH(t *testing.T) {
 func TestUfwInstall_Run_DryRun_AllHTTP(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -129,7 +129,7 @@ func TestUfwInstall_Run_DryRun_AllHTTP(t *testing.T) {
 func TestUfwInstall_Run_DryRun_AllHTTPS(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -159,7 +159,7 @@ func TestUfwInstall_Run_DryRun_AllHTTPS(t *testing.T) {
 func TestUfwInstall_Run_DryRun_CustomPorts(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -189,7 +189,7 @@ func TestUfwInstall_Run_DryRun_CustomPorts(t *testing.T) {
 func TestUfwInstall_Run_DryRun_AllOptions(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -222,7 +222,7 @@ func TestUfwInstall_Run_DryRun_AllOptions(t *testing.T) {
 func TestUfwInstall_Run_DryRun_PortsWithWhitespace(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -252,7 +252,7 @@ func TestUfwInstall_Run_DryRun_PortsWithWhitespace(t *testing.T) {
 func TestUfwInstall_Run_DryRun_EmptyPorts(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -282,7 +282,7 @@ func TestUfwInstall_Run_DryRun_EmptyPorts(t *testing.T) {
 func TestUfwInstall_Run_NotDryRun(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -305,7 +305,7 @@ func TestUfwInstall_Run_NotDryRun(t *testing.T) {
 func TestUfwInstall_Check(t *testing.T) {
 	pb := NewUfwInstall()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		Logger: slog.Default(),
 	}
 

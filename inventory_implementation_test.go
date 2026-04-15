@@ -562,8 +562,8 @@ func (m *invTestMockNode) GetArgs() map[string]string {
 	return result
 }
 
-func (m *invTestMockNode) GetNodeConfig() config.NodeConfig {
-	return config.NodeConfig{
+func (m *invTestMockNode) GetNodeConfig() types.NodeConfig {
+	return types.NodeConfig{
 		SSHHost:  m.host,
 		SSHPort:  "22",
 		RootUser: "root",
@@ -647,7 +647,7 @@ func (m *invTestMockNode) GetDryRunMode() bool {
 // invTestMockPlaybook is a mock implementation of types.RunnableInterface for testing.
 type invTestMockPlaybook struct {
 	name    string
-	cfg     config.NodeConfig
+	cfg     types.NodeConfig
 	dryRun  bool
 	args    map[string]string
 	timeout time.Duration
@@ -670,11 +670,11 @@ func (m *invTestMockPlaybook) SetDescription(desc string) types.RunnableInterfac
 	return m
 }
 
-func (m *invTestMockPlaybook) GetNodeConfig() config.NodeConfig {
+func (m *invTestMockPlaybook) GetNodeConfig() types.NodeConfig {
 	return m.cfg
 }
 
-func (m *invTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.RunnableInterface {
+func (m *invTestMockPlaybook) SetNodeConfig(cfg types.NodeConfig) types.RunnableInterface {
 	m.cfg = cfg
 	return m
 }

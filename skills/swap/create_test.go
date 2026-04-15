@@ -11,7 +11,7 @@ import (
 func TestSwapCreate_Run_DryRun(t *testing.T) {
 	pb := NewSwapCreate()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -35,7 +35,7 @@ func TestSwapCreate_Run_DryRun(t *testing.T) {
 func TestSwapCreate_Run_DryRun_WithArgs(t *testing.T) {
 	pb := NewSwapCreate()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args: map[string]string{
@@ -59,7 +59,7 @@ func TestSwapCreate_Run_DryRun_WithArgs(t *testing.T) {
 func TestSwapCreate_Run_NotDryRun(t *testing.T) {
 	pb := NewSwapCreate()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},

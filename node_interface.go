@@ -1,6 +1,6 @@
 package ork
 
-import "github.com/dracory/ork/config"
+import "github.com/dracory/ork/types"
 
 // NodeInterface defines the contract for managing a remote server via SSH.
 // Implementations must support configuration via setter methods, connection
@@ -74,7 +74,7 @@ type NodeInterface interface {
 	//	fmt.Println(args["username"])  // Output: alice
 	GetArgs() map[string]string
 
-	// GetNodeConfig returns a copy of the underlying config.NodeConfig.
+	// GetNodeConfig returns a copy of the underlying types.NodeConfig.
 	// This allows integration with code that uses the config package directly.
 	// The returned configuration includes all accumulated settings (host, port, user, key, args).
 	//
@@ -85,7 +85,7 @@ type NodeInterface interface {
 	//	    SetUser("deploy")
 	//	cfg := node.GetNodeConfig()
 	//	fmt.Printf("Connecting to %s\n", cfg.SSHAddr())
-	GetNodeConfig() config.NodeConfig
+	GetNodeConfig() types.NodeConfig
 
 	// GetHost returns the configured SSH host (hostname or IP address).
 	//
@@ -238,7 +238,7 @@ type NodeInterface interface {
 //	node := ork.NewNode("server.example.com")
 //	// Equivalent to:
 //	// Node{
-//	//     cfg: config.NodeConfig{
+//	//     cfg: types.NodeConfig{
 //	//         SSHHost: "server.example.com",
 //	//         SSHPort: "22",
 //	//         RootUser: "root",
@@ -256,7 +256,7 @@ type NodeInterface interface {
 //	    SetKey("production.prv")
 func NewNodeForHost(host string) NodeInterface {
 	return &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHHost:  host,
 			SSHPort:  "22",
 			RootUser: "root",
@@ -290,7 +290,7 @@ func NewNodeForHost(host string) NodeInterface {
 //	}
 func NewNode() NodeInterface {
 	return &nodeImplementation{
-		cfg: config.NodeConfig{
+		cfg: types.NodeConfig{
 			SSHPort:  "22",
 			RootUser: "root",
 			SSHKey:   "id_rsa",
@@ -300,7 +300,7 @@ func NewNode() NodeInterface {
 	}
 }
 
-// NewNodeFromConfig creates a new Node from an existing config.NodeConfig.
+// NewNodeFromConfig creates a new Node from an existing types.NodeConfig.
 // This is useful when you have a pre-built configuration and want to
 // create a Node from it directly.
 //
@@ -309,7 +309,7 @@ func NewNode() NodeInterface {
 //
 // Example:
 //
-//	cfg := config.NodeConfig{
+//	cfg := types.NodeConfig{
 //	    SSHHost:  "server.example.com",
 //	    SSHPort:  "2222",
 //	    RootUser: "deploy",
@@ -321,7 +321,7 @@ func NewNode() NodeInterface {
 //	if err := node.Connect(); err != nil {
 //	    log.Fatal(err)
 //	}
-func NewNodeFromConfig(cfg config.NodeConfig) NodeInterface {
+func NewNodeFromConfig(cfg types.NodeConfig) NodeInterface {
 	// Create a deep copy of the config to prevent external modifications
 	cfgCopy := cfg
 	if cfg.Args != nil {

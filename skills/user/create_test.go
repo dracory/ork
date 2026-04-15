@@ -12,7 +12,7 @@ func TestUserCreate_Run_DryRun(t *testing.T) {
 	pb := NewUserCreate()
 	pb.SetArg("username", "testuser")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -41,7 +41,7 @@ func TestUserCreate_Run_DryRun_WithSSHKey(t *testing.T) {
 	pb.SetArg("username", "testuser")
 	pb.SetArg("ssh-key", "ssh-rsa AAAAB3NzaC1yc2E...")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -68,7 +68,7 @@ func TestUserCreate_Run_DryRun_WithSSHKey(t *testing.T) {
 func TestUserCreate_Run_DryRun_NoUsername(t *testing.T) {
 	pb := NewUserCreate()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 		Args:         map[string]string{},
@@ -93,7 +93,7 @@ func TestUserCreate_Run_NotDryRun(t *testing.T) {
 	pb := NewUserCreate()
 	pb.SetArg("username", "testuser")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 	}

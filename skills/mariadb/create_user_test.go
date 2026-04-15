@@ -14,7 +14,7 @@ func TestCreateUser_Run_DryRun(t *testing.T) {
 	pb.SetArg("password", "testpass123")
 	pb.SetArg("root-password", "rootpass123")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -45,7 +45,7 @@ func TestCreateUser_Run_DryRun_WithDB(t *testing.T) {
 	pb.SetArg("root-password", "rootpass123")
 	pb.SetArg("db-name", "testdb")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -74,7 +74,7 @@ func TestCreateUser_Run_DryRun_NoUsername(t *testing.T) {
 	pb.SetArg("password", "testpass123")
 	pb.SetArg("root-password", "rootpass123")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -100,7 +100,7 @@ func TestCreateUser_Run_NotDryRun(t *testing.T) {
 	pb.SetArg("password", "testpass123")
 	pb.SetArg("root-password", "rootpass123")
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 	}

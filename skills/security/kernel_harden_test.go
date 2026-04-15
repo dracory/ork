@@ -11,7 +11,7 @@ import (
 func TestKernelHarden_Run_DryRun(t *testing.T) {
 	pb := NewKernelHarden()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: true,
 		Logger:       slog.Default(),
 	}
@@ -38,7 +38,7 @@ func TestKernelHarden_Run_DryRun(t *testing.T) {
 func TestKernelHarden_Run_NotDryRun(t *testing.T) {
 	pb := NewKernelHarden()
 
-	cfg := config.NodeConfig{
+	cfg := types.NodeConfig{
 		IsDryRunMode: false,
 		Logger:       slog.Default(),
 	}
