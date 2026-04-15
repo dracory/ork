@@ -36,15 +36,15 @@ Since playbooks implement `RunnableInterface`, they can use all existing runnabl
 
 ### Core Concept
 
-A playbook implements `RunnableInterface` and orchestrates other skills in its `Run()` method with custom logic. Playbooks can embed `ork.BasePlaybook` which provides a foundation for playbook development:
+A playbook implements `RunnableInterface` and orchestrates other skills in its `Run()` method with custom logic. Playbooks can embed `types.BasePlaybook` which provides a foundation for playbook development:
 
 ```go
 type DeployWebserverPlaybook struct {
-    *ork.BasePlaybook
+    *types.BasePlaybook
 }
 
 func NewDeployWebserverPlaybook() types.RunnableInterface {
-    playbook := ork.NewBasePlaybook()
+    playbook := types.NewBasePlaybook()
     playbook.SetID("deploy-webserver")
     playbook.SetDescription("Deploy web server with custom orchestration")
     return &DeployWebserverPlaybook{BasePlaybook: playbook}
@@ -136,11 +136,11 @@ func SkillBuilder(skillType string) func() types.RunnableInterface
 
 ```go
 type DeployWebserverPlaybook struct {
-    *ork.BasePlaybook
+    *types.BasePlaybook
 }
 
 func NewDeployWebserverPlaybook() types.RunnableInterface {
-    playbook := ork.NewBasePlaybook()
+    playbook := types.NewBasePlaybook()
     playbook.SetID("deploy-webserver")
     playbook.SetDescription("Deploy web server")
     return &DeployWebserverPlaybook{BasePlaybook: playbook}
@@ -175,11 +175,11 @@ node.Run(NewDeployWebserverPlaybook())
 
 ```go
 type SmartUpdatePlaybook struct {
-    *ork.BasePlaybook
+    *types.BasePlaybook
 }
 
 func NewSmartUpdatePlaybook() types.RunnableInterface {
-    playbook := ork.NewBasePlaybook()
+    playbook := types.NewBasePlaybook()
     playbook.SetID("smart-update")
     playbook.SetDescription("Update only if needed")
     return &SmartUpdatePlaybook{BasePlaybook: playbook}
@@ -221,11 +221,11 @@ func (s *SmartUpdatePlaybook) Run() types.Result {
 
 ```go
 type SetupUsersPlaybook struct {
-    *ork.BasePlaybook
+    *types.BasePlaybook
 }
 
 func NewSetupUsersPlaybook() types.RunnableInterface {
-    playbook := ork.NewBasePlaybook()
+    playbook := types.NewBasePlaybook()
     playbook.SetID("setup-users")
     playbook.SetDescription("Create multiple users")
     return &SetupUsersPlaybook{BasePlaybook: playbook}
@@ -261,11 +261,11 @@ node.Run(NewSetupUsersPlaybook())
 
 ```go
 type BackupAllDatabasesPlaybook struct {
-    *ork.BasePlaybook
+    *types.BasePlaybook
 }
 
 func NewBackupAllDatabasesPlaybook() types.RunnableInterface {
-    playbook := ork.NewBasePlaybook()
+    playbook := types.NewBasePlaybook()
     playbook.SetID("backup-all-databases")
     playbook.SetDescription("Backup all databases")
     return &BackupAllDatabasesPlaybook{BasePlaybook: playbook}
@@ -322,11 +322,11 @@ node.Run(NewBackupAllDatabasesPlaybook())
 
 ```go
 type ResilientDownloadPlaybook struct {
-    *ork.BasePlaybook
+    *types.BasePlaybook
 }
 
 func NewResilientDownloadPlaybook() types.RunnableInterface {
-    playbook := ork.NewBasePlaybook()
+    playbook := types.NewBasePlaybook()
     playbook.SetID("resilient-download")
     playbook.SetDescription("Download with retry logic")
     return &ResilientDownloadPlaybook{BasePlaybook: playbook}
@@ -364,11 +364,11 @@ node.Run(NewResilientDownloadPlaybook())
 
 ```go
 type ComplexDeployPlaybook struct {
-    *ork.BasePlaybook
+    *types.BasePlaybook
 }
 
 func NewComplexDeployPlaybook() types.RunnableInterface {
-    playbook := ork.NewBasePlaybook()
+    playbook := types.NewBasePlaybook()
     playbook.SetID("complex-deploy")
     playbook.SetDescription("Deploy with state and rollback")
     return &ComplexDeployPlaybook{BasePlaybook: playbook}
@@ -434,11 +434,11 @@ node.Run(NewComplexDeployPlaybook())
 
 ```go
 type ClusterRolloutPlaybook struct {
-    *ork.BasePlaybook
+    *types.BasePlaybook
 }
 
 func NewClusterRolloutPlaybook() types.RunnableInterface {
-    playbook := ork.NewBasePlaybook()
+    playbook := types.NewBasePlaybook()
     playbook.SetID("cluster-rollout")
     playbook.SetDescription("Rollout across cluster with custom logic")
     return &ClusterRolloutPlaybook{BasePlaybook: playbook}
@@ -648,6 +648,7 @@ func ParseResult(result types.Result, parser func(string) (interface{}, error)) 
 | Testing | Mock skills | Mock skills + unit tests | Mock skills + unit tests |
 | Use Case | Simple sequential operations | Complex orchestration logic | Complex orchestration needs |
 | API | Builder pattern (convenience) | Same Run() as regular skills | New API needed |
+| Options | SkillOptions | RunnableOptions | WorkflowOptions |
 
 ## When to Use Each
 
@@ -675,7 +676,7 @@ func ParseResult(result types.Result, parser func(string) (interface{}, error)) 
 
 ### 1. BasePlaybook
 
-Create `ork.BasePlaybook` as a foundation for playbook development. Similar to `skills.BaseSkill`, it should:
+Create `types.BasePlaybook` as a foundation for playbook development. Similar to `types.BaseSkill`, it should:
 
 - Implement `RunnableInterface`
 - Provide a default empty `Run()` implementation that returns an error (to force override)
@@ -684,11 +685,13 @@ Create `ork.BasePlaybook` as a foundation for playbook development. Similar to `
 - Provide fluent setter methods for chaining
 
 **Package Structure:**
-- `skills.BaseSkill` remains in the `skills` package (used by all skill implementations)
-- `ork.BasePlaybook` is in the `ork` package (to avoid circular dependencies since ork imports skills)
+- `types.BaseSkill` is in the `types` package (foundational type for skills)
+- `types.BasePlaybook` is in the `types` package (foundational type for playbooks)
+- Both ork and skills already import types, so no circular dependency
+- Consistent API: both foundational types in the same package
 
 ```go
-package ork
+package types
 
 // BasePlaybook provides a foundation for playbook development.
 type BasePlaybook struct {
@@ -703,13 +706,14 @@ type BasePlaybook struct {
 // NewBasePlaybook creates a new BasePlaybook.
 func NewBasePlaybook() *BasePlaybook {
     return &BasePlaybook{
-        args: make(map[string]string),
+        args:   make(map[string]string),
+        dryRun: false,
     }
 }
 
 // Run must be overridden by playbook implementations.
-func (b *BasePlaybook) Run() types.Result {
-    return types.Result{Error: fmt.Errorf("Run() must be implemented by playbook")}
+func (b *BasePlaybook) Run() Result {
+    return Result{Error: fmt.Errorf("Run() must be implemented by playbook")}
 }
 
 // Check returns false (no changes) by default. Can be overridden.
@@ -784,7 +788,8 @@ Create `ork/playbook` package with helper utilities:
 - RunnerInterface.Run() method (unified execution API)
 
 **Completed:**
-- `ork.BasePlaybook` foundation struct with `NewBasePlaybook()`
+- `types.BaseSkill` foundation struct with `NewBaseSkill()` (in types package)
+- `types.BasePlaybook` foundation struct with `NewBasePlaybook()` (in types package)
 - Example playbook demonstrating the pattern (`examples/ExamplePlaybook`)
 
 **To Implement:**

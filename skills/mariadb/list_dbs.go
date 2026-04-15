@@ -35,7 +35,7 @@ import (
 //   - mariadb-create-db: Create a new database
 //   - mariadb-backup: Backup an existing database
 type ListDBs struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns false since this is a read-only skill.
@@ -93,7 +93,7 @@ func (m *ListDBs) Run() types.Result {
 
 // NewListDBs creates a new mariadb-list-dbs skill.
 func NewListDBs() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbListDBs)
 	pb.SetDescription("Display all databases in the MariaDB server (read-only)")
 	return &ListDBs{BaseSkill: pb}

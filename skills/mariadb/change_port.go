@@ -35,7 +35,7 @@ import (
 //   - mariadb-status: Verify server is running after port change
 //   - ufw-install: Configure firewall for new port
 type ChangePort struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns true to apply the port change.
@@ -128,7 +128,7 @@ func (m *ChangePort) Run() types.Result {
 
 // NewChangePort creates a new mariadb-change-port skill.
 func NewChangePort() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbChangePort)
 	pb.SetDescription("Change the MariaDB server port from default 3306")
 	return &ChangePort{BaseSkill: pb}

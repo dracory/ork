@@ -56,7 +56,7 @@ import (
 // Related Playbooks:
 //   - user-create: Create non-root user before disabling root login
 type SshHarden struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns true since we want to verify and apply security settings.
@@ -192,7 +192,7 @@ func (s *SshHarden) Run() types.Result {
 
 // NewSshHarden creates a new ssh-harden skill.
 func NewSshHarden() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSshHarden)
 	pb.SetDescription("Apply security hardening to SSH server configuration")
 	return &SshHarden{BaseSkill: pb}

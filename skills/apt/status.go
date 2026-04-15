@@ -38,7 +38,7 @@ import (
 //   - Pre-flight check before maintenance windows
 //   - Reporting and compliance auditing
 type AptStatus struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns false since AptStatus is read-only.
@@ -120,7 +120,7 @@ func (a *AptStatus) Run() types.Result {
 //	A PlaybookInterface implementation configured with IDAptStatus identifier
 //	and description "Show available package updates (read-only)".
 func NewAptStatus() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAptStatus)
 	pb.SetDescription("Show available package updates (read-only)")
 	return &AptStatus{BaseSkill: pb}

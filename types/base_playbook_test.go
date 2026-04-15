@@ -1,4 +1,4 @@
-package ork
+package types
 
 import (
 	"testing"

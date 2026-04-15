@@ -43,7 +43,7 @@ import (
 //   - Reports Changed=false when no packages need upgrading
 //   - Reports Changed=true when packages are actually upgraded
 type AptUpgrade struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if there are packages that need upgrading.
@@ -134,7 +134,7 @@ func (a *AptUpgrade) Run() types.Result {
 //	A PlaybookInterface implementation configured with IDAptUpgrade identifier
 //	and description "Install available package updates (apt-get upgrade)".
 func NewAptUpgrade() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAptUpgrade)
 	pb.SetDescription("Install available package updates (apt-get upgrade)")
 	return &AptUpgrade{BaseSkill: pb}

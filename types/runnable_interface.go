@@ -6,18 +6,18 @@ import (
 	"github.com/dracory/ork/config"
 )
 
-// SkillOptions provides configuration options for skill execution.
-// This allows per-skill variable scoping and additional execution controls.
-type SkillOptions struct {
-	// Args contains skill-specific variables that override node-level arguments.
-	// These are merged with node-level args (skill args take precedence).
+// RunnableOptions provides configuration options for runnable execution.
+// This allows per-runnable variable scoping and additional execution controls.
+type RunnableOptions struct {
+	// Args contains runnable-specific variables that override node-level arguments.
+	// These are merged with node-level args (runnable args take precedence).
 	Args map[string]string
 
 	// DryRun indicates whether to simulate execution without making changes.
-	// When true, the skill should preview what would be done.
+	// When true, the runnable should preview what would be done.
 	DryRun bool
 
-	// Timeout specifies the maximum duration for skill execution.
+	// Timeout specifies the maximum duration for runnable execution.
 	// Zero means no timeout.
 	Timeout time.Duration
 }
@@ -30,7 +30,7 @@ type SkillOptions struct {
 //
 //	skill := skills.NewUserCreate().
 //	    SetNodeConfig(cfg).
-//	    SetOptions(&types.SkillOptions{Args: map[string]string{"username": "alice"}})
+//	    SetOptions(&types.RunnableOptions{Args: map[string]string{"username": "alice"}})
 //
 //	needsRun, _ := skill.Check()
 //	result := skill.Run()

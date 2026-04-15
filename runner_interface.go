@@ -20,7 +20,7 @@ type RunnerInterface interface {
 
 	// RunByID executes a skill by ID from the registry.
 	// Deprecated: Use Run() instead.
-	RunByID(id string, opts ...types.SkillOptions) types.Results
+	RunByID(id string, opts ...types.RunnableOptions) types.Results
 
 	// Check runs the runnable's check mode to determine if changes would be made.
 	// Sets Changed=true on result if changes are needed.

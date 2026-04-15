@@ -10,7 +10,7 @@ import (
 
 // NewFail2banInstall creates a new fail2ban-install skill.
 func NewFail2banInstall() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDFail2banInstall)
 	pb.SetDescription("Install and enable fail2ban intrusion prevention system")
 	return &Fail2banInstall{BaseSkill: pb}
@@ -55,7 +55,7 @@ func NewFail2banInstall() types.RunnableInterface {
 // Related Playbooks:
 //   - fail2ban-status: Check service and jail status
 type Fail2banInstall struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if fail2ban needs to be installed.

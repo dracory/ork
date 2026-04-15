@@ -1,7 +1,6 @@
 package examples
 
 import (
-	"github.com/dracory/ork"
 	"github.com/dracory/ork/skills/apt"
 	"github.com/dracory/ork/skills/ping"
 	"github.com/dracory/ork/types"
@@ -10,12 +9,12 @@ import (
 // ExamplePlaybook demonstrates a basic playbook that runs multiple skills in sequence.
 // This playbook checks system status and updates if needed.
 type ExamplePlaybook struct {
-	*ork.BasePlaybook
+	*types.BasePlaybook
 }
 
 // NewExamplePlaybook creates a new example playbook.
 func NewExamplePlaybook() types.RunnableInterface {
-	playbook := ork.NewBasePlaybook()
+	playbook := types.NewBasePlaybook()
 	playbook.SetID("example-playbook")
 	playbook.SetDescription("Example playbook demonstrating sequential skill execution")
 	return &ExamplePlaybook{BasePlaybook: playbook}

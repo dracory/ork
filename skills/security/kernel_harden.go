@@ -47,7 +47,7 @@ import (
 // Related Playbooks:
 //   - ssh-harden: Network-facing service hardening
 type KernelHarden struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns true since we want to verify and apply security settings.
@@ -194,7 +194,7 @@ EOF`, sysctlDropInPath), Description: "Create kernel hardening config"}
 
 // NewKernelHarden creates a new kernel-harden skill.
 func NewKernelHarden() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDKernelHarden)
 	pb.SetDescription("Apply security-focused kernel parameters via sysctl")
 	return &KernelHarden{BaseSkill: pb}

@@ -94,21 +94,21 @@ func (g *groupImplementation) RunCommand(cmd string) types.Results {
 }
 
 // Run executes a skill across all nodes in this group.
-func (g *groupImplementation) Run(skill types.RunnableInterface) types.Results {
+func (g *groupImplementation) Run(runnable types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
 
 	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
 	for _, node := range g.nodes {
-		nodeResults := node.Run(skill)
+		nodeResults := node.Run(runnable)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
 
 // RunByID executes a skill by ID across all nodes in this group.
-func (g *groupImplementation) RunByID(id string, opts ...types.SkillOptions) types.Results {
+func (g *groupImplementation) RunByID(id string, opts ...types.RunnableOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}

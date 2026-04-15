@@ -28,7 +28,7 @@ import (
 //   - mariadb-install: Install MariaDB server
 //   - mariadb-secure: Security hardening
 type Status struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns false since this is a read-only skill.
@@ -115,7 +115,7 @@ func (m *Status) Run() types.Result {
 
 // NewStatus creates a new mariadb-status skill.
 func NewStatus() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbStatus)
 	pb.SetDescription("Display MariaDB server status information (read-only)")
 	return &Status{BaseSkill: pb}

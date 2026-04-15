@@ -47,7 +47,7 @@ const (
 //   - ssh-harden: Disable password auth, root login
 //   - ufw-install: Configure firewall
 type SshChangePort struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if port change is needed.
@@ -144,7 +144,7 @@ func (s *SshChangePort) Run() types.Result {
 
 // NewSshChangePort creates a new ssh-change-port skill.
 func NewSshChangePort() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSshChangePort)
 	pb.SetDescription("Change the SSH port to reduce automated scanning")
 	return &SshChangePort{BaseSkill: pb}

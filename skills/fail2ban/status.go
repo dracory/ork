@@ -52,7 +52,7 @@ import (
 // Related Playbooks:
 //   - fail2ban-install: Install fail2ban
 type Fail2banStatus struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns false since this is a read-only skill.
@@ -102,7 +102,7 @@ func (f *Fail2banStatus) Run() types.Result {
 
 // NewFail2banStatus creates a new fail2ban-status skill.
 func NewFail2banStatus() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDFail2banStatus)
 	pb.SetDescription("Display fail2ban service status and SSH jail information (read-only)")
 	return &Fail2banStatus{BaseSkill: pb}

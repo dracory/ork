@@ -33,7 +33,7 @@ import (
 //   - mariadb-create-user: Create a user and grant access to this database
 //   - mariadb-list-dbs: Verify database was created
 type CreateDB struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if the database already exists.
@@ -103,7 +103,7 @@ func (m *CreateDB) Run() types.Result {
 
 // NewCreateDB creates a new mariadb-create-db skill.
 func NewCreateDB() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbCreateDB)
 	pb.SetDescription("Create a new MariaDB database with UTF-8 encoding")
 	return &CreateDB{BaseSkill: pb}

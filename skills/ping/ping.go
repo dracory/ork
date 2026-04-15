@@ -38,7 +38,7 @@ import (
 //   - SSH key must be accessible at ~/.ssh/ with correct permissions
 //   - Root user must have SSH key authentication enabled
 type Ping struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check verifies SSH connectivity to the remote server.
@@ -105,7 +105,7 @@ func (p *Ping) Run() types.Result {
 // The returned skill can be registered with the skill registry
 // and executed via the CLI or programmatically.
 func NewPing() types.RunnableInterface {
-	skill := skills.NewBaseSkill()
+	skill := types.NewBaseSkill()
 	skill.SetID(skills.IDPing)
 	skill.SetDescription("Check SSH connectivity and show server uptime/load")
 	return &Ping{BaseSkill: skill}

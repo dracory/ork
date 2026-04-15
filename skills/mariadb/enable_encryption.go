@@ -46,7 +46,7 @@ import (
 //   - mariadb-enable-ssl: Encrypt data in transit
 //   - mariadb-security-audit: Verify encryption is working
 type EnableEncryption struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if encryption needs to be enabled.
@@ -157,7 +157,7 @@ EOF`, configPath, configPath, keyFilePath),
 
 // NewEnableEncryption creates a new mariadb-enable-encryption skill.
 func NewEnableEncryption() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbEnableEncryption)
 	pb.SetDescription("Enable data-at-rest encryption for MariaDB")
 	return &EnableEncryption{BaseSkill: pb}

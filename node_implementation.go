@@ -350,9 +350,9 @@ func (n *nodeImplementation) Run(skill types.RunnableInterface) types.Results {
 // RunByID executes a skill by ID from the registry.
 // This is useful when you want to run skills by string identifier.
 //
-// Optional SkillOptions can be provided to override node-level arguments for this
+// Optional RunnableOptions can be provided to override node-level arguments for this
 // specific execution. Skill-level args take precedence over node-level args.
-func (n *nodeImplementation) RunByID(id string, opts ...types.SkillOptions) types.Results {
+func (n *nodeImplementation) RunByID(id string, opts ...types.RunnableOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}

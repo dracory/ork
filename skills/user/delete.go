@@ -13,7 +13,7 @@ import (
 
 // UserDelete removes a user.
 type UserDelete struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if user exists and can be deleted.
@@ -110,7 +110,7 @@ func (u *UserDelete) Run() types.Result {
 
 // NewUserDelete creates a new user-delete skill.
 func NewUserDelete() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUserDelete)
 	pb.SetDescription("Delete a user (username via args['username'])")
 	return &UserDelete{BaseSkill: pb}

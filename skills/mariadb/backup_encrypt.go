@@ -30,7 +30,7 @@ import (
 // Related Playbooks:
 //   - mariadb-backup: Standard (non-encrypted) backup
 type BackupEncrypt struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if backup can be created.
@@ -112,7 +112,7 @@ func (b *BackupEncrypt) Run() types.Result {
 
 // NewBackupEncrypt creates a new mariadb-backup-encrypt skill.
 func NewBackupEncrypt() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbBackupEncrypt)
 	pb.SetDescription("Create an encrypted backup of a MariaDB database")
 	return &BackupEncrypt{BaseSkill: pb}

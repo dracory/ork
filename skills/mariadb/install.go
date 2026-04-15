@@ -41,7 +41,7 @@ import (
 //   - mariadb-secure: Remove default insecure settings
 //   - mariadb-status: Verify installation is working
 type Install struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if MariaDB needs to be installed.
@@ -144,7 +144,7 @@ func (m *Install) Run() types.Result {
 
 // NewInstall creates a new mariadb-install skill.
 func NewInstall() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbInstall)
 	pb.SetDescription("Install and configure MariaDB database server")
 	return &Install{BaseSkill: pb}

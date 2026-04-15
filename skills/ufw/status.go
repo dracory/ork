@@ -42,7 +42,7 @@ import (
 //   - ufw-install: Install UFW firewall
 //   - ufw-allow: Allow additional ports
 type UfwStatus struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns false since this is a read-only skill.
@@ -87,7 +87,7 @@ func (u *UfwStatus) Run() types.Result {
 
 // NewUfwStatus creates a new ufw-status skill.
 func NewUfwStatus() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwStatus)
 	pb.SetDescription("Display UFW firewall configuration and status (read-only)")
 	return &UfwStatus{BaseSkill: pb}

@@ -42,7 +42,7 @@ import (
 // Idempotency:
 //   - Always reports Changed=false since this is read-only
 type SwapStatus struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns false since SwapStatus is read-only.
@@ -110,7 +110,7 @@ func (s *SwapStatus) Run() types.Result {
 //	A PlaybookInterface implementation configured with IDSwapStatus identifier
 //	and description "Show swap status and usage".
 func NewSwapStatus() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSwapStatus)
 	pb.SetDescription("Show swap status and usage")
 	return &SwapStatus{BaseSkill: pb}

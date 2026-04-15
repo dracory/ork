@@ -63,7 +63,7 @@ import (
 //   - Uses secure permissions on swap file (600)
 //   - Falls back gracefully if fstab or sysctl updates fail (logs warning)
 type SwapCreate struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if swap needs to be created.
@@ -259,7 +259,7 @@ func (s *SwapCreate) Run() types.Result {
 //	- unit: "gb" (gigabytes)
 //	- swappiness: "10" (low swappiness, prefers RAM)
 func NewSwapCreate() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSwapCreate)
 	pb.SetDescription("Create a swap file (size via args['size'], unit via args['unit']='gb'|'mb', swappiness via args['swappiness']=10, defaults: 1GB, swappiness=10)")
 	return &SwapCreate{BaseSkill: pb}

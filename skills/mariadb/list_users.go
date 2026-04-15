@@ -39,7 +39,7 @@ import (
 //   - mariadb-create-user: Create a new user
 //   - mariadb-secure: Remove insecure default users
 type ListUsers struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns false since this is a read-only skill.
@@ -94,7 +94,7 @@ func (m *ListUsers) Run() types.Result {
 
 // NewListUsers creates a new mariadb-list-users skill.
 func NewListUsers() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbListUsers)
 	pb.SetDescription("Display all database user accounts and their allowed hosts (read-only)")
 	return &ListUsers{BaseSkill: pb}

@@ -40,7 +40,7 @@ import (
 //   - Always reports Changed=true because the cache modification time is updated
 //   - The cost of checking if update is needed is similar to running it
 type AptUpdate struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns true for apt-update since cache refresh is always beneficial.
@@ -99,7 +99,7 @@ func (a *AptUpdate) Run() types.Result {
 //	A PlaybookInterface implementation configured with IDAptUpdate identifier
 //	and description "Refresh package database (apt-get update)".
 func NewAptUpdate() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAptUpdate)
 	pb.SetDescription("Refresh package database (apt-get update)")
 	return &AptUpdate{BaseSkill: pb}

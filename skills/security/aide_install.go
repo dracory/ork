@@ -50,7 +50,7 @@ import (
 // Related Playbooks:
 //   - auditd-install: System call auditing
 type AideInstall struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if AIDE needs to be installed.
@@ -131,7 +131,7 @@ EOF`, Description: "Create AIDE daily cron job"}
 
 // NewAideInstall creates a new aide-install skill.
 func NewAideInstall() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAideInstall)
 	pb.SetDescription("Install and configure AIDE file integrity monitoring")
 	return &AideInstall{BaseSkill: pb}

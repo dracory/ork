@@ -38,7 +38,7 @@ import (
 //   - mariadb-create-db: Create a database for this user
 //   - mariadb-list-users: Verify user was created
 type CreateUser struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if the user already exists.
@@ -175,7 +175,7 @@ func (m *CreateUser) Run() types.Result {
 
 // NewCreateUser creates a new mariadb-create-user skill.
 func NewCreateUser() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbCreateUser)
 	pb.SetDescription("Create a new MariaDB user with configurable privileges")
 	return &CreateUser{BaseSkill: pb}

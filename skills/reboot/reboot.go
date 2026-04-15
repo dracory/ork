@@ -54,7 +54,7 @@ import (
 // Note: By default, WaitForReconnect is false. The caller must explicitly
 // enable waiting by setting WaitForReconnect=true on the returned instance.
 type Reboot struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 	// WaitForReconnect if true, will poll until server is back online
 	WaitForReconnect bool
 	// MaxWaitTime is the maximum time to wait for reconnection (default: 5m)
@@ -171,7 +171,7 @@ func (r *Reboot) Run() types.Result {
 //
 // Note: MaxWaitTime only applies when WaitForReconnect is true.
 func NewReboot() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDReboot)
 	pb.SetDescription("Reboot the remote server")
 	return &Reboot{

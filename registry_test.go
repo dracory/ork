@@ -3,7 +3,7 @@ package ork
 import (
 	"testing"
 
-	"github.com/dracory/ork/skills"
+	"github.com/dracory/ork/types"
 )
 
 func TestNewDefaultRegistry_Initialized(t *testing.T) {
@@ -113,7 +113,7 @@ func TestGetGlobalSkillRegistry(t *testing.T) {
 	}
 
 	// Test that we can use it to register a skill
-	customSkill := skills.NewBaseSkill()
+	customSkill := types.NewBaseSkill()
 	customSkill.SetID("test-get-registry-skill")
 	customSkill.SetDescription("Test skill via NewDefaultRegistry")
 
@@ -168,7 +168,7 @@ func TestNewDefaultRegistry_DuplicateID(t *testing.T) {
 	}
 
 	// Try to register a skill with a duplicate ID
-	duplicateSkill := skills.NewBaseSkill()
+	duplicateSkill := types.NewBaseSkill()
 	duplicateSkill.SetID("ping") // "ping" is already registered
 	duplicateSkill.SetDescription("Duplicate ping skill")
 

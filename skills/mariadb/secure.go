@@ -33,7 +33,7 @@ import (
 //   - mariadb-install: Initial installation
 //   - mariadb-create-user: Create restricted application users
 type Secure struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns true since we always want to ensure security settings are applied.
@@ -128,7 +128,7 @@ func (m *Secure) Run() types.Result {
 
 // NewSecure creates a new mariadb-secure skill.
 func NewSecure() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbSecure)
 	pb.SetDescription("Perform basic security hardening on MariaDB installation")
 	return &Secure{BaseSkill: pb}

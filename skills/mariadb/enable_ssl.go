@@ -39,7 +39,7 @@ import (
 //   - mariadb-security-audit: Verify SSL is working properly
 //   - mariadb-create-user: Create users with SSL requirements
 type EnableSSL struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if SSL needs to be enabled.
@@ -127,7 +127,7 @@ EOF`, configPath, configPath, dataDir, dataDir, dataDir), Description: "Configur
 
 // NewEnableSSL creates a new mariadb-enable-ssl skill.
 func NewEnableSSL() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbEnableSSL)
 	pb.SetDescription("Enable SSL/TLS encryption for MariaDB connections")
 	return &EnableSSL{BaseSkill: pb}

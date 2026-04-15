@@ -1,14 +1,13 @@
-package skills
+package types
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/dracory/ork/config"
-	"github.com/dracory/ork/types"
 )
 
-// BaseSkill provides default implementations of the types.RunnableInterface.
+// BaseSkill provides default implementations of the RunnableInterface.
 // Embed this in your skill struct to get boilerplate getter/setter methods.
 // Only implement Check() and Run() for the specific skill logic.
 //
@@ -20,7 +19,7 @@ import (
 //
 //	func NewMySkill() *MySkill {
 //	    return &MySkill{
-//	        BaseSkill: skills.NewBaseSkill().
+//	        BaseSkill: types.NewBaseSkill().
 //	            SetID("my-skill").
 //	            SetDescription("What this skill does"),
 //	    }
@@ -30,7 +29,7 @@ import (
 //	    // Check if changes are needed
 //	}
 //
-//	func (m *MySkill) Run() types.Result {
+//	func (m *MySkill) Run() Result {
 //	    // Execute the skill
 //	}
 type BaseSkill struct {
@@ -57,8 +56,8 @@ func (b *BaseSkill) GetID() string {
 }
 
 // SetID sets the unique identifier for this skill.
-// Returns types.RunnableInterface for fluent method chaining with embedding types.
-func (b *BaseSkill) SetID(id string) types.RunnableInterface {
+// Returns RunnableInterface for fluent method chaining with embedding types.
+func (b *BaseSkill) SetID(id string) RunnableInterface {
 	b.id = id
 	return b
 }
@@ -69,8 +68,8 @@ func (b *BaseSkill) GetDescription() string {
 }
 
 // SetDescription sets a short description of what the skill does.
-// Returns types.RunnableInterface for fluent method chaining with embedding types.
-func (b *BaseSkill) SetDescription(description string) types.RunnableInterface {
+// Returns RunnableInterface for fluent method chaining with embedding types.
+func (b *BaseSkill) SetDescription(description string) RunnableInterface {
 	b.description = description
 	return b
 }
@@ -81,8 +80,8 @@ func (b *BaseSkill) GetNodeConfig() config.NodeConfig {
 }
 
 // SetNodeConfig sets the node configuration for this skill execution.
-// Returns types.RunnableInterface for fluent method chaining with embedding types.
-func (b *BaseSkill) SetNodeConfig(cfg config.NodeConfig) types.RunnableInterface {
+// Returns RunnableInterface for fluent method chaining with embedding types.
+func (b *BaseSkill) SetNodeConfig(cfg config.NodeConfig) RunnableInterface {
 	b.nodeCfg = cfg
 	return b
 }
@@ -93,8 +92,8 @@ func (b *BaseSkill) GetArg(key string) string {
 }
 
 // SetArg sets a single argument value.
-// Returns types.RunnableInterface for fluent method chaining.
-func (b *BaseSkill) SetArg(key, value string) types.RunnableInterface {
+// Returns RunnableInterface for fluent method chaining.
+func (b *BaseSkill) SetArg(key, value string) RunnableInterface {
 	if b.args == nil {
 		b.args = make(map[string]string)
 	}
@@ -108,8 +107,8 @@ func (b *BaseSkill) GetArgs() map[string]string {
 }
 
 // SetArgs replaces the entire arguments map.
-// Returns types.RunnableInterface for fluent method chaining.
-func (b *BaseSkill) SetArgs(args map[string]string) types.RunnableInterface {
+// Returns RunnableInterface for fluent method chaining.
+func (b *BaseSkill) SetArgs(args map[string]string) RunnableInterface {
 	b.args = args
 	return b
 }
@@ -120,8 +119,8 @@ func (b *BaseSkill) IsDryRun() bool {
 }
 
 // SetDryRun sets whether to simulate execution without making changes.
-// Returns types.RunnableInterface for fluent method chaining.
-func (b *BaseSkill) SetDryRun(dryRun bool) types.RunnableInterface {
+// Returns RunnableInterface for fluent method chaining.
+func (b *BaseSkill) SetDryRun(dryRun bool) RunnableInterface {
 	b.dryRun = dryRun
 	return b
 }
@@ -132,8 +131,8 @@ func (b *BaseSkill) GetTimeout() time.Duration {
 }
 
 // SetTimeout sets the maximum duration for skill execution.
-// Returns types.RunnableInterface for fluent method chaining.
-func (b *BaseSkill) SetTimeout(timeout time.Duration) types.RunnableInterface {
+// Returns RunnableInterface for fluent method chaining.
+func (b *BaseSkill) SetTimeout(timeout time.Duration) RunnableInterface {
 	b.timeout = timeout
 	return b
 }
@@ -144,8 +143,8 @@ func (b *BaseSkill) Check() (bool, error) {
 }
 
 // Run is a stub that embedding types must override.
-func (b *BaseSkill) Run() types.Result {
-	return types.Result{
+func (b *BaseSkill) Run() Result {
+	return Result{
 		Changed: false,
 		Message: "Run() must be implemented by embedding type",
 		Error:   fmt.Errorf("Run() must be implemented by embedding type"),

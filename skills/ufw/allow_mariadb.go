@@ -51,7 +51,7 @@ import (
 //   - ufw-install: Install UFW firewall
 //   - ufw-status: Verify MariaDB rules are active
 type AllowMariaDB struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if UFW rules need to be configured.
@@ -168,7 +168,7 @@ func (u *AllowMariaDB) allowSpecificIPs(cfg config.NodeConfig, ips []string, mar
 
 // NewAllowMariaDB creates a new ufw-allow-mariadb skill.
 func NewAllowMariaDB() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwAllowMariaDB)
 	pb.SetDescription("Configure UFW firewall rules for MariaDB access")
 	return &AllowMariaDB{BaseSkill: pb}

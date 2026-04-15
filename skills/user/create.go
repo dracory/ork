@@ -13,7 +13,7 @@ import (
 
 // UserCreate creates a new non-root user with sudo access.
 type UserCreate struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if user needs to be created.
@@ -202,7 +202,7 @@ func (u *UserCreate) Run() types.Result {
 
 // NewUserCreate creates a new user-create skill.
 func NewUserCreate() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUserCreate)
 	pb.SetDescription("Create a new user with sudo access (username via args['username'])")
 	return &UserCreate{BaseSkill: pb}

@@ -49,7 +49,7 @@ import (
 //   - Safely removes fstab entry with sed pattern matching
 //   - Idempotent - safe to run multiple times
 type SwapDelete struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if swap needs to be removed.
@@ -148,7 +148,7 @@ func (s *SwapDelete) Run() types.Result {
 //	A PlaybookInterface implementation configured with IDSwapDelete identifier
 //	and description "Remove the swap file".
 func NewSwapDelete() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSwapDelete)
 	pb.SetDescription("Remove the swap file")
 	return &SwapDelete{BaseSkill: pb}

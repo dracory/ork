@@ -37,7 +37,7 @@ import (
 // Idempotency:
 //   - Always reports Changed=false since this is read-only
 type UserList struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns false since UserList is read-only.
@@ -104,7 +104,7 @@ func (u *UserList) Run() types.Result {
 //	A PlaybookInterface implementation configured with IDUserList identifier
 //	and description "List all non-system users".
 func NewUserList() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUserList)
 	pb.SetDescription("List all non-system users")
 	return &UserList{BaseSkill: pb}

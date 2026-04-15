@@ -51,7 +51,7 @@ import (
 // Related Playbooks:
 //   - aide-install: File integrity monitoring
 type AuditdInstall struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if auditd needs to be installed.
@@ -168,7 +168,7 @@ EOF`, Description: "Create audit rules"}
 
 // NewAuditdInstall creates a new auditd-install skill.
 func NewAuditdInstall() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAuditdInstall)
 	pb.SetDescription("Install and configure the Linux Audit Framework")
 	return &AuditdInstall{BaseSkill: pb}

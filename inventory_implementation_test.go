@@ -606,7 +606,7 @@ func (m *invTestMockNode) Run(pb types.RunnableInterface) types.Results {
 	}
 }
 
-func (m *invTestMockNode) RunByID(id string, opts ...types.SkillOptions) types.Results {
+func (m *invTestMockNode) RunByID(id string, opts ...types.RunnableOptions) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {

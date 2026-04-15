@@ -39,7 +39,7 @@ import (
 // Related Playbooks:
 //   - mariadb-list-dbs: List available databases
 type Backup struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns true since we always want to create a fresh backup.
@@ -130,7 +130,7 @@ func (m *Backup) Run() types.Result {
 
 // NewBackup creates a new mariadb-backup skill.
 func NewBackup() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbBackup)
 	pb.SetDescription("Create a compressed SQL dump of a MariaDB database")
 	return &Backup{BaseSkill: pb}

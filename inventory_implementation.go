@@ -214,7 +214,7 @@ func (i *inventoryImplementation) Run(skill types.RunnableInterface) types.Resul
 }
 
 // RunByID executes a skill by ID across all nodes.
-func (i *inventoryImplementation) RunByID(id string, opts ...types.SkillOptions) types.Results {
+func (i *inventoryImplementation) RunByID(id string, opts ...types.RunnableOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}

@@ -2,7 +2,7 @@ package ork
 
 import "github.com/dracory/ork/skills"
 
-// Skill ID constants for use with RunSkill.
+// Skill ID constants for use with RunByID.
 // These constants provide compile-time safety and IDE autocomplete for skill IDs.
 // They are aliases to the constants in the skills package.
 //

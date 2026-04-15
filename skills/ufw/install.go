@@ -46,7 +46,7 @@ import (
 //   - ufw-status: Check firewall status
 //   - ufw-allow: Allow additional ports after installation
 type UfwInstall struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check determines if UFW needs to be installed.
@@ -224,7 +224,7 @@ func (u *UfwInstall) Run() types.Result {
 
 // NewUfwInstall creates a new ufw-install skill.
 func NewUfwInstall() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwInstall)
 	pb.SetDescription("Install and configure UFW firewall with secure defaults")
 	return &UfwInstall{BaseSkill: pb}

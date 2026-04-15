@@ -2,11 +2,7 @@ package ork
 
 import (
 	"github.com/dracory/ork/config"
-	"github.com/dracory/ork/types"
 )
-
-// check if the interface implements the RunnerInterface
-// var _ types.RunnerInterface = (*nodeImplementation)(nil)
 
 // NodeInterface defines the contract for managing a remote server via SSH.
 // Implementations must support configuration via setter methods, connection
@@ -225,16 +221,6 @@ type NodeInterface interface {
 	//	node.Close()
 	//	fmt.Println(node.IsConnected())  // Output: false
 	IsConnected() bool
-
-	// RunByID executes a skill by ID from the registry.
-	// Deprecated: Use RunSkill() instead. Run skills by creating the skill
-	// instance directly (e.g., skills.NewPing()) and passing it to RunSkill().
-	// This provides better type safety and IDE autocomplete support.
-	//
-	// Optional SkillOptions can be provided to override node-level arguments for this
-	// specific execution. This allows per-skill variable scoping without affecting
-	// the node's state.
-	RunByID(id string, opts ...types.SkillOptions) types.Results
 }
 
 // NewNode creates a new Node with default configuration values.

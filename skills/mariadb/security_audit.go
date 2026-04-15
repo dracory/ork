@@ -34,7 +34,7 @@ import (
 //   - mariadb-secure: Fix identified security issues
 //   - mariadb-enable-ssl: Enable SSL/TLS encryption
 type SecurityAudit struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns false since this is a read-only skill.
@@ -95,7 +95,7 @@ func (m *SecurityAudit) Run() types.Result {
 
 // NewSecurityAudit creates a new mariadb-security-audit skill.
 func NewSecurityAudit() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbSecurityAudit)
 	pb.SetDescription("Perform a comprehensive security audit of MariaDB (read-only)")
 	return &SecurityAudit{BaseSkill: pb}

@@ -42,7 +42,7 @@ import (
 // Idempotency:
 //   - Always reports Changed=false since this is read-only
 type UserStatus struct {
-	*skills.BaseSkill
+	*types.BaseSkill
 }
 
 // Check always returns false since UserStatus is read-only.
@@ -131,7 +131,7 @@ func (u *UserStatus) Run() types.Result {
 //	Pass ArgUsername via --arg=username=<name> to query a specific user.
 //	Omit the username argument to list all non-system users.
 func NewUserStatus() types.RunnableInterface {
-	pb := skills.NewBaseSkill()
+	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUserStatus)
 	pb.SetDescription("Show user information")
 	return &UserStatus{BaseSkill: pb}
