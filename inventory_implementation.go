@@ -87,10 +87,39 @@ func (i *inventoryImplementation) RunCommand(cmd string) types.Results {
 	i.propagateDryRun()
 
 	nodes := i.GetNodes()
-	for _, node := range nodes {
-		nodeResults := node.RunCommand(cmd)
-		maps.Copy(results.Results, nodeResults.Results)
+
+	// Determine concurrency limit
+	concurrency := i.maxConcurrency
+	if concurrency == 0 {
+		concurrency = len(nodes) // unlimited
 	}
+	if concurrency > len(nodes) {
+		concurrency = len(nodes)
+	}
+
+	// Use semaphore for concurrency control
+	sem := make(chan struct{}, concurrency)
+	var wg sync.WaitGroup
+
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(n NodeInterface) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			nodeResults := n.RunCommand(cmd)
+
+			// Protect results map with mutex
+			i.mu.Lock()
+			maps.Copy(results.Results, nodeResults.Results)
+			i.mu.Unlock()
+		}(node)
+	}
+
+	wg.Wait()
 	return results
 }
 
@@ -102,10 +131,39 @@ func (i *inventoryImplementation) RunPlaybook(pb types.PlaybookInterface) types.
 
 	i.propagateDryRun()
 	nodes := i.GetNodes()
-	for _, node := range nodes {
-		nodeResults := node.RunPlaybook(pb)
-		maps.Copy(results.Results, nodeResults.Results)
+
+	// Determine concurrency limit
+	concurrency := i.maxConcurrency
+	if concurrency == 0 {
+		concurrency = len(nodes) // unlimited
 	}
+	if concurrency > len(nodes) {
+		concurrency = len(nodes)
+	}
+
+	// Use semaphore for concurrency control
+	sem := make(chan struct{}, concurrency)
+	var wg sync.WaitGroup
+
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(n NodeInterface) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			nodeResults := n.RunPlaybook(pb)
+
+			// Protect results map with mutex
+			i.mu.Lock()
+			maps.Copy(results.Results, nodeResults.Results)
+			i.mu.Unlock()
+		}(node)
+	}
+
+	wg.Wait()
 	return results
 }
 
@@ -117,10 +175,39 @@ func (i *inventoryImplementation) RunPlaybookByID(id string, opts ...types.Playb
 
 	i.propagateDryRun()
 	nodes := i.GetNodes()
-	for _, node := range nodes {
-		nodeResults := node.RunPlaybookByID(id, opts...)
-		maps.Copy(results.Results, nodeResults.Results)
+
+	// Determine concurrency limit
+	concurrency := i.maxConcurrency
+	if concurrency == 0 {
+		concurrency = len(nodes) // unlimited
 	}
+	if concurrency > len(nodes) {
+		concurrency = len(nodes)
+	}
+
+	// Use semaphore for concurrency control
+	sem := make(chan struct{}, concurrency)
+	var wg sync.WaitGroup
+
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(n NodeInterface) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			nodeResults := n.RunPlaybookByID(id, opts...)
+
+			// Protect results map with mutex
+			i.mu.Lock()
+			maps.Copy(results.Results, nodeResults.Results)
+			i.mu.Unlock()
+		}(node)
+	}
+
+	wg.Wait()
 	return results
 }
 
@@ -132,10 +219,39 @@ func (i *inventoryImplementation) CheckPlaybook(pb types.PlaybookInterface) type
 
 	i.propagateDryRun()
 	nodes := i.GetNodes()
-	for _, node := range nodes {
-		nodeResults := node.CheckPlaybook(pb)
-		maps.Copy(results.Results, nodeResults.Results)
+
+	// Determine concurrency limit
+	concurrency := i.maxConcurrency
+	if concurrency == 0 {
+		concurrency = len(nodes) // unlimited
 	}
+	if concurrency > len(nodes) {
+		concurrency = len(nodes)
+	}
+
+	// Use semaphore for concurrency control
+	sem := make(chan struct{}, concurrency)
+	var wg sync.WaitGroup
+
+	for _, node := range nodes {
+		wg.Add(1)
+		go func(n NodeInterface) {
+			defer wg.Done()
+
+			// Acquire semaphore
+			sem <- struct{}{}
+			defer func() { <-sem }()
+
+			nodeResults := n.CheckPlaybook(pb)
+
+			// Protect results map with mutex
+			i.mu.Lock()
+			maps.Copy(results.Results, nodeResults.Results)
+			i.mu.Unlock()
+		}(node)
+	}
+
+	wg.Wait()
 	return results
 }
 

@@ -404,6 +404,48 @@ func TestInventoryImplementation_CheckPlaybook_SetsDryRun(t *testing.T) {
 	}
 }
 
+// TestInventoryImplementation_ConcurrentExecution verifies that concurrent execution works.
+func TestInventoryImplementation_ConcurrentExecution(t *testing.T) {
+	i := NewInventory()
+	i.SetMaxConcurrency(2)
+
+	// Add multiple nodes with unique hosts
+	hosts := []string{"server1.example.com", "server2.example.com", "server3.example.com", "server4.example.com", "server5.example.com"}
+	for _, host := range hosts {
+		node := &invTestMockNode{host: host}
+		i.AddNode(node)
+	}
+
+	mockPb := &invTestMockPlaybook{name: "test-playbook"}
+	results := i.RunPlaybook(mockPb)
+
+	// Should have results for all 5 nodes
+	if len(results.Results) != 5 {
+		t.Errorf("Expected 5 results, got %d", len(results.Results))
+	}
+}
+
+// TestInventoryImplementation_ConcurrentExecution_Unlimited verifies unlimited concurrency (maxConcurrency=0).
+func TestInventoryImplementation_ConcurrentExecution_Unlimited(t *testing.T) {
+	i := NewInventory()
+	i.SetMaxConcurrency(0) // unlimited
+
+	// Add multiple nodes with unique hosts
+	hosts := []string{"server1.example.com", "server2.example.com", "server3.example.com", "server4.example.com", "server5.example.com"}
+	for _, host := range hosts {
+		node := &invTestMockNode{host: host}
+		i.AddNode(node)
+	}
+
+	mockPb := &invTestMockPlaybook{name: "test-playbook"}
+	results := i.RunPlaybook(mockPb)
+
+	// Should have results for all 5 nodes
+	if len(results.Results) != 5 {
+		t.Errorf("Expected 5 results, got %d", len(results.Results))
+	}
+}
+
 // TestInventoryImplementation_ComplexScenario verifies a complex inventory setup.
 func TestInventoryImplementation_ComplexScenario(t *testing.T) {
 	i := NewInventory()
