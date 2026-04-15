@@ -2,15 +2,16 @@
 path: api_reference.md
 page-type: reference
 summary: Complete API reference for all public interfaces, functions, and types.
-tags: [reference, api, interfaces, vault, prompts]
+tags: [reference, api, interfaces, vault, prompts, privilege-escalation]
 created: 2025-04-14
 updated: 2026-04-15
-version: 2.0.0
+version: 2.1.0
 ---
 
 # API Reference
 
 ## Changelog
+- **v2.1.0** (2026-04-15): Added privilege escalation (become) feature with BecomeInterface, BaseBecome, and BecomeUser field in NodeConfig
 - **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, BasePlaybook moved to types package, NodeConfig moved to types package, config package removed, playbook package removed
 - **v1.2.0** (2026-04-14): Added vault functions for secure secrets management and prompt functions for interactive user input
 - **v1.1.0** (2026-04-14): Updated API references from playbook to playbooks package
@@ -132,7 +133,18 @@ type RunnerInterface interface {
     SetLogger(logger *slog.Logger) RunnerInterface
     SetDryRunMode(dryRun bool) RunnerInterface
     GetDryRunMode() bool
+    types.BecomeInterface
 }
+```
+
+#### BecomeInterface Methods (embedded in RunnerInterface)
+
+```go
+// SetBecomeUser sets the user to become when executing commands via sudo
+SetBecomeUser(user string) types.BecomeInterface
+
+// GetBecomeUser returns the configured become user
+GetBecomeUser() string
 ```
 
 ### Registry Functions
@@ -266,8 +278,10 @@ type NodeConfig struct {
     
     // Dry-run mode flag
     IsDryRunMode bool
+    
+    // BecomeUser is the user to become when executing commands via sudo
+    BecomeUser string
 }
-```
 
 #### Methods
 
@@ -316,6 +330,8 @@ type RunnableInterface interface {
     // Core operations
     Check() (bool, error)
     Run() types.Result
+
+    BecomeInterface
 }
 ```
 
@@ -357,6 +373,47 @@ type Command struct {
 ```
 
 Used to display and execute shell commands in a structured way, especially useful in dry-run mode to show what commands would be executed.
+
+### BecomeInterface
+
+Defines privilege escalation capabilities for running commands as a different user via sudo.
+
+```go
+type BecomeInterface interface {
+    SetBecomeUser(user string) BecomeInterface
+    GetBecomeUser() string
+}
+```
+
+#### Methods
+
+```go
+// SetBecomeUser sets the user to become when executing commands via sudo
+// Returns BecomeInterface for fluent method chaining
+SetBecomeUser(user string) BecomeInterface
+
+// GetBecomeUser returns the configured become user
+// Returns empty string if not set
+GetBecomeUser() string
+```
+
+### BaseBecome
+
+Provides a default implementation of BecomeInterface that can be embedded in other structs.
+
+```go
+type BaseBecome struct {
+    becomeUser string
+}
+```
+
+Embed `BaseBecome` in your custom skills or playbooks to automatically get privilege escalation support:
+
+```go
+type MyCustomSkill struct {
+    types.BaseSkill  // Already embeds BaseBecome
+}
+```
 
 ### Result
 

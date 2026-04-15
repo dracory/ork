@@ -5,10 +5,11 @@ summary: Navigation sidebar for Ork LiveWiki.
 tags: [navigation, sidebar]
 created: 2025-04-14
 updated: 2026-04-15
-version: 2.1.0
+version: 2.2.0
 ---
 
 ## Changelog
+- **v2.2.0** (2026-04-15): Added privilege escalation (become) feature with sudo support
 - **v2.1.0** (2026-04-15): Removed deprecated modules (config, playbook, playbooks), added skills module
 - **v1.0.0** (2025-04-14): Initial creation
 

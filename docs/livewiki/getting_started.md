@@ -2,10 +2,10 @@
 path: getting_started.md
 page-type: tutorial
 summary: Step-by-step guide to installing Ork and running your first automation tasks.
-tags: [tutorial, getting-started, installation, quickstart]
+tags: [tutorial, getting-started, installation, quickstart, privilege-escalation]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-15
+version: 1.1.0
 ---
 
 # Getting Started with Ork
@@ -213,6 +213,75 @@ Dry-run mode works at all levels:
 - **Node level**: `node.SetDryRunMode(true)`
 - **Group level**: `group.SetDryRunMode(true)`
 - **Inventory level**: `inv.SetDryRunMode(true)`
+
+## Privilege Escalation (Become)
+
+Ork supports running commands as a different user using `sudo`. This is useful when you need to perform operations that require elevated privileges.
+
+### Basic Usage
+
+```go
+// Connect as a non-root user, but run commands as root
+node := ork.NewNodeForHost("server.example.com").
+    SetUser("deploy").
+    SetBecomeUser("root")
+
+// This will run: sudo -u root apt-get update
+results := node.RunCommand("apt-get update")
+```
+
+### Running as Specific Users
+
+```go
+// Run database commands as the postgres user
+node.SetBecomeUser("postgres")
+results := node.RunCommand("psql -c 'SELECT version()'")
+
+// Run web server commands as www-data
+node.SetBecomeUser("www-data")
+results := node.RunCommand("systemctl restart nginx")
+```
+
+### Precedence Rules
+
+The become user setting follows this precedence (highest to lowest):
+1. **Skill/Playbook level**: Skill-specific setting
+2. **Node level**: Node-specific setting
+3. **Group level**: Group setting (propagated to all nodes)
+4. **Inventory level**: Inventory setting (propagated to all groups and nodes)
+
+```go
+// Set at inventory level - applies to all
+inv := ork.NewInventory()
+inv.SetBecomeUser("root")
+
+// Override at group level
+dbGroup := ork.NewGroup("databases")
+dbGroup.SetBecomeUser("postgres")  // Uses postgres, not root
+
+// Override at node level
+node := ork.NewNodeForHost("special.example.com")
+node.SetBecomeUser("admin")  // Uses admin, not postgres or root
+```
+
+### With Skills
+
+```go
+// Set become user on the skill itself
+skill := skills.NewAptUpdate()
+skill.SetBecomeUser("root")
+
+// The skill will run as root regardless of node/group/inventory settings
+results := node.Run(skill)
+```
+
+### Security Considerations
+
+- The connecting user must have `sudo` privileges to the target user
+- No password support is currently implemented - ensure passwordless sudo is configured
+- Use the principle of least privilege - only escalate when necessary
+
+For detailed documentation, see [Privilege Escalation](../../privilege_escalation.md).
 
 ## Persistent Connections
 
