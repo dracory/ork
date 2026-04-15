@@ -683,6 +683,10 @@ Create `ork.BasePlaybook` as a foundation for playbook development. Similar to `
 - Store ID, description, node config, args, dry-run mode, and timeout
 - Provide fluent setter methods for chaining
 
+**Package Structure:**
+- `skills.BaseSkill` remains in the `skills` package (used by all skill implementations)
+- `ork.BasePlaybook` is in the `ork` package (to avoid circular dependencies since ork imports skills)
+
 ```go
 package ork
 
@@ -779,9 +783,11 @@ Create `ork/playbook` package with helper utilities:
 - RunnableInterface implementation (unified interface for skills and playbooks)
 - RunnerInterface.Run() method (unified execution API)
 
-**To Implement:**
+**Completed:**
 - `ork.BasePlaybook` foundation struct with `NewBasePlaybook()`
-- Core playbook pattern (implement RunnableInterface with complex Run() logic)
+- Example playbook demonstrating the pattern (`examples/ExamplePlaybook`)
+
+**To Implement:**
 - Helper package (`ork/playbook`) with common patterns
 - Additional documentation and examples
 - Best practices guide for playbook development
