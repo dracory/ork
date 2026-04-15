@@ -1021,3 +1021,174 @@ func containsHelper(s, substr string) bool {
 	}
 	return false
 }
+
+// TestNewNodeForHost verifies that NewNodeForHost initializes with correct default values.
+func TestNewNodeForHost(t *testing.T) {
+	host := "server.example.com"
+	node := NewNodeForHost(host)
+
+	// Verify the node is not nil
+	if node == nil {
+		t.Fatal("Expected NewNodeForHost to return non-nil NodeInterface")
+	}
+
+	// Verify default values using getter methods
+	if node.GetHost() != host {
+		t.Errorf("Expected GetHost()=%q, got %q", host, node.GetHost())
+	}
+
+	if node.GetPort() != "22" {
+		t.Errorf("Expected GetPort()=%q, got %q", "22", node.GetPort())
+	}
+
+	if node.GetUser() != "root" {
+		t.Errorf("Expected GetUser()=%q, got %q", "root", node.GetUser())
+	}
+
+	if node.GetKey() != "id_rsa" {
+		t.Errorf("Expected GetKey()=%q, got %q", "id_rsa", node.GetKey())
+	}
+
+	// Verify Args is initialized
+	cfg := node.GetNodeConfig()
+	if cfg.Args == nil {
+		t.Error("Expected Args to be initialized, got nil")
+	}
+
+	if len(cfg.Args) != 0 {
+		t.Errorf("Expected Args to be empty, got %d items", len(cfg.Args))
+	}
+
+	// Verify not connected initially
+	if node.IsConnected() {
+		t.Error("Expected IsConnected() to return false initially")
+	}
+}
+
+// TestNewNode verifies that NewNode (no arguments) initializes with correct default values.
+func TestNewNode(t *testing.T) {
+	node := NewNode()
+
+	// Verify the node is not nil
+	if node == nil {
+		t.Fatal("Expected NewNode to return non-nil NodeInterface")
+	}
+
+	// Verify default values - host should be empty
+	if node.GetHost() != "" {
+		t.Errorf("Expected GetHost()=%q, got %q", "", node.GetHost())
+	}
+
+	if node.GetPort() != "22" {
+		t.Errorf("Expected GetPort()=%q, got %q", "22", node.GetPort())
+	}
+
+	if node.GetUser() != "root" {
+		t.Errorf("Expected GetUser()=%q, got %q", "root", node.GetUser())
+	}
+
+	if node.GetKey() != "id_rsa" {
+		t.Errorf("Expected GetKey()=%q, got %q", "id_rsa", node.GetKey())
+	}
+
+	// Verify Args is initialized
+	cfg := node.GetNodeConfig()
+	if cfg.Args == nil {
+		t.Error("Expected Args to be initialized, got nil")
+	}
+
+	if len(cfg.Args) != 0 {
+		t.Errorf("Expected Args to be empty, got %d items", len(cfg.Args))
+	}
+
+	// Verify not connected initially
+	if node.IsConnected() {
+		t.Error("Expected IsConnected() to return false initially")
+	}
+}
+
+// TestNewNodeFromConfig verifies that NewNodeFromConfig creates a node from existing config.
+func TestNewNodeFromConfig(t *testing.T) {
+	cfg := types.NodeConfig{
+		SSHHost:  "server.example.com",
+		SSHPort:  "2222",
+		RootUser: "deploy",
+		SSHKey:   "production.prv",
+		Args: map[string]string{
+			"env": "production",
+		},
+	}
+
+	node := NewNodeFromConfig(cfg)
+
+	// Verify the node is not nil
+	if node == nil {
+		t.Fatal("Expected NewNodeFromConfig to return non-nil NodeInterface")
+	}
+
+	// Verify config values were copied
+	if node.GetHost() != "server.example.com" {
+		t.Errorf("Expected GetHost()=%q, got %q", "server.example.com", node.GetHost())
+	}
+
+	if node.GetPort() != "2222" {
+		t.Errorf("Expected GetPort()=%q, got %q", "2222", node.GetPort())
+	}
+
+	if node.GetUser() != "deploy" {
+		t.Errorf("Expected GetUser()=%q, got %q", "deploy", node.GetUser())
+	}
+
+	if node.GetKey() != "production.prv" {
+		t.Errorf("Expected GetKey()=%q, got %q", "production.prv", node.GetKey())
+	}
+
+	// Verify Args is initialized
+	if node.GetArg("env") != "production" {
+		t.Errorf("Expected GetArg(env)=%q, got %q", "production", node.GetArg("env"))
+	}
+
+	args := node.GetArgs()
+	if args["env"] != "production" {
+		t.Errorf("Expected GetArgs()[env]=%q, got %q", "production", args["env"])
+	}
+
+	// Verify not connected initially
+	if node.IsConnected() {
+		t.Error("Expected IsConnected() to return false initially")
+	}
+}
+
+// TestNewNodeFromConfig_DeepCopy verifies that NewNodeFromConfig creates a deep copy of the config.
+func TestNewNodeFromConfig_DeepCopy(t *testing.T) {
+	cfg := types.NodeConfig{
+		SSHHost:  "server.example.com",
+		SSHPort:  "22",
+		RootUser: "root",
+		SSHKey:   "id_rsa",
+		Args: map[string]string{
+			"key": "value",
+		},
+	}
+
+	node := NewNodeFromConfig(cfg)
+
+	// Modify original config
+	cfg.SSHHost = "modified.example.com"
+	cfg.Args["key"] = "modified"
+	cfg.Args["newkey"] = "newvalue"
+
+	// Verify node's config is unchanged
+	if node.GetHost() != "server.example.com" {
+		t.Errorf("Expected GetHost() unchanged, got %q", node.GetHost())
+	}
+
+	if node.GetArg("key") != "value" {
+		t.Errorf("Expected GetArg(key) unchanged, got %q", node.GetArg("key"))
+	}
+
+	args := node.GetArgs()
+	if _, exists := args["newkey"]; exists {
+		t.Error("Expected GetArgs() not to have 'newkey'")
+	}
+}
