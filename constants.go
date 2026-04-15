@@ -9,7 +9,7 @@ import "github.com/dracory/ork/skills"
 // Example:
 //
 //	node := ork.NewNodeForHost("server.example.com")
-//	err := node.RunSkill(ork.SkillPing)
+//	err := node.Run(ork.SkillPing)
 const (
 	// SkillPing checks SSH connectivity
 	SkillPing = skills.IDPing

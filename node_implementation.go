@@ -323,12 +323,12 @@ func (n *nodeImplementation) RunCommand(cmd string) types.Results {
 	return results
 }
 
-// RunSkill executes a skill instance directly and returns detailed result information.
+// Run executes a skill instance directly and returns detailed result information.
 // This is the preferred method for executing skills.
 //
 // The skill is configured with the node's settings and executed immediately.
 // This method allows running custom or programmatically created skills without registry lookup.
-func (n *nodeImplementation) RunSkill(skill types.RunnableInterface) types.Results {
+func (n *nodeImplementation) Run(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -347,12 +347,12 @@ func (n *nodeImplementation) RunSkill(skill types.RunnableInterface) types.Resul
 	return results
 }
 
-// RunSkillByID executes a skill by ID from the registry.
+// RunByID executes a skill by ID from the registry.
 // This is useful when you want to run skills by string identifier.
 //
 // Optional SkillOptions can be provided to override node-level arguments for this
 // specific execution. Skill-level args take precedence over node-level args.
-func (n *nodeImplementation) RunSkillByID(id string, opts ...types.SkillOptions) types.Results {
+func (n *nodeImplementation) RunByID(id string, opts ...types.SkillOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -396,9 +396,9 @@ func (n *nodeImplementation) RunSkillByID(id string, opts ...types.SkillOptions)
 	return results
 }
 
-// CheckSkill implements RunnerInterface.
+// Check implements RunnerInterface.
 // Runs skill in dry-run mode to check if changes are needed.
-func (n *nodeImplementation) CheckSkill(skill types.RunnableInterface) types.Results {
+func (n *nodeImplementation) Check(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}

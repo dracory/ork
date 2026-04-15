@@ -6,7 +6,7 @@ package skills
 // Example:
 //
 //	node := ork.NewNodeForHost("server.example.com")
-//	err := node.RunSkill(skills.IDPing)
+//	err := node.Run(skills.IDPing)
 const (
 	// IDPing checks SSH connectivity
 	IDPing = "ping"

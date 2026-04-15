@@ -93,22 +93,22 @@ func (g *groupImplementation) RunCommand(cmd string) types.Results {
 	return results
 }
 
-// RunSkill executes a skill across all nodes in this group.
-func (g *groupImplementation) RunSkill(skill types.RunnableInterface) types.Results {
+// Run executes a skill across all nodes in this group.
+func (g *groupImplementation) Run(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
 
 	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
 	for _, node := range g.nodes {
-		nodeResults := node.RunSkill(skill)
+		nodeResults := node.Run(skill)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
 
-// RunSkillByID executes a skill by ID across all nodes in this group.
-func (g *groupImplementation) RunSkillByID(id string, opts ...types.SkillOptions) types.Results {
+// RunByID executes a skill by ID across all nodes in this group.
+func (g *groupImplementation) RunByID(id string, opts ...types.SkillOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -116,14 +116,14 @@ func (g *groupImplementation) RunSkillByID(id string, opts ...types.SkillOptions
 	g.propagateDryRun()
 
 	for _, node := range g.nodes {
-		nodeResults := node.RunSkillByID(id, opts...)
+		nodeResults := node.RunByID(id, opts...)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
 
-// CheckSkill runs the skill's check mode across all nodes in this group.
-func (g *groupImplementation) CheckSkill(skill types.RunnableInterface) types.Results {
+// Check runs the skill's check mode across all nodes in this group.
+func (g *groupImplementation) Check(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -131,7 +131,7 @@ func (g *groupImplementation) CheckSkill(skill types.RunnableInterface) types.Re
 	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
 
 	for _, node := range g.nodes {
-		nodeResults := node.CheckSkill(skill)
+		nodeResults := node.Check(skill)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results

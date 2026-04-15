@@ -49,7 +49,7 @@ import (
 //	    SetArg("username", "alice").
 //	    SetArg("shell", "/bin/bash")
 //
-//	if err := node.RunSkill("user-create"); err != nil {
+//	if err := node.Run("user-create"); err != nil {
 //	    log.Fatal(err)
 //	}
 type NodeInterface interface {
@@ -226,7 +226,7 @@ type NodeInterface interface {
 	//	fmt.Println(node.IsConnected())  // Output: false
 	IsConnected() bool
 
-	// RunSkillByID executes a skill by ID from the registry.
+	// RunByID executes a skill by ID from the registry.
 	// Deprecated: Use RunSkill() instead. Run skills by creating the skill
 	// instance directly (e.g., skills.NewPing()) and passing it to RunSkill().
 	// This provides better type safety and IDE autocomplete support.
@@ -234,7 +234,7 @@ type NodeInterface interface {
 	// Optional SkillOptions can be provided to override node-level arguments for this
 	// specific execution. This allows per-skill variable scoping without affecting
 	// the node's state.
-	RunSkillByID(id string, opts ...types.SkillOptions) types.Results
+	RunByID(id string, opts ...types.SkillOptions) types.Results
 }
 
 // NewNode creates a new Node with default configuration values.

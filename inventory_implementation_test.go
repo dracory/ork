@@ -329,7 +329,7 @@ func TestInventoryImplementation_RunCommand_Empty(t *testing.T) {
 }
 
 // TestInventoryImplementation_RunPlaybook verifies playbook execution across all nodes.
-func TestInventoryImplementation_RunSkill(t *testing.T) {
+func Run(t *testing.T) {
 	i := NewInventory()
 
 	node1 := &invTestMockNode{host: "server1.example.com"}
@@ -337,7 +337,7 @@ func TestInventoryImplementation_RunSkill(t *testing.T) {
 	i.AddNode(node1).AddNode(node2)
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.RunSkill(mockPb)
+	results := i.Run(mockPb)
 
 	if len(results.Results) != 2 {
 		t.Errorf("Expected 2 results, got %d", len(results.Results))
@@ -349,7 +349,7 @@ func TestInventoryImplementation_RunPlaybook_Empty(t *testing.T) {
 	i := NewInventory()
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.RunSkill(mockPb)
+	results := i.Run(mockPb)
 
 	if len(results.Results) != 0 {
 		t.Errorf("Expected 0 results for empty inventory, got %d", len(results.Results))
@@ -357,14 +357,14 @@ func TestInventoryImplementation_RunPlaybook_Empty(t *testing.T) {
 }
 
 // TestInventoryImplementation_RunPlaybookByID verifies playbook execution by ID.
-func TestInventoryImplementation_RunSkillByID(t *testing.T) {
+func TestInventoryImplementation_RunByID(t *testing.T) {
 	i := NewInventory()
 
 	node1 := &invTestMockNode{host: "server1.example.com"}
 	node2 := &invTestMockNode{host: "server2.example.com"}
 	i.AddNode(node1).AddNode(node2)
 
-	results := i.RunSkillByID("test-playbook")
+	results := i.RunByID("test-playbook")
 
 	// Results may be empty if playbook not registered, but should not panic
 	if results.Results == nil {
@@ -372,8 +372,8 @@ func TestInventoryImplementation_RunSkillByID(t *testing.T) {
 	}
 }
 
-// TestInventoryImplementation_CheckPlaybook verifies check mode execution.
-func TestInventoryImplementation_CheckSkill(t *testing.T) {
+// TestInventoryImplementation_Check verifies check mode execution.
+func TestInventoryImplementation_Check(t *testing.T) {
 	i := NewInventory()
 
 	node1 := &invTestMockNode{host: "server1.example.com"}
@@ -381,7 +381,7 @@ func TestInventoryImplementation_CheckSkill(t *testing.T) {
 	i.AddNode(node1).AddNode(node2)
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.CheckSkill(mockPb)
+	results := i.Check(mockPb)
 
 	if len(results.Results) != 2 {
 		t.Errorf("Expected 2 results, got %d", len(results.Results))
@@ -396,7 +396,7 @@ func TestInventoryImplementation_CheckPlaybook_SetsDryRun(t *testing.T) {
 	i.AddNode(node1)
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.CheckSkill(mockPb)
+	results := i.Check(mockPb)
 
 	// Just verify it runs without error
 	if results.Results == nil {
@@ -417,7 +417,7 @@ func TestInventoryImplementation_ConcurrentExecution(t *testing.T) {
 	}
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.RunSkill(mockPb)
+	results := i.Run(mockPb)
 
 	// Should have results for all 5 nodes
 	if len(results.Results) != 5 {
@@ -438,7 +438,7 @@ func TestInventoryImplementation_ConcurrentExecution_Unlimited(t *testing.T) {
 	}
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.RunSkill(mockPb)
+	results := i.Run(mockPb)
 
 	// Should have results for all 5 nodes
 	if len(results.Results) != 5 {
@@ -595,7 +595,7 @@ func (m *invTestMockNode) RunCommand(cmd string) types.Results {
 	}
 }
 
-func (m *invTestMockNode) RunSkill(pb types.RunnableInterface) types.Results {
+func (m *invTestMockNode) Run(pb types.RunnableInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -606,7 +606,7 @@ func (m *invTestMockNode) RunSkill(pb types.RunnableInterface) types.Results {
 	}
 }
 
-func (m *invTestMockNode) RunSkillByID(id string, opts ...types.SkillOptions) types.Results {
+func (m *invTestMockNode) RunByID(id string, opts ...types.SkillOptions) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -617,7 +617,7 @@ func (m *invTestMockNode) RunSkillByID(id string, opts ...types.SkillOptions) ty
 	}
 }
 
-func (m *invTestMockNode) CheckSkill(pb types.RunnableInterface) types.Results {
+func (m *invTestMockNode) Check(pb types.RunnableInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {

@@ -803,7 +803,7 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 		connected: false,
 	}
 
-	results := n.RunSkillByID("test-playbook")
+	results := n.RunByID("test-playbook")
 	result := results.Results["server.example.com"]
 	if result.Error != nil {
 		t.Errorf("Expected no error, got: %v", result.Error)
@@ -843,7 +843,7 @@ func TestNodeImplementation_Playbook_NotFound(t *testing.T) {
 		connected: false,
 	}
 
-	results := n.RunSkillByID("nonexistent-playbook")
+	results := n.RunByID("nonexistent-playbook")
 	result := results.Results["server.example.com"]
 	if result.Error == nil {
 		t.Error("Expected error for nonexistent playbook, got nil")
@@ -890,7 +890,7 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 		connected: false,
 	}
 
-	results := n.RunSkillByID("failing-playbook")
+	results := n.RunByID("failing-playbook")
 	result := results.Results["server.example.com"]
 	if result.Error == nil {
 		t.Error("Expected error from failing playbook, got nil")

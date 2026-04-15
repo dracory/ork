@@ -294,8 +294,8 @@ func TestGroupImplementation_RunCommand_EmptyGroup(t *testing.T) {
 	}
 }
 
-// TestGroupImplementation_RunPlaybook verifies playbook execution across group nodes.
-func TestGroupImplementation_RunSkill(t *testing.T) {
+// TestGroupImplementation_Run verifies playbook execution across group nodes.
+func TestGroupImplementation_Run(t *testing.T) {
 	g := NewGroup("web-servers")
 
 	node1 := &groupTestMockNode{host: "server1.example.com"}
@@ -305,7 +305,7 @@ func TestGroupImplementation_RunSkill(t *testing.T) {
 
 	mockPb := &groupTestMockPlaybook{name: "test-playbook"}
 
-	results := g.RunSkill(mockPb)
+	results := g.Run(mockPb)
 
 	// Verify results contain entries for both nodes
 	if len(results.Results) != 2 {
@@ -318,7 +318,7 @@ func TestGroupImplementation_RunPlaybook_EmptyGroup(t *testing.T) {
 	g := NewGroup("empty-group")
 
 	mockPb := &groupTestMockPlaybook{name: "test-playbook"}
-	results := g.RunSkill(mockPb)
+	results := g.Run(mockPb)
 
 	if len(results.Results) != 0 {
 		t.Errorf("Expected 0 results for empty group, got %d", len(results.Results))
@@ -326,7 +326,7 @@ func TestGroupImplementation_RunPlaybook_EmptyGroup(t *testing.T) {
 }
 
 // TestGroupImplementation_RunPlaybookByID verifies playbook execution by ID.
-func TestGroupImplementation_RunSkillByID(t *testing.T) {
+func TestGroupImplementation_RunByID(t *testing.T) {
 	g := NewGroup("web-servers")
 
 	node1 := &groupTestMockNode{host: "server1.example.com"}
@@ -334,7 +334,7 @@ func TestGroupImplementation_RunSkillByID(t *testing.T) {
 
 	g.AddNode(node1).AddNode(node2)
 
-	results := g.RunSkillByID("test-playbook")
+	results := g.RunByID("test-playbook")
 
 	// Results may be empty if playbook not registered, but should not panic
 	if results.Results == nil {
@@ -343,7 +343,7 @@ func TestGroupImplementation_RunSkillByID(t *testing.T) {
 }
 
 // TestGroupImplementation_CheckPlaybook verifies check mode execution.
-func TestGroupImplementation_CheckSkill(t *testing.T) {
+func Check(t *testing.T) {
 	g := NewGroup("web-servers")
 
 	node1 := &groupTestMockNode{host: "server1.example.com"}
@@ -352,7 +352,7 @@ func TestGroupImplementation_CheckSkill(t *testing.T) {
 	g.AddNode(node1).AddNode(node2)
 
 	mockPb := &groupTestMockPlaybook{name: "test-playbook"}
-	results := g.CheckSkill(mockPb)
+	results := g.Check(mockPb)
 
 	// Verify results contain entries for both nodes
 	if len(results.Results) != 2 {
@@ -368,7 +368,7 @@ func TestGroupImplementation_CheckPlaybook_SetsDryRun(t *testing.T) {
 	g.AddNode(node1)
 
 	mockPb := &groupTestMockPlaybook{name: "test-playbook"}
-	results := g.CheckSkill(mockPb)
+	results := g.Check(mockPb)
 
 	// Just verify it runs without error
 	if results.Results == nil {
@@ -475,7 +475,7 @@ func (m *groupTestMockNode) RunCommand(cmd string) types.Results {
 	}
 }
 
-func (m *groupTestMockNode) RunSkill(pb types.RunnableInterface) types.Results {
+func (m *groupTestMockNode) Run(pb types.RunnableInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -486,7 +486,7 @@ func (m *groupTestMockNode) RunSkill(pb types.RunnableInterface) types.Results {
 	}
 }
 
-func (m *groupTestMockNode) RunSkillByID(id string, opts ...types.SkillOptions) types.Results {
+func (m *groupTestMockNode) RunByID(id string, opts ...types.SkillOptions) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -497,7 +497,7 @@ func (m *groupTestMockNode) RunSkillByID(id string, opts ...types.SkillOptions) 
 	}
 }
 
-func (m *groupTestMockNode) CheckSkill(pb types.RunnableInterface) types.Results {
+func (m *groupTestMockNode) Check(pb types.RunnableInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
