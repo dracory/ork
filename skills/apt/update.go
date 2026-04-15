@@ -98,7 +98,7 @@ func (a *AptUpdate) Run() types.Result {
 //
 //	A PlaybookInterface implementation configured with IDAptUpdate identifier
 //	and description "Refresh package database (apt-get update)".
-func NewAptUpdate() types.SkillInterface {
+func NewAptUpdate() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDAptUpdate)
 	pb.SetDescription("Refresh package database (apt-get update)")

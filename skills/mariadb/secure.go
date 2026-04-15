@@ -127,7 +127,7 @@ func (m *Secure) Run() types.Result {
 }
 
 // NewSecure creates a new mariadb-secure skill.
-func NewSecure() types.SkillInterface {
+func NewSecure() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbSecure)
 	pb.SetDescription("Perform basic security hardening on MariaDB installation")

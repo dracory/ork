@@ -595,7 +595,7 @@ func (m *invTestMockNode) RunCommand(cmd string) types.Results {
 	}
 }
 
-func (m *invTestMockNode) RunSkill(pb types.SkillInterface) types.Results {
+func (m *invTestMockNode) RunSkill(pb types.RunnableInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -617,7 +617,7 @@ func (m *invTestMockNode) RunSkillByID(id string, opts ...types.SkillOptions) ty
 	}
 }
 
-func (m *invTestMockNode) CheckSkill(pb types.SkillInterface) types.Results {
+func (m *invTestMockNode) CheckSkill(pb types.RunnableInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -644,7 +644,7 @@ func (m *invTestMockNode) GetDryRunMode() bool {
 	return false
 }
 
-// invTestMockPlaybook is a mock implementation of types.SkillInterface for testing.
+// invTestMockPlaybook is a mock implementation of types.RunnableInterface for testing.
 type invTestMockPlaybook struct {
 	name    string
 	cfg     config.NodeConfig
@@ -657,7 +657,7 @@ func (m *invTestMockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *invTestMockPlaybook) SetID(id string) types.SkillInterface {
+func (m *invTestMockPlaybook) SetID(id string) types.RunnableInterface {
 	m.name = id
 	return m
 }
@@ -666,7 +666,7 @@ func (m *invTestMockPlaybook) GetDescription() string {
 	return "Mock playbook"
 }
 
-func (m *invTestMockPlaybook) SetDescription(desc string) types.SkillInterface {
+func (m *invTestMockPlaybook) SetDescription(desc string) types.RunnableInterface {
 	return m
 }
 
@@ -674,7 +674,7 @@ func (m *invTestMockPlaybook) GetNodeConfig() config.NodeConfig {
 	return m.cfg
 }
 
-func (m *invTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.SkillInterface {
+func (m *invTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.RunnableInterface {
 	m.cfg = cfg
 	return m
 }
@@ -686,7 +686,7 @@ func (m *invTestMockPlaybook) GetArg(key string) string {
 	return m.args[key]
 }
 
-func (m *invTestMockPlaybook) SetArg(key, value string) types.SkillInterface {
+func (m *invTestMockPlaybook) SetArg(key, value string) types.RunnableInterface {
 	if m.args == nil {
 		m.args = make(map[string]string)
 	}
@@ -698,7 +698,7 @@ func (m *invTestMockPlaybook) GetArgs() map[string]string {
 	return m.args
 }
 
-func (m *invTestMockPlaybook) SetArgs(args map[string]string) types.SkillInterface {
+func (m *invTestMockPlaybook) SetArgs(args map[string]string) types.RunnableInterface {
 	m.args = args
 	return m
 }
@@ -707,7 +707,7 @@ func (m *invTestMockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }
 
-func (m *invTestMockPlaybook) SetDryRun(dryRun bool) types.SkillInterface {
+func (m *invTestMockPlaybook) SetDryRun(dryRun bool) types.RunnableInterface {
 	m.dryRun = dryRun
 	return m
 }
@@ -716,7 +716,7 @@ func (m *invTestMockPlaybook) GetTimeout() time.Duration {
 	return m.timeout
 }
 
-func (m *invTestMockPlaybook) SetTimeout(timeout time.Duration) types.SkillInterface {
+func (m *invTestMockPlaybook) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	m.timeout = timeout
 	return m
 }

@@ -167,7 +167,7 @@ EOF`, Description: "Create audit rules"}
 }
 
 // NewAuditdInstall creates a new auditd-install skill.
-func NewAuditdInstall() types.SkillInterface {
+func NewAuditdInstall() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDAuditdInstall)
 	pb.SetDescription("Install and configure the Linux Audit Framework")

@@ -147,7 +147,7 @@ func (s *SwapDelete) Run() types.Result {
 //
 //	A PlaybookInterface implementation configured with IDSwapDelete identifier
 //	and description "Remove the swap file".
-func NewSwapDelete() types.SkillInterface {
+func NewSwapDelete() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDSwapDelete)
 	pb.SetDescription("Remove the swap file")

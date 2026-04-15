@@ -133,7 +133,7 @@ func (a *AptUpgrade) Run() types.Result {
 //
 //	A PlaybookInterface implementation configured with IDAptUpgrade identifier
 //	and description "Install available package updates (apt-get upgrade)".
-func NewAptUpgrade() types.SkillInterface {
+func NewAptUpgrade() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDAptUpgrade)
 	pb.SetDescription("Install available package updates (apt-get upgrade)")

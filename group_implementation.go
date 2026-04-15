@@ -94,7 +94,7 @@ func (g *groupImplementation) RunCommand(cmd string) types.Results {
 }
 
 // RunSkill executes a skill across all nodes in this group.
-func (g *groupImplementation) RunSkill(skill types.SkillInterface) types.Results {
+func (g *groupImplementation) RunSkill(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -123,7 +123,7 @@ func (g *groupImplementation) RunSkillByID(id string, opts ...types.SkillOptions
 }
 
 // CheckSkill runs the skill's check mode across all nodes in this group.
-func (g *groupImplementation) CheckSkill(skill types.SkillInterface) types.Results {
+func (g *groupImplementation) CheckSkill(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}

@@ -12,7 +12,7 @@
 //   - ufw: Uncomplicated Firewall management (status, enable, disable)
 //   - user: User management (create, delete, status)
 //
-// All skills implement the types.SkillInterface and can be used
+// All skills implement the types.RunnableInterface and can be used
 // with the ork.Node.Skill() method or registered with a types.Registry.
 //
 // Example usage:

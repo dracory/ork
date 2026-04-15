@@ -924,7 +924,7 @@ func (m *mockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *mockPlaybook) SetID(id string) types.SkillInterface {
+func (m *mockPlaybook) SetID(id string) types.RunnableInterface {
 	m.name = id
 	return m
 }
@@ -933,7 +933,7 @@ func (m *mockPlaybook) GetDescription() string {
 	return "Mock playbook for testing"
 }
 
-func (m *mockPlaybook) SetDescription(description string) types.SkillInterface {
+func (m *mockPlaybook) SetDescription(description string) types.RunnableInterface {
 	return m
 }
 
@@ -941,7 +941,7 @@ func (m *mockPlaybook) GetNodeConfig() config.NodeConfig {
 	return m.cfg
 }
 
-func (m *mockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.SkillInterface {
+func (m *mockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.RunnableInterface {
 	m.cfg = cfg
 	return m
 }
@@ -950,7 +950,7 @@ func (m *mockPlaybook) GetArg(key string) string {
 	return m.args[key]
 }
 
-func (m *mockPlaybook) SetArg(key, value string) types.SkillInterface {
+func (m *mockPlaybook) SetArg(key, value string) types.RunnableInterface {
 	if m.args == nil {
 		m.args = make(map[string]string)
 	}
@@ -962,7 +962,7 @@ func (m *mockPlaybook) GetArgs() map[string]string {
 	return m.args
 }
 
-func (m *mockPlaybook) SetArgs(args map[string]string) types.SkillInterface {
+func (m *mockPlaybook) SetArgs(args map[string]string) types.RunnableInterface {
 	m.args = args
 	return m
 }
@@ -971,7 +971,7 @@ func (m *mockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }
 
-func (m *mockPlaybook) SetDryRun(dryRun bool) types.SkillInterface {
+func (m *mockPlaybook) SetDryRun(dryRun bool) types.RunnableInterface {
 	m.dryRun = dryRun
 	return m
 }
@@ -980,7 +980,7 @@ func (m *mockPlaybook) GetTimeout() time.Duration {
 	return m.timeout
 }
 
-func (m *mockPlaybook) SetTimeout(timeout time.Duration) types.SkillInterface {
+func (m *mockPlaybook) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	m.timeout = timeout
 	return m
 }

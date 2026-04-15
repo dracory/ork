@@ -191,7 +191,7 @@ func (s *SshHarden) Run() types.Result {
 }
 
 // NewSshHarden creates a new ssh-harden skill.
-func NewSshHarden() types.SkillInterface {
+func NewSshHarden() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDSshHarden)
 	pb.SetDescription("Apply security hardening to SSH server configuration")

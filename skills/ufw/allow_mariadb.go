@@ -167,7 +167,7 @@ func (u *AllowMariaDB) allowSpecificIPs(cfg config.NodeConfig, ips []string, mar
 }
 
 // NewAllowMariaDB creates a new ufw-allow-mariadb skill.
-func NewAllowMariaDB() types.SkillInterface {
+func NewAllowMariaDB() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDUfwAllowMariaDB)
 	pb.SetDescription("Configure UFW firewall rules for MariaDB access")

@@ -223,7 +223,7 @@ func (u *UfwInstall) Run() types.Result {
 }
 
 // NewUfwInstall creates a new ufw-install skill.
-func NewUfwInstall() types.SkillInterface {
+func NewUfwInstall() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDUfwInstall)
 	pb.SetDescription("Install and configure UFW firewall with secure defaults")

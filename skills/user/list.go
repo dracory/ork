@@ -103,7 +103,7 @@ func (u *UserList) Run() types.Result {
 //
 //	A PlaybookInterface implementation configured with IDUserList identifier
 //	and description "List all non-system users".
-func NewUserList() types.SkillInterface {
+func NewUserList() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDUserList)
 	pb.SetDescription("List all non-system users")

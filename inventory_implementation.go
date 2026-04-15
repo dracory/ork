@@ -158,7 +158,7 @@ func (i *inventoryImplementation) RunCommand(cmd string) types.Results {
 }
 
 // RunSkill executes a skill across all nodes.
-func (i *inventoryImplementation) RunSkill(skill types.SkillInterface) types.Results {
+func (i *inventoryImplementation) RunSkill(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -270,7 +270,7 @@ func (i *inventoryImplementation) RunSkillByID(id string, opts ...types.SkillOpt
 }
 
 // CheckSkill runs the skill's check mode across all nodes.
-func (i *inventoryImplementation) CheckSkill(skill types.SkillInterface) types.Results {
+func (i *inventoryImplementation) CheckSkill(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}

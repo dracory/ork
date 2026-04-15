@@ -111,7 +111,7 @@ func (b *BackupEncrypt) Run() types.Result {
 }
 
 // NewBackupEncrypt creates a new mariadb-backup-encrypt skill.
-func NewBackupEncrypt() types.SkillInterface {
+func NewBackupEncrypt() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbBackupEncrypt)
 	pb.SetDescription("Create an encrypted backup of a MariaDB database")

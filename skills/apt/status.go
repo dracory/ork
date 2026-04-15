@@ -119,7 +119,7 @@ func (a *AptStatus) Run() types.Result {
 //
 //	A PlaybookInterface implementation configured with IDAptStatus identifier
 //	and description "Show available package updates (read-only)".
-func NewAptStatus() types.SkillInterface {
+func NewAptStatus() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDAptStatus)
 	pb.SetDescription("Show available package updates (read-only)")

@@ -156,7 +156,7 @@ EOF`, configPath, configPath, keyFilePath),
 }
 
 // NewEnableEncryption creates a new mariadb-enable-encryption skill.
-func NewEnableEncryption() types.SkillInterface {
+func NewEnableEncryption() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbEnableEncryption)
 	pb.SetDescription("Enable data-at-rest encryption for MariaDB")

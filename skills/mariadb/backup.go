@@ -129,7 +129,7 @@ func (m *Backup) Run() types.Result {
 }
 
 // NewBackup creates a new mariadb-backup skill.
-func NewBackup() types.SkillInterface {
+func NewBackup() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbBackup)
 	pb.SetDescription("Create a compressed SQL dump of a MariaDB database")

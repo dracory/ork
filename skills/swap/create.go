@@ -258,7 +258,7 @@ func (s *SwapCreate) Run() types.Result {
 //	- size: "1" (1 unit)
 //	- unit: "gb" (gigabytes)
 //	- swappiness: "10" (low swappiness, prefers RAM)
-func NewSwapCreate() types.SkillInterface {
+func NewSwapCreate() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDSwapCreate)
 	pb.SetDescription("Create a swap file (size via args['size'], unit via args['unit']='gb'|'mb', swappiness via args['swappiness']=10, defaults: 1GB, swappiness=10)")

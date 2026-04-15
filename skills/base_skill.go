@@ -8,7 +8,7 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// BaseSkill provides default implementations of the types.SkillInterface.
+// BaseSkill provides default implementations of the types.RunnableInterface.
 // Embed this in your skill struct to get boilerplate getter/setter methods.
 // Only implement Check() and Run() for the specific skill logic.
 //
@@ -57,8 +57,8 @@ func (b *BaseSkill) GetID() string {
 }
 
 // SetID sets the unique identifier for this skill.
-// Returns types.SkillInterface for fluent method chaining with embedding types.
-func (b *BaseSkill) SetID(id string) types.SkillInterface {
+// Returns types.RunnableInterface for fluent method chaining with embedding types.
+func (b *BaseSkill) SetID(id string) types.RunnableInterface {
 	b.id = id
 	return b
 }
@@ -69,8 +69,8 @@ func (b *BaseSkill) GetDescription() string {
 }
 
 // SetDescription sets a short description of what the skill does.
-// Returns types.SkillInterface for fluent method chaining with embedding types.
-func (b *BaseSkill) SetDescription(description string) types.SkillInterface {
+// Returns types.RunnableInterface for fluent method chaining with embedding types.
+func (b *BaseSkill) SetDescription(description string) types.RunnableInterface {
 	b.description = description
 	return b
 }
@@ -81,8 +81,8 @@ func (b *BaseSkill) GetNodeConfig() config.NodeConfig {
 }
 
 // SetNodeConfig sets the node configuration for this skill execution.
-// Returns types.SkillInterface for fluent method chaining with embedding types.
-func (b *BaseSkill) SetNodeConfig(cfg config.NodeConfig) types.SkillInterface {
+// Returns types.RunnableInterface for fluent method chaining with embedding types.
+func (b *BaseSkill) SetNodeConfig(cfg config.NodeConfig) types.RunnableInterface {
 	b.nodeCfg = cfg
 	return b
 }
@@ -93,8 +93,8 @@ func (b *BaseSkill) GetArg(key string) string {
 }
 
 // SetArg sets a single argument value.
-// Returns types.SkillInterface for fluent method chaining.
-func (b *BaseSkill) SetArg(key, value string) types.SkillInterface {
+// Returns types.RunnableInterface for fluent method chaining.
+func (b *BaseSkill) SetArg(key, value string) types.RunnableInterface {
 	if b.args == nil {
 		b.args = make(map[string]string)
 	}
@@ -108,8 +108,8 @@ func (b *BaseSkill) GetArgs() map[string]string {
 }
 
 // SetArgs replaces the entire arguments map.
-// Returns types.SkillInterface for fluent method chaining.
-func (b *BaseSkill) SetArgs(args map[string]string) types.SkillInterface {
+// Returns types.RunnableInterface for fluent method chaining.
+func (b *BaseSkill) SetArgs(args map[string]string) types.RunnableInterface {
 	b.args = args
 	return b
 }
@@ -120,8 +120,8 @@ func (b *BaseSkill) IsDryRun() bool {
 }
 
 // SetDryRun sets whether to simulate execution without making changes.
-// Returns types.SkillInterface for fluent method chaining.
-func (b *BaseSkill) SetDryRun(dryRun bool) types.SkillInterface {
+// Returns types.RunnableInterface for fluent method chaining.
+func (b *BaseSkill) SetDryRun(dryRun bool) types.RunnableInterface {
 	b.dryRun = dryRun
 	return b
 }
@@ -132,8 +132,8 @@ func (b *BaseSkill) GetTimeout() time.Duration {
 }
 
 // SetTimeout sets the maximum duration for skill execution.
-// Returns types.SkillInterface for fluent method chaining.
-func (b *BaseSkill) SetTimeout(timeout time.Duration) types.SkillInterface {
+// Returns types.RunnableInterface for fluent method chaining.
+func (b *BaseSkill) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	b.timeout = timeout
 	return b
 }

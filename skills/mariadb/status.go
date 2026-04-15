@@ -114,7 +114,7 @@ func (m *Status) Run() types.Result {
 }
 
 // NewStatus creates a new mariadb-status skill.
-func NewStatus() types.SkillInterface {
+func NewStatus() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbStatus)
 	pb.SetDescription("Display MariaDB server status information (read-only)")

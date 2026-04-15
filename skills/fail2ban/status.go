@@ -101,7 +101,7 @@ func (f *Fail2banStatus) Run() types.Result {
 }
 
 // NewFail2banStatus creates a new fail2ban-status skill.
-func NewFail2banStatus() types.SkillInterface {
+func NewFail2banStatus() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDFail2banStatus)
 	pb.SetDescription("Display fail2ban service status and SSH jail information (read-only)")

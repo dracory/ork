@@ -193,7 +193,7 @@ EOF`, sysctlDropInPath), Description: "Create kernel hardening config"}
 }
 
 // NewKernelHarden creates a new kernel-harden skill.
-func NewKernelHarden() types.SkillInterface {
+func NewKernelHarden() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDKernelHarden)
 	pb.SetDescription("Apply security-focused kernel parameters via sysctl")

@@ -99,12 +99,12 @@ func (p *Ping) Run() types.Result {
 //
 // Returns:
 //
-//	A SkillInterface implementation configured with IDPing identifier
+//	A RunnableInterface implementation configured with IDPing identifier
 //	and description "Check SSH connectivity and show server uptime/load".
 //
 // The returned skill can be registered with the skill registry
 // and executed via the CLI or programmatically.
-func NewPing() types.SkillInterface {
+func NewPing() types.RunnableInterface {
 	skill := skills.NewBaseSkill()
 	skill.SetID(skills.IDPing)
 	skill.SetDescription("Check SSH connectivity and show server uptime/load")

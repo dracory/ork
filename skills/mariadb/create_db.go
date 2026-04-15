@@ -102,7 +102,7 @@ func (m *CreateDB) Run() types.Result {
 }
 
 // NewCreateDB creates a new mariadb-create-db skill.
-func NewCreateDB() types.SkillInterface {
+func NewCreateDB() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbCreateDB)
 	pb.SetDescription("Create a new MariaDB database with UTF-8 encoding")

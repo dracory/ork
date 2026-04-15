@@ -130,7 +130,7 @@ EOF`, Description: "Create AIDE daily cron job"}
 }
 
 // NewAideInstall creates a new aide-install skill.
-func NewAideInstall() types.SkillInterface {
+func NewAideInstall() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDAideInstall)
 	pb.SetDescription("Install and configure AIDE file integrity monitoring")

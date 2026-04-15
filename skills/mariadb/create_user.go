@@ -174,7 +174,7 @@ func (m *CreateUser) Run() types.Result {
 }
 
 // NewCreateUser creates a new mariadb-create-user skill.
-func NewCreateUser() types.SkillInterface {
+func NewCreateUser() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbCreateUser)
 	pb.SetDescription("Create a new MariaDB user with configurable privileges")

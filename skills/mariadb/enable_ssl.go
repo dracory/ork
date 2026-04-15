@@ -126,7 +126,7 @@ EOF`, configPath, configPath, dataDir, dataDir, dataDir), Description: "Configur
 }
 
 // NewEnableSSL creates a new mariadb-enable-ssl skill.
-func NewEnableSSL() types.SkillInterface {
+func NewEnableSSL() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbEnableSSL)
 	pb.SetDescription("Enable SSL/TLS encryption for MariaDB connections")

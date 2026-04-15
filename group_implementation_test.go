@@ -475,7 +475,7 @@ func (m *groupTestMockNode) RunCommand(cmd string) types.Results {
 	}
 }
 
-func (m *groupTestMockNode) RunSkill(pb types.SkillInterface) types.Results {
+func (m *groupTestMockNode) RunSkill(pb types.RunnableInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -497,7 +497,7 @@ func (m *groupTestMockNode) RunSkillByID(id string, opts ...types.SkillOptions) 
 	}
 }
 
-func (m *groupTestMockNode) CheckSkill(pb types.SkillInterface) types.Results {
+func (m *groupTestMockNode) CheckSkill(pb types.RunnableInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -524,7 +524,7 @@ func (m *groupTestMockNode) GetDryRunMode() bool {
 	return false
 }
 
-// groupTestMockPlaybook is a mock implementation of types.SkillInterface for testing.
+// groupTestMockPlaybook is a mock implementation of types.RunnableInterface for testing.
 type groupTestMockPlaybook struct {
 	name    string
 	cfg     config.NodeConfig
@@ -537,7 +537,7 @@ func (m *groupTestMockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *groupTestMockPlaybook) SetID(id string) types.SkillInterface {
+func (m *groupTestMockPlaybook) SetID(id string) types.RunnableInterface {
 	m.name = id
 	return m
 }
@@ -546,7 +546,7 @@ func (m *groupTestMockPlaybook) GetDescription() string {
 	return "Mock playbook"
 }
 
-func (m *groupTestMockPlaybook) SetDescription(desc string) types.SkillInterface {
+func (m *groupTestMockPlaybook) SetDescription(desc string) types.RunnableInterface {
 	return m
 }
 
@@ -554,7 +554,7 @@ func (m *groupTestMockPlaybook) GetNodeConfig() config.NodeConfig {
 	return m.cfg
 }
 
-func (m *groupTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.SkillInterface {
+func (m *groupTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.RunnableInterface {
 	m.cfg = cfg
 	return m
 }
@@ -566,7 +566,7 @@ func (m *groupTestMockPlaybook) GetArg(key string) string {
 	return m.args[key]
 }
 
-func (m *groupTestMockPlaybook) SetArg(key, value string) types.SkillInterface {
+func (m *groupTestMockPlaybook) SetArg(key, value string) types.RunnableInterface {
 	if m.args == nil {
 		m.args = make(map[string]string)
 	}
@@ -578,7 +578,7 @@ func (m *groupTestMockPlaybook) GetArgs() map[string]string {
 	return m.args
 }
 
-func (m *groupTestMockPlaybook) SetArgs(args map[string]string) types.SkillInterface {
+func (m *groupTestMockPlaybook) SetArgs(args map[string]string) types.RunnableInterface {
 	m.args = args
 	return m
 }
@@ -587,7 +587,7 @@ func (m *groupTestMockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }
 
-func (m *groupTestMockPlaybook) SetDryRun(dryRun bool) types.SkillInterface {
+func (m *groupTestMockPlaybook) SetDryRun(dryRun bool) types.RunnableInterface {
 	m.dryRun = dryRun
 	return m
 }
@@ -596,7 +596,7 @@ func (m *groupTestMockPlaybook) GetTimeout() time.Duration {
 	return m.timeout
 }
 
-func (m *groupTestMockPlaybook) SetTimeout(timeout time.Duration) types.SkillInterface {
+func (m *groupTestMockPlaybook) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	m.timeout = timeout
 	return m
 }

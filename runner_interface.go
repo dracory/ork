@@ -16,7 +16,7 @@ type RunnerInterface interface {
 
 	// RunSkill executes a skill instance.
 	// For Inventory, runs concurrently across all nodes.
-	RunSkill(skill types.SkillInterface) types.Results
+	RunSkill(skill types.RunnableInterface) types.Results
 
 	// RunSkillByID executes a skill by ID from the registry.
 	// Deprecated: Use RunSkill() instead.
@@ -24,7 +24,7 @@ type RunnerInterface interface {
 
 	// CheckSkill runs the skill's check mode to determine if changes would be made.
 	// Sets Changed=true on result if changes are needed.
-	CheckSkill(skill types.SkillInterface) types.Results
+	CheckSkill(skill types.RunnableInterface) types.Results
 
 	// GetLogger returns the logger. Returns slog.Default() if not set.
 	GetLogger() *slog.Logger

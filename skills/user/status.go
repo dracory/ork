@@ -130,7 +130,7 @@ func (u *UserStatus) Run() types.Result {
 //
 //	Pass ArgUsername via --arg=username=<name> to query a specific user.
 //	Omit the username argument to list all non-system users.
-func NewUserStatus() types.SkillInterface {
+func NewUserStatus() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDUserStatus)
 	pb.SetDescription("Show user information")

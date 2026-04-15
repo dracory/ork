@@ -68,7 +68,7 @@ func NewSkillRegistry() *types.Registry {
 func NewDefaultRegistry() (*types.Registry, error) {
 	reg := NewSkillRegistry()
 
-	skills := []types.SkillInterface{
+	skills := []types.RunnableInterface{
 		ping.NewPing(),
 		apt.NewAptUpdate(),
 		apt.NewAptUpgrade(),

@@ -94,7 +94,7 @@ func (m *SecurityAudit) Run() types.Result {
 }
 
 // NewSecurityAudit creates a new mariadb-security-audit skill.
-func NewSecurityAudit() types.SkillInterface {
+func NewSecurityAudit() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbSecurityAudit)
 	pb.SetDescription("Perform a comprehensive security audit of MariaDB (read-only)")

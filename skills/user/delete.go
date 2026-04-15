@@ -109,7 +109,7 @@ func (u *UserDelete) Run() types.Result {
 }
 
 // NewUserDelete creates a new user-delete skill.
-func NewUserDelete() types.SkillInterface {
+func NewUserDelete() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDUserDelete)
 	pb.SetDescription("Delete a user (username via args['username'])")

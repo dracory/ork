@@ -201,7 +201,7 @@ func (u *UserCreate) Run() types.Result {
 }
 
 // NewUserCreate creates a new user-create skill.
-func NewUserCreate() types.SkillInterface {
+func NewUserCreate() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDUserCreate)
 	pb.SetDescription("Create a new user with sudo access (username via args['username'])")

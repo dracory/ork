@@ -93,7 +93,7 @@ func (m *ListUsers) Run() types.Result {
 }
 
 // NewListUsers creates a new mariadb-list-users skill.
-func NewListUsers() types.SkillInterface {
+func NewListUsers() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbListUsers)
 	pb.SetDescription("Display all database user accounts and their allowed hosts (read-only)")

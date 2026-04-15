@@ -127,7 +127,7 @@ func (m *ChangePort) Run() types.Result {
 }
 
 // NewChangePort creates a new mariadb-change-port skill.
-func NewChangePort() types.SkillInterface {
+func NewChangePort() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbChangePort)
 	pb.SetDescription("Change the MariaDB server port from default 3306")

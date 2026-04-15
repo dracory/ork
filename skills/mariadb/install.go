@@ -143,7 +143,7 @@ func (m *Install) Run() types.Result {
 }
 
 // NewInstall creates a new mariadb-install skill.
-func NewInstall() types.SkillInterface {
+func NewInstall() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbInstall)
 	pb.SetDescription("Install and configure MariaDB database server")

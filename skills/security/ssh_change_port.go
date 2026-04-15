@@ -143,7 +143,7 @@ func (s *SshChangePort) Run() types.Result {
 }
 
 // NewSshChangePort creates a new ssh-change-port skill.
-func NewSshChangePort() types.SkillInterface {
+func NewSshChangePort() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDSshChangePort)
 	pb.SetDescription("Change the SSH port to reduce automated scanning")

@@ -9,7 +9,7 @@ import (
 )
 
 // NewFail2banInstall creates a new fail2ban-install skill.
-func NewFail2banInstall() types.SkillInterface {
+func NewFail2banInstall() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDFail2banInstall)
 	pb.SetDescription("Install and enable fail2ban intrusion prevention system")

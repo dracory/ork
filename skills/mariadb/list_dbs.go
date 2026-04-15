@@ -92,7 +92,7 @@ func (m *ListDBs) Run() types.Result {
 }
 
 // NewListDBs creates a new mariadb-list-dbs skill.
-func NewListDBs() types.SkillInterface {
+func NewListDBs() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDMariadbListDBs)
 	pb.SetDescription("Display all databases in the MariaDB server (read-only)")

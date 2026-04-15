@@ -109,7 +109,7 @@ func (s *SwapStatus) Run() types.Result {
 //
 //	A PlaybookInterface implementation configured with IDSwapStatus identifier
 //	and description "Show swap status and usage".
-func NewSwapStatus() types.SkillInterface {
+func NewSwapStatus() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDSwapStatus)
 	pb.SetDescription("Show swap status and usage")

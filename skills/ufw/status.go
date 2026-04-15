@@ -86,7 +86,7 @@ func (u *UfwStatus) Run() types.Result {
 }
 
 // NewUfwStatus creates a new ufw-status skill.
-func NewUfwStatus() types.SkillInterface {
+func NewUfwStatus() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDUfwStatus)
 	pb.SetDescription("Display UFW firewall configuration and status (read-only)")

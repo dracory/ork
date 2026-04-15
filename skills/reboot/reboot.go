@@ -170,7 +170,7 @@ func (r *Reboot) Run() types.Result {
 //		pb.MaxWaitTime = 10 * time.Minute
 //
 // Note: MaxWaitTime only applies when WaitForReconnect is true.
-func NewReboot() types.SkillInterface {
+func NewReboot() types.RunnableInterface {
 	pb := skills.NewBaseSkill()
 	pb.SetID(skills.IDReboot)
 	pb.SetDescription("Reboot the remote server")
