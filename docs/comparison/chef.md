@@ -93,7 +93,7 @@ webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 inv.AddGroup(webGroup)
 
 // Target specific group
-results := inv.GetGroupByName("webservers").RunPlaybook(playbooks.NewPing())
+results := inv.GetGroupByName("webservers").Run(skills.NewPing())
 summary := results.Summary()
 ```
 
@@ -141,11 +141,11 @@ end
 # Different on Ubuntu vs CentOS vs Windows
 ```
 
-### Ork Playbook (Procedural)
+### Ork Skill (Procedural)
 ```go
 // Explicit steps executed in order
-ping := playbooks.NewPing()
-results := node.RunPlaybook(ping)
+ping := skills.NewPing()
+results := node.Run(ping)
 
 // Access result for specific node
 result := results.Results["server.example.com"]
@@ -153,9 +153,9 @@ if result.Error != nil {
     return err
 }
 
-// Chain multiple playbooks
-results = node.RunPlaybook(playbooks.NewAptUpdate())
-results = node.RunPlaybook(playbooks.NewAptUpgrade())
+// Chain multiple skills
+results = node.Run(skills.NewAptUpdate())
+results = node.Run(skills.NewAptUpgrade())
 ```
 
 ## State Model
@@ -179,7 +179,7 @@ package 'nginx'  # Chef picks apt, yum, or msi
 
 ```go
 // You control exactly what runs and when
-results := node.RunPlaybook(playbooks.NewAptUpgrade())
+results := node.Run(skills.NewAptUpgrade())
 result := results.Results["server.example.com"]
 ```
 
@@ -201,13 +201,13 @@ template '/etc/config' do
 end
 ```
 
-### Ork (Playbook-level)
+### Ork (Skill-level)
 ```go
 // Check pattern via RunnerInterface
-aptUpgrade := playbooks.NewAptUpgrade()
+aptUpgrade := skills.NewAptUpgrade()
 
 // Check if upgrade needed - works on Node, Group, or Inventory
-results := node.CheckPlaybook(aptUpgrade)
+results := node.Check(aptUpgrade)
 result := results.Results["server.example.com"]
 
 if result.Changed {

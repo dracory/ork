@@ -215,10 +215,10 @@ func main() {
     
     // Configure the server with playbooks
     results := node.
-        RunPlaybook(playbooks.NewAptUpdate()).
-        RunPlaybook(playbooks.NewAptUpgrade()).
-        RunPlaybook(playbooks.NewUfwInstall()).
-        RunPlaybook(playbooks.NewNginxInstall())
+        Run(skills.NewAptUpdate()).
+        Run(skills.NewAptUpgrade()).
+        Run(skills.NewUfwInstall()).
+        Run(skills.NewNginxInstall())
     
     // Check results
     result := results.Results[serverIP]
@@ -247,7 +247,7 @@ for _, ip := range webServerIPs { // From CloudFormation outputs
 inv.AddGroup(webGroup)
 
 // Configure all web servers in parallel
-results := inv.RunPlaybook(playbooks.NewNginxInstall())
+results := inv.Run(skills.NewNginxInstall())
 summary := results.Summary()
 fmt.Printf("Changed: %d, Failed: %d\n", summary.Changed, summary.Failed)
 ```
@@ -277,7 +277,7 @@ aws cloudformation describe-stacks \
 serverIP := getCloudFormationOutput("PublicIP")
 
 node := ork.NewNodeForHost(serverIP)
-results := node.RunPlaybook(playbooks.NewUfwInstall())
+results := node.Run(skills.NewUfwInstall())
 ```
 
 ### Phase 3: Integration
@@ -311,7 +311,7 @@ UserData:
 - Cannot update after creation
 - Limited to basic scripts
 
-### Ork Playbooks
+### Ork Skills
 ```go
 // Advantages:
 // - Can run anytime
@@ -320,13 +320,13 @@ UserData:
 // - Check mode for preview
 // - Reusable across servers
 
-results := node.RunPlaybook(playbooks.NewNginxInstall())
+results := node.Run(skills.NewNginxInstall())
 if results.Results[host].Error != nil {
     log.Printf("Error: %v", results.Results[host].Error)
 }
 
 // Check what would change
-checkResults := node.CheckPlaybook(playbooks.NewNginxInstall())
+checkResults := node.Check(skills.NewNginxInstall())
 if checkResults.Results[host].Changed {
     fmt.Println("Nginx would be installed")
 }
@@ -365,19 +365,19 @@ aws cloudformation delete-stack --stack-name my-stack
 
 ### Ork State
 - No state file
-- Idempotency via playbooks
+- Idempotency via skills
 - Check mode to preview changes
 - Results returned after each run
 
 ```go
 // Check what would change
-results := node.CheckPlaybook(playbooks.NewUfwInstall())
+results := node.Check(skills.NewUfwInstall())
 if results.Results[host].Changed {
     fmt.Println("Changes would be made")
 }
 
 // Actually apply
-results = node.RunPlaybook(playbooks.NewUfwInstall())
+results = node.Run(skills.NewUfwInstall())
 ```
 
 ## Change Sets
@@ -404,13 +404,13 @@ aws cloudformation execute-change-set \
 ### Ork Check Mode
 ```go
 // Preview changes without applying
-results := node.CheckPlaybook(playbooks.NewNginxInstall())
+results := node.Check(skills.NewNginxInstall())
 if results.Results[host].Changed {
     fmt.Printf("Would change: %s\n", results.Results[host].Message)
 }
 
 // Apply if desired
-results = node.RunPlaybook(playbooks.NewNginxInstall())
+results = node.Run(skills.NewNginxInstall())
 ```
 
 ## Cross-Stack References
@@ -515,17 +515,17 @@ node.SetArg("vpc_id", vpcID)
 | Template | Go code (programmatic) |
 | Parameter | Node argument (SetArg) |
 | Output | Results map |
-| Change Set | CheckPlaybook() |
-| Stack Update | RunPlaybook() |
+| Change Set | Check() |
+| Stack Update | Run() |
 | Stack Delete | No equivalent (Ork doesn't destroy) |
-| Drift Detection | CheckPlaybook() |
-| Rollback | Manual (re-run previous playbook) |
+| Drift Detection | Check() |
+| Rollback | Manual (re-run previous skill) |
 | Cross-Stack Reference | Programmatic variable passing |
-| Resource Type | Playbook type |
+| Resource Type | Skill type |
 
-## UserData vs Playbooks
+## UserData vs Skills
 
-| Aspect | CloudFormation UserData | Ork Playbooks |
+| Aspect | CloudFormation UserData | Ork Skills |
 |--------|------------------------|---------------|
 | **Execution Time** | Once at boot | Anytime |
 | **Idempotency** | Manual | Built-in |

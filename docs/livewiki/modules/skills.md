@@ -1,25 +1,29 @@
 ---
-path: modules/playbooks.md
+path: modules/skills.md
 page-type: module
-summary: Built-in playbook implementations for system management, users, swap, MariaDB, security, and more.
-tags: [module, playbooks, automation, tasks]
+summary: Built-in skill implementations for system management, users, swap, MariaDB, security, and more.
+tags: [module, skills, automation, tasks]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-15
+version: 2.0.0
 ---
 
-# playbooks Package
+## Changelog
+- **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface
+- **v1.0.0** (2025-04-14): Initial creation
 
-Reusable playbook implementations for common server automation tasks.
+# skills Package
+
+Reusable skill implementations for common server automation tasks.
 
 ## Purpose
 
-The `playbooks` package provides built-in implementations of `PlaybookInterface` for common server management tasks. Each subpackage focuses on a specific domain (system, users, security, databases, etc.).
+The `skills` package provides built-in implementations of `RunnableInterface` for common server management tasks. Each subpackage focuses on a specific domain (system, users, security, databases, etc.).
 
 ## Structure
 
 ```
-playbooks/
+skills/
 ├── doc.go              # Package documentation
 ├── apt/                # Package management
 ├── ping/               # Connectivity checks
@@ -34,8 +38,8 @@ playbooks/
 
 ## Quick Reference
 
-| Category | Playbook | Constructor | Key Arguments |
-|----------|----------|-------------|---------------|
+| Category | Skill | Constructor | Key Arguments |
+|----------|-------|-------------|---------------|
 | **System** | ping | `ping.NewPing()` | - |
 | | apt-update | `apt.NewAptUpdate()` | - |
 | | apt-upgrade | `apt.NewAptUpgrade()` | - |
@@ -71,14 +75,14 @@ playbooks/
 | | mariadb-enable-encryption | `mariadb.NewEnableEncryption()` | - |
 | | mariadb-backup-encrypt | `mariadb.NewBackupEncrypt()` | - |
 
-## System Playbooks
+## System Skills
 
 ### ping
 
 Tests SSH connectivity and returns server uptime.
 
 ```go
-results := node.RunPlaybook(playbooks.NewPing())
+results := node.Run(skills.NewPing())
 // Result.Details["uptime"] contains uptime string
 ```
 
@@ -86,17 +90,17 @@ results := node.RunPlaybook(playbooks.NewPing())
 
 ### apt
 
-Package management playbooks for Debian/Ubuntu systems.
+Package management skills for Debian/Ubuntu systems.
 
 ```go
 // Update package lists
-results := node.RunPlaybook(playbooks.NewAptUpdate())
+results := node.Run(skills.NewAptUpdate())
 
 // Upgrade installed packages
-results = node.RunPlaybook(playbooks.NewAptUpgrade())
+results = node.Run(skills.NewAptUpgrade())
 
 // Check for available updates
-results = node.RunPlaybook(playbooks.NewAptStatus())
+results = node.Run(skills.NewAptStatus())
 // Result.Details contain update information
 ```
 
@@ -107,14 +111,14 @@ results = node.RunPlaybook(playbooks.NewAptStatus())
 Reboots the server with optional wait for reconnection.
 
 ```go
-results := node.RunPlaybook(playbooks.NewReboot())
+results := node.Run(skills.NewReboot())
 ```
 
 **Warning**: Use with caution. Will disconnect active sessions.
 
-## User Playbooks
+## User Skills
 
-All user playbooks require the `username` argument.
+All user skills require the `username` argument.
 
 ### user-create
 
@@ -126,7 +130,7 @@ node.SetArg("shell", "/bin/bash")           // optional, default: /bin/bash
 node.SetArg("password", "initialpass")      // optional
 node.SetArg("ssh-key", "ssh-rsa AAAAB3...") // optional
 
-results := node.RunPlaybook(playbooks.NewUserCreate())
+results := node.Run(skills.NewUserCreate())
 ```
 
 **Idempotent**: Returns unchanged if user already exists.
@@ -137,7 +141,7 @@ Removes a user from the system.
 
 ```go
 node.SetArg("username", "bob")
-results := node.RunPlaybook(playbooks.NewUserDelete())
+results := node.Run(skills.NewUserDelete())
 ```
 
 **Idempotent**: Returns unchanged if user doesn't exist.
@@ -148,13 +152,13 @@ Shows user information.
 
 ```go
 node.SetArg("username", "alice")  // optional - shows all users if empty
-results := node.RunPlaybook(playbooks.NewUserStatus())
+results := node.Run(skills.NewUserStatus())
 // Result.Details contain user info
 ```
 
 **Idempotent**: Yes (read-only)
 
-## Swap Playbooks
+## Swap Skills
 
 ### swap-create
 
@@ -165,7 +169,7 @@ node.SetArg("size", "2")        // Size in GB (default: "1")
 node.SetArg("unit", "gb")       // "gb" or "mb" (default: "gb")
 node.SetArg("swappiness", "10") // 0-100 (default: "10")
 
-results := node.RunPlaybook(playbooks.NewSwapCreate())
+results := node.Run(skills.NewSwapCreate())
 // Result.Details: size, file, swappiness, status
 ```
 
@@ -176,7 +180,7 @@ results := node.RunPlaybook(playbooks.NewSwapCreate())
 Removes the swap file.
 
 ```go
-results := node.RunPlaybook(playbooks.NewSwapDelete())
+results := node.Run(skills.NewSwapDelete())
 ```
 
 **Idempotent**: Returns unchanged if no swap exists.
@@ -186,13 +190,13 @@ results := node.RunPlaybook(playbooks.NewSwapDelete())
 Shows current swap status.
 
 ```go
-results := node.RunPlaybook(playbooks.NewSwapStatus())
+results := node.Run(skills.NewSwapStatus())
 // Result.Details contain swap info
 ```
 
 **Idempotent**: Yes (read-only)
 
-## Security Playbooks
+## Security Skills
 
 ### ssh-harden
 
@@ -209,7 +213,7 @@ Applies security hardening to SSH configuration.
 
 ```go
 node.SetArg("non-root-user", "deploy")  // Verify this user exists first
-results := node.RunPlaybook(playbooks.NewSshHarden())
+results := node.Run(skills.NewSshHarden())
 ```
 
 **Warning**: After running, you must use SSH key authentication. Ensure the non-root user exists and has sudo access.
@@ -219,7 +223,7 @@ results := node.RunPlaybook(playbooks.NewSshHarden())
 Applies security-focused kernel parameters.
 
 ```go
-results := node.RunPlaybook(playbooks.NewKernelHarden())
+results := node.Run(skills.NewKernelHarden())
 ```
 
 ### aide-install
@@ -227,7 +231,7 @@ results := node.RunPlaybook(playbooks.NewKernelHarden())
 Installs AIDE (Advanced Intrusion Detection Environment).
 
 ```go
-results := node.RunPlaybook(playbooks.NewAideInstall())
+results := node.Run(skills.NewAideInstall())
 ```
 
 ### auditd-install
@@ -235,7 +239,7 @@ results := node.RunPlaybook(playbooks.NewAideInstall())
 Installs and configures the Linux Audit Framework (auditd).
 
 ```go
-results := node.RunPlaybook(playbooks.NewAuditdInstall())
+results := node.Run(skills.NewAuditdInstall())
 ```
 
 ### ssh-change-port
@@ -244,19 +248,19 @@ Changes the SSH server port.
 
 ```go
 node.SetArg("port", "2222")
-results := node.RunPlaybook(playbooks.NewSshChangePort())
+results := node.Run(skills.NewSshChangePort())
 ```
 
 **Warning**: Ensure firewall rules are updated before changing ports.
 
-## UFW (Firewall) Playbooks
+## UFW (Firewall) Skills
 
 ### ufw-install
 
 Installs and enables UFW (Uncomplicated Firewall).
 
 ```go
-results := node.RunPlaybook(playbooks.NewUfwInstall())
+results := node.Run(skills.NewUfwInstall())
 ```
 
 ### ufw-status
@@ -264,7 +268,7 @@ results := node.RunPlaybook(playbooks.NewUfwInstall())
 Shows UFW status and rules.
 
 ```go
-results := node.RunPlaybook(playbooks.NewUfwStatus())
+results := node.Run(skills.NewUfwStatus())
 ```
 
 ### ufw-allow-mariadb
@@ -272,18 +276,18 @@ results := node.RunPlaybook(playbooks.NewUfwStatus())
 Configures UFW to allow MariaDB connections.
 
 ```go
-results := node.RunPlaybook(playbooks.NewAllowMariaDB())
+results := node.Run(skills.NewAllowMariaDB())
 // Allows port 3306/tcp
 ```
 
-## Fail2ban Playbooks
+## Fail2ban Skills
 
 ### fail2ban-install
 
 Installs and configures fail2ban intrusion prevention.
 
 ```go
-results := node.RunPlaybook(playbooks.NewFail2banInstall())
+results := node.Run(skills.NewFail2banInstall())
 ```
 
 ### fail2ban-status
@@ -291,10 +295,10 @@ results := node.RunPlaybook(playbooks.NewFail2banInstall())
 Shows fail2ban service and jail status.
 
 ```go
-results := node.RunPlaybook(playbooks.NewFail2banStatus())
+results := node.Run(skills.NewFail2banStatus())
 ```
 
-## MariaDB Playbooks
+## MariaDB Skills
 
 ### mariadb-install
 
@@ -302,7 +306,7 @@ Installs and configures MariaDB server.
 
 ```go
 node.SetArg("root-password", "secure_password")  // optional
-results := node.RunPlaybook(playbooks.NewMariadbInstall())
+results := node.Run(skills.NewMariadbInstall())
 ```
 
 Configures bind-address to 0.0.0.0 for remote access.
@@ -313,7 +317,7 @@ Secures MariaDB installation (removes test data, disables remote root).
 
 ```go
 node.SetArg("root-password", "secure_password")
-results := node.RunPlaybook(playbooks.NewMariadbSecure())
+results := node.Run(skills.NewMariadbSecure())
 ```
 
 ### mariadb-create-db
@@ -323,7 +327,7 @@ Creates a new database.
 ```go
 node.SetArg("database", "myapp")
 node.SetArg("root-password", "secure_password")  // If not in config
-results := node.RunPlaybook(playbooks.NewMariadbCreateDB())
+results := node.Run(skills.NewMariadbCreateDB())
 ```
 
 **Idempotent**: Returns unchanged if database exists.
@@ -336,7 +340,7 @@ Creates a new database user.
 node.SetArg("username", "appuser")
 node.SetArg("password", "apppassword")
 node.SetArg("root-password", "secure_password")
-results := node.RunPlaybook(playbooks.NewMariadbCreateUser())
+results := node.Run(skills.NewMariadbCreateUser())
 ```
 
 **Idempotent**: Updates password if user exists.
@@ -346,7 +350,7 @@ results := node.RunPlaybook(playbooks.NewMariadbCreateUser())
 Shows MariaDB server status.
 
 ```go
-results := node.RunPlaybook(playbooks.NewMariadbStatus())
+results := node.Run(skills.NewMariadbStatus())
 ```
 
 ### mariadb-list-dbs
@@ -354,7 +358,7 @@ results := node.RunPlaybook(playbooks.NewMariadbStatus())
 Lists all databases.
 
 ```go
-results := node.RunPlaybook(playbooks.NewMariadbListDBs())
+results := node.Run(skills.NewMariadbListDBs())
 // Result.Details contain database list
 ```
 
@@ -363,7 +367,7 @@ results := node.RunPlaybook(playbooks.NewMariadbListDBs())
 Lists all database users.
 
 ```go
-results := node.RunPlaybook(playbooks.NewMariadbListUsers())
+results := node.Run(skills.NewMariadbListUsers())
 ```
 
 ### mariadb-backup
@@ -373,7 +377,7 @@ Creates a compressed SQL dump.
 ```go
 node.SetArg("database", "myapp")  // optional - backs up all if empty
 node.SetArg("root-password", "secure_password")
-results := node.RunPlaybook(playbooks.NewMariadbBackup())
+results := node.Run(skills.NewMariadbBackup())
 ```
 
 ### mariadb-security-audit
@@ -381,7 +385,7 @@ results := node.RunPlaybook(playbooks.NewMariadbBackup())
 Performs security audit of MariaDB configuration.
 
 ```go
-results := node.RunPlaybook(playbooks.NewMariadbSecurityAudit())
+results := node.Run(skills.NewMariadbSecurityAudit())
 // Result.Details contain audit findings
 ```
 
@@ -391,7 +395,7 @@ Changes MariaDB port.
 
 ```go
 node.SetArg("port", "3307")
-results := node.RunPlaybook(playbooks.NewMariadbChangePort())
+results := node.Run(skills.NewMariadbChangePort())
 ```
 
 ### mariadb-enable-ssl
@@ -399,7 +403,7 @@ results := node.RunPlaybook(playbooks.NewMariadbChangePort())
 Enables SSL/TLS encryption for connections.
 
 ```go
-results := node.RunPlaybook(playbooks.NewMariadbEnableSSL())
+results := node.Run(skills.NewMariadbEnableSSL())
 ```
 
 ### mariadb-enable-encryption
@@ -407,7 +411,7 @@ results := node.RunPlaybook(playbooks.NewMariadbEnableSSL())
 Enables data-at-rest encryption.
 
 ```go
-results := node.RunPlaybook(playbooks.NewMariadbEnableEncryption())
+results := node.Run(skills.NewMariadbEnableEncryption())
 ```
 
 ### mariadb-backup-encrypt
@@ -416,22 +420,22 @@ Creates an encrypted backup.
 
 ```go
 node.SetArg("database", "myapp")  // optional
-results := node.RunPlaybook(playbooks.NewMariadbBackupEncrypt())
+results := node.Run(skills.NewMariadbBackupEncrypt())
 ```
 
 ## Usage Patterns
 
-### Running Playbooks
+### Running Skills
 
 ```go
 // Direct instance (recommended)
-results := node.RunPlaybook(playbooks.NewAptUpdate())
+results := node.Run(skills.NewAptUpdate())
 
 // By ID via registry
-results := node.RunPlaybookByID(playbooks.IDAptUpdate)
+results := node.RunByID(skills.IDAptUpdate)
 
 // Check mode (preview changes)
-results := node.CheckPlaybook(playbooks.NewAptUpgrade())
+results := node.Check(skills.NewAptUpgrade())
 ```
 
 ### Setting Arguments
@@ -439,24 +443,24 @@ results := node.CheckPlaybook(playbooks.NewAptUpgrade())
 ```go
 // Via node
 node.SetArg("username", "alice")
-results := node.RunPlaybook(playbooks.NewUserCreate())
+results := node.Run(skills.NewUserCreate())
 
 // Via config
-cfg := config.NodeConfig{
+cfg := types.NodeConfig{
     SSHHost: "server.example.com",
     Args: map[string]string{
         "username": "alice",
     },
 }
-pb := playbooks.NewUserCreate()
-pb.SetConfig(cfg)
+pb := skills.NewUserCreate()
+pb.SetNodeConfig(cfg)
 result := pb.Run()
 ```
 
 ### Handling Results
 
 ```go
-results := node.RunPlaybook(playbooks.NewSwapCreate())
+results := node.Run(skills.NewSwapCreate())
 result := results.Results["server.example.com"]
 
 if result.Error != nil {
@@ -473,12 +477,12 @@ if result.Changed {
 }
 ```
 
-## Creating Custom Playbooks
+## Creating Custom Skills
 
-See the [Development Guide](../development.md) for creating custom playbooks.
+See the [Development Guide](../development.md) for creating custom skills.
 
 ## See Also
 
-- [playbook](playbook.md) - Playbook interface definition
+- [skill](skill.md) - BasePlaybook and BaseSkill in types package
 - [API Reference](../api_reference.md) - Complete API
 - [Cheatsheet](../cheatsheet.md) - Quick reference

@@ -4,13 +4,14 @@ page-type: reference
 summary: Complete API reference for all public interfaces, functions, and types.
 tags: [reference, api, interfaces, vault, prompts]
 created: 2025-04-14
-updated: 2026-04-14
-version: 1.2.0
+updated: 2026-04-15
+version: 2.0.0
 ---
 
 # API Reference
 
 ## Changelog
+- **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, BasePlaybook moved to types package, NodeConfig moved to types package, config package removed, playbook package removed
 - **v1.2.0** (2026-04-14): Added vault functions for secure secrets management and prompt functions for interactive user input
 - **v1.1.0** (2026-04-14): Updated API references from playbook to playbooks package
 - **v1.0.0** (2025-04-14): Initial creation
@@ -22,11 +23,9 @@ Complete reference for all public APIs in Ork.
 | Package | Path | Purpose |
 |---------|------|---------|
 | `ork` | `github.com/dracory/ork` | Main API with Node, Group, Inventory |
-| `config` | `github.com/dracory/ork/config` | Configuration types |
 | `ssh` | `github.com/dracory/ork/ssh` | SSH client utilities |
-| `playbook` | `github.com/dracory/ork/playbook` | BasePlaybook implementation |
-| `playbooks` | `github.com/dracory/ork/playbooks` | Built-in playbook implementations |
-| `types` | `github.com/dracory/ork/types` | PlaybookInterface, Registry, Command, Result types |
+| `skills` | `github.com/dracory/ork/skills` | Built-in skill implementations |
+| `types` | `github.com/dracory/ork/types` | RunnableInterface, BasePlaybook, BaseSkill, Registry, Command, Result, NodeConfig types |
 
 ## ork Package
 
@@ -41,7 +40,7 @@ type NodeInterface interface {
     // Configuration getters
     GetArg(key string) string
     GetArgs() map[string]string
-    GetNodeConfig() config.NodeConfig
+    GetNodeConfig() types.NodeConfig
     GetHost() string
     GetUser() string
     GetKey() string
@@ -58,9 +57,6 @@ type NodeInterface interface {
     Connect() error
     Close() error
     IsConnected() bool
-    
-    // Playbook by ID (deprecated, use RunPlaybook)
-    RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
 }
 ```
 
@@ -74,7 +70,7 @@ func NewNodeForHost(host string) NodeInterface
 func NewNode() NodeInterface
 
 // Create node from existing config
-func NewNodeFromConfig(cfg config.NodeConfig) NodeInterface
+func NewNodeFromConfig(cfg types.NodeConfig) NodeInterface
 ```
 
 ### GroupInterface
@@ -129,9 +125,9 @@ Base interface for all executable entities.
 ```go
 type RunnerInterface interface {
     RunCommand(cmd string) types.Results
-    RunPlaybook(pb types.PlaybookInterface) types.Results
-    RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
-    CheckPlaybook(pb types.PlaybookInterface) types.Results
+    Run(runnable types.RunnableInterface) types.Results
+    RunByID(id string, opts ...types.RunnableOptions) types.Results
+    Check(runnable types.RunnableInterface) types.Results
     GetLogger() *slog.Logger
     SetLogger(logger *slog.Logger) RunnerInterface
     SetDryRunMode(dryRun bool) RunnerInterface
@@ -142,13 +138,13 @@ type RunnerInterface interface {
 ### Registry Functions
 
 ```go
-// Get the global playbook registry singleton (lazily initialized)
+// Get the global skill registry singleton (lazily initialized)
 func GetGlobalPlaybookRegistry() (*types.Registry, error)
 
 // Create a new empty registry
 func NewPlaybookRegistry() *types.Registry
 
-// Create a new isolated registry with all built-in playbooks registered
+// Create a new isolated registry with all built-in skills registered
 func NewDefaultRegistry() (*types.Registry, error)
 ```
 
@@ -221,26 +217,26 @@ func PromptWithOptions(prompt string, options []string) (int, error)
 func PromptMultiple(configs []types.PromptConfig, existingValues ...map[string]string) (types.PromptResult, error)
 ```
 
-### Playbook Constants
+### Skill Constants
 
 ```go
 const (
-    PlaybookPing              = "ping"
-    PlaybookAptUpdate         = "apt-update"
-    PlaybookAptUpgrade        = "apt-upgrade"
-    PlaybookAptStatus         = "apt-status"
-    PlaybookReboot            = "reboot"
-    PlaybookSwapCreate        = "swap-create"
-    PlaybookSwapDelete        = "swap-delete"
-    PlaybookSwapStatus        = "swap-status"
-    PlaybookUserCreate        = "user-create"
-    PlaybookUserDelete        = "user-delete"
-    PlaybookUserStatus        = "user-status"
-    // ... see playbook/constants.go for full list
+    IDPing              = "ping"
+    IDAptUpdate         = "apt-update"
+    IDAptUpgrade        = "apt-upgrade"
+    IDAptStatus         = "apt-status"
+    IDReboot            = "reboot"
+    IDSwapCreate        = "swap-create"
+    IDSwapDelete        = "swap-delete"
+    IDSwapStatus        = "swap-status"
+    IDUserCreate        = "user-create"
+    IDUserDelete        = "user-delete"
+    IDUserStatus        = "user-status"
+    // ... see skills/constants.go for full list
 )
 ```
 
-## config Package
+## types Package
 
 ### NodeConfig
 
@@ -289,7 +285,65 @@ func (c NodeConfig) GetArgOr(key, defaultValue string) string
 func (c NodeConfig) GetLoggerOrDefault() *slog.Logger
 ```
 
-## types Package
+### RunnableInterface
+
+All skills must implement this interface (defined in types package).
+
+```go
+type RunnableInterface interface {
+    // Identification
+    GetID() string
+    SetID(id string) RunnableInterface
+    GetDescription() string
+    SetDescription(description string) RunnableInterface
+    
+    // Configuration
+    GetNodeConfig() NodeConfig
+    SetNodeConfig(cfg NodeConfig) RunnableInterface
+    
+    // Arguments
+    GetArg(key string) string
+    SetArg(key, value string) RunnableInterface
+    GetArgs() map[string]string
+    SetArgs(args map[string]string) RunnableInterface
+    
+    // Execution options
+    IsDryRun() bool
+    SetDryRun(dryRun bool) RunnableInterface
+    GetTimeout() time.Duration
+    SetTimeout(timeout time.Duration) RunnableInterface
+    
+    // Core operations
+    Check() (bool, error)
+    Run() Result
+}
+```
+
+### BasePlaybook
+
+Provides default implementation of RunnableInterface with fluent API.
+
+```go
+type BasePlaybook struct {
+    // ... internal fields
+}
+
+// Constructor
+func NewBasePlaybook() *BasePlaybook
+```
+
+### BaseSkill
+
+Provides default implementation of RunnableInterface with Check() and Run() stubs.
+
+```go
+type BaseSkill struct {
+    // ... internal fields
+}
+
+// Constructor
+func NewBaseSkill() *BaseSkill
+```
 
 ### Command
 
@@ -343,55 +397,6 @@ type Summary struct {
 }
 ```
 
-### PlaybookInterface
-
-All playbooks must implement this interface (defined in types package).
-
-```go
-type PlaybookInterface interface {
-    // Identification
-    GetID() string
-    SetID(id string) PlaybookInterface
-    GetDescription() string
-    SetDescription(description string) PlaybookInterface
-    
-    // Configuration
-    GetNodeConfig() config.NodeConfig
-    SetNodeConfig(cfg config.NodeConfig) PlaybookInterface
-    
-    // Arguments
-    GetArg(key string) string
-    SetArg(key, value string) PlaybookInterface
-    GetArgs() map[string]string
-    SetArgs(args map[string]string) PlaybookInterface
-    
-    // Execution options
-    IsDryRun() bool
-    SetDryRun(dryRun bool) PlaybookInterface
-    GetTimeout() time.Duration
-    SetTimeout(timeout time.Duration) PlaybookInterface
-    
-    // Core operations
-    Check() (bool, error)
-    Run() Result
-}
-```
-
-## playbook Package
-
-### BasePlaybook
-
-Provides default implementation of PlaybookInterface.
-
-```go
-type BasePlaybook struct {
-    // ... internal fields
-}
-
-// Constructor
-func NewBasePlaybook() *BasePlaybook
-```
-
 ## ssh Package
 
 ### Client
@@ -427,84 +432,84 @@ func RunOnce(host, port, user, key, cmd string) (string, error)
 func PrivateKeyPath(sshKey string) string
 
 // Run with dry-run safety
-func Run(cfg config.NodeConfig, cmd string) (string, error)
+func Run(cfg types.NodeConfig, cmd string) (string, error)
 ```
 
-## playbooks Package
+## skills Package
 
-### System Playbooks
+### System Skills
 
 ```go
 // Ping
-func ping.NewPing() types.PlaybookInterface
+func ping.NewPing() types.RunnableInterface
 
 // Apt
-func apt.NewAptUpdate() types.PlaybookInterface
-func apt.NewAptUpgrade() types.PlaybookInterface
-func apt.NewAptStatus() types.PlaybookInterface
+func apt.NewAptUpdate() types.RunnableInterface
+func apt.NewAptUpgrade() types.RunnableInterface
+func apt.NewAptStatus() types.RunnableInterface
 
 // Reboot
-func reboot.NewReboot() types.PlaybookInterface
+func reboot.NewReboot() types.RunnableInterface
 ```
 
 ### User Management
 
 ```go
-func user.NewUserCreate() types.PlaybookInterface
-func user.NewUserDelete() types.PlaybookInterface
-func user.NewUserList() types.PlaybookInterface
-func user.NewUserStatus() types.PlaybookInterface
+func user.NewUserCreate() types.RunnableInterface
+func user.NewUserDelete() types.RunnableInterface
+func user.NewUserList() types.RunnableInterface
+func user.NewUserStatus() types.RunnableInterface
 ```
 
 ### Swap Management
 
 ```go
-func swap.NewSwapCreate() types.PlaybookInterface
-func swap.NewSwapDelete() types.PlaybookInterface
-func swap.NewSwapStatus() types.PlaybookInterface
+func swap.NewSwapCreate() types.RunnableInterface
+func swap.NewSwapDelete() types.RunnableInterface
+func swap.NewSwapStatus() types.RunnableInterface
 ```
 
 ### Security
 
 ```go
-func security.NewSshHarden() types.PlaybookInterface
-func security.NewKernelHarden() types.PlaybookInterface
-func security.NewAideInstall() types.PlaybookInterface
-func security.NewAuditdInstall() types.PlaybookInterface
-func security.NewSshChangePort() types.PlaybookInterface
+func security.NewSshHarden() types.RunnableInterface
+func security.NewKernelHarden() types.RunnableInterface
+func security.NewAideInstall() types.RunnableInterface
+func security.NewAuditdInstall() types.RunnableInterface
+func security.NewSshChangePort() types.RunnableInterface
 ```
 
 ### Firewall
 
 ```go
-func ufw.NewUfwInstall() types.PlaybookInterface
-func ufw.NewUfwStatus() types.PlaybookInterface
-func ufw.NewAllowMariaDB() types.PlaybookInterface
+func ufw.NewUfwInstall() types.RunnableInterface
+func ufw.NewUfwStatus() types.RunnableInterface
+func ufw.NewAllowMariaDB() types.RunnableInterface
 ```
 
 ### Fail2ban
 
 ```go
-func fail2ban.NewFail2banInstall() types.PlaybookInterface
-func fail2ban.NewFail2banStatus() types.PlaybookInterface
+func fail2ban.NewFail2banInstall() types.RunnableInterface
+func fail2ban.NewFail2banStatus() types.RunnableInterface
 ```
 
 ### MariaDB
 
 ```go
-func mariadb.NewInstall() types.PlaybookInterface
-func mariadb.NewSecure() types.PlaybookInterface
-func mariadb.NewCreateDB() types.PlaybookInterface
-func mariadb.NewCreateUser() types.PlaybookInterface
-func mariadb.NewStatus() types.PlaybookInterface
-func mariadb.NewListDBs() types.PlaybookInterface
-func mariadb.NewListUsers() types.PlaybookInterface
-func mariadb.NewBackup() types.PlaybookInterface
-func mariadb.NewSecurityAudit() types.PlaybookInterface
-func mariadb.NewChangePort() types.PlaybookInterface
-func mariadb.NewEnableSSL() types.PlaybookInterface
-func mariadb.NewEnableEncryption() types.PlaybookInterface
-func mariadb.NewBackupEncrypt() types.PlaybookInterface
+func mariadb.NewInstall() types.RunnableInterface
+func mariadb.NewSecure() types.RunnableInterface
+func mariadb.NewCreateDB() types.RunnableInterface
+func mariadb.NewCreateUser() types.RunnableInterface
+func mariadb.NewStatus() types.RunnableInterface
+func mariadb.NewListDBs() types.RunnableInterface
+func mariadb.NewListUsers() types.RunnableInterface
+func mariadb.NewBackup() types.RunnableInterface
+func mariadb.NewSecurityAudit() types.RunnableInterface
+func mariadb.NewChangePort() types.RunnableInterface
+func mariadb.NewEnableSSL() types.RunnableInterface
+func mariadb.NewEnableEncryption() types.RunnableInterface
+func mariadb.NewBackupEncrypt() types.RunnableInterface
 ```
 
 ## Usage Examples
@@ -534,7 +539,7 @@ result := results.Results["server.example.com"]
 ### Working with Results
 
 ```go
-results := inv.RunPlaybook(playbooks.NewAptUpdate())
+results := inv.Run(skills.NewAptUpdate())
 
 // Get summary
 summary := results.Summary()
@@ -558,20 +563,20 @@ for host, result := range results.Results {
 }
 ```
 
-### Creating Custom Playbooks
+### Creating Custom Skills
 
 ```go
-type MyPlaybook struct {
-    *playbook.BasePlaybook
+type MySkill struct {
+    *types.BaseSkill
 }
 
-func (p *MyPlaybook) Check() (bool, error) {
+func (p *MySkill) Check() (bool, error) {
     cfg := p.GetNodeConfig()
     output, _ := ssh.Run(cfg, "check command")
     return !strings.Contains(output, "configured"), nil
 }
 
-func (p *MyPlaybook) Run() types.Result {
+func (p *MySkill) Run() types.Result {
     needsChange, _ := p.Check()
     if !needsChange {
         return types.Result{
@@ -595,11 +600,11 @@ func (p *MyPlaybook) Run() types.Result {
     }
 }
 
-func NewMyPlaybook() types.PlaybookInterface {
-    pb := playbook.NewBasePlaybook()
-    pb.SetID("my-playbook")
-    pb.SetDescription("Does something useful")
-    return &MyPlaybook{BasePlaybook: pb}
+func NewMySkill() types.RunnableInterface {
+    skill := types.NewBaseSkill()
+    skill.SetID("my-skill")
+    skill.SetDescription("Does something useful")
+    return &MySkill{BaseSkill: skill}
 }
 ```
 

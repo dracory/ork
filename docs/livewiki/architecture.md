@@ -4,9 +4,14 @@ page-type: reference
 summary: System architecture, design patterns, and key architectural decisions in Ork.
 tags: [architecture, design, patterns]
 created: 2025-04-14
-updated: 2026-04-14
-version: 1.1.0
+updated: 2026-04-15
+version: 2.0.0
 ---
+
+## Changelog
+- **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, BasePlaybook moved to types package, NodeConfig moved to types package, config package removed, playbook package removed
+- **v1.1.0** (2026-04-14): Updated architecture diagrams and package references
+- **v1.0.0** (2025-04-14): Initial creation
 
 # Ork Architecture
 
@@ -29,27 +34,25 @@ graph TB
     end
     
     subgraph "Core Components"
-        G[config Package]
         H[ssh Package]
-        I[playbook Package]
         J[types Package]
     end
     
     subgraph "Testing Framework"
-        TF1[internal/playbooktest]
+        TF1[internal/skilltest]
         TF2[internal/sshtest]
     end
     
-    subgraph "Playbook Implementations"
-        K[playbooks/apt]
-        L[playbooks/user]
-        M[playbooks/swap]
-        N[playbooks/mariadb]
-        O[playbooks/security]
-        P[playbooks/ufw]
-        Q[playbooks/fail2ban]
-        R[playbooks/ping]
-        S[playbooks/reboot]
+    subgraph "Skill Implementations"
+        K[skills/apt]
+        L[skills/user]
+        M[skills/swap]
+        N[skills/mariadb]
+        O[skills/security]
+        P[skills/ufw]
+        Q[skills/fail2ban]
+        R[skills/ping]
+        S[skills/reboot]
     end
     
     subgraph "External"
@@ -64,18 +67,17 @@ graph TB
     C --> F
     D --> F
     E --> F
-    C --> G
     C --> H
-    C --> I
-    I --> K
-    I --> L
-    I --> M
-    I --> N
-    I --> O
-    I --> P
-    I --> Q
-    I --> R
-    I --> S
+    C --> J
+    J --> K
+    J --> L
+    J --> M
+    J --> N
+    J --> O
+    J --> P
+    J --> Q
+    J --> R
+    J --> S
     H --> T
     T --> U
 ```
@@ -136,9 +138,9 @@ Key features:
 - Dry-run mode support
 - Key-based authentication
 
-#### Config Package
+#### Types Package
 
-Central configuration management:
+Central configuration and type definitions:
 
 ```go
 type NodeConfig struct {
@@ -156,27 +158,27 @@ type NodeConfig struct {
 }
 ```
 
-### 3. Playbook System Layer
+### 3. Skill System Layer
 
-#### Playbook Interface (types package)
+#### RunnableInterface (types package)
 
 All automation tasks implement this interface (defined in types package):
 
 ```go
-type PlaybookInterface interface {
+type RunnableInterface interface {
     GetID() string
     GetDescription() string
-    SetNodeConfig(cfg config.NodeConfig) PlaybookInterface
+    SetNodeConfig(cfg NodeConfig) RunnableInterface
     GetArg(key string) string
-    SetArg(key, value string) PlaybookInterface
+    SetArg(key, value string) RunnableInterface
     Check() (bool, error)
     Run() Result
 }
 ```
 
-#### Base Playbook (playbook package)
+#### BasePlaybook (types package)
 
-Provides common functionality:
+Provides default implementation with fluent API:
 
 ```mermaid
 classDiagram
@@ -188,22 +190,54 @@ classDiagram
         -dryRun bool
         -timeout Duration
         +GetID() string
-        +SetID(id string) PlaybookInterface
+        +SetID(id string) RunnableInterface
         +GetDescription() string
-        +SetDescription(desc string) PlaybookInterface
+        +SetDescription(desc string) RunnableInterface
         +GetNodeConfig() NodeConfig
-        +SetNodeConfig(cfg NodeConfig) PlaybookInterface
+        +SetNodeConfig(cfg NodeConfig) RunnableInterface
         +GetArg(key string) string
-        +SetArg(key, value string) PlaybookInterface
+        +SetArg(key, value string) RunnableInterface
     }
     
-    class PlaybookInterface {
+    class RunnableInterface {
         <<interface>>
         +Check() (bool, error)
         +Run() Result
     }
     
-    BasePlaybook ..|> PlaybookInterface
+    BasePlaybook ..|> RunnableInterface
+```
+
+#### BaseSkill (types package)
+
+Provides default implementation with Check() and Run() stubs:
+
+```mermaid
+classDiagram
+    class BaseSkill {
+        -id string
+        -description string
+        -config NodeConfig
+        -args map[string]string
+        -dryRun bool
+        -timeout Duration
+        +GetID() string
+        +SetID(id string) RunnableInterface
+        +GetDescription() string
+        +SetDescription(desc string) RunnableInterface
+        +GetNodeConfig() NodeConfig
+        +SetNodeConfig(cfg NodeConfig) RunnableInterface
+        +GetArg(key string) string
+        +SetArg(key, value string) RunnableInterface
+    }
+    
+    class RunnableInterface {
+        <<interface>>
+        +Check() (bool, error)
+        +Run() Result
+    }
+    
+    BaseSkill ..|> RunnableInterface
 ```
 
 ## Design Patterns
@@ -222,11 +256,11 @@ node := ork.NewNodeForHost("server.example.com").
 
 ### 2. Repository Pattern (Registry)
 
-Playbook registry (types.Registry) for ID-based lookup:
+Skill registry (types.Registry) for ID-based lookup:
 
 ```mermaid
 graph LR
-    A[types.Registry] --> B[Register Playbook]
+    A[types.Registry] --> B[Register Skill]
     C[Node] --> D[Run by ID]
     D --> A
     A --> E[Find by ID]
@@ -236,11 +270,11 @@ graph LR
 
 ### 3. Strategy Pattern
 
-Different playbooks implement the same interface:
+Different skills implement the same interface:
 
 ```mermaid
 graph TB
-    A[PlaybookInterface] --> B[AptUpdate]
+    A[RunnableInterface] --> B[AptUpdate]
     A --> C[UserCreate]
     A --> D[SwapCreate]
     A --> E[MariaDBInstall]
@@ -282,12 +316,12 @@ func NewInventory() InventoryInterface
 
 ```mermaid
 sequenceDiagram
-    User->>Inventory: RunPlaybook(pb)
+    User->>Inventory: Run(skill)
     Inventory->>Inventory: Collect all nodes
     par Concurrent execution
-        Inventory->>Node1: RunPlaybook(pb)
-        Inventory->>Node2: RunPlaybook(pb)
-        Inventory->>Node3: RunPlaybook(pb)
+        Inventory->>Node1: Run(skill)
+        Inventory->>Node2: Run(skill)
+        Inventory->>Node3: Run(skill)
     end
     Inventory->>User: Aggregate Results
 ```
@@ -340,37 +374,37 @@ sequenceDiagram
     end
 ```
 
-### Playbook Execution Flow
+### Skill Execution Flow
 
 ```mermaid
 sequenceDiagram
-    User->>Node: RunPlaybook(pb)
-    Node->>Playbook: SetConfig(node.cfg)
-    Node->>Playbook: SetDryRun(node.IsDryRunMode)
+    User->>Node: Run(skill)
+    Node->>Skill: SetConfig(node.cfg)
+    Node->>Skill: SetDryRun(node.IsDryRunMode)
     
     alt Dry Run
-        Playbook->>Logger: Log planned actions
-        Playbook->>Playbook: Return [dry-run] Result
+        Skill->>Logger: Log planned actions
+        Skill->>Skill: Return [dry-run] Result
     else Normal Execution
-        Playbook->>SSH: Run(command)
+        Skill->>SSH: Run(command)
         SSH->>Remote: Execute
         Remote->>SSH: Return output
-        SSH->>Playbook: Return output
-        Playbook->>Playbook: Build Result
+        SSH->>Skill: Return output
+        Skill->>Skill: Build Result
     end
     
-    Playbook->>Node: Return Result
+    Skill->>Node: Return Result
     Node->>Node: Wrap in Results
     Node->>User: Return Results
 ```
 
 ## Idempotency Design
 
-All playbooks follow the Check-Run pattern:
+All skills follow the Check-Run pattern:
 
 ```mermaid
 graph TD
-    A[Playbook Run] --> B{Check}
+    A[Skill Run] --> B{Check}
     B -->|Changes Needed| C[Execute Changes]
     B -->|No Changes| D[Return Unchanged]
     C --> E[Return Changed]
@@ -381,13 +415,13 @@ graph TD
 Example implementation:
 
 ```go
-func (p *MyPlaybook) Check() (bool, error) {
+func (p *MySkill) Check() (bool, error) {
     // Check current state
     output, _ := ssh.Run(cfg, "check command")
     return !isAlreadyConfigured(output), nil
 }
 
-func (p *MyPlaybook) Run() Result {
+func (p *MySkill) Run() Result {
     needsChange, _ := p.Check()
     if !needsChange {
         return Result{Changed: false, Message: "Already configured"}
@@ -453,22 +487,22 @@ Safety enforced at execution layer - no way to bypass.
 
 ## Extension Points
 
-### Custom Playbooks
+### Custom Skills
 
 ```go
-type MyPlaybook struct {
-    *playbook.BasePlaybook
+type MySkill struct {
+    *types.BaseSkill
 }
 
-func (p *MyPlaybook) Check() (bool, error) { ... }
-func (p *MyPlaybook) Run() types.Result { ... }
+func (p *MySkill) Check() (bool, error) { ... }
+func (p *MySkill) Run() types.Result { ... }
 
 // Register globally
 registry, err := ork.GetGlobalPlaybookRegistry()
 if err != nil {
     log.Fatal(err)
 }
-registry.PlaybookRegister(myPlaybook)
+registry.PlaybookRegister(mySkill)
 ```
 
 ## See Also

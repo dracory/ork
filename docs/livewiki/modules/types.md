@@ -1,29 +1,33 @@
 ---
 path: modules/types.md
 page-type: module
-summary: Shared types including PlaybookInterface, Registry, Command, PromptConfig, PromptResult, and result types for operation outcomes across all Ork packages.
+summary: Shared types including RunnableInterface, BasePlaybook, BaseSkill, Registry, NodeConfig, Command, PromptConfig, PromptResult, and result types for operation outcomes across all Ork packages.
 tags: [module, types, results, prompts]
 created: 2025-04-14
-updated: 2026-04-14
-version: 1.2.0
+updated: 2026-04-15
+version: 2.0.0
 ---
 
 # types Package
 
 ## Changelog
+- **v2.0.0** (2026-04-15): Major terminology refactoring - PlaybookInterface renamed to RunnableInterface, PlaybookOptions renamed to RunnableOptions, BasePlaybook and BaseSkill moved to types package, NodeConfig moved from config to types package
 - **v1.2.0** (2026-04-14): Added PromptConfig and PromptResult types for interactive user input
 - **v1.1.0** (2026-04-14): Updated PlaybookInterface and Registry documentation
 - **v1.0.0** (2025-04-14): Initial creation
 
-Shared types for playbooks, registries, commands, and operation results across all Ork packages.
+Shared types for skills, registries, commands, configuration, and operation results across all Ork packages.
 
 ## Purpose
 
 The `types` package provides:
-- `PlaybookInterface`: The interface all playbooks must implement
-- `Registry`: For registering and looking up playbooks by ID
+- `RunnableInterface`: The interface all skills must implement
+- `BasePlaybook`: Default implementation with fluent API and optional Check()
+- `BaseSkill`: Default implementation with Check() and Run() stubs
+- `NodeConfig`: Central configuration structure for remote operations
+- `Registry`: For registering and looking up skills by ID
 - `Command`: Struct for shell commands with descriptions
-- `PlaybookOptions`: Configuration options for playbook execution
+- `RunnableOptions`: Configuration options for skill execution
 - `PromptConfig`, `PromptResult`: Types for interactive user input
 - `Result`, `Results`, `Summary`: Operation outcome types
 
@@ -31,38 +35,42 @@ The `types` package provides:
 
 | File | Purpose |
 |------|---------|
-| `registry.go` | PlaybookInterface, PlaybookOptions, Registry |
+| `runner_interface.go` | RunnerInterface - base for all executables |
+| `base_playbook.go` | BasePlaybook default implementation |
+| `base_skill.go` | BaseSkill default implementation |
+| `node_config.go` | NodeConfig struct and methods |
+| `registry.go` | RunnableInterface, RunnableOptions, Registry |
 | `command.go` | Command struct with description |
 | `prompt.go` | PromptConfig, PromptResult types |
 | `results.go` | Result, Results, and Summary types |
 
-## PlaybookInterface
+## RunnableInterface
 
-All automation playbooks must implement this interface.
+All automation skills must implement this interface.
 
 ```go
-type PlaybookInterface interface {
+type RunnableInterface interface {
     // Identification
     GetID() string
-    SetID(id string) PlaybookInterface
+    SetID(id string) RunnableInterface
     GetDescription() string
-    SetDescription(description string) PlaybookInterface
+    SetDescription(description string) RunnableInterface
     
     // Configuration
-    GetNodeConfig() config.NodeConfig
-    SetNodeConfig(cfg config.NodeConfig) PlaybookInterface
+    GetNodeConfig() NodeConfig
+    SetNodeConfig(cfg NodeConfig) RunnableInterface
     
     // Arguments
     GetArg(key string) string
-    SetArg(key, value string) PlaybookInterface
+    SetArg(key, value string) RunnableInterface
     GetArgs() map[string]string
-    SetArgs(args map[string]string) PlaybookInterface
+    SetArgs(args map[string]string) RunnableInterface
     
     // Execution options
     IsDryRun() bool
-    SetDryRun(dryRun bool) PlaybookInterface
+    SetDryRun(dryRun bool) RunnableInterface
     GetTimeout() time.Duration
-    SetTimeout(timeout time.Duration) PlaybookInterface
+    SetTimeout(timeout time.Duration) RunnableInterface
     
     // Core operations
     Check() (bool, error)
@@ -72,10 +80,10 @@ type PlaybookInterface interface {
 
 ### Check
 
-Determines if the playbook needs to make changes.
+Determines if the skill needs to make changes.
 
 ```go
-func (p PlaybookInterface) Check() (bool, error)
+func (p RunnableInterface) Check() (bool, error)
 ```
 
 - Returns `true` if changes are needed
@@ -84,27 +92,193 @@ func (p PlaybookInterface) Check() (bool, error)
 
 ### Run
 
-Executes the playbook and returns the result.
+Executes the skill and returns the result.
 
 ```go
-func (p PlaybookInterface) Run() Result
+func (p RunnableInterface) Run() Result
 ```
 
 The `Result.Changed` field indicates whether any modifications were made.
 
-## PlaybookOptions
+## BasePlaybook
 
-Configuration options for playbook execution.
+Provides a default implementation of RunnableInterface with fluent API. Use this when you want optional Check() with a default implementation.
 
 ```go
-type PlaybookOptions struct {
+type BasePlaybook struct {
+    id          string
+    description string
+    nodeCfg     NodeConfig
+    args        map[string]string
+    dryRun      bool
+    timeout     time.Duration
+}
+```
+
+### Constructor
+
+```go
+func NewBasePlaybook() *BasePlaybook
+```
+
+### Features
+
+- Fluent API for method chaining
+- Optional Check() (returns false by default)
+- Must implement Run() yourself
+- Useful for simple skills where Check() is not critical
+
+### Example
+
+```go
+type MySkill struct {
+    *types.BasePlaybook
+}
+
+func NewMySkill() types.RunnableInterface {
+    return &MySkill{
+        BasePlaybook: types.NewBasePlaybook().
+            SetID("my-skill").
+            SetDescription("Does something useful"),
+    }
+}
+
+func (m *MySkill) Run() types.Result {
+    // Your implementation here
+    return types.Result{Changed: true, Message: "Done"}
+}
+```
+
+## BaseSkill
+
+Provides a default implementation of RunnableInterface with Check() and Run() stubs that must be implemented. Use this when you want to enforce implementation of both Check() and Run().
+
+```go
+type BaseSkill struct {
+    id          string
+    description string
+    nodeCfg     NodeConfig
+    args        map[string]string
+    dryRun      bool
+    timeout     time.Duration
+}
+```
+
+### Constructor
+
+```go
+func NewBaseSkill() *BaseSkill
+```
+
+### Features
+
+- Fluent API for method chaining
+- Check() stub that returns error (must be implemented)
+- Run() stub that returns error (must be implemented)
+- Enforces idempotency pattern
+
+### Example
+
+```go
+type MySkill struct {
+    *types.BaseSkill
+}
+
+func NewMySkill() types.RunnableInterface {
+    return &MySkill{
+        BaseSkill: types.NewBaseSkill().
+            SetID("my-skill").
+            SetDescription("Does something useful"),
+    }
+}
+
+func (m *MySkill) Check() (bool, error) {
+    // Your check implementation here
+    return true, nil
+}
+
+func (m *MySkill) Run() types.Result {
+    // Your run implementation here
+    return types.Result{Changed: true, Message: "Done"}
+}
+```
+
+## RunnableOptions
+
+Configuration options for skill execution.
+
+```go
+type RunnableOptions struct {
     Args    map[string]string  // Override node-level args
     DryRun  bool               // Override dry-run mode
     Timeout time.Duration      // Execution timeout
 }
 ```
 
-Used with `RunPlaybookByID()` for per-execution overrides.
+Used with `RunByID()` for per-execution overrides.
+
+## NodeConfig
+
+Central configuration structure for all remote operations.
+
+```go
+type NodeConfig struct {
+    // SSH connection settings
+    SSHHost  string            // Hostname or IP address
+    SSHPort  string            // SSH port (default: "22")
+    SSHLogin string            // SSH login user
+    SSHKey   string            // Private key filename (resolved to ~/.ssh/)
+    
+    // User settings
+    RootUser    string         // Root/admin user
+    NonRootUser string         // Non-root user
+    
+    // Database settings
+    DBPort         string      // Database port
+    DBRootPassword string      // Database root password
+    
+    // Extra arguments for skills
+    Args map[string]string
+    
+    // Logger for structured logging
+    Logger *slog.Logger
+    
+    // Dry-run mode flag
+    IsDryRunMode bool
+}
+```
+
+### Methods
+
+```go
+// SSHAddr returns host:port
+func (c NodeConfig) SSHAddr() string
+
+// GetArg retrieves from Args map
+func (c NodeConfig) GetArg(key string) string
+
+// GetArgOr retrieves with default value
+func (c NodeConfig) GetArgOr(key, defaultValue string) string
+
+// GetLoggerOrDefault returns logger or slog.Default()
+func (c NodeConfig) GetLoggerOrDefault() *slog.Logger
+```
+
+### SSHAddr
+
+Returns the full SSH address as `host:port`. Port defaults to "22" if not set.
+
+### GetArg
+
+Retrieves an argument from the `Args` map. Returns empty string if not found.
+
+### GetArgOr
+
+Retrieves an argument with a default value fallback.
+
+### GetLoggerOrDefault
+
+Returns the configured logger or `slog.Default()` if nil.
 
 ## PromptConfig
 
@@ -194,11 +368,11 @@ password := results["password"]
 
 ## Registry
 
-Playbook registry for ID-based lookup.
+Skill registry for ID-based lookup.
 
 ```go
 type Registry struct {
-    playbooks map[string]PlaybookInterface
+    playbooks map[string]RunnableInterface
     mu        sync.RWMutex
 }
 ```
@@ -212,16 +386,16 @@ func NewRegistry() *Registry
 ### Methods
 
 ```go
-// Register a playbook
-func (r *Registry) PlaybookRegister(p PlaybookInterface) error
+// Register a skill
+func (r *Registry) PlaybookRegister(p RunnableInterface) error
 
-// Find playbook by ID
-func (r *Registry) PlaybookFindByID(id string) (PlaybookInterface, bool)
+// Find skill by ID
+func (r *Registry) PlaybookFindByID(id string) (RunnableInterface, bool)
 
-// List all registered playbooks
-func (r *Registry) PlaybookList() []PlaybookInterface
+// List all registered skills
+func (r *Registry) PlaybookList() []RunnableInterface
 
-// Get all playbook IDs
+// Get all skill IDs
 func (r *Registry) GetPlaybookIDs() []string
 ```
 
@@ -231,14 +405,14 @@ func (r *Registry) GetPlaybookIDs() []string
 // Create registry
 registry := types.NewRegistry()
 
-// Register playbooks
-registry.PlaybookRegister(playbooks.NewPing())
-registry.PlaybookRegister(playbooks.NewAptUpdate())
+// Register skills
+registry.PlaybookRegister(skills.NewPing())
+registry.PlaybookRegister(skills.NewAptUpdate())
 
 // Lookup by ID
-pb, ok := registry.PlaybookFindByID("ping")
+skill, ok := registry.PlaybookFindByID("ping")
 if ok {
-    result := pb.Run()
+    result := skill.Run()
 }
 ```
 
@@ -266,7 +440,7 @@ cmd := types.Command{
 
 ## Result
 
-Represents the outcome of a single operation (command or playbook execution).
+Represents the outcome of a single operation (command or skill execution).
 
 ```go
 type Result struct {
@@ -322,9 +496,9 @@ for key, value := range result.Details {
 }
 ```
 
-Common detail keys by playbook:
+Common detail keys by skill:
 
-| Playbook | Detail Keys |
+| Skill | Detail Keys |
 |----------|-------------|
 | ping | `uptime` |
 | apt-update | `output` |
@@ -344,7 +518,7 @@ if result.Error != nil {
 
 ## Results
 
-Contains per-node results from any operation (command or playbook) on multiple nodes.
+Contains per-node results from any operation (command or skill) on multiple nodes.
 
 ```go
 type Results struct {
@@ -363,7 +537,7 @@ func (r Results) Summary() Summary
 ```
 
 ```go
-results := inv.RunPlaybook(playbooks.NewPing())
+results := inv.Run(skills.NewPing())
 summary := results.Summary()
 
 fmt.Printf("Total: %d\n", summary.Total)
@@ -375,7 +549,7 @@ fmt.Printf("Failed: %d\n", summary.Failed)
 ### Iterating Results
 
 ```go
-results := group.RunPlaybook(playbooks.NewAptUpdate())
+results := group.Run(skills.NewAptUpdate())
 
 for hostname, result := range results.Results {
     if result.Error != nil {
@@ -404,7 +578,7 @@ type Summary struct {
 ### Usage
 
 ```go
-results := inv.RunPlaybook(playbooks.NewAptUpgrade())
+results := inv.Run(skills.NewAptUpgrade())
 summary := results.Summary()
 
 // Quick status check
@@ -422,35 +596,23 @@ if summary.Changed == summary.Total {
 ```mermaid
 graph TD
     A[Node/Group/Inventory] -->|RunCommand| B[types.Results]
-    A -->|RunPlaybook| B
+    A -->|Run| B
     B -->|Summary| C[types.Summary]
     B -->|Results map| D[types.Result]
-    E[Playbook] -->|Run| F[playbook.Result]
+    E[Skill] -->|Run| F[types.Result]
     F -->|Converted| D
 ```
 
-Note: `playbook.Result` and `types.Result` have identical structures but are defined separately for package isolation.
+Note: Skills return `types.Result` directly, no conversion needed.
 
 ## Conversion
 
-The `ork` package converts `playbook.Result` to `types.Result`:
+Skills return `types.Result` directly, no conversion needed:
 
 ```go
-// From playbook.Result
-pbResult := playbook.Result{
-    Changed: true,
-    Message: "Success",
-    Details: map[string]string{"key": "value"},
-    Error:   nil,
-}
-
-// To types.Result
-typesResult := types.Result{
-    Changed: pbResult.Changed,
-    Message: pbResult.Message,
-    Details: pbResult.Details,
-    Error:   pbResult.Error,
-}
+// Skill returns types.Result
+result := skill.Run()
+// result is already types.Result
 ```
 
 ## Examples
@@ -502,7 +664,7 @@ for hostname, result := range results.Results {
 ### Error Handling Patterns
 
 ```go
-results := group.RunPlaybook(playbooks.NewAptUpgrade())
+results := group.Run(skills.NewAptUpgrade())
 
 // Pattern 1: Fail on any error
 for hostname, result := range results.Results {
@@ -534,13 +696,13 @@ if summary.Failed > 0 {
 
 ```go
 // Preview changes
-results := node.CheckPlaybook(playbooks.NewAptUpgrade())
+results := node.Check(skills.NewAptUpgrade())
 result := results.Results["server.example.com"]
 
 if result.Changed {
     log.Printf("Would upgrade: %s", result.Message)
     // Now actually run it
-    results = node.RunPlaybook(playbooks.NewAptUpgrade())
+    results = node.Run(skills.NewAptUpgrade())
 } else {
     log.Println("No upgrades needed")
 }
@@ -548,21 +710,18 @@ if result.Changed {
 
 ## Design Notes
 
-### Why PlaybookInterface in types Package?
+### Why RunnableInterface in types Package?
 
 Package isolation prevents circular dependencies:
-- `types` package defines `PlaybookInterface` and `Registry`
-- `playbook` package provides `BasePlaybook` implementation
-- `ork` package uses types.PlaybookInterface for type safety
+- `types` package defines `RunnableInterface`, `BasePlaybook`, `BaseSkill`, and `Registry`
+- `skills` package implements RunnableInterface
+- `ork` package uses types.RunnableInterface for type safety
 - This allows the registry to be in a lower-level package
 
-### Why Separate types.Result and playbook.Result?
+### Why BasePlaybook vs BaseSkill?
 
-Package isolation prevents circular dependencies:
-- `playbook` package defines `playbook.Result`
-- `types` package defines `types.Result` 
-- `ork` package converts between them
-- Both have identical structure for consistency
+- **BasePlaybook**: Use when you want optional Check() with a default implementation (returns false). Check() is not enforced.
+- **BaseSkill**: Use when you want to enforce implementation of both Check() and Run(). Both methods return errors by default and must be overridden.
 
 ### Map Key Choice
 
@@ -586,5 +745,5 @@ if !ok {
 ## See Also
 
 - [ork](ork.md) - Uses types.Results for all operations
-- [playbook](playbook.md) - Defines playbook.Result
+- [skills](skills.md) - Implements RunnableInterface
 - [API Reference](../api_reference.md) - Complete API

@@ -4,20 +4,21 @@ page-type: overview
 summary: Complete codebase summary optimized for LLM consumption.
 tags: [llm, context, summary, vault, prompts]
 created: 2025-04-14
-updated: 2026-04-14
-version: 1.2.0
+updated: 2026-04-15
+version: 2.0.0
 ---
 
 # LLM Context: Ork
 
 ## Changelog
+- **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, BasePlaybook moved to types package, NodeConfig moved to types package, config package removed, playbook package removed
 - **v1.2.0** (2026-04-14): Added vault support for secure secrets management and prompt functions for interactive user input
 - **v1.1.0** (2026-04-14): Updated registry functions and API references
 - **v1.0.0** (2025-04-14): Initial creation
 
 ## Project Summary
 
-Ork is a Go-based SSH automation framework for server management. It provides a type-safe, idempotent API for managing remote Linux servers over SSH, similar to Ansible but with Go's strong typing and concurrency features. The framework supports single-node operations through `Node`, multi-node operations through `Group` and `Inventory`, and includes 30+ built-in playbooks for common automation tasks like package management, user management, database setup, and security hardening.
+Ork is a Go-based SSH automation framework for server management. It provides a type-safe, idempotent API for managing remote Linux servers over SSH, similar to Ansible but with Go's strong typing and concurrency features. The framework supports single-node operations through `Node`, multi-node operations through `Group` and `Inventory`, and includes 30+ built-in skills for common automation tasks like package management, user management, database setup, and security hardening.
 
 Key differentiators:
 - **Type-safe**: Full Go type safety with interfaces
@@ -47,42 +48,38 @@ ork/
 ├── inventory_implementation.go     # InventoryInterface implementation
 ├── inventory_implementation_test.go
 ├── inventory_interface.go        # InventoryInterface definition
-├── runner_interface.go         # RunnerInterface base
-├── constants.go                  # Playbook ID constants (ork package)
+├── constants.go                  # Skill ID constants (ork package)
 ├── registry.go                   # Global registry + NewDefaultRegistry factory
 ├── registry_test.go
 ├── vault.go                     # Vault functions for secure secrets management
 ├── prompts.go                    # Interactive prompt functions for user input
 ├── prompts_test.go
-├── config/
-│   └── node_config.go            # NodeConfig struct + methods
 ├── ssh/
 │   ├── ssh.go                    # SSH Client wrapper
 │   ├── functions.go              # Run, PrivateKeyPath
 │   └── ssh_test.go
-├── playbook/
-│   ├── playbook.go               # BasePlaybook implementation
-│   ├── base_playbook.go          # BasePlaybook default implementation
-│   ├── constants.go              # Playbook ID constants
-│   └── functions.go              # Utility functions
-├── playbooks/
+├── skills/
 │   ├── doc.go                    # Package documentation
 │   ├── apt/                      # apt-update, apt-upgrade, apt-status
 │   ├── ping/                     # ping connectivity check
 │   ├── reboot/                   # server reboot
 │   ├── swap/                     # swap-create, swap-delete, swap-status
 │   ├── user/                     # user-create, user-delete, user-list, user-status
-│   ├── mariadb/                  # 13 MariaDB playbooks
+│   ├── mariadb/                  # 13 MariaDB skills
 │   ├── security/                 # ssh-harden, kernel-harden, aide-install, auditd-install, ssh-change-port
 │   ├── ufw/                      # ufw-install, ufw-status, ufw-allow-mariadb
 │   └── fail2ban/                 # fail2ban-install, fail2ban-status
 ├── types/
-│   ├── registry.go               # Registry, PlaybookInterface, PlaybookOptions
+│   ├── registry.go               # Registry, RunnableInterface, RunnableOptions
 │   ├── command.go                # Command struct with description
 │   ├── results.go                # Result, Results, Summary types
-│   └── prompt.go                 # PromptConfig, PromptResult types
+│   ├── prompt.go                 # PromptConfig, PromptResult types
+│   ├── node_config.go            # NodeConfig struct + methods
+│   ├── base_playbook.go          # BasePlaybook default implementation
+│   ├── base_skill.go             # BaseSkill default implementation
+│   └── runner_interface.go       # RunnerInterface base
 ├── internal/
-│   ├── playbooktest/             # Test helpers for playbook testing
+│   ├── skilltest/                # Test helpers for skill testing
 │   ├── sshtest/                  # Mock SSH client for testing
 │   └── README.md                 # Testing framework documentation
 └── docs/
@@ -94,8 +91,8 @@ ork/
 1. **Node**: Represents a single remote server with SSH connection settings
 2. **Group**: Collection of nodes that can be operated on together
 3. **Inventory**: Manages multiple groups for large-scale operations
-4. **Playbook**: Reusable automation task implementing PlaybookInterface
-5. **RunnerInterface**: Base interface for Node, Group, Inventory (RunCommand, RunPlaybook, etc.)
+4. **Skill**: Reusable automation task implementing RunnableInterface
+5. **RunnerInterface**: Base interface for Node, Group, Inventory (RunCommand, Run, etc.)
 6. **Dry-run mode**: Safety feature that prevents actual server modifications
 7. **Idempotency**: Check() determines if changes needed, Run() applies them
 8. **Vault**: Secure secrets management using envenc for encrypted vault files
@@ -129,10 +126,10 @@ type InventoryInterface interface {
     SetMaxConcurrency(max int) InventoryInterface
 }
 
-// PlaybookInterface (in types package) - Automation tasks
-type PlaybookInterface interface {
+// RunnableInterface (in types package) - Automation tasks
+type RunnableInterface interface {
     GetID() string
-    SetNodeConfig(cfg config.NodeConfig) PlaybookInterface
+    SetNodeConfig(cfg NodeConfig) RunnableInterface
     Check() (bool, error)
     Run() Result
     // ...
@@ -141,7 +138,9 @@ type PlaybookInterface interface {
 // RunnerInterface - Common operations
 type RunnerInterface interface {
     RunCommand(cmd string) types.Results
-    RunPlaybook(pb types.PlaybookInterface) types.Results
+    Run(runnable types.RunnableInterface) types.Results
+    RunByID(id string, opts ...types.RunnableOptions) types.Results
+    Check(runnable types.RunnableInterface) types.Results
     SetDryRunMode(dryRun bool) RunnerInterface
 }
 ```
@@ -156,21 +155,21 @@ node := ork.NewNodeForHost("server.com").
     SetKey("production.prv")
 ```
 
-### Playbook Execution
+### Skill Execution
 ```go
 // Direct instance (preferred)
-results := node.RunPlaybook(playbooks.NewAptUpdate())
+results := node.Run(skills.NewAptUpdate())
 
 // By ID (registry lookup)
-results := node.RunPlaybookByID(playbooks.IDAptUpdate)
+results := node.RunByID(skills.IDAptUpdate)
 
-// Check mode (dry-run for single playbook)
-results := node.CheckPlaybook(playbooks.NewAptUpgrade())
+// Check mode (dry-run for single skill)
+results := node.Check(skills.NewAptUpgrade())
 ```
 
 ### Result Handling
 ```go
-results := inv.RunPlaybook(playbooks.NewPing())
+results := inv.Run(skills.NewPing())
 summary := results.Summary()
 
 for host, result := range results.Results {
@@ -198,23 +197,24 @@ node.SetDryRunMode(true)
 |------|---------|
 | `node_interface.go:17-244` | NodeInterface definition with full documentation |
 | `node_implementation.go:28-435` | Node implementation, connection management |
-| `runner_interface.go:11-45` | RunnerInterface - base for all executables |
+| `types/runner_interface.go:8-41` | RunnerInterface - base for all executables |
 | `inventory_interface.go:5-29` | InventoryInterface definition |
 | `group_implementation.go:13-174` | Group implementation with dry-run propagation |
-| `types/registry.go:27-97` | PlaybookInterface, PlaybookOptions, Registry |
+| `types/registry.go:27-97` | RunnableInterface, RunnableOptions, Registry |
 | `types/command.go:13-18` | Command struct with description |
 | `types/prompt.go:1-16` | PromptConfig, PromptResult types for user input |
-| `playbook/base_playbook.go` | BasePlaybook default implementation |
-| `config/node_config.go:6-67` | NodeConfig with SSHAddr(), GetArgOr() |
+| `types/base_playbook.go:1-150` | BasePlaybook default implementation |
+| `types/base_skill.go:1-151` | BaseSkill default implementation |
+| `types/node_config.go:6-67` | NodeConfig with SSHAddr(), GetArgOr() |
 | `ssh/functions.go:39-47` | Run() with dry-run safety check |
 | `types/results.go:6-52` | Result, Results, Summary types |
 | `registry.go:37-46` | GetGlobalPlaybookRegistry, NewDefaultRegistry |
 | `vault.go:1-76` | Vault functions for secure secrets management |
 | `prompts.go:1-241` | Interactive prompt functions for user input |
-| `internal/playbooktest/helpers.go` | Test helpers for playbook testing |
+| `internal/skilltest/helpers.go` | Test helpers for skill testing |
 | `internal/sshtest/mock_client.go` | Mock SSH client for testing |
 
-## Playbook IDs (for registry lookup)
+## Skill IDs (for registry lookup)
 
 System: `ping`, `apt-update`, `apt-upgrade`, `apt-status`, `reboot`
 
@@ -233,29 +233,30 @@ MariaDB: `mariadb-install`, `mariadb-secure`, `mariadb-create-db`, `mariadb-crea
 ## Key Design Decisions
 
 1. **Interface-based design**: All major components use interfaces for testability
-2. **Dry-run at execution layer**: Safety in `ssh.Run()`, not in playbooks (though playbooks can detect)
+2. **Dry-run at execution layer**: Safety in `ssh.Run()`, not in skills (though skills can detect)
 3. **Result aggregation**: Results map keyed by hostname for multi-node operations
 4. **Concurrent inventory**: Parallel execution with configurable concurrency
 5. **Fluent API**: Method chaining for readable configuration
-6. **Playbook registry**: Global registry (types.Registry) for ID-based playbook lookup with GetGlobalPlaybookRegistry() singleton
-7. **Config propagation**: Dry-run mode propagates Inventory -> Group -> Node -> Playbook
+6. **Skill registry**: Global registry (types.Registry) for ID-based skill lookup with GetGlobalPlaybookRegistry() singleton
+7. **Config propagation**: Dry-run mode propagates Inventory -> Group -> Node -> Skill
 8. **Registry factory pattern**: NewDefaultRegistry() for isolated registries in testing
 9. **Command struct**: types.Command wraps shell commands with descriptions for better dry-run output
-10. **Internal testing framework**: playbooktest and sshtest packages for comprehensive unit testing
+10. **Internal testing framework**: skilltest and sshtest packages for comprehensive unit testing
 11. **Vault integration**: envenc-based encrypted vault files for secure secrets management with dual loading strategies (keys map or environment variables)
 12. **Prompt system**: Comprehensive user input functions with validation, confirmation, and multi-prompt support for interactive configuration
+13. **BasePlaybook vs BaseSkill**: BasePlaybook provides fluent API with optional Check(), BaseSkill provides both Check() and Run() stubs that must be implemented
 
 ## Testing Approach
 
 - **Unit tests**: Mock SSH via `internal/sshtest.MockClient` or `ssh.SetRunFunc()`
-- **Test helpers**: `internal/playbooktest` provides comprehensive test utilities
+- **Test helpers**: `internal/skilltest` provides comprehensive test utilities
 - **Integration tests**: Use testcontainers-go with real SSH containers
 - **Thread safety**: Group uses `sync.RWMutex` for dry-run mode
 - **Mock SSH**: `internal/sshtest` provides expectation-based mock client for testing without SSH servers
 
 ## Extension Points
 
-- **Custom playbooks**: Implement types.PlaybookInterface, register in registry
+- **Custom skills**: Implement types.RunnableInterface, register in registry
 - **SSH mocking**: Use `internal/sshtest.MockClient` or `ssh.SetRunFunc()` in tests
 - **Custom logger**: Implement slog.Handler, set via SetLogger()
 - **Isolated registries**: Use `NewDefaultRegistry()` for testing without global state

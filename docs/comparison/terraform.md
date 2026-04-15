@@ -96,12 +96,12 @@ for _, ip := range serverIps {
 inv.AddGroup(webGroup)
 
 // Configure all servers
-results := inv.RunPlaybook(playbooks.NewUfwInstall())
+results := inv.Run(skills.NewUfwInstall())
 summary := results.Summary()
 fmt.Printf("Configured %d servers, %d changed\n", summary.Total, summary.Changed)
 
-// Custom playbook for application deployment
-results = node.RunPlaybook(myapp.NewDeploy())
+// Custom skill for application deployment
+results = node.Run(myapp.NewDeploy())
 ```
 
 ## Execution Model
@@ -197,7 +197,7 @@ for _, host := range []string{"web1.internal", "web2.internal"} {
 inv.AddGroup(webGroup)
 
 // Configure all web servers with results
-results := inv.RunPlaybook(playbooks.NewUfwInstall())
+results := inv.Run(skills.NewUfwInstall())
 for host, result := range results.Results {
     if result.Error != nil {
         log.Printf("%s failed: %v", host, result.Error)
@@ -227,8 +227,8 @@ Terraform tracks resources in state file. Second apply = no-op.
 // First run: Installs nginx, creates user
 // Second run: Same commands, nginx already installed
 
-// Playbooks handle idempotency internally
-results := node.RunPlaybook(playbooks.NewAptInstall())
+// Skills handle idempotency internally
+results := node.Run(skills.NewAptInstall())
 result := results.Results["server.example.com"]
 if result.Changed {
     log.Println("Nginx was installed")
@@ -237,7 +237,7 @@ if result.Changed {
 }
 ```
 
-Ork playbooks check state before acting (e.g., "is nginx installed?").
+Ork skills check state before acting (e.g., "is nginx installed?").
 
 ## Complementary Usage
 
@@ -264,7 +264,7 @@ ips := getTerraformOutput("web_ips")
 
 for _, ip := range ips {
     node := ork.NewNodeForHost(ip)
-    results := node.RunPlaybook(playbooks.NewPing())
+    results := node.Run(skills.NewPing())
     result := results.Results[ip]
     if result.Error != nil {
         log.Printf("%s: %v", ip, result.Error)

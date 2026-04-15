@@ -91,13 +91,13 @@ node 'webserver01.example.com' {
 node := ork.NewNodeForHost("webserver01.example.com")
 
 // Install nginx
-results := node.RunPlaybook(playbooks.NewAptInstall())
+results := node.Run(skills.NewAptInstall())
 
 // Configure user
-userPb := playbooks.NewUserCreate()
+userPb := skills.NewUserCreate()
 userPb.SetArg("username", "deploy")
 userPb.SetArg("shell", "/bin/bash")
-results = node.RunPlaybook(userPb)
+results = node.Run(userPb)
 
 // Direct command execution
 results = node.RunCommand("sudo systemctl enable nginx")
@@ -140,11 +140,11 @@ file { '/etc/config':
 }
 ```
 
-### Ork (Playbook-level)
+### Ork (Skill-level)
 ```go
 // Check pattern via RunnerInterface
-ping := playbooks.NewPing()
-results := node.CheckPlaybook(ping)
+ping := skills.NewPing()
+results := node.Check(ping)
 result := results.Results["server.example.com"]
 
 if result.Changed {
@@ -157,10 +157,10 @@ if result.Changed {
 | Puppet | Ork |
 |--------|-----|
 | Manifest (.pp) | Go program |
-| Resource | Playbook |
+| Resource | Skill |
 | Facter | Direct configuration |
 | Catalog | No equivalent (no state) |
-| Class/Module | Package of playbooks |
+| Class/Module | Package of skills |
 | Node definition | Node instantiation |
 | Hiera (data) | Go structs / config |
 

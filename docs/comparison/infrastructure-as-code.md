@@ -52,8 +52,8 @@ webGroup.AddNode(ork.NewNodeForHost(server.PublicIp).
     SetKey("deploy.pem"))
 inv.AddGroup(webGroup)
 
-// Configure the server
-results := inv.RunPlaybook(playbooks.NewUfwInstall())
+// Configure the server with skills
+results := inv.Run(skills.NewUfwInstall())
 summary := results.Summary()
 ```
 
@@ -266,16 +266,16 @@ for _, ip := range ips {
 inv.AddGroup(webGroup)
 
 // Security hardening across all servers
-results := inv.RunPlaybook(playbooks.NewUfwInstall())
-results = inv.RunPlaybook(playbooks.NewFail2banInstall())
+results := inv.Run(skills.NewUfwInstall())
+results = inv.Run(skills.NewFail2banInstall())
 
 // Install stack
-results = inv.RunPlaybook(playbooks.NewAptUpdate())
+results = inv.Run(skills.NewAptUpdate())
 
 // Deploy application with per-node results
 deploy := myapp.NewDeploy()
 deploy.SetArg("version", "1.2.3")
-results = inv.RunPlaybook(deploy)
+results = inv.Run(deploy)
 for host, result := range results.Results {
     if result.Error != nil {
         log.Printf("%s deploy failed: %v", host, result.Error)

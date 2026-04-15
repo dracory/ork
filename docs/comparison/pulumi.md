@@ -174,10 +174,10 @@ func main() {
     
     // Configure the server with playbooks
     results := node.
-        RunPlaybook(playbooks.NewAptUpdate()).
-        RunPlaybook(playbooks.NewAptUpgrade()).
-        RunPlaybook(playbooks.NewUfwInstall()).
-        RunPlaybook(playbooks.NewNginxInstall())
+        Run(skills.NewAptUpdate()).
+        Run(skills.NewAptUpgrade()).
+        Run(skills.NewUfwInstall()).
+        Run(skills.NewNginxInstall())
     
     // Check results
     result := results.Results[serverIP]
@@ -206,7 +206,7 @@ for _, ip := range webServerIPs { // From Pulumi outputs
 inv.AddGroup(webGroup)
 
 // Configure all web servers in parallel
-results := inv.RunPlaybook(playbooks.NewNginxInstall())
+results := inv.Run(skills.NewNginxInstall())
 summary := results.Summary()
 fmt.Printf("Changed: %d, Failed: %d\n", summary.Changed, summary.Failed)
 ```
@@ -231,7 +231,7 @@ pulumi stack output serverIp
 serverIP := pulumiStack.Output("serverIp")
 
 node := ork.NewNodeForHost(serverIP)
-results := node.RunPlaybook(playbooks.NewUfwInstall())
+results := node.Run(skills.NewUfwInstall())
 ```
 
 ### Phase 3: Integration
@@ -263,20 +263,20 @@ pulumi state rm aws:ec2/instance:Instance web-server
 
 ### Ork State
 - No state file
-- Idempotency via playbooks
+- Idempotency via skills
 - Check mode to preview changes
 - Results returned after each run
 - Manual tracking if needed
 
 ```go
 // Check what would change
-results := node.CheckPlaybook(playbooks.NewUfwInstall())
+results := node.Check(skills.NewUfwInstall())
 if results.Results[host].Changed {
     fmt.Println("Changes would be made")
 }
 
 // Actually apply
-results = node.RunPlaybook(playbooks.NewUfwInstall())
+results = node.Run(skills.NewUfwInstall())
 ```
 
 ## Drift Detection
@@ -293,11 +293,11 @@ pulumi diff
 ### Ork Drift Detection
 ```go
 // Check if configuration matches desired state
-results := node.CheckPlaybook(playbooks.NewUfwInstall())
+results := node.Check(skills.NewUfwInstall())
 if results.Results[host].Changed {
     fmt.Println("Configuration has drifted")
-    // Re-apply playbook
-    node.RunPlaybook(playbooks.NewUfwInstall())
+    // Re-apply skill
+    node.Run(skills.NewUfwInstall())
 }
 ```
 
@@ -380,11 +380,11 @@ if results.Results[host].Changed {
 | Resource | Node (server) |
 | Stack | Inventory (collection of nodes) |
 | Provider | SSH connection |
-| State file | No equivalent (idempotent playbooks) |
-| `pulumi up` | `RunPlaybook()` |
-| `pulumi preview` | `CheckPlaybook()` |
+| State file | No equivalent (idempotent skills) |
+| `pulumi up` | `Run()` |
+| `pulumi preview` | `Check()` |
 | `pulumi destroy` | No equivalent (Ork doesn't destroy) |
-| `pulumi refresh` | `CheckPlaybook()` (drift detection) |
+| `pulumi refresh` | `Check()` (drift detection) |
 | `pulumi import` | No equivalent |
 | Component (multiple resources) | Group (multiple nodes) |
 | Output | Results map |

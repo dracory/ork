@@ -8,11 +8,25 @@
 | **Architecture** | Agentless (SSH) | Agentless (SSH) |
 | **Execution** | Push | Push |
 | **Inventory** | Static files (INI/YAML) | Go structs (programmatic) |
-| **Automation Unit** | Playbooks | Playbooks |
+| **Automation Unit** | Modules (built-in) + Playbooks (user-defined) | Skills (built-in) + Playbooks (user-defined) |
 | **State Model** | Procedural | Procedural |
-| **Idempotency** | Task-level | Playbook-level |
+| **Idempotency** | Module-level | Skill-level |
 | **Server Required** | No | No |
 | **Learning Curve** | Low | Low (Go knowledge) |
+
+## Key Distinction: Modules vs Skills vs Playbooks
+
+**Ansible:**
+- **Modules** = Built-in, simple operations (apt, user, service, file, etc.)
+- **Playbooks** = User-defined YAML files that compose multiple modules into workflows
+
+**Ork:**
+- **Skills** = Built-in implementations (apt, user, ping, mariadb, etc.) in the skills/ package
+- **Playbooks** = User-defined custom implementations using BasePlaybook or BaseSkill
+
+**Analogy:**
+- Ansible modules ≈ Ork skills (both are built-in, atomic operations)
+- Ansible playbooks ≈ Ork playbooks (both are user-defined compositions)
 
 ## Architecture & Execution
 
@@ -77,70 +91,98 @@ webGroup.AddNode(ork.NewNodeForHost("web1.example.com").
 webGroup.SetArg("env", "production")
 inv.AddGroup(webGroup)
 
-// Run playbook on entire inventory
-results := inv.RunPlaybook(playbooks.NewPing())
+// Run skill on entire inventory
+results := inv.Run(skills.NewPing())
 summary := results.Summary()
 fmt.Printf("Changed: %d, Failed: %d\n", summary.Changed, summary.Failed)
 ```
 
 ## Automation Units
 
-### Ansible Playbook
+### Ansible: Module (Built-in) + Playbook (Composition)
+
+**Ansible Module (built-in, atomic operation):**
 ```yaml
-- name: Configure web servers
+# Single module - atomic operation
+- name: Install nginx
+  apt:
+    name: nginx
+    state: present
+```
+
+**Ansible Playbook (composes multiple modules):**
+```yaml
+# Playbook - composes multiple modules into a workflow
+- name: Configure web server
   hosts: webservers
   become: yes
-  vars:
-    app_version: "1.2.3"
-  
+
   tasks:
     - name: Install nginx
       apt:
         name: nginx
         state: present
-    
-    - name: Start nginx service
+
+    - name: Start nginx
       service:
         name: nginx
         state: started
         enabled: yes
-    
-    - name: Deploy application
-      template:
-        src: app.conf.j2
-        dest: /etc/app/config.conf
-      notify: restart app
-  
-  handlers:
-    - name: restart app
-      service:
-        name: myapp
-        state: restarted
+
+    - name: Create deploy user
+      user:
+        name: deploy
+        shell: /bin/bash
 ```
 
-### Ork Playbook
+### Ork: Skill (Built-in) + Playbook (Custom Implementation)
+
+**Ork Skill (built-in, atomic operation):**
 ```go
-// Run a single playbook
+// Use built-in skill from skills/ package
 node := ork.NewNodeForHost("server.example.com")
-results := node.RunPlaybook(playbooks.NewPing())
+results := node.Run(skills.NewAptInstall())
+```
 
-// Get result for this specific node
-result := results.Results["server.example.com"]
-if result.Error != nil {
-    log.Fatal(result.Error)
+**Ork Custom Playbook (user-defined implementation):**
+```go
+// Create custom playbook using BasePlaybook
+type MyWebServerPlaybook struct {
+    types.BasePlaybook
 }
 
-if result.Changed {
-    log.Printf("Changes made: %s", result.Message)
+func (p *MyWebServerPlaybook) Run() types.Result {
+    node := p.GetNodeConfig()
+    host := node.SSHHost
+
+    // Compose multiple built-in skills
+    results := make(map[string]types.Result)
+
+    // Install nginx
+    nginxResult := skills.NewAptInstall().
+        SetNodeConfig(node).
+        Run()
+    results[host] = nginxResult
+
+    if nginxResult.Error != nil {
+        return types.Result{Error: nginxResult.Error}
+    }
+
+    // Start nginx
+    startResult := skills.NewServiceStart().
+        SetNodeConfig(node).
+        SetArg("service", "nginx").
+        Run()
+    results[host] = startResult
+
+    return types.Result{Results: results}
 }
 
-// Chain configuration
-node.SetPort("2222").
-    SetUser("deploy").
-    SetArg("version", "1.2.3")
-
-results = node.RunPlaybook(playbooks.NewAptUpgrade())
-result = results.Results["server.example.com"]
+// Use the custom playbook
+node := ork.NewNodeForHost("server.example.com")
+myPlaybook := &MyWebServerPlaybook{}
+myPlaybook.SetNodeConfig(node.GetNodeConfig())
+results := node.Run(myPlaybook)
 ```
 
 ## Idempotency
@@ -163,14 +205,14 @@ result = results.Results["server.example.com"]
 ```
 
 ### Ork
-- Built into playbooks via `CheckPlaybook()` method (via RunnerInterface)
+- Built into skills via `Check()` method (via RunnerInterface)
 - `Result.Changed` field indicates if change occurred
 - Works on Node, Group, and Inventory uniformly
 
 ```go
 // Check if changes needed before running
-ping := playbooks.NewPing()
-results := node.CheckPlaybook(ping)
+ping := skills.NewPing()
+results := node.Check(ping)
 
 result := results.Results["server.example.com"]
 if result.Changed {
@@ -179,7 +221,7 @@ if result.Changed {
 
 // Also works on groups and inventory
 webServers := inv.GetGroupByName("webservers")
-results = webServers.CheckPlaybook(ping)
+results = webServers.Check(ping)
 ```
 
 ## Configuration Patterns
@@ -193,7 +235,7 @@ results = webServers.CheckPlaybook(ping)
 6. Role defaults
 
 ### Variable Precedence (Ork)
-1. Playbook-level args (`SetArg()`)
+1. Skill-level args (`SetArg()`)
 2. Node-level args
 3. Group args (via `SetArg()`)
 4. Inventory-level args
@@ -217,8 +259,8 @@ results = webServers.CheckPlaybook(ping)
 | **Parallel Execution** | ✅ Yes (native) | ✅ Yes (configurable) | Ansible runs tasks in parallel by default; Ork supports configurable concurrency via SetMaxConcurrency() |
 | **Check Mode (Dry-run)** | ✅ Yes | ✅ Yes | Both support previewing changes without applying |
 | **Handlers** | ✅ Yes | ❌ No | Ansible has notify/handlers for event-driven actions |
-| **Roles** | ✅ Yes | ⚠️ Partial | Ansible has built-in roles; Ork can organize playbooks manually |
-| **Modules** | ✅ 3000+ | ⚠️ Limited | Ansible has vast module library; Ork has built-in playbooks |
+| **Roles** | ✅ Yes | ⚠️ Partial | Ansible has built-in roles; Ork can organize skills manually |
+| **Modules** | ✅ 3000+ | ⚠️ Growing | Ansible has vast module library; Ork has built-in skills (equivalent to modules) |
 | **Templates** | ✅ Jinja2 | ⚠️ Go templates | Ansible uses Jinja2; Ork uses Go's text/template |
 | **Variables** | ✅ Complex hierarchy | ✅ Args/Config | Ansible has 12-level precedence; Ork has simpler precedence |
 | **Secrets Management** | ✅ Ansible Vault | ✅ envenc vault | Ansible has built-in encryption; Ork uses envenc for encrypted vault files |
@@ -227,7 +269,7 @@ results = webServers.CheckPlaybook(ping)
 | **Windows Support** | ✅ Yes | ⚠️ Limited | Ansible has WinRM modules; Ork SSH-based (limited Windows) |
 | **Network Devices** | ✅ Yes (many vendors) | ❌ No | Ansible supports routers/switches; Ork is server-focused |
 | **Cloud Modules** | ✅ Yes (AWS, GCP, Azure) | ❌ No | Ansible can provision cloud resources; Ork only configures |
-| **Idempotency** | ✅ Task-level | ✅ Playbook-level | Ansible modules are idempotent; Ork playbooks implement idempotency |
+| **Idempotency** | ✅ Task-level | ✅ Skill-level | Ansible modules are idempotent; Ork skills implement idempotency |
 | **Conditional Execution** | ✅ when conditionals | ✅ Go if/else | Ansible uses YAML conditionals; Ork uses Go logic |
 | **Loops** | ✅ with_items, loop | ✅ Go for loops | Ansible has YAML loops; Ork uses Go iteration |
 | **Blocks** | ✅ Yes | ❌ No | Ansible can group tasks with error handling |
@@ -248,7 +290,7 @@ results = webServers.CheckPlaybook(ping)
 | **Start-at-task** | ✅ Yes | ❌ No | Ansible can resume from specific task |
 | **Step Mode** | ✅ Yes | ❌ No | Ansible can pause at each task for debugging |
 | **Diff Mode** | ✅ Yes | ❌ No | Ansible shows file changes |
-| **Check Mode Impact** | ✅ Modules support | ✅ Playbooks support | Both can preview changes |
+| **Check Mode Impact** | ✅ Modules support | ✅ Skills support | Both can preview changes |
 | **Vault ID** | ✅ Yes | ❌ No | Ansible supports multiple vaults |
 | **Collections** | ✅ Yes | ❌ No | Ansible bundles modules in collections |
 | **Inventory Plugins** | ✅ Yes | ❌ No | Ansible has dynamic inventory plugins |

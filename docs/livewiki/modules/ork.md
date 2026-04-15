@@ -4,15 +4,16 @@ page-type: module
 summary: Main ork package providing Node, Group, and Inventory interfaces for SSH-based server automation, with vault and prompts support.
 tags: [module, ork, node, group, inventory, vault, prompts]
 created: 2025-04-14
-updated: 2026-04-14
-version: 1.2.0
+updated: 2026-04-15
+version: 2.0.0
 ---
 
 # ork Package
 
 ## Changelog
+- **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, config package moved to types
 - **v1.2.0** (2026-04-14): Added vault functions for secure secrets management and prompt functions for interactive user input
-- **v1.1.0** (2026-04-14): Updated registry functions with GetGlobalPlaybookRegistry and NewDefaultRegistry
+- **v1.1.0** (2026-04-14): Updated registry functions with GetGlobalRegistry and NewDefaultRegistry
 - **v1.0.0** (2025-04-14): Initial creation
 
 The main package providing the public API for Ork. This package defines and implements `NodeInterface`, `GroupInterface`, and `InventoryInterface` for SSH-based server automation.
@@ -24,7 +25,7 @@ The `ork` package is the primary entry point for users of the framework. It prov
 - **Node management**: Single server operations via `NodeInterface`
 - **Group management**: Multi-server operations via `GroupInterface`
 - **Inventory management**: Large-scale operations via `InventoryInterface`
-- **Playbook execution**: Running automation tasks across nodes
+- **Skill execution**: Running automation tasks across nodes
 
 ## Key Files
 
@@ -40,7 +41,7 @@ The `ork` package is the primary entry point for users of the framework. It prov
 | `inventory_implementation.go` | `InventoryInterface` implementation |
 | `inventory_implementation_test.go` | Inventory tests |
 | `runner_interface.go` | `RunnerInterface` base interface |
-| `constants.go` | Playbook ID aliases |
+| `constants.go` | Skill ID aliases |
 | `registry.go` | Global registry + NewDefaultRegistry factory |
 | `vault.go` | Vault functions for secure secrets management |
 | `prompts.go` | Interactive prompt functions for user input |
@@ -60,7 +61,7 @@ type NodeInterface interface {
     GetKey() string
     GetArg(key string) string
     GetArgs() map[string]string
-    GetNodeConfig() config.NodeConfig
+    GetNodeConfig() types.NodeConfig
     
     // Configuration setters (fluent)
     SetPort(port string) NodeInterface
@@ -74,8 +75,8 @@ type NodeInterface interface {
     Close() error
     IsConnected() bool
     
-    // Deprecated: Use RunPlaybook instead
-    RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
+    // Deprecated: Use Run instead
+    RunByID(id string, opts ...types.RunnableOptions) types.Results
 }
 ```
 
@@ -89,7 +90,7 @@ func NewNodeForHost(host string) NodeInterface
 func NewNode() NodeInterface
 
 // Create from existing config
-func NewNodeFromConfig(cfg config.NodeConfig) NodeInterface
+func NewNodeFromConfig(cfg types.NodeConfig) NodeInterface
 ```
 
 ### Usage Example
@@ -104,8 +105,8 @@ node := ork.NewNodeForHost("server.example.com").
 // Run command
 results := node.RunCommand("uptime")
 
-// Run playbook
-results = node.RunPlaybook(playbooks.NewAptUpdate())
+// Run skill
+results = node.Run(skills.NewAptUpdate())
 
 // Persistent connection
 node.Connect()
@@ -149,8 +150,8 @@ group.AddNode(node2)
 // Set group arguments
 group.SetArg("env", "production")
 
-// Run playbook on all nodes
-results := group.RunPlaybook(playbooks.NewPing())
+// Run skill on all nodes
+results := group.Run(skills.NewPing())
 ```
 
 ## InventoryInterface
@@ -189,7 +190,7 @@ inv.AddGroup(dbGroup)
 inv.SetMaxConcurrency(20)
 
 // Run on all nodes
-results := inv.RunPlaybook(playbooks.NewAptUpdate())
+results := inv.Run(skills.NewAptUpdate())
 ```
 
 ## RunnerInterface
@@ -199,9 +200,9 @@ Base interface for all executable entities (Node, Group, Inventory).
 ```go
 type RunnerInterface interface {
     RunCommand(cmd string) types.Results
-    RunPlaybook(pb types.PlaybookInterface) types.Results
-    RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
-    CheckPlaybook(pb types.PlaybookInterface) types.Results
+    Run(runnable types.RunnableInterface) types.Results
+    RunByID(id string, opts ...types.RunnableOptions) types.Results
+    Check(runnable types.RunnableInterface) types.Results
     GetLogger() *slog.Logger
     SetLogger(logger *slog.Logger) RunnerInterface
     SetDryRunMode(dryRun bool) RunnerInterface
@@ -209,41 +210,41 @@ type RunnerInterface interface {
 }
 ```
 
-## Playbook Constants
+## Skill Constants
 
-Convenient aliases for playbook IDs:
+Convenient aliases for skill IDs:
 
 ```go
 const (
-    PlaybookPing              = playbooks.IDPing
-    PlaybookAptUpdate         = playbooks.IDAptUpdate
-    PlaybookAptUpgrade        = playbooks.IDAptUpgrade
-    PlaybookUserCreate        = playbooks.IDUserCreate
-    PlaybookUserDelete        = playbooks.IDUserDelete
-    PlaybookSwapCreate        = playbooks.IDSwapCreate
+    SkillPing              = skills.IDPing
+    SkillAptUpdate         = skills.IDAptUpdate
+    SkillAptUpgrade        = skills.IDAptUpgrade
+    SkillUserCreate        = skills.IDUserCreate
+    SkillUserDelete        = skills.IDUserDelete
+    SkillSwapCreate        = skills.IDSwapCreate
     // ... see constants.go for full list
 )
 ```
 
 ## Registry
 
-Global playbook registry for ID-based playbook lookup:
+Global skill registry for ID-based skill lookup:
 
 ```go
 // Get the global registry singleton (lazily initialized)
-registry, err := ork.GetGlobalPlaybookRegistry()
+registry, err := ork.GetGlobalRegistry()
 if err != nil {
     log.Fatal(err)
 }
 
-// Find playbook by ID
-pb, ok := registry.PlaybookFindByID("apt-update")
+// Find skill by ID
+skill, ok := registry.PlaybookFindByID("apt-update")
 
-// Register custom playbook
-registry.PlaybookRegister(myPlaybook)
+// Register custom skill
+registry.PlaybookRegister(mySkill)
 
 // Create empty registry for custom configuration
-emptyRegistry := ork.NewPlaybookRegistry()
+emptyRegistry := ork.NewRegistry()
 
 // Create isolated registry for testing
 isolatedRegistry, err := ork.NewDefaultRegistry()
@@ -382,10 +383,9 @@ results, err := ork.PromptMultiple(prompts)
 
 | Package | Usage |
 |---------|-------|
-| `config` | `NodeConfig` configuration |
-| `playbook` | `BasePlaybook` implementation |
+| `types` | `NodeConfig`, `RunnableInterface`, `Registry`, `BasePlaybook`, `BaseSkill`, `Command`, `Result`, `Results`, `Summary` |
+| `skills` | Built-in skill implementations |
 | `ssh` | SSH command execution |
-| `types` | `PlaybookInterface`, `Registry`, `Command`, `Result`, `Results`, `Summary` |
 | `github.com/dracory/envenc` | Vault encryption/decryption for secrets management |
 
 ## Thread Safety
@@ -406,10 +406,10 @@ results := node.RunCommand("uptime")
 
 // With arguments
 node.SetArg("username", "alice")
-results = node.RunPlaybook(playbooks.NewUserCreate())
+results = node.Run(skills.NewUserCreate())
 
 // Check mode
-results = node.CheckPlaybook(playbooks.NewAptUpgrade())
+results = node.Check(skills.NewAptUpgrade())
 ```
 
 ### Multi-Node Operations
@@ -429,7 +429,7 @@ for _, node := range nodes {
 }
 
 // Run on all
-results := group.RunPlaybook(playbooks.NewPing())
+results := group.Run(skills.NewPing())
 
 // Check summary
 summary := results.Summary()
@@ -457,13 +457,13 @@ inv.AddGroup(db)
 
 // Run across all with concurrency control
 inv.SetMaxConcurrency(10)
-results := inv.RunPlaybook(playbooks.NewAptUpdate())
+results := inv.Run(skills.NewAptUpdate())
 ```
 
 ## See Also
 
-- [config](config.md) - Configuration types
-- [playbook](playbook.md) - Playbook interface
-- [playbooks](playbooks.md) - Built-in playbooks
-- [types](types.md) - Result types
+- [types](types.md) - Configuration types, RunnableInterface, and result types
+- [skill](skill.md) - BasePlaybook and BaseSkill in types package
+- [skills](skills.md) - Built-in skill implementations
+- [API Reference](../api_reference.md) - Complete API
 - [Getting Started](../getting_started.md) - Tutorial

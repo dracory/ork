@@ -4,13 +4,17 @@ page-type: overview
 summary: High-level introduction to Ork, a Go-based SSH automation framework for server management.
 tags: [overview, introduction, getting-started]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-04-15
+version: 2.0.0
 ---
+
+## Changelog
+- **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, BasePlaybook moved to types package, NodeConfig moved to types package, config package removed, playbook package removed
+- **v1.0.0** (2025-04-14): Initial creation
 
 # Ork Overview
 
-Ork is a **Go package for SSH-based server automation**. Think of it like Ansible, but written in Go. You define **Nodes** (remote servers), organize them into **Groups**, and run commands or playbooks against them individually or at scale via **Inventory**.
+Ork is a **Go package for SSH-based server automation**. Think of it like Ansible, but written in Go. You define **Nodes** (remote servers), organize them into **Groups**, and run commands or skills against them individually or at scale via **Inventory**.
 
 ## What is Ork?
 
@@ -25,7 +29,7 @@ Ork provides a simple, type-safe API for managing remote Linux servers over SSH.
 | **Idempotent** | All operations are idempotent - safe to run multiple times |
 | **Concurrent** | Inventory operations run concurrently across nodes |
 | **Dry-Run Mode** | Preview changes without executing them on servers |
-| **Playbook System** | Pre-built automation tasks for common operations |
+| **Skill System** | Pre-built automation tasks for common operations |
 | **Fluent API** | Chain methods for readable configuration |
 
 ## Architecture Overview
@@ -40,8 +44,8 @@ graph TD
     D --> C
     E --> D
     F --> G[Remote Server]
-    C --> H[types.PlaybookInterface]
-    H --> I[playbooks Package]
+    C --> H[types.RunnableInterface]
+    H --> I[skills Package]
 ```
 
 ## Core Concepts
@@ -76,24 +80,24 @@ An `Inventory` manages multiple groups for large-scale operations:
 inv := ork.NewInventory()
 inv.AddGroup(webGroup)
 inv.AddGroup(dbGroup)
-results := inv.RunPlaybook(playbooks.NewAptUpdate())
+results := inv.Run(skills.NewAptUpdate())
 ```
 
-### 4. Playbooks
+### 4. Skills
 
-Playbooks are reusable automation tasks:
+Skills are reusable automation tasks:
 
 ```go
-// Run a built-in playbook
-results := node.RunPlaybook(playbooks.NewAptUpdate())
+// Run a built-in skill
+results := node.Run(skills.NewPing())
 
 // Run by ID (registry lookup)
-results := node.RunPlaybookByID(playbooks.IDPing)
+results := node.RunByID(skills.IDPing)
 ```
 
-## Built-in Playbooks
+## Built-in Skills
 
-| Category | Playbooks |
+| Category | Skills |
 |----------|-----------|
 | **System** | ping, reboot, apt-update, apt-upgrade, apt-status |
 | **Users** | user-create, user-delete, user-status |
@@ -111,7 +115,7 @@ package main
 import (
     "log"
     "github.com/dracory/ork"
-    "github.com/dracory/ork/playbooks"
+    "github.com/dracory/ork/skills"
 )
 
 func main() {
@@ -121,17 +125,17 @@ func main() {
         SetUser("deploy")
     
     // Check connectivity
-    results := node.RunPlaybook(playbooks.NewPing())
+    results := node.Run(skills.NewPing())
     if results.Results["server.example.com"].Error != nil {
         log.Fatal("Connection failed")
     }
     
     // Update packages
-    results = node.RunPlaybook(playbooks.NewAptUpdate())
+    results = node.Run(skills.NewAptUpdate())
     
     // Create a user
     node.SetArg("username", "alice")
-    results = node.RunPlaybook(playbooks.NewUserCreate())
+    results = node.Run(skills.NewUserCreate())
     
     log.Println(results.Results["server.example.com"].Message)
 }

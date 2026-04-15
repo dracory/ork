@@ -147,13 +147,13 @@ create_user:
 // Explicit steps in Go
 node := ork.NewNodeForHost("server.example.com")
 
-// Run playbooks
-results := node.RunPlaybook(playbooks.NewAptUpdate())
-results = node.RunPlaybook(playbooks.NewAptUpgrade())
+// Run skills
+results := node.Run(skills.NewAptUpdate())
+results = node.Run(skills.NewAptUpgrade())
 
 // Custom logic in Go
 if node.GetHost() == "production" {
-    results = node.RunPlaybook(playbooks.NewFail2banInstall())
+    results = node.Run(skills.NewFail2banInstall())
 }
 ```
 
@@ -194,7 +194,7 @@ update_db:
 ```go
 // One node at a time
 node := ork.NewNodeForHost("server.example.com")
-results := node.RunPlaybook(playbooks.NewPing())
+results := node.Run(skills.NewPing())
 result := results.Results["server.example.com"]
 
 // Inventory executes across all nodes
@@ -202,7 +202,7 @@ inv := ork.NewInventory()
 webGroup := ork.NewGroup("webservers")
 webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 inv.AddGroup(webGroup)
-results = inv.RunPlaybook(playbooks.NewPing())  // Runs on all nodes
+results = inv.Run(skills.NewPing())  // Runs on all nodes
 ```
 
 ## Targeting / Inventory
@@ -229,14 +229,14 @@ salt -C 'G@os:Ubuntu and web* or db*' state.apply
 ```go
 // By host (single node)
 node := ork.NewNodeForHost("server.example.com")
-results := node.RunPlaybook(playbooks.NewPing())
+results := node.Run(skills.NewPing())
 
 // By group
 inv := ork.NewInventory()
 webGroup := ork.NewGroup("webservers")
 webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 inv.AddGroup(webGroup)
-results = inv.GetGroupByName("webservers").RunPlaybook(playbooks.NewPing())
+results = inv.GetGroupByName("webservers").Run(skills.NewPing())
 
 // Access per-node results
 for host, result := range results.Results {

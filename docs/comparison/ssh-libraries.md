@@ -8,7 +8,7 @@ Comparison with lightweight SSH-based tools for task execution and deployment.
 
 | Tool | Language | Level | Primary Use | Architecture |
 |------|----------|-------|-------------|--------------|
-| **Ork** | Go | High | Server automation, playbooks | Library + patterns |
+| **Ork** | Go | High | Server automation, skills | Library + patterns |
 | **Fabric** | Python | Medium | SSH task execution | Library |
 | **Paramiko** | Python | Low | SSH protocol implementation | Library |
 | **Capistrano** | Ruby | High | Application deployment | Framework |
@@ -59,9 +59,9 @@ fab -H user@host -i /path/to/key.pem diskspace
 | Aspect | Fabric | Ork |
 |--------|--------|-----|
 | **Language** | ✅ Python | ✅ Go |
-| **Level** | ⚠️ Command execution | ✅ Higher-level playbooks |
+| **Level** | ⚠️ Command execution | ✅ Higher-level skills |
 | **SSH Handling** | ✅ Built-in (Invoke+Paramiko) | ✅ Built-in (custom) |
-| **Idempotency** | ❌ Manual | ✅ Built into playbooks |
+| **Idempotency** | ❌ Manual | ✅ Built into skills |
 | **Type Safety** | ❌ No | ✅ Yes (Go) |
 | **Parallel** | ⚠️ Limited | ✅ Inventory (configurable concurrency) |
 | **Library/CLI** | ✅ Both CLI and library | ✅ Library |
@@ -140,7 +140,7 @@ client.close()
 | **Protocol** | ✅ SSH protocol implementation | ⚠️ Uses SSH library |
 | **Use Case** | ⚠️ Building SSH tools | ✅ End-user automation |
 | **Connection** | ❌ Manual management | ✅ Managed (persistent option) |
-| **Abstractions** | ❌ None | ✅ Nodes, Playbooks, Results |
+| **Abstractions** | ❌ None | ✅ Nodes, Skills, Results |
 
 ### Paramiko SFTP Example
 ```python
@@ -163,11 +163,11 @@ node := ork.NewNodeForHost("server.example.com")
 results := node.RunCommand("cat /remote/file.txt")
 result := results.Results["server.example.com"]
 
-// Or use playbooks for file operations
-filePb := playbooks.NewFileDeploy()
+// Or use skills for file operations
+filePb := skills.NewFileDeploy()
 filePb.SetArg("source", "/local/file.txt")
 filePb.SetArg("destination", "/remote/file.txt")
-results = node.RunPlaybook(filePb)
+results = node.Run(filePb)
 ```
 
 ---
@@ -358,7 +358,7 @@ results, _ := ork.PromptMultiple(prompts)
 | **Build SSH tool** | Paramiko |
 | **Rails deployment** | Capistrano |
 | **Go application automation** | Ork |
-| **Server hardening** | Ork (playbooks) |
+| **Server hardening** | Ork (skills) |
 | **Custom deployment workflow** | Fabric, Ork |
 | **Multi-server orchestration** | Ork (Inventory), Fabric |
 
@@ -391,7 +391,7 @@ results, _ := ork.PromptMultiple(prompts)
 - Go shop
 - Need type safety and compile-time checking
 - Building automation into applications
-- Want playbook-based reusable automation
+- Want skill-based reusable automation
 - Cross-platform server configuration
 - Embedding in larger Go projects
 
@@ -476,7 +476,7 @@ for _, host := range hosts {
 | Rails deployment | Capistrano |
 | Go server automation | Ork |
 | Type safety + compile-time checks | Ork |
-| Reusable playbooks | Ork |
+| Reusable skills | Ork |
 | Secure secrets management (vault) | Ork |
 | Interactive user input (prompts) | Ork |
 | Simple, no dependencies | Fabric (Python) or Ork (Go binary) |

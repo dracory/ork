@@ -98,12 +98,12 @@ Compare to Ork's procedural approach:
 node := ork.NewNodeForHost("server.example.com")
 
 // Check via RunnerInterface, then act
-nginxInstall := playbooks.NewAptInstall()
-results := node.CheckPlaybook(nginxInstall)
+nginxInstall := skills.NewAptInstall()
+results := node.Check(nginxInstall)
 result := results.Results["server.example.com"]
 
 if result.Changed {
-    results = node.RunPlaybook(nginxInstall)
+    results = node.Run(nginxInstall)
 }
 
 // Direct command execution
@@ -141,9 +141,9 @@ bundle agent manage_user {
 node := ork.NewNodeForHost("server.example.com")
 
 if shouldCreateUser {
-    userPb := playbooks.NewUserCreate()
+    userPb := skills.NewUserCreate()
     userPb.SetArg("username", "deploy")
-    results := node.RunPlaybook(userPb)
+    results := node.Run(userPb)
     result := results.Results["server.example.com"]
 
     if result.Error != nil {
@@ -211,7 +211,7 @@ Agent Check Cycle (~5 seconds):
 node := ork.NewNodeForHost("server.example.com")
 
 // SSH handshake + authentication
-result := node.RunPlaybook(playbooks.NewPing())
+result := node.Run(skills.NewPing())
 
 // New command = reuse connection or new handshake
 output, _ := node.RunCommand("uptime")
@@ -252,8 +252,8 @@ body common control {
 ```go
 // Policies embedded in Go code
 func configureServer(node ork.NodeInterface) {
-    node.RunPlaybook(playbooks.NewAptUpdate())
-    node.RunPlaybook(playbooks.NewFail2banInstall())
+    node.Run(skills.NewAptUpdate())
+    node.Run(skills.NewFail2banInstall())
 }
 
 // Or load from external source
@@ -322,7 +322,7 @@ bundle agent inventory {
 | **Resource Usage** | ✅ Extremely lightweight (~1MB) | ⚠️ Connection-based | CFEngine minimal overhead; Ork uses SSH connections |
 | **Speed** | ✅ Very fast (C code) | ⚠️ Standard SSH speed | CFEngine local execution; Ork network latency |
 | **State Model** | ✅ Declarative (Promise Theory) | ✅ Procedural | CFEngine promises; Ork explicit execution |
-| **Idempotency** | ✅ Built-in (promises) | ✅ Playbook-level | Both support idempotent operations |
+| **Idempotency** | ✅ Built-in (promises) | ✅ Skill-level | Both support idempotent operations |
 | **Secrets Management** | ❌ Manual | ✅ envenc vault | Ork has built-in vault support |
 | **Configuration Distribution** | ✅ Policy Hub / Git | ⚠️ Go code / external | CFEngine has distribution system; Ork uses Go |
 | **Scalability** | ✅ 10,000+ nodes | ⚠️ Smaller scale | CFEngine proven at massive scale |
