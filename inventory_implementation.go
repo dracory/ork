@@ -157,8 +157,8 @@ func (i *inventoryImplementation) RunCommand(cmd string) types.Results {
 	return results
 }
 
-// RunPlaybook executes a playbook across all nodes.
-func (i *inventoryImplementation) RunPlaybook(pb types.PlaybookInterface) types.Results {
+// RunSkill executes a skill across all nodes.
+func (i *inventoryImplementation) RunSkill(skill types.SkillInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -185,7 +185,7 @@ func (i *inventoryImplementation) RunPlaybook(pb types.PlaybookInterface) types.
 			defer func() {
 				if r := recover(); r != nil {
 					// Log panic and record failure in results
-					i.GetLogger().Error("panic in RunPlaybook goroutine", "error", r)
+					i.GetLogger().Error("panic in RunSkill goroutine", "error", r)
 					i.mu.Lock()
 					results.Results[n.GetHost()] = types.Result{
 						Changed: false,
@@ -200,7 +200,7 @@ func (i *inventoryImplementation) RunPlaybook(pb types.PlaybookInterface) types.
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			nodeResults := n.RunPlaybook(pb)
+			nodeResults := n.RunSkill(skill)
 
 			// Protect results map with mutex
 			i.mu.Lock()
@@ -213,8 +213,8 @@ func (i *inventoryImplementation) RunPlaybook(pb types.PlaybookInterface) types.
 	return results
 }
 
-// RunPlaybookByID executes a playbook by ID across all nodes.
-func (i *inventoryImplementation) RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results {
+// RunSkillByID executes a skill by ID across all nodes.
+func (i *inventoryImplementation) RunSkillByID(id string, opts ...types.SkillOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -241,7 +241,7 @@ func (i *inventoryImplementation) RunPlaybookByID(id string, opts ...types.Playb
 			defer func() {
 				if r := recover(); r != nil {
 					// Log panic and record failure in results
-					i.GetLogger().Error("panic in RunPlaybookByID goroutine", "error", r)
+					i.GetLogger().Error("panic in RunSkillByID goroutine", "error", r)
 					i.mu.Lock()
 					results.Results[n.GetHost()] = types.Result{
 						Changed: false,
@@ -256,7 +256,7 @@ func (i *inventoryImplementation) RunPlaybookByID(id string, opts ...types.Playb
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			nodeResults := n.RunPlaybookByID(id, opts...)
+			nodeResults := n.RunSkillByID(id, opts...)
 
 			// Protect results map with mutex
 			i.mu.Lock()
@@ -269,8 +269,8 @@ func (i *inventoryImplementation) RunPlaybookByID(id string, opts ...types.Playb
 	return results
 }
 
-// CheckPlaybook runs the playbook's check mode across all nodes.
-func (i *inventoryImplementation) CheckPlaybook(pb types.PlaybookInterface) types.Results {
+// CheckSkill runs the skill's check mode across all nodes.
+func (i *inventoryImplementation) CheckSkill(skill types.SkillInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -297,7 +297,7 @@ func (i *inventoryImplementation) CheckPlaybook(pb types.PlaybookInterface) type
 			defer func() {
 				if r := recover(); r != nil {
 					// Log panic and record failure in results
-					i.GetLogger().Error("panic in CheckPlaybook goroutine", "error", r)
+					i.GetLogger().Error("panic in CheckSkill goroutine", "error", r)
 					i.mu.Lock()
 					results.Results[n.GetHost()] = types.Result{
 						Changed: false,
@@ -312,7 +312,7 @@ func (i *inventoryImplementation) CheckPlaybook(pb types.PlaybookInterface) type
 			sem <- struct{}{}
 			defer func() { <-sem }()
 
-			nodeResults := n.CheckPlaybook(pb)
+			nodeResults := n.CheckSkill(skill)
 
 			// Protect results map with mutex
 			i.mu.Lock()

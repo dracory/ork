@@ -1,49 +1,49 @@
 package ork
 
-import "github.com/dracory/ork/playbooks"
+import "github.com/dracory/ork/skills"
 
-// Playbook ID constants for use with RunPlaybook.
-// These constants provide compile-time safety and IDE autocomplete for playbook IDs.
-// They are aliases to the constants in the playbooks package.
+// Skill ID constants for use with RunSkill.
+// These constants provide compile-time safety and IDE autocomplete for skill IDs.
+// They are aliases to the constants in the skills package.
 //
 // Example:
 //
 //	node := ork.NewNodeForHost("server.example.com")
-//	err := node.RunPlaybook(ork.PlaybookPing)
+//	err := node.RunSkill(ork.SkillPing)
 const (
-	// PlaybookPing checks SSH connectivity
-	PlaybookPing = playbooks.IDPing
+	// SkillPing checks SSH connectivity
+	SkillPing = skills.IDPing
 
-	// PlaybookAptUpdate refreshes the package database
-	PlaybookAptUpdate = playbooks.IDAptUpdate
+	// SkillAptUpdate refreshes the package database
+	SkillAptUpdate = skills.IDAptUpdate
 
-	// PlaybookAptUpgrade installs available updates
-	PlaybookAptUpgrade = playbooks.IDAptUpgrade
+	// SkillAptUpgrade installs available updates
+	SkillAptUpgrade = skills.IDAptUpgrade
 
-	// PlaybookAptStatus shows available updates
-	PlaybookAptStatus = playbooks.IDAptStatus
+	// SkillAptStatus shows available updates
+	SkillAptStatus = skills.IDAptStatus
 
-	// PlaybookReboot reboots the server
-	PlaybookReboot = playbooks.IDReboot
+	// SkillReboot reboots the server
+	SkillReboot = skills.IDReboot
 
-	// PlaybookSwapCreate creates a swap file (requires "size" arg in GB)
-	PlaybookSwapCreate = playbooks.IDSwapCreate
+	// SkillSwapCreate creates a swap file (requires "size" arg in GB)
+	SkillSwapCreate = skills.IDSwapCreate
 
-	// PlaybookSwapDelete removes the swap file
-	PlaybookSwapDelete = playbooks.IDSwapDelete
+	// SkillSwapDelete removes the swap file
+	SkillSwapDelete = skills.IDSwapDelete
 
-	// PlaybookSwapStatus shows swap status
-	PlaybookSwapStatus = playbooks.IDSwapStatus
+	// SkillSwapStatus shows swap status
+	SkillSwapStatus = skills.IDSwapStatus
 
-	// PlaybookUserCreate creates a user with sudo (requires "username" arg)
-	PlaybookUserCreate = playbooks.IDUserCreate
+	// SkillUserCreate creates a user with sudo (requires "username" arg)
+	SkillUserCreate = skills.IDUserCreate
 
-	// PlaybookUserDelete deletes a user (requires "username" arg)
-	PlaybookUserDelete = playbooks.IDUserDelete
+	// SkillUserDelete deletes a user (requires "username" arg)
+	SkillUserDelete = skills.IDUserDelete
 
-	// PlaybookUserList lists all non-system users
-	PlaybookUserList = playbooks.IDUserList
+	// SkillUserList lists all non-system users
+	SkillUserList = skills.IDUserList
 
-	// PlaybookUserStatus shows user info (requires "username" arg)
-	PlaybookUserStatus = playbooks.IDUserStatus
+	// SkillUserStatus shows user info (requires "username" arg)
+	SkillUserStatus = skills.IDUserStatus
 )

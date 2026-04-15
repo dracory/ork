@@ -1,6 +1,6 @@
 # Ork
 
-Ork is a Go package for SSH-based server automation. Think of it like Ansible, but in Go - you define **Nodes** (remote servers), organize them into **Groups**, and run commands or playbooks against them individually or at scale via **Inventory**.
+Ork is a Go package for SSH-based server automation. Think of it like Ansible, but in Go - you define **Nodes** (remote servers), organize them into **Groups**, and run commands or skills against them individually or at scale via **Inventory**.
 
 ## Installation
 
@@ -179,19 +179,19 @@ output1 := results1.Results["server.example.com"].Message
 output2 := results2.Results["server.example.com"].Message
 ```
 
-## Playbooks
+## Skills
 
-Run pre-built automation tasks (playbooks) against a node:
+Run pre-built automation tasks (skills) against a node:
 
 ```go
 node := ork.NewNodeForHost("server.example.com").
     SetArg("username", "alice").
     SetArg("shell", "/bin/bash")
 
-results := node.RunPlaybook(playbooks.NewUserCreate())
+results := node.RunSkill(skills.NewUserCreate())
 result := results.Results["server.example.com"]
 if result.Error != nil {
-    log.Fatalf("Playbook failed: %v", result.Error)
+    log.Fatalf("Skill failed: %v", result.Error)
 }
 if result.Changed {
     log.Printf("User created: %s", result.Message)
@@ -200,44 +200,44 @@ if result.Changed {
 }
 ```
 
-### Available Playbooks
+### Available Skills
 
-| `ork` Package | `playbook` Package | String | Args | Description |
-|---------------|-------------------|--------|------|-------------|
-| `PlaybookPing` | `IDPing` | `ping` | - | Check SSH connectivity |
-| `PlaybookAptUpdate` | `IDAptUpdate` | `apt-update` | - | Refresh package database |
-| `PlaybookAptUpgrade` | `IDAptUpgrade` | `apt-upgrade` | - | Install available updates |
-| `PlaybookAptStatus` | `IDAptStatus` | `apt-status` | - | Show available updates |
-| `PlaybookReboot` | `IDReboot` | `reboot` | - | Reboot server |
-| `PlaybookSwapCreate` | `IDSwapCreate` | `swap-create` | `size` (GB) | Create swap file |
-| `PlaybookSwapDelete` | `IDSwapDelete` | `swap-delete` | - | Remove swap file |
-| `PlaybookSwapStatus` | `IDSwapStatus` | `swap-status` | - | Show swap status |
-| `PlaybookUserCreate` | `IDUserCreate` | `user-create` | `username` | Create user with sudo |
-| `PlaybookUserDelete` | `IDUserDelete` | `user-delete` | `username` | Delete user |
-| `PlaybookUserStatus` | `IDUserStatus` | `user-status` | `username` (opt) | Show user info |
-| `PlaybookFail2banInstall` | `IDFail2banInstall` | `fail2ban-install` | - | Install and configure fail2ban |
-| `PlaybookFail2banStatus` | `IDFail2banStatus` | `fail2ban-status` | - | Show fail2ban status |
-| `PlaybookUfwInstall` | `IDUfwInstall` | `ufw-install` | - | Install UFW firewall |
-| `PlaybookUfwStatus` | `IDUfwStatus` | `ufw-status` | - | Show UFW status |
-| `PlaybookUfwAllowMariadb` | `IDUfwAllowMariadb` | `ufw-allow-mariadb` | - | Allow MariaDB through UFW |
-| `PlaybookMariadbInstall` | `IDMariadbInstall` | `mariadb-install` | - | Install MariaDB server |
-| `PlaybookMariadbStatus` | `IDMariadbStatus` | `mariadb-status` | - | Show MariaDB status |
-| `PlaybookMariadbSecure` | `IDMariadbSecure` | `mariadb-secure` | - | Secure MariaDB installation |
-| `PlaybookMariadbBackup` | `IDMariadbBackup` | `mariadb-backup` | `database` (opt) | Backup database |
-| `PlaybookMariadbBackupEncrypt` | `IDMariadbBackupEncrypt` | `mariadb-backup-encrypt` | - | Encrypted backup |
-| `PlaybookMariadbChangePort` | `IDMariadbChangePort` | `mariadb-change-port` | `port` | Change MariaDB port |
-| `PlaybookMariadbCreateDB` | `IDMariadbCreateDB` | `mariadb-create-db` | `database` | Create database |
-| `PlaybookMariadbCreateUser` | `IDMariadbCreateUser` | `mariadb-create-user` | `username`, `password` | Create DB user |
-| `PlaybookMariadbEnableEncryption` | `IDMariadbEnableEncryption` | `mariadb-enable-encryption` | - | Enable encryption at rest |
-| `PlaybookMariadbEnableSSL` | `IDMariadbEnableSSL` | `mariadb-enable-ssl` | - | Enable SSL connections |
-| `PlaybookMariadbListDBs` | `IDMariadbListDBs` | `mariadb-list-dbs` | - | List databases |
-| `PlaybookMariadbListUsers` | `IDMariadbListUsers` | `mariadb-list-users` | - | List DB users |
-| `PlaybookMariadbSecurityAudit` | `IDMariadbSecurityAudit` | `mariadb-security-audit` | - | Run security audit |
-| `PlaybookSecurityAideInstall` | `IDSecurityAideInstall` | `security-aide-install` | - | Install AIDE IDS |
-| `PlaybookSecurityAuditdInstall` | `IDSecurityAuditdInstall` | `security-auditd-install` | - | Install audit daemon |
-| `PlaybookSecurityKernelHarden` | `IDSecurityKernelHarden` | `security-kernel-harden` | - | Apply kernel hardening |
-| `PlaybookSecuritySSHChangePort` | `IDSecuritySSHChangePort` | `security-ssh-change-port` | `port` | Change SSH port |
-| `PlaybookSecuritySSHHarden` | `IDSecuritySSHHarden` | `security-ssh-harden` | - | Harden SSH config |
+| `ork` Package | `skill` Package | String | Args | Description |
+|---------------|----------------|--------|------|-------------|
+| `SkillPing` | `IDPing` | `ping` | - | Check SSH connectivity |
+| `SkillAptUpdate` | `IDAptUpdate` | `apt-update` | - | Refresh package database |
+| `SkillAptUpgrade` | `IDAptUpgrade` | `apt-upgrade` | - | Install available updates |
+| `SkillAptStatus` | `IDAptStatus` | `apt-status` | - | Show available updates |
+| `SkillReboot` | `IDReboot` | `reboot` | - | Reboot server |
+| `SkillSwapCreate` | `IDSwapCreate` | `swap-create` | `size` (GB) | Create swap file |
+| `SkillSwapDelete` | `IDSwapDelete` | `swap-delete` | - | Remove swap file |
+| `SkillSwapStatus` | `IDSwapStatus` | `swap-status` | - | Show swap status |
+| `SkillUserCreate` | `IDUserCreate` | `user-create` | `username` | Create user with sudo |
+| `SkillUserDelete` | `IDUserDelete` | `user-delete` | `username` | Delete user |
+| `SkillUserStatus` | `IDUserStatus` | `user-status` | `username` (opt) | Show user info |
+| `SkillFail2banInstall` | `IDFail2banInstall` | `fail2ban-install` | - | Install and configure fail2ban |
+| `SkillFail2banStatus` | `IDFail2banStatus` | `fail2ban-status` | - | Show fail2ban status |
+| `SkillUfwInstall` | `IDUfwInstall` | `ufw-install` | - | Install UFW firewall |
+| `SkillUfwStatus` | `IDUfwStatus` | `ufw-status` | - | Show UFW status |
+| `SkillUfwAllowMariadb` | `IDUfwAllowMariadb` | `ufw-allow-mariadb` | - | Allow MariaDB through UFW |
+| `SkillMariadbInstall` | `IDMariadbInstall` | `mariadb-install` | - | Install MariaDB server |
+| `SkillMariadbStatus` | `IDMariadbStatus` | `mariadb-status` | - | Show MariaDB status |
+| `SkillMariadbSecure` | `IDMariadbSecure` | `mariadb-secure` | - | Secure MariaDB installation |
+| `SkillMariadbBackup` | `IDMariadbBackup` | `mariadb-backup` | `database` (opt) | Backup database |
+| `SkillMariadbBackupEncrypt` | `IDMariadbBackupEncrypt` | `mariadb-backup-encrypt` | - | Encrypted backup |
+| `SkillMariadbChangePort` | `IDMariadbChangePort` | `mariadb-change-port` | `port` | Change MariaDB port |
+| `SkillMariadbCreateDB` | `IDMariadbCreateDB` | `mariadb-create-db` | `database` | Create database |
+| `SkillMariadbCreateUser` | `IDMariadbCreateUser` | `mariadb-create-user` | `username`, `password` | Create DB user |
+| `SkillMariadbEnableEncryption` | `IDMariadbEnableEncryption` | `mariadb-enable-encryption` | - | Enable encryption at rest |
+| `SkillMariadbEnableSSL` | `IDMariadbEnableSSL` | `mariadb-enable-ssl` | - | Enable SSL connections |
+| `SkillMariadbListDBs` | `IDMariadbListDBs` | `mariadb-list-dbs` | - | List databases |
+| `SkillMariadbListUsers` | `IDMariadbListUsers` | `mariadb-list-users` | - | List DB users |
+| `SkillMariadbSecurityAudit` | `IDMariadbSecurityAudit` | `mariadb-security-audit` | - | Run security audit |
+| `SkillSecurityAideInstall` | `IDSecurityAideInstall` | `security-aide-install` | - | Install AIDE IDS |
+| `SkillSecurityAuditdInstall` | `IDSecurityAuditdInstall` | `security-auditd-install` | - | Install audit daemon |
+| `SkillSecurityKernelHarden` | `IDSecurityKernelHarden` | `security-kernel-harden` | - | Apply kernel hardening |
+| `SkillSecuritySSHChangePort` | `IDSecuritySSHChangePort` | `security-ssh-change-port` | `port` | Change SSH port |
+| `SkillSecuritySSHHarden` | `IDSecuritySSHHarden` | `security-ssh-harden` | - | Harden SSH config |
 
 ## Inventory (Multi-Node Operations)
 
@@ -254,8 +254,8 @@ webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
 webGroup.SetArg("env", "production")
 inv.AddGroup(webGroup)
 
-// Run playbook on entire inventory
-results := inv.RunPlaybook(playbooks.NewPing())
+// Run skill on entire inventory
+results := inv.RunSkill(skills.NewPing())
 
 // Check summary
 summary := results.Summary()
@@ -272,17 +272,17 @@ for host, result := range results.Results {
 
 ## Idempotency
 
-All playbooks support idempotent execution. Use `CheckPlaybook()` to preview changes:
+All skills support idempotent execution. Use `CheckSkill()` to preview changes:
 
 ```go
 // Check if changes would be made (dry-run)
-results := node.CheckPlaybook(playbooks.NewAptUpgrade())
+results := node.CheckSkill(skills.NewAptUpgrade())
 result := results.Results["server.example.com"]
 
 if result.Changed {
     log.Printf("Would upgrade packages: %s", result.Message)
     // Now actually run it
-    results = node.RunPlaybook(playbooks.NewAptUpgrade())
+    results = node.RunSkill(skills.NewAptUpgrade())
 }
 ```
 
@@ -312,23 +312,23 @@ type Summary struct {
 }
 ```
 
-### Direct Playbook Access (Advanced)
+### Direct Skill Access (Advanced)
 
-For programmatic playbook handling, use the `playbook` package directly:
+For programmatic skill handling, use the `skill` package directly:
 
 ```go
 import (
-    "github.com/dracory/ork/playbook"
-    "github.com/dracory/ork/playbooks"
+    "github.com/dracory/ork/skill"
+    "github.com/dracory/ork/skills"
 )
 
 // Execute directly with config
-aptUpgrade := playbooks.NewAptUpgrade()
+aptUpgrade := skills.NewAptUpgrade()
 aptUpgrade.SetConfig(cfg)
 result := aptUpgrade.Run()
 
-// Or check before running via CheckPlaybook
-results := node.CheckPlaybook(playbooks.NewSwapCreate())
+// Or check before running via CheckSkill
+results := node.CheckSkill(skills.NewSwapCreate())
 result := results.Results["server.example.com"]
 if !result.Changed {
     log.Println("Swap already exists, skipping...")
@@ -346,7 +346,7 @@ Preview what changes would be made without actually executing commands on the se
 // At node level
 node := ork.NewNodeForHost("server.example.com").
     SetDryRunMode(true)
-results := node.RunPlaybook(playbooks.NewAptUpgrade())
+results := node.RunSkill(skills.NewAptUpgrade())
 // Commands are logged but not executed
 
 // At group level
@@ -370,14 +370,14 @@ results := inv.RunCommand("uptime")
 2. **Automatic propagation**: Dry-run mode propagates from Inventory → Groups → Nodes at execution time
 3. **Thread-safe**: Uses mutex protection for concurrent access to dry-run state
 
-### Detecting Dry-Run in Playbooks
+### Detecting Dry-Run in Skills
 
 ```go
-func (p *MyPlaybook) Run() playbook.Result {
-    output, _ := ssh.Run(p.cfg, "apt-get upgrade -y")
+func (s *MySkill) Run() skill.Result {
+    output, _ := ssh.Run(s.cfg, "apt-get upgrade -y")
 
     if output == "[dry-run]" {
-        return playbook.Result{
+        return skill.Result{
             Changed: true,
             Message: "Would run: apt-get upgrade -y",
         }
@@ -386,7 +386,7 @@ func (p *MyPlaybook) Run() playbook.Result {
 }
 ```
 
-**Note:** Even if a playbook doesn't check for the `[dry-run]` marker, **safety is guaranteed** - no commands execute on the server when dry-run mode is enabled.
+**Note:** Even if a skill doesn't check for the `[dry-run]` marker, **safety is guaranteed** - no commands execute on the server when dry-run mode is enabled.
 
 ## Advanced Usage
 
@@ -405,62 +405,62 @@ fmt.Printf("User: %s\n", node.GetUser())
 cfg := node.GetNodeConfig()
 ```
 
-### Custom Playbooks
+### Custom Skills
 
-Extend Ork with custom automation tasks by implementing the `Playbook` interface:
+Extend Ork with custom automation tasks by implementing the `Skill` interface:
 
-#### Registering Custom Playbooks
+#### Registering Custom Skills
 
-Register your custom playbooks to use them via `node.RunPlaybookByID("custom-id")`:
+Register your custom skills to use them via `node.RunSkillByID("custom-id")`:
 
 ```go
 import (
     "github.com/dracory/ork"
-    "github.com/dracory/ork/playbook"
+    "github.com/dracory/ork/skill"
 )
 
-// Create a custom playbook
-customPb := playbook.NewBasePlaybook()
-customPb.SetID("install-docker")
-customPb.SetDescription("Install Docker on the server")
+// Create a custom skill
+customSkill := skill.NewBaseSkill()
+customSkill.SetID("install-docker")
+customSkill.SetDescription("Install Docker on the server")
 
 // Register it globally
-registry, err := ork.GetGlobalPlaybookRegistry()
+registry, err := ork.GetGlobalSkillRegistry()
 if err != nil {
     log.Fatalf("Failed to get registry: %v", err)
 }
-if err := registry.PlaybookRegister(customPb); err != nil {
-    log.Fatalf("Failed to register playbook: %v", err)
+if err := registry.SkillRegister(customSkill); err != nil {
+    log.Fatalf("Failed to register skill: %v", err)
 }
 
-// Now use it like any built-in playbook
+// Now use it like any built-in skill
 node := ork.NewNodeForHost("server.example.com")
-result := node.RunPlaybookByID("install-docker")
+result := node.RunSkillByID("install-docker")
 ```
 
-### Custom Playbooks with Full Idempotency
+### Custom Skills with Full Idempotency
 
 For full idempotency support, implement all methods:
 
 ```go
-type MyCustomPlaybook struct{}
+type MyCustomSkill struct{}
 
-func (p *MyCustomPlaybook) GetID() string { return "my-task" }
-func (p *MyCustomPlaybook) Description() string { return "Does something" }
+func (s *MyCustomSkill) GetID() string { return "my-task" }
+func (s *MyCustomSkill) Description() string { return "Does something" }
 
 // Check() - returns true if changes needed
-func (p *MyCustomPlaybook) Check(cfg config.NodeConfig) (bool, error) {
+func (s *MyCustomSkill) Check(cfg config.NodeConfig) (bool, error) {
     // Check if already configured
-    // Playbooks implement Check for use with CheckPlaybook()
+    // Skills implement Check for use with CheckSkill()
     output, _ := ssh.Run(cfg, types.Command{Command: "cat /etc/my-config"})
     return !strings.Contains(output, "configured"), nil
 }
 
 // Run() - execute and return Result
-func (p *MyCustomPlaybook) Run(cfg config.NodeConfig) playbook.Result {
-    needsChange, _ := p.Check(cfg)
+func (s *MyCustomSkill) Run(cfg config.NodeConfig) skill.Result {
+    needsChange, _ := s.Check(cfg)
     if !needsChange {
-        return playbook.Result{
+        return skill.Result{
             Changed: false,
             Message: "Already configured",
         }
@@ -469,10 +469,10 @@ func (p *MyCustomPlaybook) Run(cfg config.NodeConfig) playbook.Result {
     // Apply changes...
     _, err := ssh.Run(cfg, types.Command{Command: "setup-command"})
     if err != nil {
-        return playbook.Result{Changed: false, Error: err}
+        return skill.Result{Changed: false, Error: err}
     }
 
-    return playbook.Result{
+    return skill.Result{
         Changed: true,
         Message: "Configuration applied",
     }
@@ -485,8 +485,8 @@ For advanced use cases or when you need fine-grained control, you can use the in
 
 - `ssh` - SSH connection utilities and command execution
 - `config` - Configuration types for remote operations
-- `playbook` - Base interfaces and registry for organizing playbooks
-- `playbooks` - Reusable playbook implementations (ping, apt, reboot, swap, user)
+- `skill` - Base interfaces and registry for organizing skills
+- `skills` - Reusable skill implementations (ping, apt, reboot, swap, user)
 
 For advanced use cases, use the internal packages directly:
 
@@ -497,7 +497,7 @@ import (
     "log"
 
     "github.com/dracory/ork/config"
-    "github.com/dracory/ork/playbooks"
+    "github.com/dracory/ork/skills"
 )
 
 func main() {
@@ -509,7 +509,7 @@ func main() {
     }
 
     // Ping server to check connectivity
-    ping := playbooks.NewPing()
+    ping := skills.NewPing()
     ping.SetConfig(cfg)
     result := ping.Run()
     if result.Error != nil {
@@ -517,7 +517,7 @@ func main() {
     }
 
     // Update packages
-    aptUpdate := playbooks.NewAptUpdate()
+    aptUpdate := skills.NewAptUpdate()
     aptUpdate.SetConfig(cfg)
     result = aptUpdate.Run()
     if result.Error != nil {
@@ -526,7 +526,7 @@ func main() {
 
     // Create a 2GB swap file
     cfg.Args = map[string]string{"size": "2"}
-    swapCreate := playbooks.NewSwapCreate()
+    swapCreate := skills.NewSwapCreate()
     swapCreate.SetConfig(cfg)
     result = swapCreate.Run()
     if result.Error != nil {
@@ -542,8 +542,8 @@ func main() {
 - `runnable` - `RunnableInterface` for Node, Group, and Inventory
 - `config` - Configuration types
 - `ssh` - SSH client with connection management
-- `playbook` - Playbook interface and registry
-- `playbooks` - Built-in playbook implementations
+- `skill` - Skill interface and registry
+- `skills` - Built-in skill implementations
 
 ## License
 

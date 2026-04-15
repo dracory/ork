@@ -43,13 +43,13 @@ import (
 //	node := ork.NewNode("server.example.com")
 //	output, err := node.RunCommand("uptime")  // Creates one-time connection
 //
-// Example usage with playbooks:
+// Example usage with skills:
 //
 //	node := ork.NewNode("server.example.com").
 //	    SetArg("username", "alice").
 //	    SetArg("shell", "/bin/bash")
 //
-//	if err := node.RunPlaybook("user-create"); err != nil {
+//	if err := node.RunSkill("user-create"); err != nil {
 //	    log.Fatal(err)
 //	}
 type NodeInterface interface {
@@ -158,7 +158,7 @@ type NodeInterface interface {
 
 	// SetArg adds a single argument to the arguments map.
 	// This adds to existing arguments without replacing them.
-	// Arguments are passed to playbooks for configuration.
+	// Arguments are passed to skills for configuration.
 	// Returns the NodeInterface to enable method chaining.
 	//
 	// Example:
@@ -170,7 +170,7 @@ type NodeInterface interface {
 
 	// SetArgs replaces the entire arguments map with the provided map.
 	// Any existing arguments are discarded.
-	// Arguments are passed to playbooks for configuration.
+	// Arguments are passed to skills for configuration.
 	// Returns the NodeInterface to enable method chaining.
 	//
 	// Example:
@@ -186,7 +186,7 @@ type NodeInterface interface {
 
 	// Connect establishes a persistent SSH connection to the remote server.
 	// The connection is maintained until Close() is called.
-	// Subsequent RunCommand() and RunPlaybook() calls will reuse this connection.
+	// Subsequent RunCommand() and RunSkill() calls will reuse this connection.
 	//
 	// Returns an error if the connection fails, with a descriptive message
 	// including the host and port.
@@ -226,15 +226,15 @@ type NodeInterface interface {
 	//	fmt.Println(node.IsConnected())  // Output: false
 	IsConnected() bool
 
-	// RunPlaybookByID executes a playbook by ID from the registry.
-	// Deprecated: Use RunPlaybook() instead. Run playbooks by creating the playbook
-	// instance directly (e.g., playbooks.NewPing()) and passing it to RunPlaybook().
+	// RunSkillByID executes a skill by ID from the registry.
+	// Deprecated: Use RunSkill() instead. Run skills by creating the skill
+	// instance directly (e.g., skills.NewPing()) and passing it to RunSkill().
 	// This provides better type safety and IDE autocomplete support.
 	//
-	// Optional PlaybookOptions can be provided to override node-level arguments for this
-	// specific execution. This allows per-playbook variable scoping without affecting
+	// Optional SkillOptions can be provided to override node-level arguments for this
+	// specific execution. This allows per-skill variable scoping without affecting
 	// the node's state.
-	RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results
+	RunSkillByID(id string, opts ...types.SkillOptions) types.Results
 }
 
 // NewNode creates a new Node with default configuration values.

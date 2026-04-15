@@ -776,16 +776,16 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 		},
 	}
 
-	// Register mock playbook
-	reg, err := GetGlobalPlaybookRegistry()
+	// Register mock skill
+	reg, err := GetGlobalSkillRegistry()
 	if err != nil {
-		t.Fatalf("GetGlobalPlaybookRegistry() failed: %v", err)
+		t.Fatalf("GetGlobalSkillRegistry() failed: %v", err)
 	}
-	if err := reg.PlaybookRegister(mockPlaybook); err != nil {
-		t.Fatalf("failed to register mock playbook: %v", err)
+	if err := reg.SkillRegister(mockPlaybook); err != nil {
+		t.Fatalf("failed to register mock skill: %v", err)
 	}
 	defer func() {
-		// Clean up: remove mock playbook from registry
+		// Clean up: remove mock skill from registry
 		// Note: Registry doesn't have Remove method, so we'll just leave it
 	}()
 
@@ -803,7 +803,7 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 		connected: false,
 	}
 
-	results := n.RunPlaybookByID("test-playbook")
+	results := n.RunSkillByID("test-playbook")
 	result := results.Results["server.example.com"]
 	if result.Error != nil {
 		t.Errorf("Expected no error, got: %v", result.Error)
@@ -843,7 +843,7 @@ func TestNodeImplementation_Playbook_NotFound(t *testing.T) {
 		connected: false,
 	}
 
-	results := n.RunPlaybookByID("nonexistent-playbook")
+	results := n.RunSkillByID("nonexistent-playbook")
 	result := results.Results["server.example.com"]
 	if result.Error == nil {
 		t.Error("Expected error for nonexistent playbook, got nil")
@@ -870,13 +870,13 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 		},
 	}
 
-	// Register mock playbook
-	reg, err := GetGlobalPlaybookRegistry()
+	// Register mock skill
+	reg, err := GetGlobalSkillRegistry()
 	if err != nil {
-		t.Fatalf("GetGlobalPlaybookRegistry() failed: %v", err)
+		t.Fatalf("GetGlobalSkillRegistry() failed: %v", err)
 	}
-	if err := reg.PlaybookRegister(mockPlaybook); err != nil {
-		t.Fatalf("failed to register mock playbook: %v", err)
+	if err := reg.SkillRegister(mockPlaybook); err != nil {
+		t.Fatalf("failed to register mock skill: %v", err)
 	}
 
 	n := &nodeImplementation{
@@ -890,7 +890,7 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 		connected: false,
 	}
 
-	results := n.RunPlaybookByID("failing-playbook")
+	results := n.RunSkillByID("failing-playbook")
 	result := results.Results["server.example.com"]
 	if result.Error == nil {
 		t.Error("Expected error from failing playbook, got nil")
@@ -924,7 +924,7 @@ func (m *mockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *mockPlaybook) SetID(id string) types.PlaybookInterface {
+func (m *mockPlaybook) SetID(id string) types.SkillInterface {
 	m.name = id
 	return m
 }
@@ -933,7 +933,7 @@ func (m *mockPlaybook) GetDescription() string {
 	return "Mock playbook for testing"
 }
 
-func (m *mockPlaybook) SetDescription(description string) types.PlaybookInterface {
+func (m *mockPlaybook) SetDescription(description string) types.SkillInterface {
 	return m
 }
 
@@ -941,7 +941,7 @@ func (m *mockPlaybook) GetNodeConfig() config.NodeConfig {
 	return m.cfg
 }
 
-func (m *mockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.PlaybookInterface {
+func (m *mockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.SkillInterface {
 	m.cfg = cfg
 	return m
 }
@@ -950,7 +950,7 @@ func (m *mockPlaybook) GetArg(key string) string {
 	return m.args[key]
 }
 
-func (m *mockPlaybook) SetArg(key, value string) types.PlaybookInterface {
+func (m *mockPlaybook) SetArg(key, value string) types.SkillInterface {
 	if m.args == nil {
 		m.args = make(map[string]string)
 	}
@@ -962,7 +962,7 @@ func (m *mockPlaybook) GetArgs() map[string]string {
 	return m.args
 }
 
-func (m *mockPlaybook) SetArgs(args map[string]string) types.PlaybookInterface {
+func (m *mockPlaybook) SetArgs(args map[string]string) types.SkillInterface {
 	m.args = args
 	return m
 }
@@ -971,7 +971,7 @@ func (m *mockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }
 
-func (m *mockPlaybook) SetDryRun(dryRun bool) types.PlaybookInterface {
+func (m *mockPlaybook) SetDryRun(dryRun bool) types.SkillInterface {
 	m.dryRun = dryRun
 	return m
 }
@@ -980,7 +980,7 @@ func (m *mockPlaybook) GetTimeout() time.Duration {
 	return m.timeout
 }
 
-func (m *mockPlaybook) SetTimeout(timeout time.Duration) types.PlaybookInterface {
+func (m *mockPlaybook) SetTimeout(timeout time.Duration) types.SkillInterface {
 	m.timeout = timeout
 	return m
 }

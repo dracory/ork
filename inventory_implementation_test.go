@@ -329,7 +329,7 @@ func TestInventoryImplementation_RunCommand_Empty(t *testing.T) {
 }
 
 // TestInventoryImplementation_RunPlaybook verifies playbook execution across all nodes.
-func TestInventoryImplementation_RunPlaybook(t *testing.T) {
+func TestInventoryImplementation_RunSkill(t *testing.T) {
 	i := NewInventory()
 
 	node1 := &invTestMockNode{host: "server1.example.com"}
@@ -337,7 +337,7 @@ func TestInventoryImplementation_RunPlaybook(t *testing.T) {
 	i.AddNode(node1).AddNode(node2)
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.RunPlaybook(mockPb)
+	results := i.RunSkill(mockPb)
 
 	if len(results.Results) != 2 {
 		t.Errorf("Expected 2 results, got %d", len(results.Results))
@@ -349,7 +349,7 @@ func TestInventoryImplementation_RunPlaybook_Empty(t *testing.T) {
 	i := NewInventory()
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.RunPlaybook(mockPb)
+	results := i.RunSkill(mockPb)
 
 	if len(results.Results) != 0 {
 		t.Errorf("Expected 0 results for empty inventory, got %d", len(results.Results))
@@ -357,14 +357,14 @@ func TestInventoryImplementation_RunPlaybook_Empty(t *testing.T) {
 }
 
 // TestInventoryImplementation_RunPlaybookByID verifies playbook execution by ID.
-func TestInventoryImplementation_RunPlaybookByID(t *testing.T) {
+func TestInventoryImplementation_RunSkillByID(t *testing.T) {
 	i := NewInventory()
 
 	node1 := &invTestMockNode{host: "server1.example.com"}
 	node2 := &invTestMockNode{host: "server2.example.com"}
 	i.AddNode(node1).AddNode(node2)
 
-	results := i.RunPlaybookByID("test-playbook")
+	results := i.RunSkillByID("test-playbook")
 
 	// Results may be empty if playbook not registered, but should not panic
 	if results.Results == nil {
@@ -373,7 +373,7 @@ func TestInventoryImplementation_RunPlaybookByID(t *testing.T) {
 }
 
 // TestInventoryImplementation_CheckPlaybook verifies check mode execution.
-func TestInventoryImplementation_CheckPlaybook(t *testing.T) {
+func TestInventoryImplementation_CheckSkill(t *testing.T) {
 	i := NewInventory()
 
 	node1 := &invTestMockNode{host: "server1.example.com"}
@@ -381,7 +381,7 @@ func TestInventoryImplementation_CheckPlaybook(t *testing.T) {
 	i.AddNode(node1).AddNode(node2)
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.CheckPlaybook(mockPb)
+	results := i.CheckSkill(mockPb)
 
 	if len(results.Results) != 2 {
 		t.Errorf("Expected 2 results, got %d", len(results.Results))
@@ -396,7 +396,7 @@ func TestInventoryImplementation_CheckPlaybook_SetsDryRun(t *testing.T) {
 	i.AddNode(node1)
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.CheckPlaybook(mockPb)
+	results := i.CheckSkill(mockPb)
 
 	// Just verify it runs without error
 	if results.Results == nil {
@@ -417,7 +417,7 @@ func TestInventoryImplementation_ConcurrentExecution(t *testing.T) {
 	}
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.RunPlaybook(mockPb)
+	results := i.RunSkill(mockPb)
 
 	// Should have results for all 5 nodes
 	if len(results.Results) != 5 {
@@ -438,7 +438,7 @@ func TestInventoryImplementation_ConcurrentExecution_Unlimited(t *testing.T) {
 	}
 
 	mockPb := &invTestMockPlaybook{name: "test-playbook"}
-	results := i.RunPlaybook(mockPb)
+	results := i.RunSkill(mockPb)
 
 	// Should have results for all 5 nodes
 	if len(results.Results) != 5 {
@@ -595,7 +595,7 @@ func (m *invTestMockNode) RunCommand(cmd string) types.Results {
 	}
 }
 
-func (m *invTestMockNode) RunPlaybook(pb types.PlaybookInterface) types.Results {
+func (m *invTestMockNode) RunSkill(pb types.SkillInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -606,7 +606,7 @@ func (m *invTestMockNode) RunPlaybook(pb types.PlaybookInterface) types.Results 
 	}
 }
 
-func (m *invTestMockNode) RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results {
+func (m *invTestMockNode) RunSkillByID(id string, opts ...types.SkillOptions) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -617,7 +617,7 @@ func (m *invTestMockNode) RunPlaybookByID(id string, opts ...types.PlaybookOptio
 	}
 }
 
-func (m *invTestMockNode) CheckPlaybook(pb types.PlaybookInterface) types.Results {
+func (m *invTestMockNode) CheckSkill(pb types.SkillInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -644,7 +644,7 @@ func (m *invTestMockNode) GetDryRunMode() bool {
 	return false
 }
 
-// invTestMockPlaybook is a mock implementation of types.PlaybookInterface for testing.
+// invTestMockPlaybook is a mock implementation of types.SkillInterface for testing.
 type invTestMockPlaybook struct {
 	name    string
 	cfg     config.NodeConfig
@@ -657,7 +657,7 @@ func (m *invTestMockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *invTestMockPlaybook) SetID(id string) types.PlaybookInterface {
+func (m *invTestMockPlaybook) SetID(id string) types.SkillInterface {
 	m.name = id
 	return m
 }
@@ -666,7 +666,7 @@ func (m *invTestMockPlaybook) GetDescription() string {
 	return "Mock playbook"
 }
 
-func (m *invTestMockPlaybook) SetDescription(desc string) types.PlaybookInterface {
+func (m *invTestMockPlaybook) SetDescription(desc string) types.SkillInterface {
 	return m
 }
 
@@ -674,7 +674,7 @@ func (m *invTestMockPlaybook) GetNodeConfig() config.NodeConfig {
 	return m.cfg
 }
 
-func (m *invTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.PlaybookInterface {
+func (m *invTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.SkillInterface {
 	m.cfg = cfg
 	return m
 }
@@ -686,7 +686,7 @@ func (m *invTestMockPlaybook) GetArg(key string) string {
 	return m.args[key]
 }
 
-func (m *invTestMockPlaybook) SetArg(key, value string) types.PlaybookInterface {
+func (m *invTestMockPlaybook) SetArg(key, value string) types.SkillInterface {
 	if m.args == nil {
 		m.args = make(map[string]string)
 	}
@@ -698,7 +698,7 @@ func (m *invTestMockPlaybook) GetArgs() map[string]string {
 	return m.args
 }
 
-func (m *invTestMockPlaybook) SetArgs(args map[string]string) types.PlaybookInterface {
+func (m *invTestMockPlaybook) SetArgs(args map[string]string) types.SkillInterface {
 	m.args = args
 	return m
 }
@@ -707,7 +707,7 @@ func (m *invTestMockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }
 
-func (m *invTestMockPlaybook) SetDryRun(dryRun bool) types.PlaybookInterface {
+func (m *invTestMockPlaybook) SetDryRun(dryRun bool) types.SkillInterface {
 	m.dryRun = dryRun
 	return m
 }
@@ -716,7 +716,7 @@ func (m *invTestMockPlaybook) GetTimeout() time.Duration {
 	return m.timeout
 }
 
-func (m *invTestMockPlaybook) SetTimeout(timeout time.Duration) types.PlaybookInterface {
+func (m *invTestMockPlaybook) SetTimeout(timeout time.Duration) types.SkillInterface {
 	m.timeout = timeout
 	return m
 }

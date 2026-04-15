@@ -93,22 +93,22 @@ func (g *groupImplementation) RunCommand(cmd string) types.Results {
 	return results
 }
 
-// RunPlaybook executes a playbook across all nodes in this group.
-func (g *groupImplementation) RunPlaybook(pb types.PlaybookInterface) types.Results {
+// RunSkill executes a skill across all nodes in this group.
+func (g *groupImplementation) RunSkill(skill types.SkillInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
 
 	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
 	for _, node := range g.nodes {
-		nodeResults := node.RunPlaybook(pb)
+		nodeResults := node.RunSkill(skill)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
 
-// RunPlaybookByID executes a playbook by ID across all nodes in this group.
-func (g *groupImplementation) RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results {
+// RunSkillByID executes a skill by ID across all nodes in this group.
+func (g *groupImplementation) RunSkillByID(id string, opts ...types.SkillOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -116,14 +116,14 @@ func (g *groupImplementation) RunPlaybookByID(id string, opts ...types.PlaybookO
 	g.propagateDryRun()
 
 	for _, node := range g.nodes {
-		nodeResults := node.RunPlaybookByID(id, opts...)
+		nodeResults := node.RunSkillByID(id, opts...)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
 }
 
-// CheckPlaybook runs the playbook's check mode across all nodes in this group.
-func (g *groupImplementation) CheckPlaybook(pb types.PlaybookInterface) types.Results {
+// CheckSkill runs the skill's check mode across all nodes in this group.
+func (g *groupImplementation) CheckSkill(skill types.SkillInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
@@ -131,7 +131,7 @@ func (g *groupImplementation) CheckPlaybook(pb types.PlaybookInterface) types.Re
 	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
 
 	for _, node := range g.nodes {
-		nodeResults := node.CheckPlaybook(pb)
+		nodeResults := node.CheckSkill(skill)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
 	return results
@@ -153,7 +153,7 @@ func (g *groupImplementation) SetLogger(logger *slog.Logger) RunnableInterface {
 
 // SetDryRunMode sets whether to simulate execution without making changes.
 // When true, ssh.Run() will log commands and return "[dry-run]" marker instead of executing.
-// The dry-run mode is applied to nodes at execution time (RunPlaybook, RunCommand, etc.).
+// The dry-run mode is applied to nodes at execution time (RunSkill, RunCommand, etc.).
 // Returns RunnableInterface for fluent method chaining.
 func (g *groupImplementation) SetDryRunMode(dryRun bool) RunnableInterface {
 	g.mu.Lock()

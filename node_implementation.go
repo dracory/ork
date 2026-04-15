@@ -323,20 +323,20 @@ func (n *nodeImplementation) RunCommand(cmd string) types.Results {
 	return results
 }
 
-// RunPlaybook executes a playbook instance directly and returns detailed result information.
-// This is the preferred method for executing playbooks.
+// RunSkill executes a skill instance directly and returns detailed result information.
+// This is the preferred method for executing skills.
 //
-// The playbook is configured with the node's settings and executed immediately.
-// This method allows running custom or programmatically created playbooks without registry lookup.
-func (n *nodeImplementation) RunPlaybook(pb types.PlaybookInterface) types.Results {
+// The skill is configured with the node's settings and executed immediately.
+// This method allows running custom or programmatically created skills without registry lookup.
+func (n *nodeImplementation) RunSkill(skill types.SkillInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
 
-	pb.SetNodeConfig(n.cfg)
-	// Propagate node's dry-run mode to playbook
-	pb.SetDryRun(n.cfg.IsDryRunMode)
-	result := pb.Run()
+	skill.SetNodeConfig(n.cfg)
+	// Propagate node's dry-run mode to skill
+	skill.SetDryRun(n.cfg.IsDryRunMode)
+	result := skill.Run()
 
 	results.Results[n.GetHost()] = types.Result{
 		Changed: result.Changed,
@@ -347,46 +347,46 @@ func (n *nodeImplementation) RunPlaybook(pb types.PlaybookInterface) types.Resul
 	return results
 }
 
-// RunPlaybookByID executes a playbook by ID from the registry.
-// This is useful when you want to run playbooks by string identifier.
+// RunSkillByID executes a skill by ID from the registry.
+// This is useful when you want to run skills by string identifier.
 //
-// Optional PlaybookOptions can be provided to override node-level arguments for this
-// specific execution. Playbook-level args take precedence over node-level args.
-func (n *nodeImplementation) RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results {
+// Optional SkillOptions can be provided to override node-level arguments for this
+// specific execution. Skill-level args take precedence over node-level args.
+func (n *nodeImplementation) RunSkillByID(id string, opts ...types.SkillOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
 
-	registry, err := GetGlobalPlaybookRegistry()
+	registry, err := GetGlobalSkillRegistry()
 	if err != nil {
 		results.Results[n.GetHost()] = types.Result{
 			Changed: false,
-			Message: fmt.Sprintf("failed to get playbook registry: %v", err),
-			Error:   fmt.Errorf("failed to get playbook registry: %w", err),
+			Message: fmt.Sprintf("failed to get skill registry: %v", err),
+			Error:   fmt.Errorf("failed to get skill registry: %w", err),
 		}
 		return results
 	}
 
-	pb, ok := registry.PlaybookFindByID(id)
+	skill, ok := registry.SkillFindByID(id)
 	if !ok {
 		results.Results[n.GetHost()] = types.Result{
 			Changed: false,
-			Message: fmt.Sprintf("playbook '%s' not found in registry", id),
-			Error:   fmt.Errorf("playbook '%s' not found in registry", id),
+			Message: fmt.Sprintf("skill '%s' not found in registry", id),
+			Error:   fmt.Errorf("skill '%s' not found in registry", id),
 		}
 		return results
 	}
 
-	pb.SetNodeConfig(n.cfg)
+	skill.SetNodeConfig(n.cfg)
 	// Start with node's dry-run mode, allow opts to override
-	pb.SetDryRun(n.cfg.IsDryRunMode)
+	skill.SetDryRun(n.cfg.IsDryRunMode)
 	if len(opts) > 0 {
-		pb.SetArgs(opts[0].Args)
-		pb.SetDryRun(opts[0].DryRun)
-		pb.SetTimeout(opts[0].Timeout)
+		skill.SetArgs(opts[0].Args)
+		skill.SetDryRun(opts[0].DryRun)
+		skill.SetTimeout(opts[0].Timeout)
 	}
 
-	result := pb.Run()
+	result := skill.Run()
 	results.Results[n.GetHost()] = types.Result{
 		Changed: result.Changed,
 		Message: result.Message,
@@ -396,15 +396,15 @@ func (n *nodeImplementation) RunPlaybookByID(id string, opts ...types.PlaybookOp
 	return results
 }
 
-// CheckPlaybook implements RunnableInterface.
-// Runs playbook in dry-run mode to check if changes are needed.
-func (n *nodeImplementation) CheckPlaybook(pb types.PlaybookInterface) types.Results {
+// CheckSkill implements RunnableInterface.
+// Runs skill in dry-run mode to check if changes are needed.
+func (n *nodeImplementation) CheckSkill(skill types.SkillInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
 	// Use node's dry-run mode setting (may be already set via SetDryRunMode)
-	pb.SetDryRun(n.cfg.IsDryRunMode)
-	result := pb.Run()
+	skill.SetDryRun(n.cfg.IsDryRunMode)
+	result := skill.Run()
 	results.Results[n.GetHost()] = types.Result{
 		Changed: result.Changed,
 		Message: result.Message,

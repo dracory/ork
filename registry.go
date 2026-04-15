@@ -3,30 +3,30 @@ package ork
 import (
 	"sync"
 
-	"github.com/dracory/ork/playbooks/apt"
-	"github.com/dracory/ork/playbooks/fail2ban"
-	"github.com/dracory/ork/playbooks/mariadb"
-	"github.com/dracory/ork/playbooks/ping"
-	"github.com/dracory/ork/playbooks/reboot"
-	"github.com/dracory/ork/playbooks/security"
-	"github.com/dracory/ork/playbooks/swap"
-	"github.com/dracory/ork/playbooks/ufw"
-	"github.com/dracory/ork/playbooks/user"
+	"github.com/dracory/ork/skills/apt"
+	"github.com/dracory/ork/skills/fail2ban"
+	"github.com/dracory/ork/skills/mariadb"
+	"github.com/dracory/ork/skills/ping"
+	"github.com/dracory/ork/skills/reboot"
+	"github.com/dracory/ork/skills/security"
+	"github.com/dracory/ork/skills/swap"
+	"github.com/dracory/ork/skills/ufw"
+	"github.com/dracory/ork/skills/user"
 	"github.com/dracory/ork/types"
 )
 
-// globalPlaybookRegistry is the global playbook registry that holds all built-in
-// and user-registered playbooks. It is lazily initialized on first use as a singleton.
+// globalSkillRegistry is the global skill registry that holds all built-in
+// and user-registered skills. It is lazily initialized on first use as a singleton.
 //
-// The registry is used by Node.Playbook() to look up and execute playbooks.
+// The registry is used by Node.Skill() to look up and execute skills.
 var (
-	globalPlaybookRegistry     *types.Registry
-	globalPlaybookRegistryOnce sync.Once
+	globalSkillRegistry     *types.Registry
+	globalSkillRegistryOnce sync.Once
 )
 
-// GetGlobalPlaybookRegistry returns the global playbook registry singleton.
+// GetGlobalSkillRegistry returns the global skill registry singleton.
 // This is syntactic sugar for user convenience - it lazily initializes and returns
-// the global registry with all built-in playbooks pre-registered.
+// the global registry with all built-in skills pre-registered.
 //
 // For most use cases, users should call this function. For testing or custom
 // configurations, use NewDefaultRegistry() to create isolated registries.
@@ -34,41 +34,41 @@ var (
 // The registry is lazily initialized on first call using sync.Once to ensure
 // thread-safe singleton behavior.
 // Returns an error if initialization fails.
-func GetGlobalPlaybookRegistry() (*types.Registry, error) {
+func GetGlobalSkillRegistry() (*types.Registry, error) {
 	var initErr error
-	globalPlaybookRegistryOnce.Do(func() {
-		globalPlaybookRegistry, initErr = NewDefaultRegistry()
+	globalSkillRegistryOnce.Do(func() {
+		globalSkillRegistry, initErr = NewDefaultRegistry()
 	})
 	if initErr != nil {
 		return nil, initErr
 	}
-	return globalPlaybookRegistry, nil
+	return globalSkillRegistry, nil
 }
 
-// NewPlaybookRegistry creates a new empty playbook registry.
+// NewSkillRegistry creates a new empty skill registry.
 // This is a convenience method (sugar) for types.NewRegistry() with a more intuitive name.
 // This creates a fresh empty registry instance, which is useful for:
 // - Testing with isolated registries
-// - Custom configurations with selective playbook registration
+// - Custom configurations with selective skill registration
 // - Multiple independent registries in the same application
 //
-// Returns an empty registry ready for custom playbook registration.
-func NewPlaybookRegistry() *types.Registry {
+// Returns an empty registry ready for custom skill registration.
+func NewSkillRegistry() *types.Registry {
 	return types.NewRegistry()
 }
 
-// NewDefaultRegistry creates a new playbook registry with all built-in playbooks registered.
+// NewDefaultRegistry creates a new skill registry with all built-in skills registered.
 // This creates a fresh registry instance (not a singleton), which is useful for:
 // - Testing with isolated registries
 // - Custom configurations without global state
 // - Multiple independent registries in the same application
 //
-// For most production use cases, use GetGlobalPlaybookRegistry() instead for convenience.
-// Returns an error if any playbook registration fails.
+// For most production use cases, use GetGlobalSkillRegistry() instead for convenience.
+// Returns an error if any skill registration fails.
 func NewDefaultRegistry() (*types.Registry, error) {
-	reg := NewPlaybookRegistry()
+	reg := NewSkillRegistry()
 
-	playbooks := []types.PlaybookInterface{
+	skills := []types.SkillInterface{
 		ping.NewPing(),
 		apt.NewAptUpdate(),
 		apt.NewAptUpgrade(),
@@ -106,8 +106,8 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		mariadb.NewBackupEncrypt(),
 	}
 
-	for _, pb := range playbooks {
-		if err := reg.PlaybookRegister(pb); err != nil {
+	for _, s := range skills {
+		if err := reg.SkillRegister(s); err != nil {
 			return nil, err
 		}
 	}

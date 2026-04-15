@@ -295,7 +295,7 @@ func TestGroupImplementation_RunCommand_EmptyGroup(t *testing.T) {
 }
 
 // TestGroupImplementation_RunPlaybook verifies playbook execution across group nodes.
-func TestGroupImplementation_RunPlaybook(t *testing.T) {
+func TestGroupImplementation_RunSkill(t *testing.T) {
 	g := NewGroup("web-servers")
 
 	node1 := &groupTestMockNode{host: "server1.example.com"}
@@ -305,7 +305,7 @@ func TestGroupImplementation_RunPlaybook(t *testing.T) {
 
 	mockPb := &groupTestMockPlaybook{name: "test-playbook"}
 
-	results := g.RunPlaybook(mockPb)
+	results := g.RunSkill(mockPb)
 
 	// Verify results contain entries for both nodes
 	if len(results.Results) != 2 {
@@ -318,7 +318,7 @@ func TestGroupImplementation_RunPlaybook_EmptyGroup(t *testing.T) {
 	g := NewGroup("empty-group")
 
 	mockPb := &groupTestMockPlaybook{name: "test-playbook"}
-	results := g.RunPlaybook(mockPb)
+	results := g.RunSkill(mockPb)
 
 	if len(results.Results) != 0 {
 		t.Errorf("Expected 0 results for empty group, got %d", len(results.Results))
@@ -326,7 +326,7 @@ func TestGroupImplementation_RunPlaybook_EmptyGroup(t *testing.T) {
 }
 
 // TestGroupImplementation_RunPlaybookByID verifies playbook execution by ID.
-func TestGroupImplementation_RunPlaybookByID(t *testing.T) {
+func TestGroupImplementation_RunSkillByID(t *testing.T) {
 	g := NewGroup("web-servers")
 
 	node1 := &groupTestMockNode{host: "server1.example.com"}
@@ -334,7 +334,7 @@ func TestGroupImplementation_RunPlaybookByID(t *testing.T) {
 
 	g.AddNode(node1).AddNode(node2)
 
-	results := g.RunPlaybookByID("test-playbook")
+	results := g.RunSkillByID("test-playbook")
 
 	// Results may be empty if playbook not registered, but should not panic
 	if results.Results == nil {
@@ -343,7 +343,7 @@ func TestGroupImplementation_RunPlaybookByID(t *testing.T) {
 }
 
 // TestGroupImplementation_CheckPlaybook verifies check mode execution.
-func TestGroupImplementation_CheckPlaybook(t *testing.T) {
+func TestGroupImplementation_CheckSkill(t *testing.T) {
 	g := NewGroup("web-servers")
 
 	node1 := &groupTestMockNode{host: "server1.example.com"}
@@ -352,7 +352,7 @@ func TestGroupImplementation_CheckPlaybook(t *testing.T) {
 	g.AddNode(node1).AddNode(node2)
 
 	mockPb := &groupTestMockPlaybook{name: "test-playbook"}
-	results := g.CheckPlaybook(mockPb)
+	results := g.CheckSkill(mockPb)
 
 	// Verify results contain entries for both nodes
 	if len(results.Results) != 2 {
@@ -368,7 +368,7 @@ func TestGroupImplementation_CheckPlaybook_SetsDryRun(t *testing.T) {
 	g.AddNode(node1)
 
 	mockPb := &groupTestMockPlaybook{name: "test-playbook"}
-	results := g.CheckPlaybook(mockPb)
+	results := g.CheckSkill(mockPb)
 
 	// Just verify it runs without error
 	if results.Results == nil {
@@ -475,7 +475,7 @@ func (m *groupTestMockNode) RunCommand(cmd string) types.Results {
 	}
 }
 
-func (m *groupTestMockNode) RunPlaybook(pb types.PlaybookInterface) types.Results {
+func (m *groupTestMockNode) RunSkill(pb types.SkillInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -486,7 +486,7 @@ func (m *groupTestMockNode) RunPlaybook(pb types.PlaybookInterface) types.Result
 	}
 }
 
-func (m *groupTestMockNode) RunPlaybookByID(id string, opts ...types.PlaybookOptions) types.Results {
+func (m *groupTestMockNode) RunSkillByID(id string, opts ...types.SkillOptions) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -497,7 +497,7 @@ func (m *groupTestMockNode) RunPlaybookByID(id string, opts ...types.PlaybookOpt
 	}
 }
 
-func (m *groupTestMockNode) CheckPlaybook(pb types.PlaybookInterface) types.Results {
+func (m *groupTestMockNode) CheckSkill(pb types.SkillInterface) types.Results {
 	return types.Results{
 		Results: map[string]types.Result{
 			m.host: {
@@ -524,7 +524,7 @@ func (m *groupTestMockNode) GetDryRunMode() bool {
 	return false
 }
 
-// groupTestMockPlaybook is a mock implementation of types.PlaybookInterface for testing.
+// groupTestMockPlaybook is a mock implementation of types.SkillInterface for testing.
 type groupTestMockPlaybook struct {
 	name    string
 	cfg     config.NodeConfig
@@ -537,7 +537,7 @@ func (m *groupTestMockPlaybook) GetID() string {
 	return m.name
 }
 
-func (m *groupTestMockPlaybook) SetID(id string) types.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetID(id string) types.SkillInterface {
 	m.name = id
 	return m
 }
@@ -546,7 +546,7 @@ func (m *groupTestMockPlaybook) GetDescription() string {
 	return "Mock playbook"
 }
 
-func (m *groupTestMockPlaybook) SetDescription(desc string) types.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetDescription(desc string) types.SkillInterface {
 	return m
 }
 
@@ -554,7 +554,7 @@ func (m *groupTestMockPlaybook) GetNodeConfig() config.NodeConfig {
 	return m.cfg
 }
 
-func (m *groupTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetNodeConfig(cfg config.NodeConfig) types.SkillInterface {
 	m.cfg = cfg
 	return m
 }
@@ -566,7 +566,7 @@ func (m *groupTestMockPlaybook) GetArg(key string) string {
 	return m.args[key]
 }
 
-func (m *groupTestMockPlaybook) SetArg(key, value string) types.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetArg(key, value string) types.SkillInterface {
 	if m.args == nil {
 		m.args = make(map[string]string)
 	}
@@ -578,7 +578,7 @@ func (m *groupTestMockPlaybook) GetArgs() map[string]string {
 	return m.args
 }
 
-func (m *groupTestMockPlaybook) SetArgs(args map[string]string) types.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetArgs(args map[string]string) types.SkillInterface {
 	m.args = args
 	return m
 }
@@ -587,7 +587,7 @@ func (m *groupTestMockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }
 
-func (m *groupTestMockPlaybook) SetDryRun(dryRun bool) types.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetDryRun(dryRun bool) types.SkillInterface {
 	m.dryRun = dryRun
 	return m
 }
@@ -596,7 +596,7 @@ func (m *groupTestMockPlaybook) GetTimeout() time.Duration {
 	return m.timeout
 }
 
-func (m *groupTestMockPlaybook) SetTimeout(timeout time.Duration) types.PlaybookInterface {
+func (m *groupTestMockPlaybook) SetTimeout(timeout time.Duration) types.SkillInterface {
 	m.timeout = timeout
 	return m
 }

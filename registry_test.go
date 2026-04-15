@@ -3,7 +3,7 @@ package ork
 import (
 	"testing"
 
-	"github.com/dracory/ork/playbooks"
+	"github.com/dracory/ork/skills"
 )
 
 func TestNewDefaultRegistry_Initialized(t *testing.T) {
@@ -16,12 +16,12 @@ func TestNewDefaultRegistry_Initialized(t *testing.T) {
 	}
 }
 
-func TestNewDefaultRegistry_AllBuiltInPlaybooksRegistered(t *testing.T) {
+func TestNewDefaultRegistry_AllBuiltInSkillsRegistered(t *testing.T) {
 	reg, err := NewDefaultRegistry()
 	if err != nil {
 		t.Fatalf("NewDefaultRegistry() failed: %v", err)
 	}
-	expectedPlaybooks := []string{
+	expectedSkills := []string{
 		"ping",
 		"apt-update",
 		"apt-upgrade",
@@ -35,26 +35,26 @@ func TestNewDefaultRegistry_AllBuiltInPlaybooksRegistered(t *testing.T) {
 		"user-status",
 	}
 
-	for _, id := range expectedPlaybooks {
-		pb, ok := reg.PlaybookFindByID(id)
+	for _, id := range expectedSkills {
+		skill, ok := reg.SkillFindByID(id)
 		if !ok {
-			t.Errorf("expected playbook '%s' to be registered, but it was not found", id)
+			t.Errorf("expected skill '%s' to be registered, but it was not found", id)
 			continue
 		}
-		if pb.GetID() != id {
-			t.Errorf("playbook ID mismatch: expected '%s', got '%s'", id, pb.GetID())
+		if skill.GetID() != id {
+			t.Errorf("skill ID mismatch: expected '%s', got '%s'", id, skill.GetID())
 		}
 	}
 }
 
-func TestNewDefaultRegistry_ContainsExpectedPlaybookIDs(t *testing.T) {
+func TestNewDefaultRegistry_ContainsExpectedSkillIDs(t *testing.T) {
 	reg, err := NewDefaultRegistry()
 	if err != nil {
 		t.Fatalf("NewDefaultRegistry() failed: %v", err)
 	}
-	ids := reg.GetPlaybookIDs()
+	ids := reg.GetSkillIDs()
 
-	// Verify all expected built-in playbook IDs are present
+	// Verify all expected built-in skill IDs are present
 	expectedIDs := []string{
 		"ping",
 		"apt-update",
@@ -78,31 +78,31 @@ func TestNewDefaultRegistry_ContainsExpectedPlaybookIDs(t *testing.T) {
 	// Check that all expected IDs are present
 	for _, id := range expectedIDs {
 		if !actualIDs[id] {
-			t.Errorf("expected built-in playbook '%s' not found in registry", id)
+			t.Errorf("expected built-in skill '%s' not found in registry", id)
 		}
 	}
 
-	// Verify we have at least the expected number of built-in playbooks
+	// Verify we have at least the expected number of built-in skills
 	if len(ids) < len(expectedIDs) {
-		t.Errorf("expected at least %d playbooks, got %d", len(expectedIDs), len(ids))
+		t.Errorf("expected at least %d skills, got %d", len(expectedIDs), len(ids))
 	}
 }
 
-func TestNewDefaultRegistry_PlaybooksHaveDescriptions(t *testing.T) {
+func TestNewDefaultRegistry_SkillsHaveDescriptions(t *testing.T) {
 	reg, err := NewDefaultRegistry()
 	if err != nil {
 		t.Fatalf("NewDefaultRegistry() failed: %v", err)
 	}
-	playbooks := reg.PlaybookList()
+	skills := reg.SkillList()
 
-	for _, pb := range playbooks {
-		if pb.GetDescription() == "" {
-			t.Errorf("playbook '%s' has empty description", pb.GetID())
+	for _, skill := range skills {
+		if skill.GetDescription() == "" {
+			t.Errorf("skill '%s' has empty description", skill.GetID())
 		}
 	}
 }
 
-func TestGetGlobalPlaybookRegistry(t *testing.T) {
+func TestGetGlobalSkillRegistry(t *testing.T) {
 	// Create a fresh registry for this test to avoid polluting the global registry
 	reg, err := NewDefaultRegistry()
 	if err != nil {
@@ -112,52 +112,52 @@ func TestGetGlobalPlaybookRegistry(t *testing.T) {
 		t.Fatal("NewDefaultRegistry() returned nil")
 	}
 
-	// Test that we can use it to register a playbook
-	customPb := playbooks.NewBasePlaybook()
-	customPb.SetID("test-get-registry-playbook")
-	customPb.SetDescription("Test playbook via NewDefaultRegistry")
+	// Test that we can use it to register a skill
+	customSkill := skills.NewBaseSkill()
+	customSkill.SetID("test-get-registry-skill")
+	customSkill.SetDescription("Test skill via NewDefaultRegistry")
 
-	err = reg.PlaybookRegister(customPb)
+	err = reg.SkillRegister(customSkill)
 	if err != nil {
-		t.Fatalf("failed to register playbook: %v", err)
+		t.Fatalf("failed to register skill: %v", err)
 	}
 
 	// Verify it can be found
-	foundPb, ok := reg.PlaybookFindByID("test-get-registry-playbook")
+	foundSkill, ok := reg.SkillFindByID("test-get-registry-skill")
 	if !ok {
-		t.Fatal("custom playbook not found after registration")
+		t.Fatal("custom skill not found after registration")
 	}
-	if foundPb.GetID() != "test-get-registry-playbook" {
-		t.Errorf("expected ID 'test-get-registry-playbook', got '%s'", foundPb.GetID())
+	if foundSkill.GetID() != "test-get-registry-skill" {
+		t.Errorf("expected ID 'test-get-registry-skill', got '%s'", foundSkill.GetID())
 	}
 }
 
-func TestGetGlobalPlaybookRegistry_LazyInitialization(t *testing.T) {
-	// Test that GetGlobalPlaybookRegistry() initializes the global registry on first call
-	reg, err := GetGlobalPlaybookRegistry()
+func TestGetGlobalSkillRegistry_LazyInitialization(t *testing.T) {
+	// Test that GetGlobalSkillRegistry() initializes the global registry on first call
+	reg, err := GetGlobalSkillRegistry()
 	if err != nil {
-		t.Fatalf("GetGlobalPlaybookRegistry() failed: %v", err)
+		t.Fatalf("GetGlobalSkillRegistry() failed: %v", err)
 	}
 	if reg == nil {
-		t.Fatal("GetGlobalPlaybookRegistry() returned nil")
+		t.Fatal("GetGlobalSkillRegistry() returned nil")
 	}
 
-	// Verify it has built-in playbooks
-	pb, ok := reg.PlaybookFindByID("ping")
+	// Verify it has built-in skills
+	skill, ok := reg.SkillFindByID("ping")
 	if !ok {
-		t.Fatal("expected 'ping' playbook in global registry")
+		t.Fatal("expected 'ping' skill in global registry")
 	}
-	if pb.GetID() != "ping" {
-		t.Errorf("expected ID 'ping', got '%s'", pb.GetID())
+	if skill.GetID() != "ping" {
+		t.Errorf("expected ID 'ping', got '%s'", skill.GetID())
 	}
 
 	// Test that subsequent calls return the same instance
-	reg2, err := GetGlobalPlaybookRegistry()
+	reg2, err := GetGlobalSkillRegistry()
 	if err != nil {
-		t.Fatalf("GetGlobalPlaybookRegistry() failed on second call: %v", err)
+		t.Fatalf("GetGlobalSkillRegistry() failed on second call: %v", err)
 	}
 	if reg != reg2 {
-		t.Error("GetGlobalPlaybookRegistry() should return the same instance on subsequent calls")
+		t.Error("GetGlobalSkillRegistry() should return the same instance on subsequent calls")
 	}
 }
 
@@ -167,13 +167,13 @@ func TestNewDefaultRegistry_DuplicateID(t *testing.T) {
 		t.Fatalf("NewDefaultRegistry() failed: %v", err)
 	}
 
-	// Try to register a playbook with a duplicate ID
-	duplicatePb := playbooks.NewBasePlaybook()
-	duplicatePb.SetID("ping") // "ping" is already registered
-	duplicatePb.SetDescription("Duplicate ping playbook")
+	// Try to register a skill with a duplicate ID
+	duplicateSkill := skills.NewBaseSkill()
+	duplicateSkill.SetID("ping") // "ping" is already registered
+	duplicateSkill.SetDescription("Duplicate ping skill")
 
-	err = reg.PlaybookRegister(duplicatePb)
+	err = reg.SkillRegister(duplicateSkill)
 	if err == nil {
-		t.Error("expected error when registering duplicate playbook ID, got nil")
+		t.Error("expected error when registering duplicate skill ID, got nil")
 	}
 }
