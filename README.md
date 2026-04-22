@@ -4,8 +4,24 @@ Ork is a Go package for SSH-based server automation. Think of it like Ansible, b
 
 ## Installation
 
+### Library
+
 ```bash
 go get github.com/dracory/ork
+```
+
+### CLI Tool
+
+```bash
+go install github.com/dracory/ork/cmd/ork@latest
+```
+
+Or build from source:
+
+```bash
+git clone https://github.com/dracory/ork.git
+cd ork
+go build -o ork ./cmd/ork
 ```
 
 ## Documentation
