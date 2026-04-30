@@ -8,14 +8,6 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// NewFail2banInstall creates a new fail2ban-install skill.
-func NewFail2banInstall() types.RunnableInterface {
-	pb := types.NewBaseSkill()
-	pb.SetID(skills.IDFail2banInstall)
-	pb.SetDescription("Install and enable fail2ban intrusion prevention system")
-	return &Fail2banInstall{BaseSkill: pb}
-}
-
 // Fail2banInstall installs and enables the fail2ban intrusion prevention system.
 // Fail2ban monitors log files for suspicious activity (like brute-force login attempts)
 // and automatically bans IPs that show malicious patterns.
@@ -124,4 +116,19 @@ func (f *Fail2banInstall) Run() types.Result {
 		Changed: true,
 		Message: "Fail2ban installed and enabled",
 	}
+}
+
+// SetArgs sets the arguments for fail2ban installation.
+// Returns Fail2banInstall for fluent method chaining.
+func (f *Fail2banInstall) SetArgs(args map[string]string) types.RunnableInterface {
+	f.BaseSkill.SetArgs(args)
+	return f
+}
+
+// NewFail2banInstall creates a new fail2ban-install skill.
+func NewFail2banInstall() types.RunnableInterface {
+	pb := types.NewBaseSkill()
+	pb.SetID(skills.IDFail2banInstall)
+	pb.SetDescription("Install and enable fail2ban intrusion prevention system")
+	return &Fail2banInstall{BaseSkill: pb}
 }

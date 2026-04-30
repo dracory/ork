@@ -100,6 +100,13 @@ func (u *AllowMariaDB) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for MariaDB UFW rules.
+// Returns AllowMariaDB for fluent method chaining.
+func (u *AllowMariaDB) SetArgs(args map[string]string) types.RunnableInterface {
+	u.BaseSkill.SetArgs(args)
+	return u
+}
+
 // allowIPs executes IP processing with the appropriate method based on IP value
 func (u *AllowMariaDB) allowIPs(cfg types.NodeConfig, ip string, mariaDBPort string, isDryRun bool) ([]string, error) {
 	if ip == "" || ip == "any" {

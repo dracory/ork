@@ -128,6 +128,13 @@ func (m *Backup) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for MariaDB backup.
+// Returns Backup for fluent method chaining.
+func (b *Backup) SetArgs(args map[string]string) types.RunnableInterface {
+	b.BaseSkill.SetArgs(args)
+	return b
+}
+
 // NewBackup creates a new mariadb-backup skill.
 func NewBackup() types.RunnableInterface {
 	pb := types.NewBaseSkill()

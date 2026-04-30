@@ -95,6 +95,13 @@ func (p *Ping) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for ping.
+// Returns Ping for fluent method chaining.
+func (p *Ping) SetArgs(args map[string]string) types.RunnableInterface {
+	p.BaseSkill.SetArgs(args)
+	return p
+}
+
 // NewPing creates a new ping skill instance.
 //
 // Returns:

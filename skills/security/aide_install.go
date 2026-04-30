@@ -129,6 +129,13 @@ EOF`, Description: "Create AIDE daily cron job"}
 	}
 }
 
+// SetArgs sets the arguments for AIDE installation.
+// Returns AideInstall for fluent method chaining.
+func (a *AideInstall) SetArgs(args map[string]string) types.RunnableInterface {
+	a.BaseSkill.SetArgs(args)
+	return a
+}
+
 // NewAideInstall creates a new aide-install skill.
 func NewAideInstall() types.RunnableInterface {
 	pb := types.NewBaseSkill()

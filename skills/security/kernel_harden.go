@@ -192,6 +192,13 @@ EOF`, sysctlDropInPath), Description: "Create kernel hardening config"}
 	}
 }
 
+// SetArgs sets the arguments for kernel hardening.
+// Returns KernelHarden for fluent method chaining.
+func (k *KernelHarden) SetArgs(args map[string]string) types.RunnableInterface {
+	k.BaseSkill.SetArgs(args)
+	return k
+}
+
 // NewKernelHarden creates a new kernel-harden skill.
 func NewKernelHarden() types.RunnableInterface {
 	pb := types.NewBaseSkill()

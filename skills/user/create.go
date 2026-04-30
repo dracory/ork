@@ -200,6 +200,13 @@ func (u *UserCreate) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for user creation.
+// Returns UserCreate for fluent method chaining.
+func (u *UserCreate) SetArgs(args map[string]string) types.RunnableInterface {
+	u.BaseSkill.SetArgs(args)
+	return u
+}
+
 // NewUserCreate creates a new user-create skill.
 func NewUserCreate() types.RunnableInterface {
 	pb := types.NewBaseSkill()

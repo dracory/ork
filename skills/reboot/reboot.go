@@ -153,6 +153,13 @@ func (r *Reboot) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for reboot.
+// Returns Reboot for fluent method chaining.
+func (r *Reboot) SetArgs(args map[string]string) types.RunnableInterface {
+	r.BaseSkill.SetArgs(args)
+	return r
+}
+
 // NewReboot creates a new reboot skill.
 // By default, WaitForReconnect is false (does not wait for server to come back).
 //
@@ -175,7 +182,7 @@ func NewReboot() types.RunnableInterface {
 	pb.SetID(skills.IDReboot)
 	pb.SetDescription("Reboot the remote server")
 	return &Reboot{
-		BaseSkill:     pb,
+		BaseSkill:        pb,
 		WaitForReconnect: false,
 		MaxWaitTime:      5 * time.Minute,
 	}

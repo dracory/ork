@@ -142,6 +142,13 @@ func (s *SshChangePort) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for SSH port change.
+// Returns SshChangePort for fluent method chaining.
+func (s *SshChangePort) SetArgs(args map[string]string) types.RunnableInterface {
+	s.BaseSkill.SetArgs(args)
+	return s
+}
+
 // NewSshChangePort creates a new ssh-change-port skill.
 func NewSshChangePort() types.RunnableInterface {
 	pb := types.NewBaseSkill()

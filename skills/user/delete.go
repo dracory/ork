@@ -108,6 +108,13 @@ func (u *UserDelete) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for user deletion.
+// Returns UserDelete for fluent method chaining.
+func (u *UserDelete) SetArgs(args map[string]string) types.RunnableInterface {
+	u.BaseSkill.SetArgs(args)
+	return u
+}
+
 // NewUserDelete creates a new user-delete skill.
 func NewUserDelete() types.RunnableInterface {
 	pb := types.NewBaseSkill()

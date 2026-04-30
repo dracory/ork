@@ -126,6 +126,13 @@ func (m *ChangePort) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for changing MariaDB port.
+// Returns ChangePort for fluent method chaining.
+func (c *ChangePort) SetArgs(args map[string]string) types.RunnableInterface {
+	c.BaseSkill.SetArgs(args)
+	return c
+}
+
 // NewChangePort creates a new mariadb-change-port skill.
 func NewChangePort() types.RunnableInterface {
 	pb := types.NewBaseSkill()

@@ -166,6 +166,13 @@ EOF`, Description: "Create audit rules"}
 	}
 }
 
+// SetArgs sets the arguments for auditd installation.
+// Returns AuditdInstall for fluent method chaining.
+func (a *AuditdInstall) SetArgs(args map[string]string) types.RunnableInterface {
+	a.BaseSkill.SetArgs(args)
+	return a
+}
+
 // NewAuditdInstall creates a new auditd-install skill.
 func NewAuditdInstall() types.RunnableInterface {
 	pb := types.NewBaseSkill()

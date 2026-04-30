@@ -91,6 +91,13 @@ func (m *ListDBs) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for listing MariaDB databases.
+// Returns ListDBs for fluent method chaining.
+func (l *ListDBs) SetArgs(args map[string]string) types.RunnableInterface {
+	l.BaseSkill.SetArgs(args)
+	return l
+}
+
 // NewListDBs creates a new mariadb-list-dbs skill.
 func NewListDBs() types.RunnableInterface {
 	pb := types.NewBaseSkill()

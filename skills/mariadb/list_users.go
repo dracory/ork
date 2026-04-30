@@ -92,6 +92,13 @@ func (m *ListUsers) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for listing MariaDB users.
+// Returns ListUsers for fluent method chaining.
+func (l *ListUsers) SetArgs(args map[string]string) types.RunnableInterface {
+	l.BaseSkill.SetArgs(args)
+	return l
+}
+
 // NewListUsers creates a new mariadb-list-users skill.
 func NewListUsers() types.RunnableInterface {
 	pb := types.NewBaseSkill()

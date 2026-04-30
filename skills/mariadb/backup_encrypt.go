@@ -110,6 +110,13 @@ func (b *BackupEncrypt) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for encrypted MariaDB backup.
+// Returns BackupEncrypt for fluent method chaining.
+func (b *BackupEncrypt) SetArgs(args map[string]string) types.RunnableInterface {
+	b.BaseSkill.SetArgs(args)
+	return b
+}
+
 // NewBackupEncrypt creates a new mariadb-backup-encrypt skill.
 func NewBackupEncrypt() types.RunnableInterface {
 	pb := types.NewBaseSkill()

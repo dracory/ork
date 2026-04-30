@@ -245,6 +245,13 @@ func (s *SwapCreate) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for swap creation.
+// Returns SwapCreate for fluent method chaining.
+func (s *SwapCreate) SetArgs(args map[string]string) types.RunnableInterface {
+	s.BaseSkill.SetArgs(args)
+	return s
+}
+
 // NewSwapCreate creates a new swap-create skill.
 //
 // Returns:

@@ -222,6 +222,13 @@ func (u *UfwInstall) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for UFW installation.
+// Returns UfwInstall for fluent method chaining.
+func (u *UfwInstall) SetArgs(args map[string]string) types.RunnableInterface {
+	u.BaseSkill.SetArgs(args)
+	return u
+}
+
 // NewUfwInstall creates a new ufw-install skill.
 func NewUfwInstall() types.RunnableInterface {
 	pb := types.NewBaseSkill()

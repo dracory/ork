@@ -100,6 +100,13 @@ func (f *Fail2banStatus) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for fail2ban status.
+// Returns Fail2banStatus for fluent method chaining.
+func (f *Fail2banStatus) SetArgs(args map[string]string) types.RunnableInterface {
+	f.BaseSkill.SetArgs(args)
+	return f
+}
+
 // NewFail2banStatus creates a new fail2ban-status skill.
 func NewFail2banStatus() types.RunnableInterface {
 	pb := types.NewBaseSkill()

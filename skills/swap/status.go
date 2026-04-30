@@ -103,6 +103,13 @@ func (s *SwapStatus) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for swap status.
+// Returns SwapStatus for fluent method chaining.
+func (s *SwapStatus) SetArgs(args map[string]string) types.RunnableInterface {
+	s.BaseSkill.SetArgs(args)
+	return s
+}
+
 // NewSwapStatus creates a new swap-status skill.
 //
 // Returns:

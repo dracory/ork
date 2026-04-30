@@ -126,6 +126,13 @@ func (m *Secure) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for MariaDB secure.
+// Returns Secure for fluent method chaining.
+func (s *Secure) SetArgs(args map[string]string) types.RunnableInterface {
+	s.BaseSkill.SetArgs(args)
+	return s
+}
+
 // NewSecure creates a new mariadb-secure skill.
 func NewSecure() types.RunnableInterface {
 	pb := types.NewBaseSkill()

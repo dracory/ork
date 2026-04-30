@@ -190,6 +190,13 @@ func (s *SshHarden) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for SSH hardening.
+// Returns SshHarden for fluent method chaining.
+func (s *SshHarden) SetArgs(args map[string]string) types.RunnableInterface {
+	s.BaseSkill.SetArgs(args)
+	return s
+}
+
 // NewSshHarden creates a new ssh-harden skill.
 func NewSshHarden() types.RunnableInterface {
 	pb := types.NewBaseSkill()

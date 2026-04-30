@@ -113,6 +113,13 @@ func (a *AptStatus) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for apt status.
+// Returns AptStatus for fluent method chaining.
+func (a *AptStatus) SetArgs(args map[string]string) types.RunnableInterface {
+	a.BaseSkill.SetArgs(args)
+	return a
+}
+
 // NewAptStatus creates a new apt-status skill.
 //
 // Returns:

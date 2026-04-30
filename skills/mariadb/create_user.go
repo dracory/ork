@@ -173,6 +173,13 @@ func (m *CreateUser) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for creating MariaDB user.
+// Returns CreateUser for fluent method chaining.
+func (c *CreateUser) SetArgs(args map[string]string) types.RunnableInterface {
+	c.BaseSkill.SetArgs(args)
+	return c
+}
+
 // NewCreateUser creates a new mariadb-create-user skill.
 func NewCreateUser() types.RunnableInterface {
 	pb := types.NewBaseSkill()

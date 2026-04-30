@@ -93,6 +93,13 @@ func (m *SecurityAudit) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for MariaDB security audit.
+// Returns SecurityAudit for fluent method chaining.
+func (s *SecurityAudit) SetArgs(args map[string]string) types.RunnableInterface {
+	s.BaseSkill.SetArgs(args)
+	return s
+}
+
 // NewSecurityAudit creates a new mariadb-security-audit skill.
 func NewSecurityAudit() types.RunnableInterface {
 	pb := types.NewBaseSkill()

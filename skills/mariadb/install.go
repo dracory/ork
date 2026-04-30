@@ -142,6 +142,13 @@ func (m *Install) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for MariaDB installation.
+// Returns Install for fluent method chaining.
+func (i *Install) SetArgs(args map[string]string) types.RunnableInterface {
+	i.BaseSkill.SetArgs(args)
+	return i
+}
+
 // NewInstall creates a new mariadb-install skill.
 func NewInstall() types.RunnableInterface {
 	pb := types.NewBaseSkill()

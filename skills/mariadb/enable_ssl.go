@@ -125,6 +125,13 @@ EOF`, configPath, configPath, dataDir, dataDir, dataDir), Description: "Configur
 	}
 }
 
+// SetArgs sets the arguments for enabling SSL.
+// Returns EnableSSL for fluent method chaining.
+func (e *EnableSSL) SetArgs(args map[string]string) types.RunnableInterface {
+	e.BaseSkill.SetArgs(args)
+	return e
+}
+
 // NewEnableSSL creates a new mariadb-enable-ssl skill.
 func NewEnableSSL() types.RunnableInterface {
 	pb := types.NewBaseSkill()

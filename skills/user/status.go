@@ -119,6 +119,13 @@ func (u *UserStatus) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for user status.
+// Returns UserStatus for fluent method chaining.
+func (u *UserStatus) SetArgs(args map[string]string) types.RunnableInterface {
+	u.BaseSkill.SetArgs(args)
+	return u
+}
+
 // NewUserStatus creates a new user-status skill.
 //
 // Returns:

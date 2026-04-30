@@ -155,6 +155,13 @@ EOF`, configPath, configPath, keyFilePath),
 	}
 }
 
+// SetArgs sets the arguments for enabling encryption.
+// Returns EnableEncryption for fluent method chaining.
+func (e *EnableEncryption) SetArgs(args map[string]string) types.RunnableInterface {
+	e.BaseSkill.SetArgs(args)
+	return e
+}
+
 // NewEnableEncryption creates a new mariadb-enable-encryption skill.
 func NewEnableEncryption() types.RunnableInterface {
 	pb := types.NewBaseSkill()

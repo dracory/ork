@@ -101,6 +101,13 @@ func (m *CreateDB) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for creating MariaDB database.
+// Returns CreateDB for fluent method chaining.
+func (c *CreateDB) SetArgs(args map[string]string) types.RunnableInterface {
+	c.BaseSkill.SetArgs(args)
+	return c
+}
+
 // NewCreateDB creates a new mariadb-create-db skill.
 func NewCreateDB() types.RunnableInterface {
 	pb := types.NewBaseSkill()

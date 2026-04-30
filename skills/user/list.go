@@ -97,6 +97,13 @@ func (u *UserList) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for user listing.
+// Returns UserList for fluent method chaining.
+func (u *UserList) SetArgs(args map[string]string) types.RunnableInterface {
+	u.BaseSkill.SetArgs(args)
+	return u
+}
+
 // NewUserList creates a new user-list skill.
 //
 // Returns:

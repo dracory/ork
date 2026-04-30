@@ -85,6 +85,13 @@ func (u *UfwStatus) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for UFW status.
+// Returns UfwStatus for fluent method chaining.
+func (u *UfwStatus) SetArgs(args map[string]string) types.RunnableInterface {
+	u.BaseSkill.SetArgs(args)
+	return u
+}
+
 // NewUfwStatus creates a new ufw-status skill.
 func NewUfwStatus() types.RunnableInterface {
 	pb := types.NewBaseSkill()

@@ -113,6 +113,13 @@ func (m *Status) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for MariaDB status.
+// Returns Status for fluent method chaining.
+func (s *Status) SetArgs(args map[string]string) types.RunnableInterface {
+	s.BaseSkill.SetArgs(args)
+	return s
+}
+
 // NewStatus creates a new mariadb-status skill.
 func NewStatus() types.RunnableInterface {
 	pb := types.NewBaseSkill()

@@ -127,6 +127,13 @@ func (a *AptUpgrade) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for apt upgrade.
+// Returns AptUpgrade for fluent method chaining.
+func (a *AptUpgrade) SetArgs(args map[string]string) types.RunnableInterface {
+	a.BaseSkill.SetArgs(args)
+	return a
+}
+
 // NewAptUpgrade creates a new apt-upgrade skill.
 //
 // Returns:

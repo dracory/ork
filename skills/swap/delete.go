@@ -141,6 +141,13 @@ func (s *SwapDelete) Run() types.Result {
 	}
 }
 
+// SetArgs sets the arguments for swap deletion.
+// Returns SwapDelete for fluent method chaining.
+func (s *SwapDelete) SetArgs(args map[string]string) types.RunnableInterface {
+	s.BaseSkill.SetArgs(args)
+	return s
+}
+
 // NewSwapDelete creates a new swap-delete skill.
 //
 // Returns:
