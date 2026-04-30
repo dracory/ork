@@ -2,6 +2,7 @@ package mariadb
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -105,6 +106,34 @@ func (m *CreateDB) Run() types.Result {
 // Returns CreateDB for fluent method chaining.
 func (c *CreateDB) SetArgs(args map[string]string) types.RunnableInterface {
 	c.BaseSkill.SetArgs(args)
+	return c
+}
+
+// SetArg sets a single argument for creating MariaDB database.
+// Returns CreateDB for fluent method chaining.
+func (c *CreateDB) SetArg(key, value string) types.RunnableInterface {
+	c.BaseSkill.SetArg(key, value)
+	return c
+}
+
+// SetID sets the ID for creating MariaDB database.
+// Returns CreateDB for fluent method chaining.
+func (c *CreateDB) SetID(id string) types.RunnableInterface {
+	c.BaseSkill.SetID(id)
+	return c
+}
+
+// SetDescription sets the description for creating MariaDB database.
+// Returns CreateDB for fluent method chaining.
+func (c *CreateDB) SetDescription(description string) types.RunnableInterface {
+	c.BaseSkill.SetDescription(description)
+	return c
+}
+
+// SetTimeout sets the timeout for creating MariaDB database.
+// Returns CreateDB for fluent method chaining.
+func (c *CreateDB) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	c.BaseSkill.SetTimeout(timeout)
 	return c
 }
 

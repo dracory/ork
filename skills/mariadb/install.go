@@ -2,6 +2,7 @@ package mariadb
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -109,15 +110,24 @@ func (m *Install) Run() types.Result {
 	// Wait for MariaDB to be ready
 	_, _ = ssh.Run(cfg, cmdWaitReady)
 
-	// Set root password if provided
-	if rootPassword != "" {
-		_, err = ssh.Run(cfg, cmdSetPassword)
-		if err != nil {
-			cfg.GetLoggerOrDefault().Warn("could not set root password", "error", err)
-		} else {
-			cfg.GetLoggerOrDefault().Info("root password set")
+	// Set root password (required for security)
+	if rootPassword == "" {
+		return types.Result{
+			Changed: false,
+			Message: "MariaDB root password is required. Provide via --arg=root-password",
+			Error:   fmt.Errorf("root-password argument is required for secure installation"),
 		}
 	}
+
+	_, err = ssh.Run(cfg, cmdSetPassword)
+	if err != nil {
+		return types.Result{
+			Changed: false,
+			Message: "Failed to set root password",
+			Error:   fmt.Errorf("failed to set root password: %w\nOutput: %s", err, output),
+		}
+	}
+	cfg.GetLoggerOrDefault().Info("root password set")
 
 	// Configure MariaDB to listen on all interfaces for public access
 	cfg.GetLoggerOrDefault().Info("configuring MariaDB to listen on all interfaces")
@@ -146,6 +156,34 @@ func (m *Install) Run() types.Result {
 // Returns Install for fluent method chaining.
 func (i *Install) SetArgs(args map[string]string) types.RunnableInterface {
 	i.BaseSkill.SetArgs(args)
+	return i
+}
+
+// SetArg sets a single argument for MariaDB installation.
+// Returns Install for fluent method chaining.
+func (i *Install) SetArg(key, value string) types.RunnableInterface {
+	i.BaseSkill.SetArg(key, value)
+	return i
+}
+
+// SetID sets the ID for MariaDB installation.
+// Returns Install for fluent method chaining.
+func (i *Install) SetID(id string) types.RunnableInterface {
+	i.BaseSkill.SetID(id)
+	return i
+}
+
+// SetDescription sets the description for MariaDB installation.
+// Returns Install for fluent method chaining.
+func (i *Install) SetDescription(description string) types.RunnableInterface {
+	i.BaseSkill.SetDescription(description)
+	return i
+}
+
+// SetTimeout sets the timeout for MariaDB installation.
+// Returns Install for fluent method chaining.
+func (i *Install) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	i.BaseSkill.SetTimeout(timeout)
 	return i
 }
 

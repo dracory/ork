@@ -119,3 +119,89 @@ func TestCreateDB_NewCreateDB(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestCreateDB_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete CreateDB type.
+func TestCreateDB_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewCreateDB()
+	args := map[string]string{"db-name": "testdb", "root-password": "testpass"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*CreateDB); !ok {
+		t.Error("SetArgs should return *CreateDB, not just RunnableInterface")
+	}
+}
+
+// TestCreateDB_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete CreateDB type.
+func TestCreateDB_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewCreateDB()
+
+	result := skill.SetArg("db-name", "testdb")
+
+	if _, ok := result.(*CreateDB); !ok {
+		t.Error("SetArg should return *CreateDB, not just RunnableInterface")
+	}
+}
+
+// TestCreateDB_SetID_ReturnsConcreteType verifies that SetID returns the concrete CreateDB type.
+func TestCreateDB_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewCreateDB()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*CreateDB); !ok {
+		t.Error("SetID should return *CreateDB, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestCreateDB_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete CreateDB type.
+func TestCreateDB_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewCreateDB()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*CreateDB); !ok {
+		t.Error("SetDescription should return *CreateDB, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestCreateDB_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete CreateDB type.
+func TestCreateDB_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewCreateDB()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*CreateDB); !ok {
+		t.Error("SetTimeout should return *CreateDB, not just RunnableInterface")
+	}
+}
+
+// TestCreateDB_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestCreateDB_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewCreateDB().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("db-name", "testdb").
+		SetArgs(map[string]string{"root-password": "testpass"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*CreateDB); !ok {
+		t.Error("Method chaining should preserve *CreateDB type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

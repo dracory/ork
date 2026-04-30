@@ -3,6 +3,7 @@ package mariadb
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -130,6 +131,34 @@ func (m *ChangePort) Run() types.Result {
 // Returns ChangePort for fluent method chaining.
 func (c *ChangePort) SetArgs(args map[string]string) types.RunnableInterface {
 	c.BaseSkill.SetArgs(args)
+	return c
+}
+
+// SetArg sets a single argument for changing MariaDB port.
+// Returns ChangePort for fluent method chaining.
+func (c *ChangePort) SetArg(key, value string) types.RunnableInterface {
+	c.BaseSkill.SetArg(key, value)
+	return c
+}
+
+// SetID sets the ID for changing MariaDB port.
+// Returns ChangePort for fluent method chaining.
+func (c *ChangePort) SetID(id string) types.RunnableInterface {
+	c.BaseSkill.SetID(id)
+	return c
+}
+
+// SetDescription sets the description for changing MariaDB port.
+// Returns ChangePort for fluent method chaining.
+func (c *ChangePort) SetDescription(description string) types.RunnableInterface {
+	c.BaseSkill.SetDescription(description)
+	return c
+}
+
+// SetTimeout sets the timeout for changing MariaDB port.
+// Returns ChangePort for fluent method chaining.
+func (c *ChangePort) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	c.BaseSkill.SetTimeout(timeout)
 	return c
 }
 

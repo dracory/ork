@@ -5,6 +5,7 @@ package user
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -204,6 +205,34 @@ func (u *UserCreate) Run() types.Result {
 // Returns UserCreate for fluent method chaining.
 func (u *UserCreate) SetArgs(args map[string]string) types.RunnableInterface {
 	u.BaseSkill.SetArgs(args)
+	return u
+}
+
+// SetArg sets a single argument for user creation.
+// Returns UserCreate for fluent method chaining.
+func (u *UserCreate) SetArg(key, value string) types.RunnableInterface {
+	u.BaseSkill.SetArg(key, value)
+	return u
+}
+
+// SetID sets the ID for user creation.
+// Returns UserCreate for fluent method chaining.
+func (u *UserCreate) SetID(id string) types.RunnableInterface {
+	u.BaseSkill.SetID(id)
+	return u
+}
+
+// SetDescription sets the description for user creation.
+// Returns UserCreate for fluent method chaining.
+func (u *UserCreate) SetDescription(description string) types.RunnableInterface {
+	u.BaseSkill.SetDescription(description)
+	return u
+}
+
+// SetTimeout sets the timeout for user creation.
+// Returns UserCreate for fluent method chaining.
+func (u *UserCreate) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	u.BaseSkill.SetTimeout(timeout)
 	return u
 }
 

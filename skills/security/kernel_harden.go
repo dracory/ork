@@ -2,6 +2,7 @@ package security
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -196,6 +197,34 @@ EOF`, sysctlDropInPath), Description: "Create kernel hardening config"}
 // Returns KernelHarden for fluent method chaining.
 func (k *KernelHarden) SetArgs(args map[string]string) types.RunnableInterface {
 	k.BaseSkill.SetArgs(args)
+	return k
+}
+
+// SetArg sets a single argument for kernel hardening.
+// Returns KernelHarden for fluent method chaining.
+func (k *KernelHarden) SetArg(key, value string) types.RunnableInterface {
+	k.BaseSkill.SetArg(key, value)
+	return k
+}
+
+// SetID sets the ID for kernel hardening.
+// Returns KernelHarden for fluent method chaining.
+func (k *KernelHarden) SetID(id string) types.RunnableInterface {
+	k.BaseSkill.SetID(id)
+	return k
+}
+
+// SetDescription sets the description for kernel hardening.
+// Returns KernelHarden for fluent method chaining.
+func (k *KernelHarden) SetDescription(description string) types.RunnableInterface {
+	k.BaseSkill.SetDescription(description)
+	return k
+}
+
+// SetTimeout sets the timeout for kernel hardening.
+// Returns KernelHarden for fluent method chaining.
+func (k *KernelHarden) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	k.BaseSkill.SetTimeout(timeout)
 	return k
 }
 

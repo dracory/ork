@@ -69,3 +69,89 @@ func TestFail2banInstall_NewFail2banInstall(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestFail2banInstall_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete Fail2banInstall type.
+func TestFail2banInstall_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewFail2banInstall()
+	args := map[string]string{"test": "value"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*Fail2banInstall); !ok {
+		t.Error("SetArgs should return *Fail2banInstall, not just RunnableInterface")
+	}
+}
+
+// TestFail2banInstall_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete Fail2banInstall type.
+func TestFail2banInstall_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewFail2banInstall()
+
+	result := skill.SetArg("test", "value")
+
+	if _, ok := result.(*Fail2banInstall); !ok {
+		t.Error("SetArg should return *Fail2banInstall, not just RunnableInterface")
+	}
+}
+
+// TestFail2banInstall_SetID_ReturnsConcreteType verifies that SetID returns the concrete Fail2banInstall type.
+func TestFail2banInstall_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewFail2banInstall()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*Fail2banInstall); !ok {
+		t.Error("SetID should return *Fail2banInstall, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestFail2banInstall_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete Fail2banInstall type.
+func TestFail2banInstall_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewFail2banInstall()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*Fail2banInstall); !ok {
+		t.Error("SetDescription should return *Fail2banInstall, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestFail2banInstall_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete Fail2banInstall type.
+func TestFail2banInstall_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewFail2banInstall()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*Fail2banInstall); !ok {
+		t.Error("SetTimeout should return *Fail2banInstall, not just RunnableInterface")
+	}
+}
+
+// TestFail2banInstall_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestFail2banInstall_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewFail2banInstall().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("test", "value").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*Fail2banInstall); !ok {
+		t.Error("Method chaining should preserve *Fail2banInstall type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

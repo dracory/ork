@@ -2,6 +2,7 @@ package mariadb
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -95,6 +96,34 @@ func (m *ListDBs) Run() types.Result {
 // Returns ListDBs for fluent method chaining.
 func (l *ListDBs) SetArgs(args map[string]string) types.RunnableInterface {
 	l.BaseSkill.SetArgs(args)
+	return l
+}
+
+// SetArg sets a single argument for listing MariaDB databases.
+// Returns ListDBs for fluent method chaining.
+func (l *ListDBs) SetArg(key, value string) types.RunnableInterface {
+	l.BaseSkill.SetArg(key, value)
+	return l
+}
+
+// SetID sets the ID for listing MariaDB databases.
+// Returns ListDBs for fluent method chaining.
+func (l *ListDBs) SetID(id string) types.RunnableInterface {
+	l.BaseSkill.SetID(id)
+	return l
+}
+
+// SetDescription sets the description for listing MariaDB databases.
+// Returns ListDBs for fluent method chaining.
+func (l *ListDBs) SetDescription(description string) types.RunnableInterface {
+	l.BaseSkill.SetDescription(description)
+	return l
+}
+
+// SetTimeout sets the timeout for listing MariaDB databases.
+// Returns ListDBs for fluent method chaining.
+func (l *ListDBs) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	l.BaseSkill.SetTimeout(timeout)
 	return l
 }
 

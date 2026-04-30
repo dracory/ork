@@ -135,6 +135,34 @@ func (b *Backup) SetArgs(args map[string]string) types.RunnableInterface {
 	return b
 }
 
+// SetArg sets a single argument for MariaDB backup.
+// Returns Backup for fluent method chaining.
+func (b *Backup) SetArg(key, value string) types.RunnableInterface {
+	b.BaseSkill.SetArg(key, value)
+	return b
+}
+
+// SetID sets the ID for MariaDB backup.
+// Returns Backup for fluent method chaining.
+func (b *Backup) SetID(id string) types.RunnableInterface {
+	b.BaseSkill.SetID(id)
+	return b
+}
+
+// SetDescription sets the description for MariaDB backup.
+// Returns Backup for fluent method chaining.
+func (b *Backup) SetDescription(description string) types.RunnableInterface {
+	b.BaseSkill.SetDescription(description)
+	return b
+}
+
+// SetTimeout sets the timeout for MariaDB backup.
+// Returns Backup for fluent method chaining.
+func (b *Backup) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	b.BaseSkill.SetTimeout(timeout)
+	return b
+}
+
 // NewBackup creates a new mariadb-backup skill.
 func NewBackup() types.RunnableInterface {
 	pb := types.NewBaseSkill()

@@ -1,6 +1,8 @@
 package security
 
 import (
+	"time"
+
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
@@ -133,6 +135,34 @@ EOF`, Description: "Create AIDE daily cron job"}
 // Returns AideInstall for fluent method chaining.
 func (a *AideInstall) SetArgs(args map[string]string) types.RunnableInterface {
 	a.BaseSkill.SetArgs(args)
+	return a
+}
+
+// SetArg sets a single argument for AIDE installation.
+// Returns AideInstall for fluent method chaining.
+func (a *AideInstall) SetArg(key, value string) types.RunnableInterface {
+	a.BaseSkill.SetArg(key, value)
+	return a
+}
+
+// SetID sets the ID for AIDE installation.
+// Returns AideInstall for fluent method chaining.
+func (a *AideInstall) SetID(id string) types.RunnableInterface {
+	a.BaseSkill.SetID(id)
+	return a
+}
+
+// SetDescription sets the description for AIDE installation.
+// Returns AideInstall for fluent method chaining.
+func (a *AideInstall) SetDescription(description string) types.RunnableInterface {
+	a.BaseSkill.SetDescription(description)
+	return a
+}
+
+// SetTimeout sets the timeout for AIDE installation.
+// Returns AideInstall for fluent method chaining.
+func (a *AideInstall) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	a.BaseSkill.SetTimeout(timeout)
 	return a
 }
 

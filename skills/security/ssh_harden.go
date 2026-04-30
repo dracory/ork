@@ -3,6 +3,7 @@ package security
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -194,6 +195,34 @@ func (s *SshHarden) Run() types.Result {
 // Returns SshHarden for fluent method chaining.
 func (s *SshHarden) SetArgs(args map[string]string) types.RunnableInterface {
 	s.BaseSkill.SetArgs(args)
+	return s
+}
+
+// SetArg sets a single argument for SSH hardening.
+// Returns SshHarden for fluent method chaining.
+func (s *SshHarden) SetArg(key, value string) types.RunnableInterface {
+	s.BaseSkill.SetArg(key, value)
+	return s
+}
+
+// SetID sets the ID for SSH hardening.
+// Returns SshHarden for fluent method chaining.
+func (s *SshHarden) SetID(id string) types.RunnableInterface {
+	s.BaseSkill.SetID(id)
+	return s
+}
+
+// SetDescription sets the description for SSH hardening.
+// Returns SshHarden for fluent method chaining.
+func (s *SshHarden) SetDescription(description string) types.RunnableInterface {
+	s.BaseSkill.SetDescription(description)
+	return s
+}
+
+// SetTimeout sets the timeout for SSH hardening.
+// Returns SshHarden for fluent method chaining.
+func (s *SshHarden) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	s.BaseSkill.SetTimeout(timeout)
 	return s
 }
 

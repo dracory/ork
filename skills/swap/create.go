@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -127,13 +128,16 @@ func (s *SwapCreate) Run() types.Result {
 		}
 	}
 
-	// Normalize unit
+	// Normalize unit and convert to megabytes
 	unit = strings.ToLower(unit)
+	var sizeMB int
 	var sizeDesc string
 	switch unit {
 	case "mb", "m":
+		sizeMB = size
 		sizeDesc = fmt.Sprintf("%dMB", size)
 	case "gb", "g":
+		sizeMB = size * 1024
 		sizeDesc = fmt.Sprintf("%dGB", size)
 	default:
 		return types.Result{
@@ -162,7 +166,7 @@ func (s *SwapCreate) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("creating swap file", "size", sizeDesc, "path", swapFilePath)
 
-	cmdCreate := types.Command{Command: fmt.Sprintf("dd if=/dev/zero of=%s bs=1M count=%d && chmod 600 %s", swapFilePath, size, swapFilePath), Description: "Create swap file"}
+	cmdCreate := types.Command{Command: fmt.Sprintf("dd if=/dev/zero of=%s bs=1M count=%d && chmod 600 %s", swapFilePath, sizeMB, swapFilePath), Description: "Create swap file"}
 	cmdMakeSwap := types.Command{Command: fmt.Sprintf("mkswap %s", swapFilePath), Description: "Make swap file"}
 	cmdCheckFstab := types.Command{Command: fmt.Sprintf("grep -q '%s none swap sw 0 0' /etc/fstab && echo 'exists' || echo 'missing'", swapFilePath), Description: "Check if swap in fstab"}
 	cmdAddFstab := types.Command{Command: fmt.Sprintf("echo '%s none swap sw 0 0' | tee -a /etc/fstab", swapFilePath), Description: "Add swap to fstab"}
@@ -171,7 +175,8 @@ func (s *SwapCreate) Run() types.Result {
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCreate.Command)
+		dryRunCreateCmd := fmt.Sprintf("dd if=/dev/zero of=%s bs=1M count=%d && chmod 600 %s", swapFilePath, sizeMB, swapFilePath)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", dryRunCreateCmd)
 		cfg.GetLoggerOrDefault().Info("dry-run: would make swap", "cmd", cmdMakeSwap.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would enable swap", "cmd", fmt.Sprintf("swapon %s", swapFilePath))
 		cfg.GetLoggerOrDefault().Info("dry-run: would check fstab", "cmd", cmdCheckFstab.Command)
@@ -249,6 +254,34 @@ func (s *SwapCreate) Run() types.Result {
 // Returns SwapCreate for fluent method chaining.
 func (s *SwapCreate) SetArgs(args map[string]string) types.RunnableInterface {
 	s.BaseSkill.SetArgs(args)
+	return s
+}
+
+// SetArg sets a single argument for swap creation.
+// Returns SwapCreate for fluent method chaining.
+func (s *SwapCreate) SetArg(key, value string) types.RunnableInterface {
+	s.BaseSkill.SetArg(key, value)
+	return s
+}
+
+// SetID sets the ID for swap creation.
+// Returns SwapCreate for fluent method chaining.
+func (s *SwapCreate) SetID(id string) types.RunnableInterface {
+	s.BaseSkill.SetID(id)
+	return s
+}
+
+// SetDescription sets the description for swap creation.
+// Returns SwapCreate for fluent method chaining.
+func (s *SwapCreate) SetDescription(description string) types.RunnableInterface {
+	s.BaseSkill.SetDescription(description)
+	return s
+}
+
+// SetTimeout sets the timeout for swap creation.
+// Returns SwapCreate for fluent method chaining.
+func (s *SwapCreate) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	s.BaseSkill.SetTimeout(timeout)
 	return s
 }
 

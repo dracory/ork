@@ -2,6 +2,7 @@ package mariadb
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -117,6 +118,34 @@ func (m *Status) Run() types.Result {
 // Returns Status for fluent method chaining.
 func (s *Status) SetArgs(args map[string]string) types.RunnableInterface {
 	s.BaseSkill.SetArgs(args)
+	return s
+}
+
+// SetArg sets a single argument for MariaDB status.
+// Returns Status for fluent method chaining.
+func (s *Status) SetArg(key, value string) types.RunnableInterface {
+	s.BaseSkill.SetArg(key, value)
+	return s
+}
+
+// SetID sets the ID for MariaDB status.
+// Returns Status for fluent method chaining.
+func (s *Status) SetID(id string) types.RunnableInterface {
+	s.BaseSkill.SetID(id)
+	return s
+}
+
+// SetDescription sets the description for MariaDB status.
+// Returns Status for fluent method chaining.
+func (s *Status) SetDescription(description string) types.RunnableInterface {
+	s.BaseSkill.SetDescription(description)
+	return s
+}
+
+// SetTimeout sets the timeout for MariaDB status.
+// Returns Status for fluent method chaining.
+func (s *Status) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	s.BaseSkill.SetTimeout(timeout)
 	return s
 }
 

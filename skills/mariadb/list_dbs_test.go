@@ -119,3 +119,89 @@ func TestListDBs_NewListDBs(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestListDBs_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete ListDBs type.
+func TestListDBs_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewListDBs()
+	args := map[string]string{"root-password": "testpass"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*ListDBs); !ok {
+		t.Error("SetArgs should return *ListDBs, not just RunnableInterface")
+	}
+}
+
+// TestListDBs_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete ListDBs type.
+func TestListDBs_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewListDBs()
+
+	result := skill.SetArg("root-password", "testpass")
+
+	if _, ok := result.(*ListDBs); !ok {
+		t.Error("SetArg should return *ListDBs, not just RunnableInterface")
+	}
+}
+
+// TestListDBs_SetID_ReturnsConcreteType verifies that SetID returns the concrete ListDBs type.
+func TestListDBs_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewListDBs()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*ListDBs); !ok {
+		t.Error("SetID should return *ListDBs, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestListDBs_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete ListDBs type.
+func TestListDBs_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewListDBs()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*ListDBs); !ok {
+		t.Error("SetDescription should return *ListDBs, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestListDBs_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete ListDBs type.
+func TestListDBs_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewListDBs()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*ListDBs); !ok {
+		t.Error("SetTimeout should return *ListDBs, not just RunnableInterface")
+	}
+}
+
+// TestListDBs_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestListDBs_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewListDBs().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("root-password", "testpass").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*ListDBs); !ok {
+		t.Error("Method chaining should preserve *ListDBs type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

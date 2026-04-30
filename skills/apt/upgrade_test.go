@@ -69,3 +69,89 @@ func TestAptUpgrade_NewAptUpgrade(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestAptUpgrade_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete AptUpgrade type.
+func TestAptUpgrade_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewAptUpgrade()
+	args := map[string]string{"test": "value"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*AptUpgrade); !ok {
+		t.Error("SetArgs should return *AptUpgrade, not just RunnableInterface")
+	}
+}
+
+// TestAptUpgrade_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete AptUpgrade type.
+func TestAptUpgrade_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewAptUpgrade()
+
+	result := skill.SetArg("test", "value")
+
+	if _, ok := result.(*AptUpgrade); !ok {
+		t.Error("SetArg should return *AptUpgrade, not just RunnableInterface")
+	}
+}
+
+// TestAptUpgrade_SetID_ReturnsConcreteType verifies that SetID returns the concrete AptUpgrade type.
+func TestAptUpgrade_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewAptUpgrade()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*AptUpgrade); !ok {
+		t.Error("SetID should return *AptUpgrade, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestAptUpgrade_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete AptUpgrade type.
+func TestAptUpgrade_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewAptUpgrade()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*AptUpgrade); !ok {
+		t.Error("SetDescription should return *AptUpgrade, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestAptUpgrade_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete AptUpgrade type.
+func TestAptUpgrade_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewAptUpgrade()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*AptUpgrade); !ok {
+		t.Error("SetTimeout should return *AptUpgrade, not just RunnableInterface")
+	}
+}
+
+// TestAptUpgrade_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestAptUpgrade_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewAptUpgrade().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("test", "value").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*AptUpgrade); !ok {
+		t.Error("Method chaining should preserve *AptUpgrade type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

@@ -6,6 +6,7 @@ package ping
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -99,6 +100,34 @@ func (p *Ping) Run() types.Result {
 // Returns Ping for fluent method chaining.
 func (p *Ping) SetArgs(args map[string]string) types.RunnableInterface {
 	p.BaseSkill.SetArgs(args)
+	return p
+}
+
+// SetArg sets a single argument for ping.
+// Returns Ping for fluent method chaining.
+func (p *Ping) SetArg(key, value string) types.RunnableInterface {
+	p.BaseSkill.SetArg(key, value)
+	return p
+}
+
+// SetID sets the ID for ping.
+// Returns Ping for fluent method chaining.
+func (p *Ping) SetID(id string) types.RunnableInterface {
+	p.BaseSkill.SetID(id)
+	return p
+}
+
+// SetDescription sets the description for ping.
+// Returns Ping for fluent method chaining.
+func (p *Ping) SetDescription(description string) types.RunnableInterface {
+	p.BaseSkill.SetDescription(description)
+	return p
+}
+
+// SetTimeout sets the timeout for ping.
+// Returns Ping for fluent method chaining.
+func (p *Ping) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	p.BaseSkill.SetTimeout(timeout)
 	return p
 }
 

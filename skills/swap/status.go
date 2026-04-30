@@ -5,6 +5,7 @@ package swap
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -107,6 +108,34 @@ func (s *SwapStatus) Run() types.Result {
 // Returns SwapStatus for fluent method chaining.
 func (s *SwapStatus) SetArgs(args map[string]string) types.RunnableInterface {
 	s.BaseSkill.SetArgs(args)
+	return s
+}
+
+// SetArg sets a single argument for swap status.
+// Returns SwapStatus for fluent method chaining.
+func (s *SwapStatus) SetArg(key, value string) types.RunnableInterface {
+	s.BaseSkill.SetArg(key, value)
+	return s
+}
+
+// SetID sets the ID for swap status.
+// Returns SwapStatus for fluent method chaining.
+func (s *SwapStatus) SetID(id string) types.RunnableInterface {
+	s.BaseSkill.SetID(id)
+	return s
+}
+
+// SetDescription sets the description for swap status.
+// Returns SwapStatus for fluent method chaining.
+func (s *SwapStatus) SetDescription(description string) types.RunnableInterface {
+	s.BaseSkill.SetDescription(description)
+	return s
+}
+
+// SetTimeout sets the timeout for swap status.
+// Returns SwapStatus for fluent method chaining.
+func (s *SwapStatus) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	s.BaseSkill.SetTimeout(timeout)
 	return s
 }
 

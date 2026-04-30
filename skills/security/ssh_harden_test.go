@@ -67,3 +67,89 @@ func TestSshHarden_NewSshHarden(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestSshHarden_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete SshHarden type.
+func TestSshHarden_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewSshHarden()
+	args := map[string]string{"test": "value"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*SshHarden); !ok {
+		t.Error("SetArgs should return *SshHarden, not just RunnableInterface")
+	}
+}
+
+// TestSshHarden_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete SshHarden type.
+func TestSshHarden_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewSshHarden()
+
+	result := skill.SetArg("test", "value")
+
+	if _, ok := result.(*SshHarden); !ok {
+		t.Error("SetArg should return *SshHarden, not just RunnableInterface")
+	}
+}
+
+// TestSshHarden_SetID_ReturnsConcreteType verifies that SetID returns the concrete SshHarden type.
+func TestSshHarden_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewSshHarden()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*SshHarden); !ok {
+		t.Error("SetID should return *SshHarden, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestSshHarden_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete SshHarden type.
+func TestSshHarden_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewSshHarden()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*SshHarden); !ok {
+		t.Error("SetDescription should return *SshHarden, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestSshHarden_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete SshHarden type.
+func TestSshHarden_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewSshHarden()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*SshHarden); !ok {
+		t.Error("SetTimeout should return *SshHarden, not just RunnableInterface")
+	}
+}
+
+// TestSshHarden_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestSshHarden_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewSshHarden().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("test", "value").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*SshHarden); !ok {
+		t.Error("Method chaining should preserve *SshHarden type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

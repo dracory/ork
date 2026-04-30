@@ -117,6 +117,34 @@ func (b *BackupEncrypt) SetArgs(args map[string]string) types.RunnableInterface 
 	return b
 }
 
+// SetArg sets a single argument for encrypted MariaDB backup.
+// Returns BackupEncrypt for fluent method chaining.
+func (b *BackupEncrypt) SetArg(key, value string) types.RunnableInterface {
+	b.BaseSkill.SetArg(key, value)
+	return b
+}
+
+// SetID sets the ID for encrypted MariaDB backup.
+// Returns BackupEncrypt for fluent method chaining.
+func (b *BackupEncrypt) SetID(id string) types.RunnableInterface {
+	b.BaseSkill.SetID(id)
+	return b
+}
+
+// SetDescription sets the description for encrypted MariaDB backup.
+// Returns BackupEncrypt for fluent method chaining.
+func (b *BackupEncrypt) SetDescription(description string) types.RunnableInterface {
+	b.BaseSkill.SetDescription(description)
+	return b
+}
+
+// SetTimeout sets the timeout for encrypted MariaDB backup.
+// Returns BackupEncrypt for fluent method chaining.
+func (b *BackupEncrypt) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	b.BaseSkill.SetTimeout(timeout)
+	return b
+}
+
 // NewBackupEncrypt creates a new mariadb-backup-encrypt skill.
 func NewBackupEncrypt() types.RunnableInterface {
 	pb := types.NewBaseSkill()

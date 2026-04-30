@@ -116,3 +116,89 @@ func TestChangePort_NewChangePort(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestChangePort_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete ChangePort type.
+func TestChangePort_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewChangePort()
+	args := map[string]string{"port": "3307"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*ChangePort); !ok {
+		t.Error("SetArgs should return *ChangePort, not just RunnableInterface")
+	}
+}
+
+// TestChangePort_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete ChangePort type.
+func TestChangePort_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewChangePort()
+
+	result := skill.SetArg("port", "3307")
+
+	if _, ok := result.(*ChangePort); !ok {
+		t.Error("SetArg should return *ChangePort, not just RunnableInterface")
+	}
+}
+
+// TestChangePort_SetID_ReturnsConcreteType verifies that SetID returns the concrete ChangePort type.
+func TestChangePort_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewChangePort()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*ChangePort); !ok {
+		t.Error("SetID should return *ChangePort, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestChangePort_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete ChangePort type.
+func TestChangePort_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewChangePort()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*ChangePort); !ok {
+		t.Error("SetDescription should return *ChangePort, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestChangePort_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete ChangePort type.
+func TestChangePort_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewChangePort()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*ChangePort); !ok {
+		t.Error("SetTimeout should return *ChangePort, not just RunnableInterface")
+	}
+}
+
+// TestChangePort_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestChangePort_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewChangePort().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("port", "3307").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*ChangePort); !ok {
+		t.Error("Method chaining should preserve *ChangePort type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

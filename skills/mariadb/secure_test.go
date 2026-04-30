@@ -92,3 +92,89 @@ func TestSecure_NewSecure(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestSecure_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete Secure type.
+func TestSecure_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewSecure()
+	args := map[string]string{"root-password": "testpass"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*Secure); !ok {
+		t.Error("SetArgs should return *Secure, not just RunnableInterface")
+	}
+}
+
+// TestSecure_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete Secure type.
+func TestSecure_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewSecure()
+
+	result := skill.SetArg("root-password", "testpass")
+
+	if _, ok := result.(*Secure); !ok {
+		t.Error("SetArg should return *Secure, not just RunnableInterface")
+	}
+}
+
+// TestSecure_SetID_ReturnsConcreteType verifies that SetID returns the concrete Secure type.
+func TestSecure_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewSecure()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*Secure); !ok {
+		t.Error("SetID should return *Secure, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestSecure_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete Secure type.
+func TestSecure_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewSecure()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*Secure); !ok {
+		t.Error("SetDescription should return *Secure, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestSecure_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete Secure type.
+func TestSecure_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewSecure()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*Secure); !ok {
+		t.Error("SetTimeout should return *Secure, not just RunnableInterface")
+	}
+}
+
+// TestSecure_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestSecure_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewSecure().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("root-password", "testpass").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*Secure); !ok {
+		t.Error("Method chaining should preserve *Secure type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

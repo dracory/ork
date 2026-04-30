@@ -97,3 +97,89 @@ func TestInstall_NewInstall(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestInstall_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete Install type.
+func TestInstall_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewInstall()
+	args := map[string]string{"root-password": "testpass"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*Install); !ok {
+		t.Error("SetArgs should return *Install, not just RunnableInterface")
+	}
+}
+
+// TestInstall_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete Install type.
+func TestInstall_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewInstall()
+
+	result := skill.SetArg("root-password", "testpass")
+
+	if _, ok := result.(*Install); !ok {
+		t.Error("SetArg should return *Install, not just RunnableInterface")
+	}
+}
+
+// TestInstall_SetID_ReturnsConcreteType verifies that SetID returns the concrete Install type.
+func TestInstall_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewInstall()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*Install); !ok {
+		t.Error("SetID should return *Install, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestInstall_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete Install type.
+func TestInstall_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewInstall()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*Install); !ok {
+		t.Error("SetDescription should return *Install, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestInstall_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete Install type.
+func TestInstall_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewInstall()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*Install); !ok {
+		t.Error("SetTimeout should return *Install, not just RunnableInterface")
+	}
+}
+
+// TestInstall_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestInstall_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewInstall().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("root-password", "testpass").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*Install); !ok {
+		t.Error("Method chaining should preserve *Install type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

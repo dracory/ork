@@ -122,3 +122,115 @@ func TestUserCreate_NewUserCreate(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestUserCreate_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete UserCreate type.
+func TestUserCreate_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewUserCreate()
+	args := map[string]string{"username": "testuser"}
+
+	result := skill.SetArgs(args)
+
+	// Verify the returned value is still a UserCreate (not just BaseSkill)
+	if _, ok := result.(*UserCreate); !ok {
+		t.Error("SetArgs should return *UserCreate, not just RunnableInterface")
+	}
+
+	// Verify the args were actually set
+	if skill.GetArg("username") != "testuser" {
+		t.Error("SetArgs should set the arguments")
+	}
+}
+
+// TestUserCreate_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete UserCreate type.
+func TestUserCreate_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewUserCreate()
+
+	result := skill.SetArg("username", "testuser")
+
+	// Verify the returned value is still a UserCreate (not just BaseSkill)
+	if _, ok := result.(*UserCreate); !ok {
+		t.Error("SetArg should return *UserCreate, not just RunnableInterface")
+	}
+
+	// Verify the arg was actually set
+	if skill.GetArg("username") != "testuser" {
+		t.Error("SetArg should set the argument")
+	}
+}
+
+// TestUserCreate_SetID_ReturnsConcreteType verifies that SetID returns the concrete UserCreate type.
+func TestUserCreate_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewUserCreate()
+
+	result := skill.SetID("custom-id")
+
+	// Verify the returned value is still a UserCreate (not just BaseSkill)
+	if _, ok := result.(*UserCreate); !ok {
+		t.Error("SetID should return *UserCreate, not just RunnableInterface")
+	}
+
+	// Verify the ID was actually set
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestUserCreate_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete UserCreate type.
+func TestUserCreate_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewUserCreate()
+
+	result := skill.SetDescription("custom description")
+
+	// Verify the returned value is still a UserCreate (not just BaseSkill)
+	if _, ok := result.(*UserCreate); !ok {
+		t.Error("SetDescription should return *UserCreate, not just RunnableInterface")
+	}
+
+	// Verify the description was actually set
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestUserCreate_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete UserCreate type.
+func TestUserCreate_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewUserCreate()
+
+	result := skill.SetTimeout(30 * 1000000000) // 30 seconds
+
+	// Verify the returned value is still a UserCreate (not just BaseSkill)
+	if _, ok := result.(*UserCreate); !ok {
+		t.Error("SetTimeout should return *UserCreate, not just RunnableInterface")
+	}
+}
+
+// TestUserCreate_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestUserCreate_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewUserCreate().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetTimeout(30 * 1000000000).
+		SetArgs(map[string]string{"username": "testuser", "ssh-key": "ssh-rsa test"})
+
+	// Verify the final result is still a UserCreate (not just BaseSkill)
+	if _, ok := skill.(*UserCreate); !ok {
+		t.Error("Method chaining should preserve *UserCreate type")
+	}
+
+	// Verify all values were set correctly
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+
+	if skill.GetArg("username") != "testuser" {
+		t.Error("Method chaining should set args")
+	}
+
+	if skill.GetArg("ssh-key") != "ssh-rsa test" {
+		t.Error("Method chaining should set ssh-key arg")
+	}
+}

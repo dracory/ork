@@ -2,6 +2,7 @@ package ufw
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -89,6 +90,34 @@ func (u *UfwStatus) Run() types.Result {
 // Returns UfwStatus for fluent method chaining.
 func (u *UfwStatus) SetArgs(args map[string]string) types.RunnableInterface {
 	u.BaseSkill.SetArgs(args)
+	return u
+}
+
+// SetArg sets a single argument for UFW status.
+// Returns UfwStatus for fluent method chaining.
+func (u *UfwStatus) SetArg(key, value string) types.RunnableInterface {
+	u.BaseSkill.SetArg(key, value)
+	return u
+}
+
+// SetID sets the ID for UFW status.
+// Returns UfwStatus for fluent method chaining.
+func (u *UfwStatus) SetID(id string) types.RunnableInterface {
+	u.BaseSkill.SetID(id)
+	return u
+}
+
+// SetDescription sets the description for UFW status.
+// Returns UfwStatus for fluent method chaining.
+func (u *UfwStatus) SetDescription(description string) types.RunnableInterface {
+	u.BaseSkill.SetDescription(description)
+	return u
+}
+
+// SetTimeout sets the timeout for UFW status.
+// Returns UfwStatus for fluent method chaining.
+func (u *UfwStatus) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	u.BaseSkill.SetTimeout(timeout)
 	return u
 }
 

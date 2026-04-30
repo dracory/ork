@@ -89,3 +89,89 @@ func TestSwapCreate_NewSwapCreate(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestSwapCreate_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete SwapCreate type.
+func TestSwapCreate_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewSwapCreate()
+	args := map[string]string{"size": "2", "unit": "gb"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*SwapCreate); !ok {
+		t.Error("SetArgs should return *SwapCreate, not just RunnableInterface")
+	}
+}
+
+// TestSwapCreate_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete SwapCreate type.
+func TestSwapCreate_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewSwapCreate()
+
+	result := skill.SetArg("size", "2")
+
+	if _, ok := result.(*SwapCreate); !ok {
+		t.Error("SetArg should return *SwapCreate, not just RunnableInterface")
+	}
+}
+
+// TestSwapCreate_SetID_ReturnsConcreteType verifies that SetID returns the concrete SwapCreate type.
+func TestSwapCreate_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewSwapCreate()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*SwapCreate); !ok {
+		t.Error("SetID should return *SwapCreate, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestSwapCreate_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete SwapCreate type.
+func TestSwapCreate_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewSwapCreate()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*SwapCreate); !ok {
+		t.Error("SetDescription should return *SwapCreate, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestSwapCreate_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete SwapCreate type.
+func TestSwapCreate_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewSwapCreate()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*SwapCreate); !ok {
+		t.Error("SetTimeout should return *SwapCreate, not just RunnableInterface")
+	}
+}
+
+// TestSwapCreate_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestSwapCreate_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewSwapCreate().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("size", "2").
+		SetArgs(map[string]string{"unit": "gb", "swappiness": "20"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*SwapCreate); !ok {
+		t.Error("Method chaining should preserve *SwapCreate type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

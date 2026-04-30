@@ -3,6 +3,7 @@ package ufw
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -104,6 +105,34 @@ func (u *AllowMariaDB) Run() types.Result {
 // Returns AllowMariaDB for fluent method chaining.
 func (u *AllowMariaDB) SetArgs(args map[string]string) types.RunnableInterface {
 	u.BaseSkill.SetArgs(args)
+	return u
+}
+
+// SetArg sets a single argument for MariaDB UFW rules.
+// Returns AllowMariaDB for fluent method chaining.
+func (u *AllowMariaDB) SetArg(key, value string) types.RunnableInterface {
+	u.BaseSkill.SetArg(key, value)
+	return u
+}
+
+// SetID sets the ID for MariaDB UFW rules.
+// Returns AllowMariaDB for fluent method chaining.
+func (u *AllowMariaDB) SetID(id string) types.RunnableInterface {
+	u.BaseSkill.SetID(id)
+	return u
+}
+
+// SetDescription sets the description for MariaDB UFW rules.
+// Returns AllowMariaDB for fluent method chaining.
+func (u *AllowMariaDB) SetDescription(description string) types.RunnableInterface {
+	u.BaseSkill.SetDescription(description)
+	return u
+}
+
+// SetTimeout sets the timeout for MariaDB UFW rules.
+// Returns AllowMariaDB for fluent method chaining.
+func (u *AllowMariaDB) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	u.BaseSkill.SetTimeout(timeout)
 	return u
 }
 

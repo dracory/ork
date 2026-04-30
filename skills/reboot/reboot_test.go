@@ -108,3 +108,89 @@ func TestReboot_NewReboot(t *testing.T) {
 		t.Errorf("Expected MaxWaitTime to be 5 minutes, got %v", pb.MaxWaitTime)
 	}
 }
+
+// TestReboot_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete Reboot type.
+func TestReboot_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewReboot()
+	args := map[string]string{"test": "value"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*Reboot); !ok {
+		t.Error("SetArgs should return *Reboot, not just RunnableInterface")
+	}
+}
+
+// TestReboot_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete Reboot type.
+func TestReboot_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewReboot()
+
+	result := skill.SetArg("test", "value")
+
+	if _, ok := result.(*Reboot); !ok {
+		t.Error("SetArg should return *Reboot, not just RunnableInterface")
+	}
+}
+
+// TestReboot_SetID_ReturnsConcreteType verifies that SetID returns the concrete Reboot type.
+func TestReboot_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewReboot()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*Reboot); !ok {
+		t.Error("SetID should return *Reboot, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestReboot_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete Reboot type.
+func TestReboot_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewReboot()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*Reboot); !ok {
+		t.Error("SetDescription should return *Reboot, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestReboot_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete Reboot type.
+func TestReboot_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewReboot()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*Reboot); !ok {
+		t.Error("SetTimeout should return *Reboot, not just RunnableInterface")
+	}
+}
+
+// TestReboot_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestReboot_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewReboot().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("test", "value").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*Reboot); !ok {
+		t.Error("Method chaining should preserve *Reboot type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

@@ -5,6 +5,7 @@ package swap
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -145,6 +146,34 @@ func (s *SwapDelete) Run() types.Result {
 // Returns SwapDelete for fluent method chaining.
 func (s *SwapDelete) SetArgs(args map[string]string) types.RunnableInterface {
 	s.BaseSkill.SetArgs(args)
+	return s
+}
+
+// SetArg sets a single argument for swap deletion.
+// Returns SwapDelete for fluent method chaining.
+func (s *SwapDelete) SetArg(key, value string) types.RunnableInterface {
+	s.BaseSkill.SetArg(key, value)
+	return s
+}
+
+// SetID sets the ID for swap deletion.
+// Returns SwapDelete for fluent method chaining.
+func (s *SwapDelete) SetID(id string) types.RunnableInterface {
+	s.BaseSkill.SetID(id)
+	return s
+}
+
+// SetDescription sets the description for swap deletion.
+// Returns SwapDelete for fluent method chaining.
+func (s *SwapDelete) SetDescription(description string) types.RunnableInterface {
+	s.BaseSkill.SetDescription(description)
+	return s
+}
+
+// SetTimeout sets the timeout for swap deletion.
+// Returns SwapDelete for fluent method chaining.
+func (s *SwapDelete) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	s.BaseSkill.SetTimeout(timeout)
 	return s
 }
 

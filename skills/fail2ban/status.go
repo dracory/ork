@@ -2,6 +2,7 @@ package fail2ban
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -104,6 +105,34 @@ func (f *Fail2banStatus) Run() types.Result {
 // Returns Fail2banStatus for fluent method chaining.
 func (f *Fail2banStatus) SetArgs(args map[string]string) types.RunnableInterface {
 	f.BaseSkill.SetArgs(args)
+	return f
+}
+
+// SetArg sets a single argument for fail2ban status.
+// Returns Fail2banStatus for fluent method chaining.
+func (f *Fail2banStatus) SetArg(key, value string) types.RunnableInterface {
+	f.BaseSkill.SetArg(key, value)
+	return f
+}
+
+// SetID sets the ID for fail2ban status.
+// Returns Fail2banStatus for fluent method chaining.
+func (f *Fail2banStatus) SetID(id string) types.RunnableInterface {
+	f.BaseSkill.SetID(id)
+	return f
+}
+
+// SetDescription sets the description for fail2ban status.
+// Returns Fail2banStatus for fluent method chaining.
+func (f *Fail2banStatus) SetDescription(description string) types.RunnableInterface {
+	f.BaseSkill.SetDescription(description)
+	return f
+}
+
+// SetTimeout sets the timeout for fail2ban status.
+// Returns Fail2banStatus for fluent method chaining.
+func (f *Fail2banStatus) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	f.BaseSkill.SetTimeout(timeout)
 	return f
 }
 

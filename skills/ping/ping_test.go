@@ -101,3 +101,89 @@ func TestPing_NewPing(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestPing_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete Ping type.
+func TestPing_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewPing()
+	args := map[string]string{"test": "value"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*Ping); !ok {
+		t.Error("SetArgs should return *Ping, not just RunnableInterface")
+	}
+}
+
+// TestPing_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete Ping type.
+func TestPing_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewPing()
+
+	result := skill.SetArg("test", "value")
+
+	if _, ok := result.(*Ping); !ok {
+		t.Error("SetArg should return *Ping, not just RunnableInterface")
+	}
+}
+
+// TestPing_SetID_ReturnsConcreteType verifies that SetID returns the concrete Ping type.
+func TestPing_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewPing()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*Ping); !ok {
+		t.Error("SetID should return *Ping, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestPing_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete Ping type.
+func TestPing_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewPing()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*Ping); !ok {
+		t.Error("SetDescription should return *Ping, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestPing_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete Ping type.
+func TestPing_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewPing()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*Ping); !ok {
+		t.Error("SetTimeout should return *Ping, not just RunnableInterface")
+	}
+}
+
+// TestPing_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestPing_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewPing().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("test", "value").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*Ping); !ok {
+		t.Error("Method chaining should preserve *Ping type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

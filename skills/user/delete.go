@@ -5,6 +5,7 @@ package user
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -112,6 +113,34 @@ func (u *UserDelete) Run() types.Result {
 // Returns UserDelete for fluent method chaining.
 func (u *UserDelete) SetArgs(args map[string]string) types.RunnableInterface {
 	u.BaseSkill.SetArgs(args)
+	return u
+}
+
+// SetArg sets a single argument for user deletion.
+// Returns UserDelete for fluent method chaining.
+func (u *UserDelete) SetArg(key, value string) types.RunnableInterface {
+	u.BaseSkill.SetArg(key, value)
+	return u
+}
+
+// SetID sets the ID for user deletion.
+// Returns UserDelete for fluent method chaining.
+func (u *UserDelete) SetID(id string) types.RunnableInterface {
+	u.BaseSkill.SetID(id)
+	return u
+}
+
+// SetDescription sets the description for user deletion.
+// Returns UserDelete for fluent method chaining.
+func (u *UserDelete) SetDescription(description string) types.RunnableInterface {
+	u.BaseSkill.SetDescription(description)
+	return u
+}
+
+// SetTimeout sets the timeout for user deletion.
+// Returns UserDelete for fluent method chaining.
+func (u *UserDelete) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	u.BaseSkill.SetTimeout(timeout)
 	return u
 }
 

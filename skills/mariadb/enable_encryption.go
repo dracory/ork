@@ -3,6 +3,7 @@ package mariadb
 import (
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -159,6 +160,34 @@ EOF`, configPath, configPath, keyFilePath),
 // Returns EnableEncryption for fluent method chaining.
 func (e *EnableEncryption) SetArgs(args map[string]string) types.RunnableInterface {
 	e.BaseSkill.SetArgs(args)
+	return e
+}
+
+// SetArg sets a single argument for enabling encryption.
+// Returns EnableEncryption for fluent method chaining.
+func (e *EnableEncryption) SetArg(key, value string) types.RunnableInterface {
+	e.BaseSkill.SetArg(key, value)
+	return e
+}
+
+// SetID sets the ID for enabling encryption.
+// Returns EnableEncryption for fluent method chaining.
+func (e *EnableEncryption) SetID(id string) types.RunnableInterface {
+	e.BaseSkill.SetID(id)
+	return e
+}
+
+// SetDescription sets the description for enabling encryption.
+// Returns EnableEncryption for fluent method chaining.
+func (e *EnableEncryption) SetDescription(description string) types.RunnableInterface {
+	e.BaseSkill.SetDescription(description)
+	return e
+}
+
+// SetTimeout sets the timeout for enabling encryption.
+// Returns EnableEncryption for fluent method chaining.
+func (e *EnableEncryption) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	e.BaseSkill.SetTimeout(timeout)
 	return e
 }
 

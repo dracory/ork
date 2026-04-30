@@ -2,6 +2,7 @@ package mariadb
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -129,6 +130,34 @@ EOF`, configPath, configPath, dataDir, dataDir, dataDir), Description: "Configur
 // Returns EnableSSL for fluent method chaining.
 func (e *EnableSSL) SetArgs(args map[string]string) types.RunnableInterface {
 	e.BaseSkill.SetArgs(args)
+	return e
+}
+
+// SetArg sets a single argument for enabling SSL.
+// Returns EnableSSL for fluent method chaining.
+func (e *EnableSSL) SetArg(key, value string) types.RunnableInterface {
+	e.BaseSkill.SetArg(key, value)
+	return e
+}
+
+// SetID sets the ID for enabling SSL.
+// Returns EnableSSL for fluent method chaining.
+func (e *EnableSSL) SetID(id string) types.RunnableInterface {
+	e.BaseSkill.SetID(id)
+	return e
+}
+
+// SetDescription sets the description for enabling SSL.
+// Returns EnableSSL for fluent method chaining.
+func (e *EnableSSL) SetDescription(description string) types.RunnableInterface {
+	e.BaseSkill.SetDescription(description)
+	return e
+}
+
+// SetTimeout sets the timeout for enabling SSL.
+// Returns EnableSSL for fluent method chaining.
+func (e *EnableSSL) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	e.BaseSkill.SetTimeout(timeout)
 	return e
 }
 

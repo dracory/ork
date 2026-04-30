@@ -119,3 +119,89 @@ func TestBackup_NewBackup(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestBackup_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete Backup type.
+func TestBackup_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewBackup()
+	args := map[string]string{"db-name": "testdb", "root-password": "testpass"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*Backup); !ok {
+		t.Error("SetArgs should return *Backup, not just RunnableInterface")
+	}
+}
+
+// TestBackup_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete Backup type.
+func TestBackup_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewBackup()
+
+	result := skill.SetArg("db-name", "testdb")
+
+	if _, ok := result.(*Backup); !ok {
+		t.Error("SetArg should return *Backup, not just RunnableInterface")
+	}
+}
+
+// TestBackup_SetID_ReturnsConcreteType verifies that SetID returns the concrete Backup type.
+func TestBackup_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewBackup()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*Backup); !ok {
+		t.Error("SetID should return *Backup, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestBackup_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete Backup type.
+func TestBackup_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewBackup()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*Backup); !ok {
+		t.Error("SetDescription should return *Backup, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestBackup_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete Backup type.
+func TestBackup_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewBackup()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*Backup); !ok {
+		t.Error("SetTimeout should return *Backup, not just RunnableInterface")
+	}
+}
+
+// TestBackup_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestBackup_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewBackup().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("db-name", "testdb").
+		SetArgs(map[string]string{"root-password": "testpass"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*Backup); !ok {
+		t.Error("Method chaining should preserve *Backup type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

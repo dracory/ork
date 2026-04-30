@@ -160,6 +160,34 @@ func (r *Reboot) SetArgs(args map[string]string) types.RunnableInterface {
 	return r
 }
 
+// SetArg sets a single argument for reboot.
+// Returns Reboot for fluent method chaining.
+func (r *Reboot) SetArg(key, value string) types.RunnableInterface {
+	r.BaseSkill.SetArg(key, value)
+	return r
+}
+
+// SetID sets the ID for reboot.
+// Returns Reboot for fluent method chaining.
+func (r *Reboot) SetID(id string) types.RunnableInterface {
+	r.BaseSkill.SetID(id)
+	return r
+}
+
+// SetDescription sets the description for reboot.
+// Returns Reboot for fluent method chaining.
+func (r *Reboot) SetDescription(description string) types.RunnableInterface {
+	r.BaseSkill.SetDescription(description)
+	return r
+}
+
+// SetTimeout sets the timeout for reboot.
+// Returns Reboot for fluent method chaining.
+func (r *Reboot) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	r.BaseSkill.SetTimeout(timeout)
+	return r
+}
+
 // NewReboot creates a new reboot skill.
 // By default, WaitForReconnect is false (does not wait for server to come back).
 //

@@ -96,3 +96,89 @@ func TestUfwStatus_NewUfwStatus(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestUfwStatus_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete UfwStatus type.
+func TestUfwStatus_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewUfwStatus()
+	args := map[string]string{"test": "value"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*UfwStatus); !ok {
+		t.Error("SetArgs should return *UfwStatus, not just RunnableInterface")
+	}
+}
+
+// TestUfwStatus_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete UfwStatus type.
+func TestUfwStatus_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewUfwStatus()
+
+	result := skill.SetArg("test", "value")
+
+	if _, ok := result.(*UfwStatus); !ok {
+		t.Error("SetArg should return *UfwStatus, not just RunnableInterface")
+	}
+}
+
+// TestUfwStatus_SetID_ReturnsConcreteType verifies that SetID returns the concrete UfwStatus type.
+func TestUfwStatus_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewUfwStatus()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*UfwStatus); !ok {
+		t.Error("SetID should return *UfwStatus, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestUfwStatus_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete UfwStatus type.
+func TestUfwStatus_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewUfwStatus()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*UfwStatus); !ok {
+		t.Error("SetDescription should return *UfwStatus, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestUfwStatus_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete UfwStatus type.
+func TestUfwStatus_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewUfwStatus()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*UfwStatus); !ok {
+		t.Error("SetTimeout should return *UfwStatus, not just RunnableInterface")
+	}
+}
+
+// TestUfwStatus_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestUfwStatus_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewUfwStatus().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("test", "value").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*UfwStatus); !ok {
+		t.Error("Method chaining should preserve *UfwStatus type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

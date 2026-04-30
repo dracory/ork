@@ -69,3 +69,89 @@ func TestEnableSSL_NewEnableSSL(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestEnableSSL_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete EnableSSL type.
+func TestEnableSSL_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewEnableSSL()
+	args := map[string]string{"test": "value"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*EnableSSL); !ok {
+		t.Error("SetArgs should return *EnableSSL, not just RunnableInterface")
+	}
+}
+
+// TestEnableSSL_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete EnableSSL type.
+func TestEnableSSL_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewEnableSSL()
+
+	result := skill.SetArg("test", "value")
+
+	if _, ok := result.(*EnableSSL); !ok {
+		t.Error("SetArg should return *EnableSSL, not just RunnableInterface")
+	}
+}
+
+// TestEnableSSL_SetID_ReturnsConcreteType verifies that SetID returns the concrete EnableSSL type.
+func TestEnableSSL_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewEnableSSL()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*EnableSSL); !ok {
+		t.Error("SetID should return *EnableSSL, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestEnableSSL_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete EnableSSL type.
+func TestEnableSSL_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewEnableSSL()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*EnableSSL); !ok {
+		t.Error("SetDescription should return *EnableSSL, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestEnableSSL_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete EnableSSL type.
+func TestEnableSSL_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewEnableSSL()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*EnableSSL); !ok {
+		t.Error("SetTimeout should return *EnableSSL, not just RunnableInterface")
+	}
+}
+
+// TestEnableSSL_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestEnableSSL_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewEnableSSL().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("test", "value").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*EnableSSL); !ok {
+		t.Error("Method chaining should preserve *EnableSSL type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

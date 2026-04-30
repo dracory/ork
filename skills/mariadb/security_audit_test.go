@@ -119,3 +119,89 @@ func TestSecurityAudit_NewSecurityAudit(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestSecurityAudit_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete SecurityAudit type.
+func TestSecurityAudit_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewSecurityAudit()
+	args := map[string]string{"root-password": "testpass"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*SecurityAudit); !ok {
+		t.Error("SetArgs should return *SecurityAudit, not just RunnableInterface")
+	}
+}
+
+// TestSecurityAudit_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete SecurityAudit type.
+func TestSecurityAudit_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewSecurityAudit()
+
+	result := skill.SetArg("root-password", "testpass")
+
+	if _, ok := result.(*SecurityAudit); !ok {
+		t.Error("SetArg should return *SecurityAudit, not just RunnableInterface")
+	}
+}
+
+// TestSecurityAudit_SetID_ReturnsConcreteType verifies that SetID returns the concrete SecurityAudit type.
+func TestSecurityAudit_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewSecurityAudit()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*SecurityAudit); !ok {
+		t.Error("SetID should return *SecurityAudit, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestSecurityAudit_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete SecurityAudit type.
+func TestSecurityAudit_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewSecurityAudit()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*SecurityAudit); !ok {
+		t.Error("SetDescription should return *SecurityAudit, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestSecurityAudit_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete SecurityAudit type.
+func TestSecurityAudit_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewSecurityAudit()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*SecurityAudit); !ok {
+		t.Error("SetTimeout should return *SecurityAudit, not just RunnableInterface")
+	}
+}
+
+// TestSecurityAudit_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestSecurityAudit_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewSecurityAudit().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("root-password", "testpass").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*SecurityAudit); !ok {
+		t.Error("Method chaining should preserve *SecurityAudit type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

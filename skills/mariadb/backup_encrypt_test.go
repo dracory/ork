@@ -101,3 +101,89 @@ func TestBackupEncrypt_NewBackupEncrypt(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestBackupEncrypt_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete BackupEncrypt type.
+func TestBackupEncrypt_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewBackupEncrypt()
+	args := map[string]string{"dbname": "testdb", "root-password": "testpass"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*BackupEncrypt); !ok {
+		t.Error("SetArgs should return *BackupEncrypt, not just RunnableInterface")
+	}
+}
+
+// TestBackupEncrypt_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete BackupEncrypt type.
+func TestBackupEncrypt_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewBackupEncrypt()
+
+	result := skill.SetArg("dbname", "testdb")
+
+	if _, ok := result.(*BackupEncrypt); !ok {
+		t.Error("SetArg should return *BackupEncrypt, not just RunnableInterface")
+	}
+}
+
+// TestBackupEncrypt_SetID_ReturnsConcreteType verifies that SetID returns the concrete BackupEncrypt type.
+func TestBackupEncrypt_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewBackupEncrypt()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*BackupEncrypt); !ok {
+		t.Error("SetID should return *BackupEncrypt, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestBackupEncrypt_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete BackupEncrypt type.
+func TestBackupEncrypt_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewBackupEncrypt()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*BackupEncrypt); !ok {
+		t.Error("SetDescription should return *BackupEncrypt, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestBackupEncrypt_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete BackupEncrypt type.
+func TestBackupEncrypt_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewBackupEncrypt()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*BackupEncrypt); !ok {
+		t.Error("SetTimeout should return *BackupEncrypt, not just RunnableInterface")
+	}
+}
+
+// TestBackupEncrypt_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestBackupEncrypt_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewBackupEncrypt().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("dbname", "testdb").
+		SetArgs(map[string]string{"root-password": "testpass"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*BackupEncrypt); !ok {
+		t.Error("Method chaining should preserve *BackupEncrypt type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

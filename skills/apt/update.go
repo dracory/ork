@@ -4,6 +4,7 @@ package apt
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -96,6 +97,34 @@ func (a *AptUpdate) Run() types.Result {
 // Returns AptUpdate for fluent method chaining.
 func (a *AptUpdate) SetArgs(args map[string]string) types.RunnableInterface {
 	a.BaseSkill.SetArgs(args)
+	return a
+}
+
+// SetArg sets a single argument for apt update.
+// Returns AptUpdate for fluent method chaining.
+func (a *AptUpdate) SetArg(key, value string) types.RunnableInterface {
+	a.BaseSkill.SetArg(key, value)
+	return a
+}
+
+// SetID sets the ID for apt update.
+// Returns AptUpdate for fluent method chaining.
+func (a *AptUpdate) SetID(id string) types.RunnableInterface {
+	a.BaseSkill.SetID(id)
+	return a
+}
+
+// SetDescription sets the description for apt update.
+// Returns AptUpdate for fluent method chaining.
+func (a *AptUpdate) SetDescription(description string) types.RunnableInterface {
+	a.BaseSkill.SetDescription(description)
+	return a
+}
+
+// SetTimeout sets the timeout for apt update.
+// Returns AptUpdate for fluent method chaining.
+func (a *AptUpdate) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	a.BaseSkill.SetTimeout(timeout)
 	return a
 }
 

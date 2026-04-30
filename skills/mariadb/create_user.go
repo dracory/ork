@@ -3,6 +3,7 @@ package mariadb
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
@@ -177,6 +178,34 @@ func (m *CreateUser) Run() types.Result {
 // Returns CreateUser for fluent method chaining.
 func (c *CreateUser) SetArgs(args map[string]string) types.RunnableInterface {
 	c.BaseSkill.SetArgs(args)
+	return c
+}
+
+// SetArg sets a single argument for creating MariaDB user.
+// Returns CreateUser for fluent method chaining.
+func (c *CreateUser) SetArg(key, value string) types.RunnableInterface {
+	c.BaseSkill.SetArg(key, value)
+	return c
+}
+
+// SetID sets the ID for creating MariaDB user.
+// Returns CreateUser for fluent method chaining.
+func (c *CreateUser) SetID(id string) types.RunnableInterface {
+	c.BaseSkill.SetID(id)
+	return c
+}
+
+// SetDescription sets the description for creating MariaDB user.
+// Returns CreateUser for fluent method chaining.
+func (c *CreateUser) SetDescription(description string) types.RunnableInterface {
+	c.BaseSkill.SetDescription(description)
+	return c
+}
+
+// SetTimeout sets the timeout for creating MariaDB user.
+// Returns CreateUser for fluent method chaining.
+func (c *CreateUser) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	c.BaseSkill.SetTimeout(timeout)
 	return c
 }
 

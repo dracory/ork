@@ -1,6 +1,8 @@
 package security
 
 import (
+	"time"
+
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
@@ -170,6 +172,34 @@ EOF`, Description: "Create audit rules"}
 // Returns AuditdInstall for fluent method chaining.
 func (a *AuditdInstall) SetArgs(args map[string]string) types.RunnableInterface {
 	a.BaseSkill.SetArgs(args)
+	return a
+}
+
+// SetArg sets a single argument for auditd installation.
+// Returns AuditdInstall for fluent method chaining.
+func (a *AuditdInstall) SetArg(key, value string) types.RunnableInterface {
+	a.BaseSkill.SetArg(key, value)
+	return a
+}
+
+// SetID sets the ID for auditd installation.
+// Returns AuditdInstall for fluent method chaining.
+func (a *AuditdInstall) SetID(id string) types.RunnableInterface {
+	a.BaseSkill.SetID(id)
+	return a
+}
+
+// SetDescription sets the description for auditd installation.
+// Returns AuditdInstall for fluent method chaining.
+func (a *AuditdInstall) SetDescription(description string) types.RunnableInterface {
+	a.BaseSkill.SetDescription(description)
+	return a
+}
+
+// SetTimeout sets the timeout for auditd installation.
+// Returns AuditdInstall for fluent method chaining.
+func (a *AuditdInstall) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	a.BaseSkill.SetTimeout(timeout)
 	return a
 }
 

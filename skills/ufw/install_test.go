@@ -336,3 +336,89 @@ func TestUfwInstall_NewUfwInstall(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestUfwInstall_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete UfwInstall type.
+func TestUfwInstall_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewUfwInstall()
+	args := map[string]string{"allow-ssh": "true"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*UfwInstall); !ok {
+		t.Error("SetArgs should return *UfwInstall, not just RunnableInterface")
+	}
+}
+
+// TestUfwInstall_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete UfwInstall type.
+func TestUfwInstall_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewUfwInstall()
+
+	result := skill.SetArg("allow-ssh", "true")
+
+	if _, ok := result.(*UfwInstall); !ok {
+		t.Error("SetArg should return *UfwInstall, not just RunnableInterface")
+	}
+}
+
+// TestUfwInstall_SetID_ReturnsConcreteType verifies that SetID returns the concrete UfwInstall type.
+func TestUfwInstall_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewUfwInstall()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*UfwInstall); !ok {
+		t.Error("SetID should return *UfwInstall, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestUfwInstall_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete UfwInstall type.
+func TestUfwInstall_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewUfwInstall()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*UfwInstall); !ok {
+		t.Error("SetDescription should return *UfwInstall, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestUfwInstall_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete UfwInstall type.
+func TestUfwInstall_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewUfwInstall()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*UfwInstall); !ok {
+		t.Error("SetTimeout should return *UfwInstall, not just RunnableInterface")
+	}
+}
+
+// TestUfwInstall_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestUfwInstall_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewUfwInstall().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("allow-ssh", "true").
+		SetArgs(map[string]string{"allow-http": "true"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*UfwInstall); !ok {
+		t.Error("Method chaining should preserve *UfwInstall type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

@@ -288,3 +288,89 @@ func TestAllowMariaDB_NewAllowMariaDB(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestAllowMariaDB_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete AllowMariaDB type.
+func TestAllowMariaDB_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewAllowMariaDB()
+	args := map[string]string{"ip": "192.168.1.10"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*AllowMariaDB); !ok {
+		t.Error("SetArgs should return *AllowMariaDB, not just RunnableInterface")
+	}
+}
+
+// TestAllowMariaDB_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete AllowMariaDB type.
+func TestAllowMariaDB_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewAllowMariaDB()
+
+	result := skill.SetArg("ip", "192.168.1.10")
+
+	if _, ok := result.(*AllowMariaDB); !ok {
+		t.Error("SetArg should return *AllowMariaDB, not just RunnableInterface")
+	}
+}
+
+// TestAllowMariaDB_SetID_ReturnsConcreteType verifies that SetID returns the concrete AllowMariaDB type.
+func TestAllowMariaDB_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewAllowMariaDB()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*AllowMariaDB); !ok {
+		t.Error("SetID should return *AllowMariaDB, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestAllowMariaDB_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete AllowMariaDB type.
+func TestAllowMariaDB_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewAllowMariaDB()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*AllowMariaDB); !ok {
+		t.Error("SetDescription should return *AllowMariaDB, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestAllowMariaDB_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete AllowMariaDB type.
+func TestAllowMariaDB_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewAllowMariaDB()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*AllowMariaDB); !ok {
+		t.Error("SetTimeout should return *AllowMariaDB, not just RunnableInterface")
+	}
+}
+
+// TestAllowMariaDB_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestAllowMariaDB_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewAllowMariaDB().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("ip", "192.168.1.10").
+		SetArgs(map[string]string{"port": "3307"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*AllowMariaDB); !ok {
+		t.Error("Method chaining should preserve *AllowMariaDB type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}

@@ -125,3 +125,89 @@ func TestStatus_NewStatus(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestStatus_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete Status type.
+func TestStatus_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewStatus()
+	args := map[string]string{"root-password": "testpass"}
+
+	result := skill.SetArgs(args)
+
+	if _, ok := result.(*Status); !ok {
+		t.Error("SetArgs should return *Status, not just RunnableInterface")
+	}
+}
+
+// TestStatus_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete Status type.
+func TestStatus_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewStatus()
+
+	result := skill.SetArg("root-password", "testpass")
+
+	if _, ok := result.(*Status); !ok {
+		t.Error("SetArg should return *Status, not just RunnableInterface")
+	}
+}
+
+// TestStatus_SetID_ReturnsConcreteType verifies that SetID returns the concrete Status type.
+func TestStatus_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewStatus()
+
+	result := skill.SetID("custom-id")
+
+	if _, ok := result.(*Status); !ok {
+		t.Error("SetID should return *Status, not just RunnableInterface")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("SetID should set the ID")
+	}
+}
+
+// TestStatus_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete Status type.
+func TestStatus_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewStatus()
+
+	result := skill.SetDescription("custom description")
+
+	if _, ok := result.(*Status); !ok {
+		t.Error("SetDescription should return *Status, not just RunnableInterface")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("SetDescription should set the description")
+	}
+}
+
+// TestStatus_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete Status type.
+func TestStatus_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewStatus()
+
+	result := skill.SetTimeout(30 * 1000000000)
+
+	if _, ok := result.(*Status); !ok {
+		t.Error("SetTimeout should return *Status, not just RunnableInterface")
+	}
+}
+
+// TestStatus_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestStatus_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewStatus().
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetArg("root-password", "testpass").
+		SetArgs(map[string]string{"another": "arg"}).
+		SetTimeout(30 * 1000000000)
+
+	if _, ok := skill.(*Status); !ok {
+		t.Error("Method chaining should preserve *Status type")
+	}
+
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining should set ID")
+	}
+
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining should set description")
+	}
+}
