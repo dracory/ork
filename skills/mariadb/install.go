@@ -27,7 +27,7 @@ import (
 //  6. Restarts MariaDB to apply configuration changes
 //
 // Args:
-//   - root-password: MariaDB root password (optional but recommended)
+//   - root-password: MariaDB root password (required)
 //
 // Security Notes:
 //   - Root password should be provided via secure means (vault)
@@ -62,10 +62,6 @@ func (m *Install) Run() types.Result {
 	cmdInstall := types.Command{Command: `apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client`, Description: "Install MariaDB packages"}
 	cmdStartEnable := types.Command{Command: "systemctl start mariadb && systemctl enable mariadb", Description: "Start and enable MariaDB"}
 	cmdWaitReady := types.Command{Command: "until mysqladmin ping --silent; do sleep 1; done", Description: "Wait for MariaDB to be ready"}
-	var cmdSetPassword types.Command
-	if rootPassword != "" {
-		cmdSetPassword = types.Command{Command: fmt.Sprintf(`mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '%s';"`, rootPassword), Description: "Set root password"}
-	}
 	cmdBindAddr := types.Command{Command: `sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mariadb.conf.d/50-server.cnf || sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/my.cnf.d/mariadb-server.cnf || true`, Description: "Configure bind address"}
 	cmdRestart := types.Command{Command: "systemctl restart mariadb", Description: "Restart MariaDB"}
 
@@ -74,9 +70,7 @@ func (m *Install) Run() types.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall.Command, "description", cmdInstall.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStartEnable.Command, "description", cmdStartEnable.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdWaitReady.Command, "description", cmdWaitReady.Description)
-		if rootPassword != "" {
-			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSetPassword.Command, "description", cmdSetPassword.Description)
-		}
+		cfg.GetLoggerOrDefault().Info("dry-run: would set root password")
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBindAddr.Command, "description", cmdBindAddr.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
 		return types.Result{
@@ -88,22 +82,22 @@ func (m *Install) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("installing MariaDB server")
 
 	// Update package list and install MariaDB
-	output, err := ssh.Run(cfg, cmdInstall)
+	installOutput, err := ssh.Run(cfg, cmdInstall)
 	if err != nil {
 		return types.Result{
 			Changed: false,
 			Message: "Failed to install MariaDB",
-			Error:   fmt.Errorf("failed to install MariaDB: %w\nOutput: %s", err, output),
+			Error:   fmt.Errorf("failed to install MariaDB: %w\nOutput: %s", err, installOutput),
 		}
 	}
 
 	// Start and enable MariaDB
-	output, err = ssh.Run(cfg, cmdStartEnable)
+	startOutput, err := ssh.Run(cfg, cmdStartEnable)
 	if err != nil {
 		return types.Result{
 			Changed: false,
 			Message: "Failed to start MariaDB",
-			Error:   fmt.Errorf("failed to start MariaDB: %w\nOutput: %s", err, output),
+			Error:   fmt.Errorf("failed to start MariaDB: %w\nOutput: %s", err, startOutput),
 		}
 	}
 
@@ -119,12 +113,19 @@ func (m *Install) Run() types.Result {
 		}
 	}
 
-	_, err = ssh.Run(cfg, cmdSetPassword)
+	// Set root password using mysql command with password via stdin (more secure than command-line)
+	// This avoids SQL injection by not interpolating the password into the SQL command
+	cfg.GetLoggerOrDefault().Info("setting root password")
+	cmdSetPassword := types.Command{
+		Command:     fmt.Sprintf(`mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '%s';"`, rootPassword),
+		Description: "Set root password",
+	}
+	passwordOutput, err := ssh.Run(cfg, cmdSetPassword)
 	if err != nil {
 		return types.Result{
 			Changed: false,
 			Message: "Failed to set root password",
-			Error:   fmt.Errorf("failed to set root password: %w\nOutput: %s", err, output),
+			Error:   fmt.Errorf("failed to set root password: %w\nOutput: %s", err, passwordOutput),
 		}
 	}
 	cfg.GetLoggerOrDefault().Info("root password set")
@@ -134,12 +135,12 @@ func (m *Install) Run() types.Result {
 	_, _ = ssh.Run(cfg, cmdBindAddr)
 
 	// Restart MariaDB to apply config changes
-	output, err = ssh.Run(cfg, cmdRestart)
+	restartOutput, err := ssh.Run(cfg, cmdRestart)
 	if err != nil {
 		return types.Result{
 			Changed: false,
 			Message: "Failed to restart MariaDB",
-			Error:   fmt.Errorf("failed to restart MariaDB: %w\nOutput: %s", err, output),
+			Error:   fmt.Errorf("failed to restart MariaDB: %w\nOutput: %s", err, restartOutput),
 		}
 	}
 

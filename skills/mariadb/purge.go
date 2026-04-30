@@ -1,6 +1,9 @@
 package mariadb
 
 import (
+	"fmt"
+	"time"
+
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -51,7 +54,7 @@ func (m *Purge) Run() types.Result {
 	cfg := m.GetNodeConfig()
 
 	// Define commands
-	cmdStop := types.Command{Command: "systemctl stop mariadb || true", Description: "Stop MariaDB service"}
+	cmdStop := types.Command{Command: "systemctl stop mariadb", Description: "Stop MariaDB service"}
 	cmdPurge := types.Command{Command: "apt-get purge -y mariadb-server mariadb-client mariadb-common", Description: "Remove MariaDB packages"}
 	cmdAutoremove := types.Command{Command: "apt-get autoremove -y", Description: "Remove unused dependencies"}
 	cmdRemoveConfig := types.Command{Command: "rm -rf /etc/mysql", Description: "Remove MariaDB configuration"}
@@ -72,14 +75,17 @@ func (m *Purge) Run() types.Result {
 		}
 	}
 
-	// Stop MariaDB service
+	// Track failures for reporting
+	var failures []string
+
+	// Stop MariaDB service (non-critical - service may not be running)
 	cfg.GetLoggerOrDefault().Info("stopping MariaDB service")
 	_, err := ssh.Run(cfg, cmdStop)
 	if err != nil {
-		cfg.GetLoggerOrDefault().Warn("could not stop MariaDB service", "error", err)
+		cfg.GetLoggerOrDefault().Warn("could not stop MariaDB service (may not be running)", "error", err)
 	}
 
-	// Remove MariaDB packages
+	// Remove MariaDB packages (critical)
 	cfg.GetLoggerOrDefault().Info("removing MariaDB packages")
 	output, err := ssh.Run(cfg, cmdPurge)
 	if err != nil {
@@ -90,41 +96,87 @@ func (m *Purge) Run() types.Result {
 		}
 	}
 
-	// Remove dependencies
+	// Remove dependencies (non-critical)
 	cfg.GetLoggerOrDefault().Info("removing unused dependencies")
 	_, err = ssh.Run(cfg, cmdAutoremove)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not remove dependencies", "error", err)
+		failures = append(failures, "autoremove")
 	}
 
-	// Remove configuration files
+	// Remove configuration files (non-critical - may not exist)
 	cfg.GetLoggerOrDefault().Info("removing MariaDB configuration files")
 	_, err = ssh.Run(cfg, cmdRemoveConfig)
 	if err != nil {
-		cfg.GetLoggerOrDefault().Warn("could not remove configuration files", "error", err)
+		cfg.GetLoggerOrDefault().Warn("could not remove configuration files (may not exist)", "error", err)
+		failures = append(failures, "config")
 	}
 
-	// Remove data directory
+	// Remove data directory (critical)
 	cfg.GetLoggerOrDefault().Info("removing MariaDB data directory")
 	_, err = ssh.Run(cfg, cmdRemoveData)
 	if err != nil {
 		cfg.GetLoggerOrDefault().Warn("could not remove data directory", "error", err)
+		failures = append(failures, "data directory")
 	}
 
-	// Remove log files
+	// Remove log files (non-critical - may not exist)
 	cfg.GetLoggerOrDefault().Info("removing MariaDB log files")
 	_, err = ssh.Run(cfg, cmdRemoveLog)
 	if err != nil {
-		cfg.GetLoggerOrDefault().Warn("could not remove log files", "error", err)
+		cfg.GetLoggerOrDefault().Warn("could not remove log files (may not exist)", "error", err)
+		failures = append(failures, "logs")
+	}
+
+	// Build result message
+	message := "MariaDB purged successfully"
+	if len(failures) > 0 {
+		message = fmt.Sprintf("MariaDB purged (with partial failures: %v)", failures)
 	}
 
 	return types.Result{
 		Changed: true,
-		Message: "MariaDB purged successfully",
+		Message: message,
 		Details: map[string]string{
-			"output": output,
+			"output":   output,
+			"failures": fmt.Sprintf("%v", failures),
 		},
 	}
+}
+
+// SetArgs sets the arguments for MariaDB purge.
+// Returns Purge for fluent method chaining.
+func (p *Purge) SetArgs(args map[string]string) types.RunnableInterface {
+	p.BaseSkill.SetArgs(args)
+	return p
+}
+
+// SetArg sets a single argument for MariaDB purge.
+// Returns Purge for fluent method chaining.
+func (p *Purge) SetArg(key, value string) types.RunnableInterface {
+	p.BaseSkill.SetArg(key, value)
+	return p
+}
+
+// SetID sets the ID for MariaDB purge.
+// Returns Purge for fluent method chaining.
+func (p *Purge) SetID(id string) types.RunnableInterface {
+	p.BaseSkill.SetID(id)
+	return p
+}
+
+// SetDescription sets the description for MariaDB purge.
+// Returns Purge for fluent method chaining.
+func (p *Purge) SetDescription(description string) types.RunnableInterface {
+	p.BaseSkill.SetDescription(description)
+	return p
+}
+
+// SetTimeout sets the timeout for MariaDB purge.
+// Returns Purge for fluent method chaining.
+func (p *Purge) SetTimeout(timeout time.Duration) types.RunnableInterface {
+	p.BaseSkill.SetTimeout(timeout)
+	return p
 }
 
 // NewPurge creates a new MariaDB purge skill.
