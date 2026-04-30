@@ -79,8 +79,8 @@ func (p *Ping) Run() types.Result {
 	if err != nil {
 		return types.Result{
 			Changed: false,
-			Message: fmt.Sprintf("Failed to ping %s", cfg.SSHHost),
-			Error:   fmt.Errorf("failed to ping %s: %w", cfg.SSHHost, err),
+			Message: fmt.Sprintf("Failed to ping %s on port %s", cfg.SSHHost, cfg.SSHPort),
+			Error:   fmt.Errorf("failed to ping %s on port %s: %w", cfg.SSHHost, cfg.SSHPort, err),
 		}
 	}
 

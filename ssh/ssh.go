@@ -5,6 +5,7 @@ package ssh
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/sfreiberg/simplessh"
 )
@@ -25,13 +26,16 @@ type Client struct {
 // which gets resolved to ~/.ssh/<key>.
 func NewClient(host, port, user, key string) *Client {
 	if port == "" {
-		port = "22"
+		port = "22" // Default SSH port
 	}
+
+	keyPath := PrivateKeyPath(key)
+
 	return &Client{
 		host:    host,
 		port:    port,
 		user:    user,
-		keyPath: PrivateKeyPath(key),
+		keyPath: keyPath,
 	}
 }
 
@@ -42,6 +46,19 @@ func (c *Client) Connect() error {
 	if c.host == "" {
 		return fmt.Errorf("host cannot be empty")
 	}
+
+	// Check if key file exists and is readable
+	_, err := os.Stat(c.keyPath)
+	if err != nil {
+		return fmt.Errorf("SSH key file error: %w", err)
+	}
+
+	// Try to read the file to verify it's accessible
+	_, err = os.ReadFile(c.keyPath)
+	if err != nil {
+		return fmt.Errorf("Cannot read SSH key file: %w", err)
+	}
+
 	addr := c.host + ":" + c.port
 	client, err := simplessh.ConnectWithKeyFile(addr, c.user, c.keyPath)
 	if err != nil {

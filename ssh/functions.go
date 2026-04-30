@@ -3,6 +3,8 @@ package ssh
 import (
 	"fmt"
 	"os/user"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/dracory/ork/types"
@@ -37,13 +39,16 @@ func runSingleCommand(host, port, user, key string, cmd types.Command) (string, 
 
 // PrivateKeyPath constructs the absolute path to an SSH private key file.
 // It combines the current user's home directory with the .ssh directory
-// and the provided key filename.
+// and the provided key filename. The path uses forward slashes for SSH library compatibility.
 func PrivateKeyPath(sshKey string) string {
 	usr, err := user.Current()
 	if err != nil {
 		return ""
 	}
-	return usr.HomeDir + "/.ssh/" + sshKey
+	path := filepath.Join(usr.HomeDir, ".ssh", sshKey)
+
+	// Convert to forward slashes for SSH library compatibility
+	return strings.ReplaceAll(path, "\\", "/")
 }
 
 // Run connects to a node using NodeConfig and executes a command.
