@@ -1,6 +1,14 @@
 // Package ork provides a framework for remote server automation.
 package ork
 
+// NewInventory creates a new empty inventory.
+func NewInventory() InventoryInterface {
+	return &inventoryImplementation{
+		groups:         make(map[string]GroupInterface),
+		maxConcurrency: 1, // Default to sequential execution for backward compatibility
+	}
+}
+
 // InventoryInterface defines operations for managing a collection of nodes
 // organized into groups. It embeds RunnerInterface for executing operations
 // across all nodes in the inventory.
@@ -55,12 +63,4 @@ type GroupInterface interface {
 
 	// GetArgs returns a copy of all arguments defined for this group.
 	GetArgs() map[string]string
-}
-
-// NewInventory creates a new empty inventory.
-func NewInventory() InventoryInterface {
-	return &inventoryImplementation{
-		groups:         make(map[string]GroupInterface),
-		maxConcurrency: 1, // Default to sequential execution for backward compatibility
-	}
 }

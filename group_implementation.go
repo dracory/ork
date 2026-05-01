@@ -8,6 +8,15 @@ import (
 	"github.com/dracory/ork/types"
 )
 
+// NewGroup creates a new group with the given name.
+func NewGroup(name string) GroupInterface {
+	return &groupImplementation{
+		name:  name,
+		nodes: make([]NodeInterface, 0),
+		args:  make(map[string]string),
+	}
+}
+
 // groupImplementation is the default implementation of GroupInterface.
 type groupImplementation struct {
 	name       string
@@ -17,15 +26,6 @@ type groupImplementation struct {
 	dryRunMode bool
 	becomeUser string
 	mu         sync.RWMutex
-}
-
-// NewGroup creates a new group with the given name.
-func NewGroup(name string) GroupInterface {
-	return &groupImplementation{
-		name:  name,
-		nodes: make([]NodeInterface, 0),
-		args:  make(map[string]string),
-	}
 }
 
 // GetName returns the group's name.

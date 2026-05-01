@@ -8,6 +8,124 @@ import (
 	"github.com/dracory/ork/types"
 )
 
+// NewNode creates a new Node with default configuration values.
+// The host parameter specifies the remote server (hostname or IP address).
+//
+// Default values:
+//   - Port: "22"
+//   - User: "root"
+//   - Key: "id_rsa"
+//   - Args: empty map
+//
+// The returned NodeInterface can be configured using setter methods
+// (SetPort, SetUser, SetKey, SetArg, SetArgs) before connecting.
+//
+// Example:
+//
+//	node := ork.NewNode("server.example.com")
+//	// Equivalent to:
+//	// Node{
+//	//     cfg: types.NodeConfig{
+//	//         SSHHost: "server.example.com",
+//	//         SSHPort: "22",
+//	//         RootUser: "root",
+//	//         SSHKey: "id_rsa",
+//	//         Args: map[string]string{},
+//	//     },
+//	//     connected: false,
+//	// }
+//
+// Example with configuration:
+//
+//	node := ork.NewNode("server.example.com").
+//	    SetPort("2222").
+//	    SetUser("deploy").
+//	    SetKey("production.prv")
+func NewNodeForHost(host string) NodeInterface {
+	return &nodeImplementation{
+		cfg: types.NodeConfig{
+			SSHHost:  host,
+			SSHPort:  "22",
+			RootUser: "root",
+			SSHKey:   "id_rsa",
+			Args:     make(map[string]string),
+		},
+		connected: false,
+	}
+}
+
+// NewNode creates a new Node with default configuration values.
+// Unlike NewNodeForHost, this function takes no arguments and creates
+// a node with an empty host. Use SetArg or SetArgs to configure the node.
+//
+// Default values:
+//   - Host: "" (empty - must be set before connecting)
+//   - Port: "22"
+//   - User: "root"
+//   - Key: "id_rsa"
+//   - Args: empty map
+//
+// Example:
+//
+//	node := ork.NewNode().
+//	    SetHost("server.example.com").
+//	    SetPort("2222").
+//	    SetUser("deploy")
+//
+//	if err := node.Connect(); err != nil {
+//	    log.Fatal(err)
+//	}
+func NewNode() NodeInterface {
+	return &nodeImplementation{
+		cfg: types.NodeConfig{
+			SSHPort:  "22",
+			RootUser: "root",
+			SSHKey:   "id_rsa",
+			Args:     make(map[string]string),
+		},
+		connected: false,
+	}
+}
+
+// NewNodeFromConfig creates a new Node from an existing types.NodeConfig.
+// This is useful when you have a pre-built configuration and want to
+// create a Node from it directly.
+//
+// The config is copied internally, so modifications to the original config
+// after calling this function will not affect the Node.
+//
+// Example:
+//
+//	cfg := types.NodeConfig{
+//	    SSHHost:  "server.example.com",
+//	    SSHPort:  "2222",
+//	    RootUser: "deploy",
+//	    SSHKey:   "production.prv",
+//	    Args: map[string]string{"env": "production"},
+//	}
+//	node := ork.NewNodeFromConfig(cfg)
+//
+//	if err := node.Connect(); err != nil {
+//	    log.Fatal(err)
+//	}
+func NewNodeFromConfig(cfg types.NodeConfig) NodeInterface {
+	// Create a deep copy of the config to prevent external modifications
+	cfgCopy := cfg
+	if cfg.Args != nil {
+		cfgCopy.Args = make(map[string]string, len(cfg.Args))
+		for k, v := range cfg.Args {
+			cfgCopy.Args[k] = v
+		}
+	} else {
+		cfgCopy.Args = make(map[string]string)
+	}
+
+	return &nodeImplementation{
+		cfg:       cfgCopy,
+		connected: false,
+	}
+}
+
 // nodeImplementation is the default implementation of NodeInterface.
 // It wraps types.NodeConfig and optionally maintains a persistent SSH connection.
 //
