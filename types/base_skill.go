@@ -9,7 +9,7 @@ import (
 // Embed this in your skill struct to get boilerplate getter/setter methods.
 // Only implement Check() and Run() for the specific skill logic.
 //
-// Example usage:
+// Example usage with fluent chaining:
 //
 //	type MySkill struct {
 //	    *BaseSkill
@@ -18,8 +18,9 @@ import (
 //	func NewMySkill() *MySkill {
 //	    return &MySkill{
 //	        BaseSkill: types.NewBaseSkill().
-//	            SetID("my-skill").
-//	            SetDescription("What this skill does"),
+//	            WithID("my-skill").
+//	            WithDescription("What this skill does").
+//	            WithDryRun(false),
 //	    }
 //	}
 //
@@ -133,6 +134,62 @@ func (b *BaseSkill) GetTimeout() time.Duration {
 // Returns RunnableInterface for fluent method chaining.
 func (b *BaseSkill) SetTimeout(timeout time.Duration) RunnableInterface {
 	b.timeout = timeout
+	return b
+}
+
+// WithID sets the unique identifier and returns BaseSkill for chaining.
+// Shortcut alias to SetID for fluent interface convenience.
+func (b *BaseSkill) WithID(id string) *BaseSkill {
+	b.SetID(id)
+	return b
+}
+
+// WithDescription sets a description and returns BaseSkill for chaining.
+// Shortcut alias to SetDescription for fluent interface convenience.
+func (b *BaseSkill) WithDescription(description string) *BaseSkill {
+	b.SetDescription(description)
+	return b
+}
+
+// WithNodeConfig sets the node config and returns BaseSkill for chaining.
+// Shortcut alias to SetNodeConfig for fluent interface convenience.
+func (b *BaseSkill) WithNodeConfig(cfg NodeConfig) *BaseSkill {
+	b.SetNodeConfig(cfg)
+	return b
+}
+
+// WithArg sets a single argument and returns BaseSkill for chaining.
+// Shortcut alias to SetArg for fluent interface convenience.
+func (b *BaseSkill) WithArg(key, value string) *BaseSkill {
+	b.SetArg(key, value)
+	return b
+}
+
+// WithArgs replaces the arguments map and returns BaseSkill for chaining.
+// Shortcut alias to SetArgs for fluent interface convenience.
+func (b *BaseSkill) WithArgs(args map[string]string) *BaseSkill {
+	b.SetArgs(args)
+	return b
+}
+
+// WithDryRun sets dry-run mode and returns BaseSkill for chaining.
+// Shortcut alias to SetDryRun for fluent interface convenience.
+func (b *BaseSkill) WithDryRun(dryRun bool) *BaseSkill {
+	b.SetDryRun(dryRun)
+	return b
+}
+
+// WithTimeout sets the timeout and returns BaseSkill for chaining.
+// Shortcut alias to SetTimeout for fluent interface convenience.
+func (b *BaseSkill) WithTimeout(timeout time.Duration) *BaseSkill {
+	b.SetTimeout(timeout)
+	return b
+}
+
+// WithBecomeUser sets the become user and returns BaseSkill for chaining.
+// Shortcut alias to SetBecomeUser for fluent interface convenience.
+func (b *BaseSkill) WithBecomeUser(user string) *BaseSkill {
+	b.BaseBecome.SetBecomeUser(user)
 	return b
 }
 

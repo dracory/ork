@@ -52,6 +52,14 @@ type AptUpdate struct {
 // Note: The cost of checking if update is needed is similar to just running it,
 // so we skip the check and always execute.
 func (a *AptUpdate) Check() (bool, error) {
+	cfg := a.GetNodeConfig()
+
+	// Check for dry-run mode
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would check if apt update is needed")
+		return true, nil
+	}
+
 	return true, nil // Always run apt update
 }
 
@@ -100,6 +108,13 @@ func (a *AptUpdate) SetArgs(args map[string]string) types.RunnableInterface {
 	return a
 }
 
+// WithNodeConfig sets the node config and returns AptUpdate for chaining.
+// Shortcut alias to SetNodeConfig for fluent interface convenience.
+func (a *AptUpdate) WithNodeConfig(cfg types.NodeConfig) *AptUpdate {
+	a.BaseSkill.SetNodeConfig(cfg)
+	return a
+}
+
 // SetArg sets a single argument for apt update.
 // Returns AptUpdate for fluent method chaining.
 func (a *AptUpdate) SetArg(key, value string) types.RunnableInterface {
@@ -132,9 +147,9 @@ func (a *AptUpdate) SetTimeout(timeout time.Duration) types.RunnableInterface {
 //
 // Returns:
 //
-//	A PlaybookInterface implementation configured with IDAptUpdate identifier
+//	A AptUpdate skill configured with IDAptUpdate identifier
 //	and description "Refresh package database (apt-get update)".
-func NewAptUpdate() types.RunnableInterface {
+func NewAptUpdate() *AptUpdate {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAptUpdate)
 	pb.SetDescription("Refresh package database (apt-get update)")

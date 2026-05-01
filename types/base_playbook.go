@@ -132,6 +132,62 @@ func (b *BasePlaybook) SetTimeout(timeout time.Duration) RunnableInterface {
 	return b
 }
 
+// WithID sets the unique identifier and returns BasePlaybook for chaining.
+// Shortcut alias to SetID for fluent interface convenience.
+func (b *BasePlaybook) WithID(id string) *BasePlaybook {
+	b.SetID(id)
+	return b
+}
+
+// WithDescription sets a description and returns BasePlaybook for chaining.
+// Shortcut alias to SetDescription for fluent interface convenience.
+func (b *BasePlaybook) WithDescription(description string) *BasePlaybook {
+	b.SetDescription(description)
+	return b
+}
+
+// WithNodeConfig sets the node config and returns BasePlaybook for chaining.
+// Shortcut alias to SetNodeConfig for fluent interface convenience.
+func (b *BasePlaybook) WithNodeConfig(cfg NodeConfig) *BasePlaybook {
+	b.SetNodeConfig(cfg)
+	return b
+}
+
+// WithArg sets a single argument and returns BasePlaybook for chaining.
+// Shortcut alias to SetArg for fluent interface convenience.
+func (b *BasePlaybook) WithArg(key, value string) *BasePlaybook {
+	b.SetArg(key, value)
+	return b
+}
+
+// WithArgs replaces the arguments map and returns BasePlaybook for chaining.
+// Shortcut alias to SetArgs for fluent interface convenience.
+func (b *BasePlaybook) WithArgs(args map[string]string) *BasePlaybook {
+	b.SetArgs(args)
+	return b
+}
+
+// WithDryRun sets dry-run mode and returns BasePlaybook for chaining.
+// Shortcut alias to SetDryRun for fluent interface convenience.
+func (b *BasePlaybook) WithDryRun(dryRun bool) *BasePlaybook {
+	b.SetDryRun(dryRun)
+	return b
+}
+
+// WithTimeout sets the timeout and returns BasePlaybook for chaining.
+// Shortcut alias to SetTimeout for fluent interface convenience.
+func (b *BasePlaybook) WithTimeout(timeout time.Duration) *BasePlaybook {
+	b.SetTimeout(timeout)
+	return b
+}
+
+// WithBecomeUser sets the become user and returns BasePlaybook for chaining.
+// Shortcut alias to SetBecomeUser for fluent interface convenience.
+func (b *BasePlaybook) WithBecomeUser(user string) *BasePlaybook {
+	b.BaseBecome.SetBecomeUser(user)
+	return b
+}
+
 // Check returns false (no changes needed) by default.
 // Playbooks can override this to provide idempotency checks, but it's optional
 // since playbooks often have complex logic that makes checking difficult.

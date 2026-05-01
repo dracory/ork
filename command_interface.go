@@ -30,6 +30,11 @@ import "github.com/dracory/ork/types"
 type CommandInterface interface {
 	types.RunnableInterface
 
+	// SetChdir sets the working directory for command execution.
+	// The command will be executed as `cd <dir> && <command>`.
+	// When combined with become, the order is: `cd <dir> && sudo -u <user> <command>`.
+	SetChdir(dir string) CommandInterface
+
 	// SetCommand sets the shell command to execute.
 	SetCommand(cmd string) CommandInterface
 
@@ -37,19 +42,15 @@ type CommandInterface interface {
 	SetRequired(required bool) CommandInterface
 
 	// WithCommand sets the shell command and returns CommandInterface for chaining.
-	// Alternative to SetCommand for consistent named-method fluent chaining.
+	// Short alias to SetCommand for consistent named-method fluent chaining.
 	WithCommand(cmd string) CommandInterface
 
 	// WithRequired sets whether the command must succeed and returns CommandInterface for chaining.
-	// Alternative to SetRequired for consistent named-method fluent chaining.
+	// Short alias to SetRequired for consistent named-method fluent chaining.
 	WithRequired(required bool) CommandInterface
 
-	// SetChdir sets the working directory for command execution.
-	// The command will be executed as `cd <dir> && <command>`.
-	// When combined with become, the order is: `cd <dir> && sudo -u <user> <command>`.
-	SetChdir(dir string) CommandInterface
-
 	// WithChdir sets the working directory and returns CommandInterface for chaining.
+	// Short alias to SetChdir for consistent named-method fluent chaining.
 	WithChdir(dir string) CommandInterface
 
 	// WithDescription sets a description and returns CommandInterface for chaining.

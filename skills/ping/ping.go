@@ -51,6 +51,13 @@ func (p *Ping) Check() (bool, error) {
 	// The error indicates if the check itself failed (connection issue)
 	cfg := p.GetNodeConfig()
 	cmdCheck := types.Command{Command: "uptime", Description: "Check server uptime"}
+
+	// Check for dry-run mode
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCheck.Command)
+		return false, nil
+	}
+
 	_, err := ssh.Run(cfg, cmdCheck)
 	if err != nil {
 		return false, err
@@ -131,16 +138,23 @@ func (p *Ping) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	return p
 }
 
+// WithNodeConfig sets the node config and returns Ping for chaining.
+// Shortcut alias to SetNodeConfig for fluent interface convenience.
+func (p *Ping) WithNodeConfig(cfg types.NodeConfig) *Ping {
+	p.BaseSkill.SetNodeConfig(cfg)
+	return p
+}
+
 // NewPing creates a new ping skill instance.
 //
 // Returns:
 //
-//	A RunnableInterface implementation configured with IDPing identifier
+//	A Ping skill configured with IDPing identifier
 //	and description "Check SSH connectivity and show server uptime/load".
 //
 // The returned skill can be registered with the skill registry
 // and executed via the CLI or programmatically.
-func NewPing() types.RunnableInterface {
+func NewPing() *Ping {
 	skill := types.NewBaseSkill()
 	skill.SetID(skills.IDPing)
 	skill.SetDescription("Check SSH connectivity and show server uptime/load")

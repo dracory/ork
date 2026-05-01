@@ -77,3 +77,90 @@ func (c NodeConfig) GetLoggerOrDefault() *slog.Logger {
 func (c *NodeConfig) SetChdir(dir string) {
 	c.Chdir = dir
 }
+
+// WithHost sets the SSH host and returns NodeConfig for chaining.
+func (c *NodeConfig) WithHost(host string) *NodeConfig {
+	c.SSHHost = host
+	return c
+}
+
+// WithPort sets the SSH port and returns NodeConfig for chaining.
+func (c *NodeConfig) WithPort(port string) *NodeConfig {
+	c.SSHPort = port
+	return c
+}
+
+// WithLogin sets the SSH login user and returns NodeConfig for chaining.
+func (c *NodeConfig) WithLogin(login string) *NodeConfig {
+	c.SSHLogin = login
+	return c
+}
+
+// WithKey sets the SSH key path and returns NodeConfig for chaining.
+func (c *NodeConfig) WithKey(key string) *NodeConfig {
+	c.SSHKey = key
+	return c
+}
+
+// WithRootUser sets the root user and returns NodeConfig for chaining.
+func (c *NodeConfig) WithRootUser(user string) *NodeConfig {
+	c.RootUser = user
+	return c
+}
+
+// WithNonRootUser sets the non-root user and returns NodeConfig for chaining.
+func (c *NodeConfig) WithNonRootUser(user string) *NodeConfig {
+	c.NonRootUser = user
+	return c
+}
+
+// WithDBPort sets the database port and returns NodeConfig for chaining.
+func (c *NodeConfig) WithDBPort(port string) *NodeConfig {
+	c.DBPort = port
+	return c
+}
+
+// WithDBRootPassword sets the database root password and returns NodeConfig for chaining.
+func (c *NodeConfig) WithDBRootPassword(password string) *NodeConfig {
+	c.DBRootPassword = password
+	return c
+}
+
+// WithArg sets a single argument and returns NodeConfig for chaining.
+func (c *NodeConfig) WithArg(key, value string) *NodeConfig {
+	if c.Args == nil {
+		c.Args = make(map[string]string)
+	}
+	c.Args[key] = value
+	return c
+}
+
+// WithArgs replaces the arguments map and returns NodeConfig for chaining.
+func (c *NodeConfig) WithArgs(args map[string]string) *NodeConfig {
+	c.Args = args
+	return c
+}
+
+// WithLogger sets the logger and returns NodeConfig for chaining.
+func (c *NodeConfig) WithLogger(logger *slog.Logger) *NodeConfig {
+	c.Logger = logger
+	return c
+}
+
+// WithDryRun sets dry-run mode and returns NodeConfig for chaining.
+func (c *NodeConfig) WithDryRun(dryRun bool) *NodeConfig {
+	c.IsDryRunMode = dryRun
+	return c
+}
+
+// WithBecomeUser sets the become user and returns NodeConfig for chaining.
+func (c *NodeConfig) WithBecomeUser(user string) *NodeConfig {
+	c.BecomeUser = user
+	return c
+}
+
+// WithChdir sets the working directory and returns NodeConfig for chaining.
+func (c *NodeConfig) WithChdir(dir string) *NodeConfig {
+	c.Chdir = dir
+	return c
+}

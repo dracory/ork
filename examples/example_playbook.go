@@ -1,6 +1,7 @@
 package examples
 
 import (
+	"github.com/dracory/ork"
 	"github.com/dracory/ork/skills/apt"
 	"github.com/dracory/ork/skills/ping"
 	"github.com/dracory/ork/types"
@@ -14,10 +15,10 @@ type ExamplePlaybook struct {
 
 // NewExamplePlaybook creates a new example playbook.
 func NewExamplePlaybook() types.RunnableInterface {
-	playbook := types.NewBasePlaybook()
-	playbook.SetID("example-playbook")
-	playbook.SetDescription("Example playbook demonstrating sequential skill execution")
-	return &ExamplePlaybook{BasePlaybook: playbook}
+	pb := ork.NewPlaybook().
+		WithID("example-playbook").
+		WithDescription("Example playbook demonstrating sequential skill execution")
+	return &ExamplePlaybook{BasePlaybook: pb}
 }
 
 // Run executes the playbook with custom orchestration logic.
@@ -25,8 +26,9 @@ func (e *ExamplePlaybook) Run() types.Result {
 	cfg := e.GetNodeConfig()
 
 	// Step 1: Check connectivity
-	pingSkill := ping.NewPing()
-	pingSkill.SetNodeConfig(cfg)
+	pingSkill := ping.NewPing().
+		WithNodeConfig(cfg)
+
 	pingResult := pingSkill.Run()
 
 	if pingResult.Error != nil {
@@ -38,8 +40,9 @@ func (e *ExamplePlaybook) Run() types.Result {
 	}
 
 	// Step 2: Check for package updates
-	updateSkill := apt.NewAptUpdate()
-	updateSkill.SetNodeConfig(cfg)
+	updateSkill := apt.NewAptUpdate().
+		WithNodeConfig(cfg)
+
 	updateResult := updateSkill.Run()
 
 	if updateResult.Error != nil {

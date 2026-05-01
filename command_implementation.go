@@ -22,9 +22,9 @@ type commandImplementation struct {
 // Example:
 //
 //	command := ork.NewCommand().
-//	    SetDescription("Restart application").
-//	    SetCommand("pm2 restart app").
-//	    SetRequired(true)
+//	    WithDescription("Restart application").
+//	    WithCommand("pm2 restart app").
+//	    WithRequired(true)
 //
 //	node := ork.NewNodeForHost("server.example.com")
 //	result := node.Run(command)
