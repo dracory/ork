@@ -32,6 +32,10 @@ type NodeConfig struct {
 	// BecomeUser is the user to become when executing commands via sudo.
 	// If empty, no privilege escalation is performed.
 	BecomeUser string
+
+	// Chdir is the working directory for command execution.
+	// If set, commands will be executed in this directory.
+	Chdir string
 }
 
 // SSHAddr returns the full SSH address as host:port.
@@ -67,4 +71,9 @@ func (c NodeConfig) GetLoggerOrDefault() *slog.Logger {
 		return c.Logger
 	}
 	return slog.Default()
+}
+
+// SetChdir sets the working directory for command execution.
+func (c *NodeConfig) SetChdir(dir string) {
+	c.Chdir = dir
 }

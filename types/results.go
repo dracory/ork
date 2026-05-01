@@ -42,6 +42,15 @@ func (r Results) Summary() Summary {
 	return s
 }
 
+// FirstResult returns the first result from the results map.
+// Useful when running on a single node. Returns zero Result if no results.
+func (r Results) FirstResult() Result {
+	for _, res := range r.Results {
+		return res
+	}
+	return Result{}
+}
+
 // Summary holds aggregated result statistics.
 type Summary struct {
 	Total     int

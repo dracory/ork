@@ -55,7 +55,11 @@ func PrivateKeyPath(sshKey string) string {
 // It extracts SSH connection settings (SSHHost, SSHPort, SSHLogin, SSHKey)
 // from the config and runs the command, returning the output.
 //
+// If cfg.Chdir is set, the command is wrapped with cd <dir> && <command>.
 // If cfg.BecomeUser is set, the command is wrapped with sudo -u <user>.
+// The order is: cd first (outside sudo), then become (sudo), so the final command is:
+//
+//	cd <dir> && sudo -u <user> <command>
 //
 // SAFETY: When cfg.IsDryRunMode is true, this function will NOT execute
 // any commands on the server. Instead, it logs the command and returns
@@ -84,6 +88,11 @@ func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 	commandToRun := cmd.Command
 	if cfg.BecomeUser != "" {
 		commandToRun = fmt.Sprintf("sudo -u %s %s", cfg.BecomeUser, cmd.Command)
+	}
+
+	// Wrap command with cd if chdir is set (outside sudo)
+	if cfg.Chdir != "" {
+		commandToRun = fmt.Sprintf("cd %s && %s", cfg.Chdir, commandToRun)
 	}
 
 	return runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description})

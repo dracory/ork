@@ -32,6 +32,19 @@
 //	    SetArg("username", "alice")
 //	err := node.Playbook("user-create")
 //
+// Running commands on nodes/inventories (fluent interface):
+//
+//	command := ork.NewCommand().
+//	    WithDescription("Restart application").
+//	    SetCommand("pm2 restart app").
+//	    SetRequired(true)
+//
+//	node := ork.NewNodeForHost("server.example.com")
+//	result := node.Run(command)
+//
+//	inventory := ork.NewInventory()
+//	result := inventory.Run(command)
+//
 // For advanced use cases, the internal packages remain accessible:
 //   - config - Configuration types
 //   - ssh - SSH client
@@ -43,7 +56,13 @@ package ork
 // This file intentionally minimal. All functionality is in:
 //   - node_interface.go - NodeInterface and NewNode
 //   - node_implementation.go - Node implementation
-//   - options.go - Functional options (to be removed)
+//   - command_interface.go - CommandInterface for shell commands (Runnable)
+//   - command_implementation.go - Command implementation
+//   - group_interface.go - GroupInterface and NewGroup
+//   - group_implementation.go - Group implementation
+//   - inventory_interface.go - InventoryInterface and NewInventory
+//   - inventory_implementation.go - Inventory implementation
+//   - registry.go - Skill registry
 
 // Note: Playbook registration and discovery is handled automatically
 // at package init time in node_interface.go

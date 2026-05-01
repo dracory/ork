@@ -1200,3 +1200,88 @@ func TestNewNodeFromConfig_DeepCopy(t *testing.T) {
 		t.Error("Expected GetArgs() not to have 'newkey'")
 	}
 }
+
+// TestNode_Run_PreservesCommandBecomeUser verifies that when a command has a become user set,
+// the node doesn't overwrite it with the node's become user.
+func TestNode_Run_PreservesCommandBecomeUser(t *testing.T) {
+	// Set up mock SSH function that implements the wrapping logic
+	var capturedCommand string
+	ssh.SetRunFunc(func(cfg types.NodeConfig, cmd types.Command) (string, error) {
+		// Implement the same wrapping logic as ssh.Run
+		commandToRun := cmd.Command
+		if cfg.BecomeUser != "" {
+			commandToRun = fmt.Sprintf("sudo -u %s %s", cfg.BecomeUser, cmd.Command)
+		}
+		if cfg.Chdir != "" {
+			commandToRun = fmt.Sprintf("cd %s && %s", cfg.Chdir, commandToRun)
+		}
+		capturedCommand = commandToRun
+		return "output", nil
+	})
+	defer ssh.SetRunFunc(nil)
+
+	// Create node with a become user set
+	node := NewNodeForHost("server.example.com")
+	node.SetBecomeUser("nodeuser")
+
+	// Create command with a different become user
+	cmd := NewCommand().
+		SetCommand("ls -la").
+		WithBecomeUser("cmduser").
+		WithRequired(true)
+
+	// Run the command
+	result := node.Run(cmd).FirstResult()
+
+	if result.Error != nil {
+		t.Errorf("Command should not error, got: %v", result.Error)
+	}
+
+	// Verify the command uses the command's become user, not the node's
+	expected := "sudo -u cmduser ls -la"
+	if capturedCommand != expected {
+		t.Errorf("Expected command '%s' (using command's become user), got '%s'", expected, capturedCommand)
+	}
+}
+
+// TestNode_Run_UsesNodeBecomeUserWhenCommandNotSet verifies that when a command doesn't have
+// a become user set, the node's become user is used.
+func TestNode_Run_UsesNodeBecomeUserWhenCommandNotSet(t *testing.T) {
+	// Set up mock SSH function that implements the wrapping logic
+	var capturedCommand string
+	ssh.SetRunFunc(func(cfg types.NodeConfig, cmd types.Command) (string, error) {
+		// Implement the same wrapping logic as ssh.Run
+		commandToRun := cmd.Command
+		if cfg.BecomeUser != "" {
+			commandToRun = fmt.Sprintf("sudo -u %s %s", cfg.BecomeUser, cmd.Command)
+		}
+		if cfg.Chdir != "" {
+			commandToRun = fmt.Sprintf("cd %s && %s", cfg.Chdir, commandToRun)
+		}
+		capturedCommand = commandToRun
+		return "output", nil
+	})
+	defer ssh.SetRunFunc(nil)
+
+	// Create node with a become user set
+	node := NewNodeForHost("server.example.com")
+	node.SetBecomeUser("nodeuser")
+
+	// Create command WITHOUT a become user
+	cmd := NewCommand().
+		SetCommand("ls -la").
+		WithRequired(true)
+
+	// Run the command
+	result := node.Run(cmd).FirstResult()
+
+	if result.Error != nil {
+		t.Errorf("Command should not error, got: %v", result.Error)
+	}
+
+	// Verify the command uses the node's become user
+	expected := "sudo -u nodeuser ls -la"
+	if capturedCommand != expected {
+		t.Errorf("Expected command '%s' (using node's become user), got '%s'", expected, capturedCommand)
+	}
+}
