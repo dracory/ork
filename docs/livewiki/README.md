@@ -4,11 +4,12 @@ page-type: overview
 summary: High-level introduction to Ork, a Go-based SSH automation framework for server management.
 tags: [overview, introduction, getting-started]
 created: 2025-04-14
-updated: 2026-04-15
-version: 2.0.0
+updated: 2026-05-01
+version: 2.1.0
 ---
 
 ## Changelog
+- **v2.1.0** (2026-05-01): Added CommandInterface for shell command execution, added Chdir support for working directory configuration
 - **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, BasePlaybook moved to types package, NodeConfig moved to types package, config package removed, playbook package removed
 - **v1.0.0** (2025-04-14): Initial creation
 
@@ -26,9 +27,10 @@ Ork provides a simple, type-safe API for managing remote Linux servers over SSH.
 |---------|-------------|
 | **SSH-Based** | Connects to servers via SSH with key-based authentication |
 | **Type-Safe** | Full Go type safety with interfaces and compile-time checking |
-| **Idempotent** | All operations are idempotent - safe to run multiple times |
+| **Idempotent** | Skills are idempotent - safe to run multiple times |
 | **Concurrent** | Inventory operations run concurrently across nodes |
 | **Dry-Run Mode** | Preview changes without executing them on servers |
+| **Command System** | Fluent API for shell command execution with chdir and become support |
 | **Skill System** | Pre-built automation tasks for common operations |
 | **Fluent API** | Chain methods for readable configuration |
 
@@ -83,7 +85,33 @@ inv.AddGroup(dbGroup)
 results := inv.Run(skills.NewAptUpdate())
 ```
 
-### 4. Skills
+### 4. Commands
+
+Commands provide a fluent API for executing shell commands:
+
+```go
+// Create and run a command
+command := ork.NewCommand().
+    WithDescription("Check server uptime").
+    WithCommand("uptime").
+    WithRequired(true)
+
+results := node.Run(command)
+
+// With working directory
+command := ork.NewCommand().
+    WithDescription("List files").
+    WithCommand("ls -la").
+    WithChdir("/var/www")
+
+// With privilege escalation
+command := ork.NewCommand().
+    WithDescription("Backup database").
+    WithCommand("pg_dump mydb").
+    WithBecomeUser("postgres")
+```
+
+### 5. Skills
 
 Skills are reusable automation tasks:
 
@@ -123,20 +151,27 @@ func main() {
     node := ork.NewNodeForHost("server.example.com").
         SetPort("2222").
         SetUser("deploy")
-    
-    // Check connectivity
+
+    // Check connectivity with a skill
     results := node.Run(skills.NewPing())
     if results.Results["server.example.com"].Error != nil {
         log.Fatal("Connection failed")
     }
-    
-    // Update packages
+
+    // Run a shell command
+    command := ork.NewCommand().
+        WithDescription("Check disk space").
+        WithCommand("df -h").
+        WithRequired(true)
+    results = node.Run(command)
+
+    // Update packages with a skill
     results = node.Run(skills.NewAptUpdate())
-    
-    // Create a user
+
+    // Create a user with a skill
     node.SetArg("username", "alice")
     results = node.Run(skills.NewUserCreate())
-    
+
     log.Println(results.Results["server.example.com"].Message)
 }
 ```

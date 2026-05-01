@@ -74,6 +74,7 @@ log.Printf("Total: %d, Changed: %d, Failed: %d",
 |-------|-----|------|-------------|
 | User Create | `user-create` | `username` | Create user with sudo |
 | User Delete | `user-delete` | `username` | Delete user |
+| User List | `user-list` | - | List all non-system users |
 | User Status | `user-status` | `username` (optional) | Show user info |
 
 ### Swap Management
@@ -88,11 +89,11 @@ log.Printf("Total: %d, Changed: %d, Failed: %d",
 
 | Skill | ID | Args | Description |
 |-------|-----|------|-------------|
-| AIDE Install | `security-aide-install` | - | Install AIDE IDS |
-| Auditd Install | `security-auditd-install` | - | Install audit daemon |
-| Kernel Harden | `security-kernel-harden` | - | Apply kernel hardening |
-| SSH Change Port | `security-ssh-change-port` | `port` | Change SSH port |
-| SSH Harden | `security-ssh-harden` | - | Harden SSH config |
+| AIDE Install | `aide-install` | - | Install AIDE IDS |
+| Auditd Install | `auditd-install` | - | Install audit daemon |
+| Kernel Harden | `kernel-harden` | - | Apply kernel hardening |
+| SSH Change Port | `ssh-change-port` | `port` | Change SSH port |
+| SSH Harden | `ssh-harden` | - | Harden SSH config |
 
 ### Firewall (UFW)
 
@@ -116,16 +117,16 @@ log.Printf("Total: %d, Changed: %d, Failed: %d",
 | MariaDB Install | `mariadb-install` | - | Install MariaDB server |
 | MariaDB Status | `mariadb-status` | - | Show MariaDB status |
 | MariaDB Secure | `mariadb-secure` | - | Secure MariaDB installation |
-| MariaDB Backup | `mariadb-backup` | `database` (optional) | Backup database |
-| MariaDB Backup Encrypt | `mariadb-backup-encrypt` | - | Encrypted backup |
-| MariaDB Change Port | `mariadb-change-port` | `port` | Change MariaDB port |
 | MariaDB Create DB | `mariadb-create-db` | `database` | Create database |
 | MariaDB Create User | `mariadb-create-user` | `username`, `password` | Create DB user |
-| MariaDB Enable Encryption | `mariadb-enable-encryption` | - | Enable encryption at rest |
-| MariaDB Enable SSL | `mariadb-enable-ssl` | - | Enable SSL connections |
 | MariaDB List DBs | `mariadb-list-dbs` | - | List databases |
 | MariaDB List Users | `mariadb-list-users` | - | List DB users |
+| MariaDB Backup | `mariadb-backup` | `database` (optional) | Backup database |
+| MariaDB Backup Encrypt | `mariadb-backup-encrypt` | - | Encrypted backup |
 | MariaDB Security Audit | `mariadb-security-audit` | - | Run security audit |
+| MariaDB Change Port | `mariadb-change-port` | `port` | Change MariaDB port |
+| MariaDB Enable SSL | `mariadb-enable-ssl` | - | Enable SSL connections |
+| MariaDB Enable Encryption | `mariadb-enable-encryption` | - | Enable encryption at rest |
 
 ## Setting Arguments
 

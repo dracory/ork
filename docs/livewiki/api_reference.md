@@ -4,13 +4,14 @@ page-type: reference
 summary: Complete API reference for all public interfaces, functions, and types.
 tags: [reference, api, interfaces, vault, prompts, privilege-escalation]
 created: 2025-04-14
-updated: 2026-04-15
-version: 2.1.0
+updated: 2026-05-01
+version: 2.2.0
 ---
 
 # API Reference
 
 ## Changelog
+- **v2.2.0** (2026-05-01): Added CommandInterface for shell command execution, added Chdir field to NodeConfig for working directory support
 - **v2.1.0** (2026-04-15): Added privilege escalation (become) feature with BecomeInterface, BaseBecome, and BecomeUser field in NodeConfig
 - **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, BasePlaybook moved to types package, NodeConfig moved to types package, config package removed, playbook package removed
 - **v1.2.0** (2026-04-14): Added vault functions for secure secrets management and prompt functions for interactive user input
@@ -133,18 +134,7 @@ type RunnerInterface interface {
     SetLogger(logger *slog.Logger) RunnerInterface
     SetDryRunMode(dryRun bool) RunnerInterface
     GetDryRunMode() bool
-    types.BecomeInterface
 }
-```
-
-#### BecomeInterface Methods (embedded in RunnerInterface)
-
-```go
-// SetBecomeUser sets the user to become when executing commands via sudo
-SetBecomeUser(user string) types.BecomeInterface
-
-// GetBecomeUser returns the configured become user
-GetBecomeUser() string
 ```
 
 ### Registry Functions
@@ -159,6 +149,60 @@ func NewPlaybookRegistry() *types.Registry
 // Create a new isolated registry with all built-in skills registered
 func NewDefaultRegistry() (*types.Registry, error)
 ```
+
+### CommandInterface
+
+Fluent interface for executing shell commands on nodes and inventories.
+
+```go
+type CommandInterface interface {
+    types.RunnableInterface
+
+    // Command-specific methods
+    SetCommand(cmd string) CommandInterface
+    SetRequired(required bool) CommandInterface
+    WithCommand(cmd string) CommandInterface
+    WithRequired(required bool) CommandInterface
+    SetChdir(dir string) CommandInterface
+    WithChdir(dir string) CommandInterface
+
+    // Fluent chaining methods for RunnableInterface
+    WithDescription(description string) CommandInterface
+    WithID(id string) CommandInterface
+    WithArg(key, value string) CommandInterface
+    WithArgs(args map[string]string) CommandInterface
+    WithNodeConfig(cfg types.NodeConfig) CommandInterface
+    WithDryRun(dryRun bool) CommandInterface
+    WithTimeout(timeout interface{}) CommandInterface
+    WithBecomeUser(user string) CommandInterface
+}
+```
+
+#### Constructor
+
+```go
+func NewCommand() CommandInterface
+```
+
+#### Methods
+
+**Command Configuration:**
+- `SetCommand(cmd string) CommandInterface` - Sets the shell command to execute
+- `SetRequired(required bool) CommandInterface` - Sets whether the command must succeed
+- `SetChdir(dir string) CommandInterface` - Sets the working directory for command execution
+- `WithCommand(cmd string) CommandInterface` - Fluent alternative to SetCommand
+- `WithRequired(required bool) CommandInterface` - Fluent alternative to SetRequired
+- `WithChdir(dir string) CommandInterface` - Fluent alternative to SetChdir
+
+**Fluent Chaining Methods:**
+- `WithDescription(description string) CommandInterface` - Sets description with fluent chaining
+- `WithID(id string) CommandInterface` - Sets ID with fluent chaining
+- `WithArg(key, value string) CommandInterface` - Sets single argument with fluent chaining
+- `WithArgs(args map[string]string) CommandInterface` - Sets arguments map with fluent chaining
+- `WithNodeConfig(cfg types.NodeConfig) CommandInterface` - Sets node config with fluent chaining
+- `WithDryRun(dryRun bool) CommandInterface` - Sets dry-run mode with fluent chaining
+- `WithTimeout(timeout interface{}) CommandInterface` - Sets timeout with fluent chaining
+- `WithBecomeUser(user string) CommandInterface` - Sets become user with fluent chaining
 
 ### Vault Functions
 
@@ -261,26 +305,29 @@ type NodeConfig struct {
     SSHPort  string
     SSHLogin string
     SSHKey   string
-    
+
     // User settings
     RootUser    string
     NonRootUser string
-    
+
     // Database settings
     DBPort         string
     DBRootPassword string
-    
+
     // Extra arguments
     Args map[string]string
-    
+
     // Logger for structured logging
     Logger *slog.Logger
-    
+
     // Dry-run mode flag
     IsDryRunMode bool
-    
+
     // BecomeUser is the user to become when executing commands via sudo
     BecomeUser string
+
+    // Chdir is the working directory for command execution
+    Chdir string
 }
 
 #### Methods
@@ -297,6 +344,9 @@ func (c NodeConfig) GetArgOr(key, defaultValue string) string
 
 // GetLoggerOrDefault returns logger or slog.Default()
 func (c NodeConfig) GetLoggerOrDefault() *slog.Logger
+
+// SetChdir sets the working directory for command execution
+func (c *NodeConfig) SetChdir(dir string)
 ```
 
 ### RunnableInterface

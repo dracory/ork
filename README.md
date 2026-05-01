@@ -1,6 +1,6 @@
 # Ork
 
-Ork is a Go package for SSH-based server automation. Think of it like Ansible, but in Go - you define **Nodes** (remote servers), organize them into **Groups**, and run commands or skills against them individually or at scale via **Inventory**.
+Ork is a Go package for SSH-based server automation. Think of it like Ansible, but in Go - you define **Nodes** (remote servers), organize them into **Groups**, and run commands, skills, or playbooks against them individually or at scale via **Inventory**.
 
 ## Installation
 
@@ -33,8 +33,9 @@ Full documentation is available in the [docs](docs/) directory.
 - [Quick Start](docs/quick_start.md) - Quick start guide with examples
 - [Configuration](docs/quick_start.md) - Configuration options and settings
 
-### Skills
+### Automation
 
+- [Commands](docs/commands.md) - Execute shell commands with fluent API
 - [Built-in Skills](docs/skills.md) - All available automation tasks
 - [Playbooks](docs/playbooks.md) - Complex orchestration with full Go power
 

@@ -1,7 +1,7 @@
 // Package ork provides a simple, intuitive API for SSH-based server automation.
 //
 // The core concept is the Node - a representation of a remote server that you
-// can connect to and run commands or playbooks against.
+// can connect to and run commands, skills, or playbooks against.
 //
 // Basic usage:
 //
@@ -26,18 +26,18 @@
 //	output1, _ := node.Run("uptime")
 //	output2, _ := node.Run("df -h")
 //
-// Running playbooks:
+// Running skills:
 //
 //	node := ork.NewNode("server.example.com").
 //	    SetArg("username", "alice")
-//	err := node.Playbook("user-create")
+//	err := node.Run(skills.NewUserCreate())
 //
 // Running commands on nodes/inventories (fluent interface):
 //
 //	command := ork.NewCommand().
 //	    WithDescription("Restart application").
-//	    SetCommand("pm2 restart app").
-//	    SetRequired(true)
+//	    WithCommand("pm2 restart app").
+//	    WithRequired(true)
 //
 //	node := ork.NewNodeForHost("server.example.com")
 //	result := node.Run(command)
@@ -46,11 +46,9 @@
 //	result := inventory.Run(command)
 //
 // For advanced use cases, the internal packages remain accessible:
-//   - config - Configuration types
 //   - ssh - SSH client
-//   - types - Shared types (PlaybookInterface, Registry, Result, Command)
-//   - playbook - Playbook interface (re-exports from types for backward compatibility)
-//   - playbooks - Built-in playbook implementations
+//   - types - Shared types (RunnableInterface, Registry, Result, Command)
+//   - skills - Built-in skill implementations
 package ork
 
 // This file intentionally minimal. All functionality is in:
@@ -64,5 +62,5 @@ package ork
 //   - inventory_implementation.go - Inventory implementation
 //   - registry.go - Skill registry
 
-// Note: Playbook registration and discovery is handled automatically
+// Note: Skill registration and discovery is handled automatically
 // at package init time in node_interface.go
