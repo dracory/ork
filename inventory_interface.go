@@ -53,6 +53,10 @@ type GroupInterface interface {
 	// GetNodes returns all nodes in this group.
 	GetNodes() []NodeInterface
 
+	// WithArg sets an argument for this group.
+	// Group arguments are inherited by all nodes in the group.
+	WithArg(key, value string) GroupInterface
+
 	// SetArg sets an argument for this group.
 	// Group arguments are inherited by all nodes in the group.
 	SetArg(key, value string) GroupInterface

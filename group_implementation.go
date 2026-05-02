@@ -72,6 +72,11 @@ func (g *groupImplementation) GetArgs() map[string]string {
 	return result
 }
 
+// WithArg sets an argument for this group (fluent interface alias for SetArg).
+func (g *groupImplementation) WithArg(key, value string) GroupInterface {
+	return g.SetArg(key, value)
+}
+
 // propagateDryRun applies the group's dry-run mode to all nodes.
 func (g *groupImplementation) propagateDryRun() {
 	g.mu.RLock()
