@@ -1,7 +1,7 @@
 # Ork
 
 <p align="center">
-  <img src="docs/images/ork.jpg" alt="Ork Logo" width="200"/>
+  <img src="docs/images/ork.jpg" alt="Ork Logo" width="100%"/>
 </p>
 
 Ork is a Go package for SSH-based server automation. Think of it like Ansible, but in Go - you define **Nodes** (remote servers), organize them into **Groups**, and run commands, skills, or playbooks against them individually or at scale via **Inventory**.
