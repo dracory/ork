@@ -131,6 +131,10 @@ type NodeInterface interface {
 	//	node := ork.NewNode("server.example.com").SetPort("2222")
 	SetPort(port string) NodeInterface
 
+	// WithPort sets the SSH port and returns NodeInterface for chaining.
+	// Shortcut alias to SetPort for fluent interface convenience.
+	WithPort(port string) NodeInterface
+
 	// SetUser sets the SSH user for the connection.
 	// Returns the NodeInterface to enable method chaining.
 	// Default is "root" if not set.
@@ -139,6 +143,10 @@ type NodeInterface interface {
 	//
 	//	node := ork.NewNode("server.example.com").SetUser("deploy")
 	SetUser(user string) NodeInterface
+
+	// WithUser sets the SSH user and returns NodeInterface for chaining.
+	// Shortcut alias to SetUser for fluent interface convenience.
+	WithUser(user string) NodeInterface
 
 	// SetKey sets the SSH private key filename for authentication.
 	// The key is resolved to ~/.ssh/<keyname>.
@@ -149,6 +157,10 @@ type NodeInterface interface {
 	//
 	//	node := ork.NewNode("server.example.com").SetKey("production.prv")
 	SetKey(key string) NodeInterface
+
+	// WithKey sets the SSH key and returns NodeInterface for chaining.
+	// Shortcut alias to SetKey for fluent interface convenience.
+	WithKey(key string) NodeInterface
 
 	// SetArg adds a single argument to the arguments map.
 	// This adds to existing arguments without replacing them.
@@ -161,6 +173,10 @@ type NodeInterface interface {
 	//	    SetArg("username", "alice").
 	//	    SetArg("shell", "/bin/bash")
 	SetArg(key, value string) NodeInterface
+
+	// WithArg sets a single argument and returns NodeInterface for chaining.
+	// Shortcut alias to SetArg for fluent interface convenience.
+	WithArg(key, value string) NodeInterface
 
 	// SetArgs replaces the entire arguments map with the provided map.
 	// Any existing arguments are discarded.
@@ -175,6 +191,10 @@ type NodeInterface interface {
 	//	}
 	//	node := ork.NewNode("server.example.com").SetArgs(args)
 	SetArgs(args map[string]string) NodeInterface
+
+	// WithArgs replaces the arguments map and returns NodeInterface for chaining.
+	// Shortcut alias to SetArgs for fluent interface convenience.
+	WithArgs(args map[string]string) NodeInterface
 
 	// Connection management
 

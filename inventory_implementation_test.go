@@ -522,12 +522,24 @@ func (m *invTestMockNode) SetPort(port string) NodeInterface {
 	return m
 }
 
+func (m *invTestMockNode) WithPort(port string) NodeInterface {
+	return m.SetPort(port)
+}
+
 func (m *invTestMockNode) SetUser(user string) NodeInterface {
 	return m
 }
 
+func (m *invTestMockNode) WithUser(user string) NodeInterface {
+	return m.SetUser(user)
+}
+
 func (m *invTestMockNode) SetKey(key string) NodeInterface {
 	return m
+}
+
+func (m *invTestMockNode) WithKey(key string) NodeInterface {
+	return m.SetKey(key)
 }
 
 func (m *invTestMockNode) SetArg(key, value string) NodeInterface {
@@ -538,9 +550,17 @@ func (m *invTestMockNode) SetArg(key, value string) NodeInterface {
 	return m
 }
 
+func (m *invTestMockNode) WithArg(key, value string) NodeInterface {
+	return m.SetArg(key, value)
+}
+
 func (m *invTestMockNode) SetArgs(args map[string]string) NodeInterface {
 	m.args = args
 	return m
+}
+
+func (m *invTestMockNode) WithArgs(args map[string]string) NodeInterface {
+	return m.SetArgs(args)
 }
 
 func (m *invTestMockNode) GetArg(key string) string {

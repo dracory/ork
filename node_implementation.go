@@ -159,6 +159,12 @@ func (n *nodeImplementation) SetPort(port string) NodeInterface {
 	return n
 }
 
+// WithPort sets the SSH port and returns NodeInterface for chaining.
+// Shortcut alias to SetPort for fluent interface convenience.
+func (n *nodeImplementation) WithPort(port string) NodeInterface {
+	return n.SetPort(port)
+}
+
 // SetUser sets the SSH user for the connection.
 // Returns the NodeInterface to enable method chaining.
 // Default is "root" if not set.
@@ -169,6 +175,12 @@ func (n *nodeImplementation) SetPort(port string) NodeInterface {
 func (n *nodeImplementation) SetUser(user string) NodeInterface {
 	n.cfg.RootUser = user
 	return n
+}
+
+// WithUser sets the SSH user and returns NodeInterface for chaining.
+// Shortcut alias to SetUser for fluent interface convenience.
+func (n *nodeImplementation) WithUser(user string) NodeInterface {
+	return n.SetUser(user)
 }
 
 // SetKey sets the SSH private key filename for authentication.
@@ -182,6 +194,12 @@ func (n *nodeImplementation) SetUser(user string) NodeInterface {
 func (n *nodeImplementation) SetKey(key string) NodeInterface {
 	n.cfg.SSHKey = key
 	return n
+}
+
+// WithKey sets the SSH key and returns NodeInterface for chaining.
+// Shortcut alias to SetKey for fluent interface convenience.
+func (n *nodeImplementation) WithKey(key string) NodeInterface {
+	return n.SetKey(key)
 }
 
 // SetArg adds a single argument to the arguments map.
@@ -202,6 +220,12 @@ func (n *nodeImplementation) SetArg(key, value string) NodeInterface {
 	return n
 }
 
+// WithArg sets a single argument and returns NodeInterface for chaining.
+// Shortcut alias to SetArg for fluent interface convenience.
+func (n *nodeImplementation) WithArg(key, value string) NodeInterface {
+	return n.SetArg(key, value)
+}
+
 // SetArgs replaces the entire arguments map with the provided map.
 // Any existing arguments are discarded.
 // Arguments are passed to playbooks for configuration.
@@ -217,6 +241,12 @@ func (n *nodeImplementation) SetArg(key, value string) NodeInterface {
 func (n *nodeImplementation) SetArgs(args map[string]string) NodeInterface {
 	n.cfg.Args = args
 	return n
+}
+
+// WithArgs replaces the arguments map and returns NodeInterface for chaining.
+// Shortcut alias to SetArgs for fluent interface convenience.
+func (n *nodeImplementation) WithArgs(args map[string]string) NodeInterface {
+	return n.SetArgs(args)
 }
 
 // GetHost returns the configured SSH host (hostname or IP address).

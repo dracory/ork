@@ -402,12 +402,24 @@ func (m *groupTestMockNode) SetPort(port string) NodeInterface {
 	return m
 }
 
+func (m *groupTestMockNode) WithPort(port string) NodeInterface {
+	return m.SetPort(port)
+}
+
 func (m *groupTestMockNode) SetUser(user string) NodeInterface {
 	return m
 }
 
+func (m *groupTestMockNode) WithUser(user string) NodeInterface {
+	return m.SetUser(user)
+}
+
 func (m *groupTestMockNode) SetKey(key string) NodeInterface {
 	return m
+}
+
+func (m *groupTestMockNode) WithKey(key string) NodeInterface {
+	return m.SetKey(key)
 }
 
 func (m *groupTestMockNode) SetArg(key, value string) NodeInterface {
@@ -418,9 +430,17 @@ func (m *groupTestMockNode) SetArg(key, value string) NodeInterface {
 	return m
 }
 
+func (m *groupTestMockNode) WithArg(key, value string) NodeInterface {
+	return m.SetArg(key, value)
+}
+
 func (m *groupTestMockNode) SetArgs(args map[string]string) NodeInterface {
 	m.args = args
 	return m
+}
+
+func (m *groupTestMockNode) WithArgs(args map[string]string) NodeInterface {
+	return m.SetArgs(args)
 }
 
 func (m *groupTestMockNode) GetArg(key string) string {
