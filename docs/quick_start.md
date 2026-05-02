@@ -107,7 +107,7 @@ inv := ork.NewInventory()
 webGroup := ork.NewGroup("webservers")
 webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
-webGroup.SetArg("env", "production")
+webGroup.WithArg("env", "production")
 inv.AddGroup(webGroup)
 
 // Run skill on entire inventory

@@ -88,7 +88,7 @@ group.AddNode(node1)
 group.AddNode(node2)
 
 // Set group arguments
-group.SetArg("env", "production")
+group.WithArg("env", "production")
 
 // Run on all nodes
 results := group.RunPlaybook(playbooks.NewAptUpdate())

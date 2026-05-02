@@ -122,8 +122,8 @@ results = node.RunPlaybook(playbooks.NewAptUpgrade())
 
 ```go
 // Set arguments for the playbook
-node.SetArg("username", "alice").
-    SetArg("shell", "/bin/bash")
+node.WithArg("username", "alice").
+    WithArg("shell", "/bin/bash")
 
 // Run the user creation playbook
 results := node.RunPlaybook(playbooks.NewUserCreate())
@@ -146,8 +146,8 @@ Groups allow you to manage multiple servers together:
 
 ```go
 // Create a group
-webGroup := ork.NewGroup("webservers")
-webGroup.SetArg("env", "production")
+webGroup := ork.NewGroup("webservers").
+    WithArg("env", "production")
 
 // Add nodes to the group
 webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))

@@ -11,6 +11,7 @@ version: 2.2.0
 # API Reference
 
 ## Changelog
+- **v2.3.0** (2026-05-02): Added WithArg method to GroupInterface for consistent fluent interface pattern across all ork APIs
 - **v2.2.0** (2026-05-01): Added CommandInterface for shell command execution, added Chdir field to NodeConfig for working directory support
 - **v2.1.0** (2026-04-15): Added privilege escalation (become) feature with BecomeInterface, BaseBecome, and BecomeUser field in NodeConfig
 - **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, BasePlaybook moved to types package, NodeConfig moved to types package, config package removed, playbook package removed
@@ -86,6 +87,7 @@ type GroupInterface interface {
     GetName() string
     AddNode(node NodeInterface) GroupInterface
     GetNodes() []NodeInterface
+    WithArg(key, value string) GroupInterface
     SetArg(key, value string) GroupInterface
     GetArg(key string) string
     GetArgs() map[string]string

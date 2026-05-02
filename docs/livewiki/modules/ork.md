@@ -11,6 +11,7 @@ version: 2.0.0
 # ork Package
 
 ## Changelog
+- **v2.3.0** (2026-05-02): Added WithArg method to GroupInterface for consistent fluent interface pattern across all ork APIs
 - **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, config package moved to types
 - **v1.2.0** (2026-04-14): Added vault functions for secure secrets management and prompt functions for interactive user input
 - **v1.1.0** (2026-04-14): Updated registry functions with GetGlobalRegistry and NewDefaultRegistry
@@ -125,6 +126,7 @@ type GroupInterface interface {
     GetName() string
     AddNode(node NodeInterface) GroupInterface
     GetNodes() []NodeInterface
+    WithArg(key, value string) GroupInterface
     SetArg(key, value string) GroupInterface
     GetArg(key string) string
     GetArgs() map[string]string
@@ -148,7 +150,7 @@ group.AddNode(node1)
 group.AddNode(node2)
 
 // Set group arguments
-group.SetArg("env", "production")
+group.WithArg("env", "production")
 
 // Run skill on all nodes
 results := group.Run(skills.NewPing())
@@ -404,8 +406,8 @@ node := ork.NewNodeForHost("server.example.com")
 // Simple command
 results := node.RunCommand("uptime")
 
-// With arguments
-node.SetArg("username", "alice")
+// With argument
+node.WithArg("username", "alice")
 results = node.Run(skills.NewUserCreate())
 
 // Check mode
