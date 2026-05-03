@@ -3,6 +3,29 @@ package types
 
 import "log/slog"
 
+// DefaultKexAlgorithms are the default KEX algorithms for SSH key exchange.
+// These are widely compatible with modern SSH servers while being supported by golang.org/x/crypto/ssh.
+var DefaultKexAlgorithms = []string{
+	"ecdh-sha2-nistp256",
+	"ecdh-sha2-nistp384",
+	"ecdh-sha2-nistp521",
+	"diffie-hellman-group-exchange-sha256",
+	"diffie-hellman-group16-sha512",
+	"diffie-hellman-group18-sha512",
+	"diffie-hellman-group14-sha256",
+}
+
+// DefaultHostKeyAlgorithms are the default host key algorithms for SSH.
+// These are widely compatible with modern SSH servers while being supported by golang.org/x/crypto/ssh.
+var DefaultHostKeyAlgorithms = []string{
+	"ecdsa-sha2-nistp256",
+	"ecdsa-sha2-nistp384",
+	"ecdsa-sha2-nistp521",
+	"rsa-sha2-256",
+	"rsa-sha2-512",
+	"ssh-ed25519",
+}
+
 // NodeConfig holds all configuration variables for remote server operations.
 type NodeConfig struct {
 	// SSH connection settings
@@ -37,8 +60,12 @@ type NodeConfig struct {
 	// If set, commands will be executed in this directory.
 	Chdir string
 
+	// KexAlgorithms specifies the key exchange algorithms to use for SSH.
+	// If empty, defaults to DefaultKexAlgorithms.
 	KexAlgorithms []string
 
+	// HostKeyAlgorithms specifies the host key algorithms to use for SSH.
+	// If empty, defaults to DefaultHostKeyAlgorithms.
 	HostKeyAlgorithms []string
 }
 

@@ -1,5 +1,5 @@
 // Package ssh provides SSH connectivity utilities for remote server automation.
-// It wraps github.com/sfreiberg/simplessh with a simplified API for playbook-style
+// It uses golang.org/x/crypto/ssh with a simplified API for playbook-style
 // operations where you connect, run commands, and disconnect.
 package ssh
 
@@ -7,10 +7,13 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/user"
+	"path/filepath"
 	"strings"
+	"time"
 
-	"github.com/sfreiberg/simplessh"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/knownhosts"
 )
 
 // Client wraps an SSH connection with convenient methods for running commands.
@@ -21,7 +24,7 @@ type Client struct {
 	keyPath           string
 	kexAlgorithms     []string
 	hostKeyAlgorithms []string
-	client            *simplessh.Client
+	client            *ssh.Client
 }
 
 // NewClient creates a new SSH client configuration.
@@ -83,11 +86,7 @@ func (c *Client) Connect() error {
 	return nil
 }
 
-func (c *Client) connectWithKeyFile(addr string) (*simplessh.Client, error) {
-	if len(c.kexAlgorithms) == 0 && len(c.hostKeyAlgorithms) == 0 {
-		return simplessh.ConnectWithKeyFile(addr, c.user, c.keyPath)
-	}
-
+func (c *Client) connectWithKeyFile(addr string) (*ssh.Client, error) {
 	key, err := os.ReadFile(c.keyPath)
 	if err != nil {
 		return nil, err
@@ -101,7 +100,8 @@ func (c *Client) connectWithKeyFile(addr string) (*simplessh.Client, error) {
 	config := &ssh.ClientConfig{
 		User:            c.user,
 		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
-		HostKeyCallback: simplessh.HostKeyCallback,
+		HostKeyCallback: knownHostsCallback(),
+		Timeout:         30 * time.Second,
 	}
 
 	if len(c.kexAlgorithms) > 0 {
@@ -112,7 +112,7 @@ func (c *Client) connectWithKeyFile(addr string) (*simplessh.Client, error) {
 		config.HostKeyAlgorithms = c.hostKeyAlgorithms
 	}
 
-	conn, err := net.DialTimeout("tcp", addr, simplessh.DefaultTimeout)
+	conn, err := net.DialTimeout("tcp", addr, 30*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,25 @@ func (c *Client) connectWithKeyFile(addr string) (*simplessh.Client, error) {
 		return nil, err
 	}
 
-	return &simplessh.Client{SSHClient: ssh.NewClient(sshConn, chans, reqs)}, nil
+	return ssh.NewClient(sshConn, chans, reqs), nil
+}
+
+func knownHostsCallback() ssh.HostKeyCallback {
+	usr, err := user.Current()
+	if err != nil {
+		return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return err
+		}
+	}
+
+	callback, err := knownhosts.New(filepath.Join(usr.HomeDir, ".ssh", "known_hosts"))
+	if err != nil {
+		return func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return err
+		}
+	}
+
+	return callback
 }
 
 // Run executes a command on the remote server.
@@ -132,7 +150,14 @@ func (c *Client) Run(cmd string) (string, error) {
 	if c.client == nil {
 		return "", fmt.Errorf("not connected, call Connect() first")
 	}
-	output, err := c.client.Exec(cmd)
+
+	session, err := c.client.NewSession()
+	if err != nil {
+		return "", fmt.Errorf("failed to create SSH session: %w", err)
+	}
+	defer session.Close()
+
+	output, err := session.CombinedOutput(cmd)
 	return string(output), err
 }
 

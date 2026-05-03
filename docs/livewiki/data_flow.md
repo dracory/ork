@@ -58,23 +58,23 @@ sequenceDiagram
     else Normal Execution
         alt Has Persistent Connection
             Node->>sshClient: Run("uptime")
-            sshClient->>simplessh: Exec(cmd)
-            simplessh->>Remote: SSH Execute
-            Remote-->>simplessh: Output
-            simplessh-->>sshClient: Output
+            sshClient->>golang.org/x/crypto/ssh: Exec(cmd)
+            golang.org/x/crypto/ssh->>Remote: SSH Execute
+            Remote-->>golang.org/x/crypto/ssh: Output
+            golang.org/x/crypto/ssh-->>sshClient: Output
             sshClient-->>Node: Output
         else No Persistent Connection
             Node->>ssh: Run(cfg, "uptime")
             ssh->>ssh: NewClient
             ssh->>ssh: Connect()
-            ssh->>simplessh: ConnectWithKeyFile
-            simplessh->>Remote: SSH Handshake
-            Remote-->>simplessh: Connected
-            simplessh-->>ssh: Client
-            ssh->>simplessh: Exec("uptime")
-            simplessh->>Remote: Execute
-            Remote-->>simplessh: Output
-            simplessh-->>ssh: Output
+            ssh->>golang.org/x/crypto/ssh: ConnectWithKeyFile
+            golang.org/x/crypto/ssh->>Remote: SSH Handshake
+            Remote-->>golang.org/x/crypto/ssh: Connected
+            golang.org/x/crypto/ssh-->>ssh: Client
+            ssh->>golang.org/x/crypto/ssh: Exec("uptime")
+            golang.org/x/crypto/ssh->>Remote: Execute
+            Remote-->>golang.org/x/crypto/ssh: Output
+            golang.org/x/crypto/ssh-->>ssh: Output
             ssh->>ssh: Close()
             ssh-->>Node: Output
         end
@@ -92,28 +92,28 @@ sequenceDiagram
     Node->>ssh: NewClient(host, port, user, key)
     ssh-->>Node: Client
     Node->>ssh: Connect()
-    ssh->>simplessh: ConnectWithKeyFile(addr, user, keyPath)
-    simplessh->>Remote: SSH Connection
-    Remote-->>simplessh: Established
-    simplessh-->>ssh: Client
+    ssh->>golang.org/x/crypto/ssh: ConnectWithKeyFile(addr, user, keyPath)
+    golang.org/x/crypto/ssh->>Remote: SSH Connection
+    Remote-->>golang.org/x/crypto/ssh: Established
+    golang.org/x/crypto/ssh-->>ssh: Client
     ssh-->>Node: nil (success)
     Node-->>-User: nil (success)
     Note over Node: connected = true
     
     User->>Node: RunCommand("uptime")
     Node->>ssh: Run("uptime")
-    ssh->>simplessh: Exec
-    simplessh->>Remote: Execute
-    Remote-->>simplessh: Output
-    simplessh-->>ssh: Output
+    ssh->>golang.org/x/crypto/ssh: Exec
+    golang.org/x/crypto/ssh->>Remote: Execute
+    Remote-->>golang.org/x/crypto/ssh: Output
+    golang.org/x/crypto/ssh-->>ssh: Output
     ssh-->>Node: Output
     Node-->>User: Results
     
     User->>+Node: Close()
     Node->>ssh: Close()
-    ssh->>simplessh: Close()
-    simplessh->>Remote: Disconnect
-    simplessh-->>ssh: nil
+    ssh->>golang.org/x/crypto/ssh: Close()
+    golang.org/x/crypto/ssh->>Remote: Disconnect
+    golang.org/x/crypto/ssh-->>ssh: nil
     ssh-->>Node: nil
     Node-->>-User: nil
     Note over Node: connected = false
@@ -325,7 +325,7 @@ graph TD
 sequenceDiagram
     participant User
     participant ssh.Client
-    participant simplessh
+    participant golang.org/x/crypto/ssh
     participant Remote
     
     User->>ssh.Client: NewClient(host, port, user, key)
@@ -336,31 +336,31 @@ sequenceDiagram
     User->>ssh.Client: Connect()
     ssh.Client->>ssh.Client: Validate host not empty
     ssh.Client->>ssh.Client: Build addr (host:port)
-    ssh.Client->>simplessh: ConnectWithKeyFile(addr, user, keyPath)
+    ssh.Client->>golang.org/x/crypto/ssh: ConnectWithKeyFile(addr, user, keyPath)
     
-    simplessh->>Remote: TCP Connection
-    Remote-->>simplessh: TCP Established
+    golang.org/x/crypto/ssh->>Remote: TCP Connection
+    Remote-->>golang.org/x/crypto/ssh: TCP Established
     
-    simplessh->>Remote: SSH Handshake
-    Remote-->>simplessh: SSH Session
+    golang.org/x/crypto/ssh->>Remote: SSH Handshake
+    Remote-->>golang.org/x/crypto/ssh: SSH Session
     
-    simplessh->>Remote: Key Authentication
-    Remote-->>simplessh: Auth Success
+    golang.org/x/crypto/ssh->>Remote: Key Authentication
+    Remote-->>golang.org/x/crypto/ssh: Auth Success
     
-    simplessh-->>ssh.Client: *simplessh.Client
+    golang.org/x/crypto/ssh-->>ssh.Client: *ssh.Client
     ssh.Client-->>User: nil
     
     User->>ssh.Client: Run(cmd)
-    ssh.Client->>simplessh: Exec(cmd)
-    simplessh->>Remote: Execute command
-    Remote-->>simplessh: stdout/stderr
-    simplessh-->>ssh.Client: []byte output
+    ssh.Client->>golang.org/x/crypto/ssh: Exec(cmd)
+    golang.org/x/crypto/ssh->>Remote: Execute command
+    Remote-->>golang.org/x/crypto/ssh: stdout/stderr
+    golang.org/x/crypto/ssh-->>ssh.Client: []byte output
     ssh.Client-->>User: string output
     
     User->>ssh.Client: Close()
-    ssh.Client->>simplessh: Close()
-    simplessh->>Remote: Disconnect
-    simplessh-->>ssh.Client: nil
+    ssh.Client->>golang.org/x/crypto/ssh: Close()
+    golang.org/x/crypto/ssh->>Remote: Disconnect
+    golang.org/x/crypto/ssh-->>ssh.Client: nil
     ssh.Client-->>User: nil
 ```
 
@@ -398,10 +398,10 @@ sequenceDiagram
     
     alt Connection Error
         Node->>ssh: Connect
-        ssh->>simplessh: ConnectWithKeyFile
-        simplessh->>Remote: TCP Connect
-        Remote-->>simplessh: Connection Refused
-        simplessh-->>ssh: error
+        ssh->>golang.org/x/crypto/ssh: ConnectWithKeyFile
+        golang.org/x/crypto/ssh->>Remote: TCP Connect
+        Remote-->>golang.org/x/crypto/ssh: Connection Refused
+        golang.org/x/crypto/ssh-->>ssh: error
         ssh-->>Node: error
         Node->>Node: Build Result
         Node-->>User: Result{Error: wrapped error}

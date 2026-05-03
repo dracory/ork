@@ -129,7 +129,7 @@ graph LR
     A[ssh.Client] --> B[Connect]
     A --> C[Run]
     A --> D[Close]
-    E[ssh.RunOnce] --> F[simplessh]
+    E[ssh.RunOnce] --> F[golang.org/x/crypto/ssh]
     A --> F
 ```
 

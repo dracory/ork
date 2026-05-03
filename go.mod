@@ -3,7 +3,6 @@ module github.com/dracory/ork
 go 1.26
 
 require (
-	github.com/sfreiberg/simplessh v0.0.0-20220719182921-185eafd40485
 	github.com/testcontainers/testcontainers-go v0.42.0
 	golang.org/x/term v0.42.0
 )

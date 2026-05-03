@@ -364,7 +364,9 @@ func (n *nodeImplementation) GetNodeConfig() types.NodeConfig {
 //	}
 //	defer node.Close()
 func (n *nodeImplementation) Connect() error {
-	client := ssh.NewClient(n.cfg.SSHHost, n.cfg.SSHPort, n.cfg.RootUser, n.cfg.SSHKey)
+	client := ssh.NewClient(n.cfg.SSHHost, n.cfg.SSHPort, n.cfg.RootUser, n.cfg.SSHKey).
+		WithKexAlgorithms(n.cfg.KexAlgorithms).
+		WithHostKeyAlgorithms(n.cfg.HostKeyAlgorithms)
 	if err := client.Connect(); err != nil {
 		return err
 	}

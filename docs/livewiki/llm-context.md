@@ -30,7 +30,7 @@ Key differentiators:
 ## Key Technologies
 
 - **Go 1.25+**: Core language
-- **simplessh**: SSH client wrapper (github.com/sfreiberg/simplessh)
+- **golang.org/x/crypto/ssh**: SSH client
 - **envenc**: Vault encryption/decryption (github.com/dracory/envenc)
 - **testcontainers-go**: Integration testing
 - **slog**: Structured logging (standard library)

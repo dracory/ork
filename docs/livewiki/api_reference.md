@@ -518,7 +518,7 @@ type Client struct {
     port    string
     user    string
     keyPath string
-    client  *simplessh.Client
+    client  *ssh.Client
 }
 ```
 

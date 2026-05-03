@@ -18,7 +18,7 @@ SSH connectivity utilities for remote server automation.
 
 ## Purpose
 
-The `ssh` package wraps `github.com/sfreiberg/simplessh` with a simplified API for skill-style operations. It provides connection management, command execution, and dry-run safety.
+The `ssh` package uses `golang.org/x/crypto/ssh` with a simplified API for skill-style operations. It provides connection management, command execution, and dry-run safety.
 
 ## Key Files
 
@@ -38,7 +38,7 @@ type Client struct {
     port    string    // SSH port
     user    string    // Username
     keyPath string    // Full path to private key
-    client  *simplessh.Client
+    client  *ssh.Client
 }
 ```
 
