@@ -176,6 +176,59 @@ ssh-keyscan HOST >> ~/.ssh/known_hosts
    node.SetUser("your_username")  // Default is "root"
    ```
 
+### "SSH key exchange algorithm mismatch"
+
+**Problem**: The SSH client and server do not share a supported key exchange algorithm. This can happen with modern or hardened OpenSSH servers that prefer or require algorithms not supported by `golang.org/x/crypto/ssh`, such as `sntrup761x25519-sha512@openssh.com`.
+
+**Solutions**:
+
+1. **Check the server algorithms**
+   ```bash
+   ssh -vvv user@HOST
+   ssh -Q kex
+   ```
+
+2. **Configure compatible algorithms in Ork**
+   ```go
+   cfg := ork.NewNodeConfig().
+       WithHost("server.example.com").
+       WithLogin("ubuntu").
+       WithKey("id_rsa").
+       WithKexAlgorithms([]string{
+           "curve25519-sha256",
+           "curve25519-sha256@libssh.org",
+           "ecdh-sha2-nistp256",
+           "diffie-hellman-group14-sha256",
+       })
+   ```
+
+3. **Adjust server configuration if it is too restrictive**
+   ```bash
+   # In /etc/ssh/sshd_config
+   KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group14-sha256
+   systemctl restart sshd
+   ```
+
+**Limitation**: Ork can only configure algorithms supported by `golang.org/x/crypto/ssh`. It cannot enable unsupported algorithms such as `sntrup761x25519-sha512@openssh.com` until the underlying library supports them.
+
+### "SSH host key algorithm mismatch"
+
+**Problem**: The SSH client and server do not share a supported host key algorithm.
+
+**Solution**: Configure compatible host key algorithms:
+
+```go
+cfg := ork.NewNodeConfig().
+    WithHost("server.example.com").
+    WithLogin("ubuntu").
+    WithKey("id_rsa").
+    WithHostKeyAlgorithms([]string{
+        "ssh-ed25519",
+        "rsa-sha2-512",
+        "rsa-sha2-256",
+    })
+```
+
 ### Permission Denied (publickey)
 
 **Problem**: Server rejects key authentication.

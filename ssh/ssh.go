@@ -5,19 +5,23 @@ package ssh
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"strings"
 
 	"github.com/sfreiberg/simplessh"
+	"golang.org/x/crypto/ssh"
 )
 
 // Client wraps an SSH connection with convenient methods for running commands.
 type Client struct {
-	host    string
-	port    string
-	user    string
-	keyPath string
-	client  *simplessh.Client
+	host              string
+	port              string
+	user              string
+	keyPath           string
+	kexAlgorithms     []string
+	hostKeyAlgorithms []string
+	client            *simplessh.Client
 }
 
 // NewClient creates a new SSH client configuration.
@@ -38,6 +42,16 @@ func NewClient(host, port, user, key string) *Client {
 		user:    user,
 		keyPath: keyPath,
 	}
+}
+
+func (c *Client) WithKexAlgorithms(algorithms []string) *Client {
+	c.kexAlgorithms = algorithms
+	return c
+}
+
+func (c *Client) WithHostKeyAlgorithms(algorithms []string) *Client {
+	c.hostKeyAlgorithms = algorithms
+	return c
 }
 
 // Connect establishes the SSH connection.
@@ -61,12 +75,55 @@ func (c *Client) Connect() error {
 	}
 
 	addr := c.host + ":" + c.port
-	client, err := simplessh.ConnectWithKeyFile(addr, c.user, c.keyPath)
+	client, err := c.connectWithKeyFile(addr)
 	if err != nil {
 		return fmt.Errorf("failed to connect to %s: %w", addr, classifySSHError(err))
 	}
 	c.client = client
 	return nil
+}
+
+func (c *Client) connectWithKeyFile(addr string) (*simplessh.Client, error) {
+	if len(c.kexAlgorithms) == 0 && len(c.hostKeyAlgorithms) == 0 {
+		return simplessh.ConnectWithKeyFile(addr, c.user, c.keyPath)
+	}
+
+	key, err := os.ReadFile(c.keyPath)
+	if err != nil {
+		return nil, err
+	}
+
+	signer, err := ssh.ParsePrivateKey(key)
+	if err != nil {
+		return nil, err
+	}
+
+	config := &ssh.ClientConfig{
+		User:            c.user,
+		Auth:            []ssh.AuthMethod{ssh.PublicKeys(signer)},
+		HostKeyCallback: simplessh.HostKeyCallback,
+	}
+
+	if len(c.kexAlgorithms) > 0 {
+		config.Config.KeyExchanges = c.kexAlgorithms
+	}
+
+	if len(c.hostKeyAlgorithms) > 0 {
+		config.HostKeyAlgorithms = c.hostKeyAlgorithms
+	}
+
+	conn, err := net.DialTimeout("tcp", addr, simplessh.DefaultTimeout)
+	if err != nil {
+		return nil, err
+	}
+
+	sshConn, chans, reqs, err := ssh.NewClientConn(conn, addr, config)
+	if err != nil {
+		conn.Close()
+		return nil, err
+	}
+
+	return &simplessh.Client{SSHClient: ssh.NewClient(sshConn, chans, reqs)}, nil
 }
 
 // Run executes a command on the remote server.
@@ -119,6 +176,16 @@ func classifySSHError(err error) error {
 	}
 
 	// Connection errors
+	if strings.Contains(errStr, "no common host key algorithm") {
+		return fmt.Errorf("SSH host key algorithm mismatch: %s. The server and client do not share a supported host key algorithm. Check the server's HostKeyAlgorithms setting or configure compatible algorithms in NodeConfig", errStr)
+	}
+	if strings.Contains(errStr, "no common algorithm") ||
+		strings.Contains(errStr, "no common key exchange algorithm") ||
+		strings.Contains(errStr, "no common kex") ||
+		strings.Contains(errStr, "kex:") ||
+		strings.Contains(errStr, "key exchange") {
+		return fmt.Errorf("SSH key exchange algorithm mismatch: %s. The server and client do not share a supported KEX algorithm. Check the server's KexAlgorithms setting or configure compatible algorithms in NodeConfig", errStr)
+	}
 	if strings.Contains(errStr, "connection refused") {
 		return fmt.Errorf("connection refused: %s. Check that the host is running and the port is correct", errStr)
 	}

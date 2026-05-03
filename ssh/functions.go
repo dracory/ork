@@ -28,8 +28,10 @@ func SetRunFunc(fn func(types.NodeConfig, types.Command) (string, error)) {
 // Use this for single commands where you don't need to maintain the connection.
 // The host parameter should be just the hostname, port is the SSH port (empty defaults to 22).
 // This is a lower-level function; prefer using Run() for playbook development.
-func runSingleCommand(host, port, user, key string, cmd types.Command) (string, error) {
-	client := NewClient(host, port, user, key)
+func runSingleCommand(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	client := NewClient(host, port, user, key).
+		WithKexAlgorithms(kexAlgorithms).
+		WithHostKeyAlgorithms(hostKeyAlgorithms)
 	if err := client.Connect(); err != nil {
 		return "", err
 	}
@@ -95,5 +97,5 @@ func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 		commandToRun = fmt.Sprintf("cd %s && %s", cfg.Chdir, commandToRun)
 	}
 
-	return runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description})
+	return runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description}, cfg.KexAlgorithms, cfg.HostKeyAlgorithms)
 }

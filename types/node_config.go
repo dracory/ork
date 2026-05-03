@@ -36,6 +36,10 @@ type NodeConfig struct {
 	// Chdir is the working directory for command execution.
 	// If set, commands will be executed in this directory.
 	Chdir string
+
+	KexAlgorithms []string
+
+	HostKeyAlgorithms []string
 }
 
 // SSHAddr returns the full SSH address as host:port.
@@ -162,5 +166,15 @@ func (c *NodeConfig) WithBecomeUser(user string) *NodeConfig {
 // WithChdir sets the working directory and returns NodeConfig for chaining.
 func (c *NodeConfig) WithChdir(dir string) *NodeConfig {
 	c.Chdir = dir
+	return c
+}
+
+func (c *NodeConfig) WithKexAlgorithms(algorithms []string) *NodeConfig {
+	c.KexAlgorithms = algorithms
+	return c
+}
+
+func (c *NodeConfig) WithHostKeyAlgorithms(algorithms []string) *NodeConfig {
+	c.HostKeyAlgorithms = algorithms
 	return c
 }
