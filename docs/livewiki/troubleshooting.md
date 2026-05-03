@@ -114,7 +114,38 @@ log.Println(results.Results["host"].Message)
 
 ## SSH Authentication Issues
 
-### "ssh: handshake failed: ssh: unable to authenticate"
+### "host key verification failed: knownhosts: key is unknown"
+
+**Problem**: The host's SSH key is not in your known_hosts file.
+
+**Solution**: Add the host key to your known_hosts file:
+```bash
+ssh-keyscan HOST >> ~/.ssh/known_hosts
+# Replace HOST with your server's hostname or IP
+```
+
+### "host key verification failed: knownhosts: key mismatch"
+
+**Problem**: The host's SSH key has changed. This could indicate a man-in-the-middle attack.
+
+**Solution**: Remove the old key and add the new one:
+```bash
+# Remove the old key
+ssh-keygen -R HOST
+# Add the new key
+ssh-keyscan HOST >> ~/.ssh/known_hosts
+# Replace HOST with your server's hostname or IP
+```
+
+**Important**: Only do this if you're certain the server is legitimate and the key change is expected (e.g., server reinstallation).
+
+### "host key verification failed: knownhosts: key is revoked"
+
+**Problem**: The host's SSH key has been revoked. This is a security concern.
+
+**Solution**: Do not connect to this host. The key revocation indicates a security issue. Contact your system administrator.
+
+### "authentication failed: unable to authenticate"
 
 **Problem**: SSH key authentication failed.
 
@@ -137,6 +168,12 @@ log.Println(results.Results["host"].Message)
    # Start ssh-agent
    eval $(ssh-agent -s)
    ssh-add ~/.ssh/your_key
+   ```
+
+4. **Wrong user**
+   ```go
+   // Verify the user exists on the server
+   node.SetUser("your_username")  // Default is "root"
    ```
 
 ### Permission Denied (publickey)

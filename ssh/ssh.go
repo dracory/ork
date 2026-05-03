@@ -6,6 +6,7 @@ package ssh
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/sfreiberg/simplessh"
 )
@@ -62,7 +63,7 @@ func (c *Client) Connect() error {
 	addr := c.host + ":" + c.port
 	client, err := simplessh.ConnectWithKeyFile(addr, c.user, c.keyPath)
 	if err != nil {
-		return fmt.Errorf("failed to connect to %s: %w", addr, err)
+		return fmt.Errorf("failed to connect to %s: %w", addr, classifySSHError(err))
 	}
 	c.client = client
 	return nil
@@ -84,4 +85,50 @@ func (c *Client) Close() error {
 		return nil
 	}
 	return c.client.Close()
+}
+
+// classifySSHError analyzes SSH connection errors and returns a more specific
+// error message based on the error type. This helps distinguish between:
+// - Host key verification failures (unknown host, changed host key)
+// - Authentication failures (wrong key, passphrase required)
+// - Connection failures (network issues, wrong port)
+func classifySSHError(err error) error {
+	if err == nil {
+		return nil
+	}
+
+	errStr := err.Error()
+
+	// Host key verification errors
+	if strings.Contains(errStr, "knownhosts: key is unknown") {
+		return fmt.Errorf("host key verification failed: %s. The host's SSH key is not in your known_hosts file. To fix this, run: ssh-keyscan HOST >> ~/.ssh/known_hosts", errStr)
+	}
+	if strings.Contains(errStr, "knownhosts: key mismatch") {
+		return fmt.Errorf("host key verification failed: %s. The host's SSH key has changed. This could indicate a man-in-the-middle attack. To fix this, remove the old key with: ssh-keygen -R HOST", errStr)
+	}
+	if strings.Contains(errStr, "knownhosts: key is revoked") {
+		return fmt.Errorf("host key verification failed: %s. The host's SSH key has been revoked. This is a security concern.", errStr)
+	}
+
+	// Authentication errors
+	if strings.Contains(errStr, "unable to authenticate") || strings.Contains(errStr, "no supported methods remain") {
+		return fmt.Errorf("authentication failed: %s. Check your SSH key, user, and that the key is authorized on the server", errStr)
+	}
+	if strings.Contains(errStr, "permission denied") {
+		return fmt.Errorf("permission denied: %s. Check your SSH key and user credentials", errStr)
+	}
+
+	// Connection errors
+	if strings.Contains(errStr, "connection refused") {
+		return fmt.Errorf("connection refused: %s. Check that the host is running and the port is correct", errStr)
+	}
+	if strings.Contains(errStr, "timeout") || strings.Contains(errStr, "timed out") {
+		return fmt.Errorf("connection timeout: %s. Check network connectivity and firewall settings", errStr)
+	}
+	if strings.Contains(errStr, "no route to host") || strings.Contains(errStr, "network is unreachable") {
+		return fmt.Errorf("network error: %s. Check network connectivity and hostname resolution", errStr)
+	}
+
+	// Return original error if no specific pattern matched
+	return err
 }
