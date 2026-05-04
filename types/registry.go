@@ -18,23 +18,39 @@ func NewRegistry() *Registry {
 	}
 }
 
-// Register adds a runnable to the registry.
-// Returns an error if the runnable is nil or if a runnable with the same ID already exists.
-func (r *Registry) Register(runnable RunnableInterface) error {
+func (r *Registry) Set(runnable RunnableInterface) error {
 	if runnable == nil {
-		return errors.New("types.Registry: cannot register nil runnable")
+		return errors.New("types.Registry: cannot set nil runnable")
 	}
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	id := runnable.GetID()
-	if _, exists := r.runnables[id]; exists {
-		return errors.New("types.Registry: runnable with ID '" + id + "' already exists")
+	r.set(runnable)
+	return nil
+}
+
+// SetAll adds multiple runnables to the registry at once.
+// Returns an error if any runnable is nil or if setting any runnable fails.
+func (r *Registry) SetAll(runnables []RunnableInterface) error {
+	if len(runnables) == 0 {
+		return nil
 	}
 
-	r.runnables[id] = runnable
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, runnable := range runnables {
+		if runnable == nil {
+			return errors.New("types.Registry: cannot set nil runnable")
+		}
+		r.set(runnable)
+	}
 	return nil
+}
+
+func (r *Registry) set(runnable RunnableInterface) {
+	r.runnables[runnable.GetID()] = runnable
 }
 
 // FindByID retrieves a runnable by ID.

@@ -1,6 +1,7 @@
 package ork
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/dracory/ork/types"
@@ -117,9 +118,9 @@ func TestGetGlobalSkillRegistry(t *testing.T) {
 	customSkill.SetID("test-get-registry-skill")
 	customSkill.SetDescription("Test skill via NewDefaultRegistry")
 
-	err = reg.Register(customSkill)
+	err = reg.Set(customSkill)
 	if err != nil {
-		t.Fatalf("failed to register skill: %v", err)
+		t.Fatalf("failed to set skill: %v", err)
 	}
 
 	// Verify it can be found
@@ -172,8 +173,107 @@ func TestNewDefaultRegistry_DuplicateID(t *testing.T) {
 	duplicateSkill.SetID("ping") // "ping" is already registered
 	duplicateSkill.SetDescription("Duplicate ping skill")
 
-	err = reg.Register(duplicateSkill)
+	err = reg.Set(duplicateSkill)
+	if err != nil {
+		t.Errorf("failed to set skill: %v", err)
+	}
+}
+
+func TestRegistry_Set(t *testing.T) {
+	reg, err := NewDefaultRegistry()
+	if err != nil {
+		t.Fatalf("NewDefaultRegistry() failed: %v", err)
+	}
+
+	customSkill := types.NewBaseSkill()
+	customSkill.SetID("ping")
+	customSkill.SetDescription("Custom ping skill")
+
+	err = reg.Set(customSkill)
+	if err != nil {
+		t.Fatalf("failed to set skill: %v", err)
+	}
+
+	foundSkill, ok := reg.FindByID("ping")
+	if !ok {
+		t.Fatal("custom skill not found")
+	}
+	if foundSkill.GetDescription() != "Custom ping skill" {
+		t.Errorf("expected custom skill, got '%s'", foundSkill.GetDescription())
+	}
+}
+
+func TestRegistry_SetAll(t *testing.T) {
+	reg, err := NewDefaultRegistry()
+	if err != nil {
+		t.Fatalf("NewDefaultRegistry() failed: %v", err)
+	}
+
+	skills := []types.RunnableInterface{
+		func() types.RunnableInterface {
+			s := types.NewBaseSkill()
+			s.SetID("skill-1")
+			s.SetDescription("Skill 1")
+			return s
+		}(),
+		func() types.RunnableInterface {
+			s := types.NewBaseSkill()
+			s.SetID("skill-2")
+			s.SetDescription("Skill 2")
+			return s
+		}(),
+		func() types.RunnableInterface {
+			s := types.NewBaseSkill()
+			s.SetID("skill-3")
+			s.SetDescription("Skill 3")
+			return s
+		}(),
+	}
+
+	err = reg.SetAll(skills)
+	if err != nil {
+		t.Fatalf("failed to set all skills: %v", err)
+	}
+
+	// Verify all skills were added
+	for i := 1; i <= 3; i++ {
+		skillID := fmt.Sprintf("skill-%d", i)
+		foundSkill, ok := reg.FindByID(skillID)
+		if !ok {
+			t.Errorf("skill '%s' not found", skillID)
+			continue
+		}
+		expectedDesc := fmt.Sprintf("Skill %d", i)
+		if foundSkill.GetDescription() != expectedDesc {
+			t.Errorf("expected description '%s', got '%s'", expectedDesc, foundSkill.GetDescription())
+		}
+	}
+}
+
+func TestRegistry_SetAll_EmptySlice(t *testing.T) {
+	reg := types.NewRegistry()
+
+	err := reg.SetAll([]types.RunnableInterface{})
+	if err != nil {
+		t.Errorf("expected no error for empty slice, got: %v", err)
+	}
+}
+
+func TestRegistry_SetAll_NilInSlice(t *testing.T) {
+	reg := types.NewRegistry()
+
+	skills := []types.RunnableInterface{
+		func() types.RunnableInterface {
+			s := types.NewBaseSkill()
+			s.SetID("skill-1")
+			s.SetDescription("Skill 1")
+			return s
+		}(),
+		nil,
+	}
+
+	err := reg.SetAll(skills)
 	if err == nil {
-		t.Error("expected error when registering duplicate skill ID, got nil")
+		t.Error("expected error for nil runnable in slice, got nil")
 	}
 }

@@ -780,8 +780,8 @@ func TestNodeImplementation_Playbook_Success(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetGlobalSkillRegistry() failed: %v", err)
 	}
-	if err := reg.Register(mockPlaybook); err != nil {
-		t.Fatalf("failed to register mock skill: %v", err)
+	if err := reg.Set(mockPlaybook); err != nil {
+		t.Fatalf("failed to set mock skill: %v", err)
 	}
 	defer func() {
 		// Clean up: remove mock skill from registry
@@ -874,8 +874,8 @@ func TestNodeImplementation_Playbook_ExecutionError(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetGlobalSkillRegistry() failed: %v", err)
 	}
-	if err := reg.Register(mockPlaybook); err != nil {
-		t.Fatalf("failed to register mock skill: %v", err)
+	if err := reg.Set(mockPlaybook); err != nil {
+		t.Fatalf("failed to set mock skill: %v", err)
 	}
 
 	n := &nodeImplementation{

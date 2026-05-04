@@ -106,10 +106,8 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		mariadb.NewBackupEncrypt(),
 	}
 
-	for _, s := range skills {
-		if err := reg.Register(s); err != nil {
-			return nil, err
-		}
+	if err := reg.SetAll(skills); err != nil {
+		return nil, err
 	}
 
 	return reg, nil

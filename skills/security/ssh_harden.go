@@ -15,6 +15,14 @@ import (
 // methods and enforce secure defaults. It backs up the original configuration before
 // making changes and validates the new configuration before applying.
 //
+// WARNING:
+//   - This skill can lock you out of the server if SSH access is not prepared correctly
+//   - After running this, you MUST use SSH key authentication
+//   - Root login will be disabled - ensure non-root user exists and can use sudo
+//   - Verify a separate SSH session can log in as the non-root user before running
+//   - Keep the current root SSH session open until the hardened SSH configuration is tested
+//   - Create a non-root user first with user-create playbook
+//
 // Usage:
 //
 //	go run . --playbook=ssh-harden [--arg=non-root-user=<username>]
@@ -43,11 +51,6 @@ import (
 //  4. Validates configuration with sshd -t
 //  5. Restarts SSH service if validation passes
 //  6. Restores backup if validation fails
-//
-// WARNING:
-//   - After running this, you MUST use SSH key authentication
-//   - Root login will be disabled - ensure non-root user exists
-//   - Create a non-root user first with user-create playbook
 //
 // Prerequisites:
 //   - Root SSH access required
@@ -227,6 +230,13 @@ func (s *SshHarden) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewSshHarden creates a new ssh-harden skill.
+//
+// WARNING:
+//   - This skill can lock you out of the server if SSH access is not prepared correctly
+//   - After running this, you MUST use SSH key authentication
+//   - Root login will be disabled - ensure non-root user exists and can use sudo
+//   - Verify a separate SSH session can log in as the non-root user before running
+//   - Keep the current root SSH session open until the hardened SSH configuration is tested
 func NewSshHarden() types.RunnableInterface {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSshHarden)
