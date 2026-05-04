@@ -73,7 +73,7 @@ func (m *EnableEncryption) Run() types.Result {
 
 	// Define commands
 	cmdBackup := types.Command{
-		Command:     fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)`, configPath, configPath),
+		Command:     fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)'`, configPath, configPath),
 		Description: "Backup MariaDB config",
 	}
 	keyDir := filepath.Dir(keyFilePath)
@@ -82,7 +82,7 @@ func (m *EnableEncryption) Run() types.Result {
 		Description: "Create key directory",
 	}
 	cmdGenKey := types.Command{
-		Command:     fmt.Sprintf(`echo "1;$(openssl rand -hex 32)" > %s`, keyFilePath),
+		Command:     fmt.Sprintf(`sh -c 'echo "1;$(openssl rand -hex 32)" > %s'`, keyFilePath),
 		Description: "Generate encryption key",
 	}
 	cmdPerms := types.Command{

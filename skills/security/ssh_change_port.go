@@ -28,25 +28,25 @@ const (
 //  1. Validates new port number (1024-65535)
 //  2. Backs up current SSH configuration
 //  3. Updates SSH port in sshd_config
-//  4. Updates UFW firewall rules (if UFW is active)
-//  5. Validates SSH configuration
-//  6. Restarts SSH service
+//  4. Validates SSH configuration
+//  5. Restarts SSH service
 //
 // Args:
 //   - port: New SSH port number (required, 1024-65535)
 //
 // IMPORTANT:
 //   - After running this, update your SSH client to use the new port
-//   - Ensure firewall allows the new port before running
+//   - Ensure firewall allows the new port before running (calling playbook responsibility)
 //   - Keep a backup SSH session open until verified
 //
 // Prerequisites:
 //   - Root SSH access on current port
 //   - Backup access method (console) in case of failure
+//   - Firewall must be configured to allow the new port (calling playbook responsibility)
 //
 // Related Playbooks:
 //   - ssh-harden: Disable password auth, root login
-//   - ufw-install: Configure firewall
+//   - ufw-install: Configure firewall (for UFW-based systems)
 type SshChangePort struct {
 	*types.BaseSkill
 }
@@ -82,19 +82,15 @@ func (s *SshChangePort) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("changing SSH port", "port", newPort)
 
 	// Define commands
-	cmdBackup := types.Command{Command: `cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)`, Description: "Backup SSH config"}
-	cmdCheckUfw := types.Command{Command: `ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"`, Description: "Check UFW status"}
-	cmdAllowPort := types.Command{Command: fmt.Sprintf(`ufw allow %s/tcp comment 'SSH on custom port'`, newPort), Description: "Allow SSH on custom port in UFW"}
-	cmdUpdatePort := types.Command{Command: fmt.Sprintf(`sed -i 's/^#*Port .*/Port %s/' /etc/ssh/sshd_config`, newPort), Description: "Update SSH port in config"}
-	cmdValidate := types.Command{Command: `sshd -t`, Description: "Validate SSH config"}
-	cmdRestore := types.Command{Command: `ls -t /etc/ssh/sshd_config.backup.* | head -1 | xargs -I {} cp {} /etc/ssh/sshd_config`, Description: "Restore SSH config backup"}
-	cmdRestart := types.Command{Command: `systemctl restart sshd`, Description: "Restart SSH service"}
+	cmdBackup := types.Command{Command: `cat /etc/ssh/sshd_config > /etc/ssh/sshd_config.backup`, Description: "Backup SSH config", Required: true}
+	cmdUpdatePort := types.Command{Command: fmt.Sprintf(`sed -i 's/^#*Port .*/Port %s/' /etc/ssh/sshd_config`, newPort), Description: "Update SSH port in config", Required: true}
+	cmdValidate := types.Command{Command: `sshd -t`, Description: "Validate SSH config", Required: true}
+	cmdRestore := types.Command{Command: `cat /etc/ssh/sshd_config.backup > /etc/ssh/sshd_config`, Description: "Restore SSH config backup", Required: true}
+	cmdRestart := types.Command{Command: `systemctl restart sshd`, Description: "Restart SSH service", Required: true}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command, "description", cmdBackup.Description)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCheckUfw.Command, "description", cmdCheckUfw.Description)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdAllowPort.Command, "description", cmdAllowPort.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpdatePort.Command, "description", cmdUpdatePort.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdValidate.Command, "description", cmdValidate.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
@@ -108,17 +104,14 @@ func (s *SshChangePort) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
 	_, err = ssh.Run(cfg, cmdBackup)
 	if err != nil {
-		return types.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
-	}
-
-	// Update UFW if active
-	ufwOutput, _ := ssh.Run(cfg, cmdCheckUfw)
-	if ufwOutput == "ACTIVE" {
-		_, _ = ssh.Run(cfg, cmdAllowPort)
+		cfg.GetLoggerOrDefault().Warn("backup failed, continuing without backup (you have a snapshot)", "error", err)
 	}
 
 	// Update SSH port
-	_, _ = ssh.Run(cfg, cmdUpdatePort)
+	_, err = ssh.Run(cfg, cmdUpdatePort)
+	if err != nil {
+		return types.Result{Changed: false, Message: "Failed to update SSH port in config", Error: err}
+	}
 
 	// Validate
 	_, err = ssh.Run(cfg, cmdValidate)
@@ -130,7 +123,9 @@ func (s *SshChangePort) Run() types.Result {
 	// Restart SSH
 	_, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
-		return types.Result{Changed: false, Message: "Failed to restart SSH", Error: err}
+		_, _ = ssh.Run(cfg, cmdRestore)
+		_, _ = ssh.Run(cfg, cmdRestart)
+		return types.Result{Changed: false, Message: "Failed to restart SSH, backup restored and SSH restarted", Error: err}
 	}
 
 	cfg.GetLoggerOrDefault().Info("SSH port change complete")

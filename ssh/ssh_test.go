@@ -2,7 +2,10 @@ package ssh
 
 import (
 	"errors"
+	"log/slog"
 	"testing"
+
+	"github.com/dracory/ork/types"
 )
 
 // TestClient_Connect_EmptyHost verifies that Connect returns an error when host is empty.
@@ -228,4 +231,240 @@ func findSubstring(s, substr string) bool {
 		}
 	}
 	return false
+}
+
+// TestRun_CommandChdir verifies that command-level Chdir is respected.
+func TestRun_CommandChdir(t *testing.T) {
+	var capturedCmd types.Command
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+		capturedCmd = cmd
+		return "output", nil
+	})
+	defer SetRunSingleCommandFunc(nil)
+
+	cfg := types.NodeConfig{
+		SSHHost:      "localhost",
+		SSHPort:      "22",
+		SSHLogin:     "root",
+		SSHKey:       "test",
+		Chdir:        "/config/dir",
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+
+	cmd := types.Command{
+		Command:     "ls -la",
+		Description: "List files",
+		Chdir:       "/command/dir",
+		Required:    true,
+	}
+
+	Run(cfg, cmd)
+
+	// Command-level Chdir should take precedence
+	if capturedCmd.Command != "cd /command/dir && ls -la" {
+		t.Errorf("Expected command to be wrapped with command-level chdir, got: %s", capturedCmd.Command)
+	}
+}
+
+// TestRun_ConfigChdir verifies that config-level Chdir is used when command-level is not set.
+func TestRun_ConfigChdir(t *testing.T) {
+	var capturedCmd types.Command
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+		capturedCmd = cmd
+		return "output", nil
+	})
+	defer SetRunSingleCommandFunc(nil)
+
+	cfg := types.NodeConfig{
+		SSHHost:      "localhost",
+		SSHPort:      "22",
+		SSHLogin:     "root",
+		SSHKey:       "test",
+		Chdir:        "/config/dir",
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+
+	cmd := types.Command{
+		Command:     "ls -la",
+		Description: "List files",
+		Required:    true,
+	}
+
+	Run(cfg, cmd)
+
+	// Config-level Chdir should be used
+	if capturedCmd.Command != "cd /config/dir && ls -la" {
+		t.Errorf("Expected command to be wrapped with config-level chdir, got: %s", capturedCmd.Command)
+	}
+}
+
+// TestRun_CommandBecomeUser verifies that command-level BecomeUser is respected.
+func TestRun_CommandBecomeUser(t *testing.T) {
+	var capturedCmd types.Command
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+		capturedCmd = cmd
+		return "output", nil
+	})
+	defer SetRunSingleCommandFunc(nil)
+
+	cfg := types.NodeConfig{
+		SSHHost:      "localhost",
+		SSHPort:      "22",
+		SSHLogin:     "root",
+		SSHKey:       "test",
+		BecomeUser:   "config-user",
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+
+	cmd := types.Command{
+		Command:     "psql -l",
+		Description: "List databases",
+		BecomeUser:  "postgres",
+		Required:    true,
+	}
+
+	Run(cfg, cmd)
+
+	// Command-level BecomeUser should take precedence
+	if capturedCmd.Command != "sudo -u postgres psql -l" {
+		t.Errorf("Expected command to be wrapped with command-level become user, got: %s", capturedCmd.Command)
+	}
+}
+
+// TestRun_ConfigBecomeUser verifies that config-level BecomeUser is used when command-level is not set.
+func TestRun_ConfigBecomeUser(t *testing.T) {
+	var capturedCmd types.Command
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+		capturedCmd = cmd
+		return "output", nil
+	})
+	defer SetRunSingleCommandFunc(nil)
+
+	cfg := types.NodeConfig{
+		SSHHost:      "localhost",
+		SSHPort:      "22",
+		SSHLogin:     "root",
+		SSHKey:       "test",
+		BecomeUser:   "config-user",
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+
+	cmd := types.Command{
+		Command:     "psql -l",
+		Description: "List databases",
+		Required:    true,
+	}
+
+	Run(cfg, cmd)
+
+	// Config-level BecomeUser should be used
+	if capturedCmd.Command != "sudo -u config-user psql -l" {
+		t.Errorf("Expected command to be wrapped with config-level become user, got: %s", capturedCmd.Command)
+	}
+}
+
+// TestRun_CombinedChdirAndBecomeUser verifies that Chdir and BecomeUser work together.
+func TestRun_CombinedChdirAndBecomeUser(t *testing.T) {
+	var capturedCmd types.Command
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+		capturedCmd = cmd
+		return "output", nil
+	})
+	defer SetRunSingleCommandFunc(nil)
+
+	cfg := types.NodeConfig{
+		SSHHost:      "localhost",
+		SSHPort:      "22",
+		SSHLogin:     "root",
+		SSHKey:       "test",
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+
+	cmd := types.Command{
+		Command:     "psql -l",
+		Description: "List databases",
+		Chdir:       "/var/lib/postgresql",
+		BecomeUser:  "postgres",
+		Required:    true,
+	}
+
+	Run(cfg, cmd)
+
+	// Should wrap with cd first (outside sudo), then become
+	expected := "cd /var/lib/postgresql && sudo -u postgres psql -l"
+	if capturedCmd.Command != expected {
+		t.Errorf("Expected command to be wrapped with chdir and become user, got: %s", capturedCmd.Command)
+	}
+}
+
+// TestRun_RequiredFalse_SuppressesError verifies that Required=false suppresses errors.
+func TestRun_RequiredFalse_SuppressesError(t *testing.T) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+		return "some output", errors.New("command failed")
+	})
+	defer SetRunSingleCommandFunc(nil)
+
+	cfg := types.NodeConfig{
+		SSHHost:      "localhost",
+		SSHPort:      "22",
+		SSHLogin:     "root",
+		SSHKey:       "test",
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+
+	cmd := types.Command{
+		Command:     "some-command",
+		Description: "Non-critical command",
+		Required:    false,
+	}
+
+	output, err := Run(cfg, cmd)
+
+	// Should not return error when Required=false
+	if err != nil {
+		t.Errorf("Expected error to be suppressed when Required=false, got: %v", err)
+	}
+	// Output should still be returned
+	if output != "some output" {
+		t.Errorf("Expected output to be 'some output', got: %s", output)
+	}
+}
+
+// TestRun_RequiredTrue_PropagatesError verifies that Required=true propagates errors.
+func TestRun_RequiredTrue_PropagatesError(t *testing.T) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+		return "", errors.New("command failed")
+	})
+	defer SetRunSingleCommandFunc(nil)
+
+	cfg := types.NodeConfig{
+		SSHHost:      "localhost",
+		SSHPort:      "22",
+		SSHLogin:     "root",
+		SSHKey:       "test",
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+
+	cmd := types.Command{
+		Command:     "some-command",
+		Description: "Critical command",
+		Required:    true,
+	}
+
+	_, err := Run(cfg, cmd)
+
+	// Should return error when Required=true
+	if err == nil {
+		t.Error("Expected error to be propagated when Required=true")
+	}
+	if err.Error() != "command failed" {
+		t.Errorf("Expected error to be 'command failed', got: %v", err)
+	}
 }

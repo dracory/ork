@@ -21,6 +21,21 @@ const (
 
 	// ArgPort specifies the port number to configure
 	ArgPort = "port"
+
+	// ArgProtocol specifies the protocol - "tcp" or "udp"
+	ArgProtocol = "protocol"
+
+	// ArgComment specifies an optional comment for the rule
+	ArgComment = "comment"
+
+	// ArgNumber specifies the rule number for delete operations
+	ArgNumber = "number"
+
+	// ArgIncoming specifies the incoming policy for default rules
+	ArgIncoming = "incoming"
+
+	// ArgOutgoing specifies the outgoing policy for default rules
+	ArgOutgoing = "outgoing"
 )
 
 // Default configuration constants.

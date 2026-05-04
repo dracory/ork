@@ -59,6 +59,27 @@ const (
 	// IDUfwAllowMariaDB configures UFW for MariaDB access
 	IDUfwAllowMariaDB = "ufw-allow-mariadb"
 
+	// IDUfwAllow configures UFW to allow a port
+	IDUfwAllow = "ufw-allow"
+
+	// IDUfwDeny denies traffic on a port
+	IDUfwDeny = "ufw-deny"
+
+	// IDUfwDelete removes a UFW rule by number
+	IDUfwDelete = "ufw-delete"
+
+	// IDUfwEnable enables the UFW firewall
+	IDUfwEnable = "ufw-enable"
+
+	// IDUfwDisable disables the UFW firewall
+	IDUfwDisable = "ufw-disable"
+
+	// IDUfwReset resets UFW to factory defaults
+	IDUfwReset = "ufw-reset"
+
+	// IDUfwDefault sets UFW default policies
+	IDUfwDefault = "ufw-default"
+
 	// IDSshHarden applies security hardening to SSH server configuration
 	IDSshHarden = "ssh-harden"
 

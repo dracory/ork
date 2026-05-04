@@ -67,8 +67,8 @@ func (m *EnableSSL) Run() types.Result {
 	// Define commands
 	cmdGenCert := types.Command{Command: fmt.Sprintf(`mysql_ssl_rsa_setup --datadir=%s`, dataDir), Description: "Generate SSL certificates"}
 	cmdChown := types.Command{Command: fmt.Sprintf(`chown mysql:mysql %s/*.pem`, dataDir), Description: "Set SSL cert ownership"}
-	cmdChmod := types.Command{Command: fmt.Sprintf(`chmod 600 %s/*-key.pem && chmod 644 %s/*.pem`, dataDir, dataDir), Description: "Set SSL cert permissions"}
-	cmdBackup := types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, configPath, configPath), Description: "Backup MariaDB config"}
+	cmdChmod := types.Command{Command: fmt.Sprintf(`sh -c 'chmod 600 %s/*-key.pem && chmod 644 %s/*.pem'`, dataDir, dataDir), Description: "Set SSL cert permissions"}
+	cmdBackup := types.Command{Command: fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d)'`, configPath, configPath), Description: "Backup MariaDB config"}
 	cmdConfigure := types.Command{Command: fmt.Sprintf(`grep -q "ssl-ca" %s || cat >> %s << 'EOF'
 
 # SSL/TLS Configuration

@@ -99,10 +99,10 @@ func (s *SshHarden) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("SSH security hardening started")
 
 	// Define commands
-	cmdBackup := types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sshConfigPath, sshConfigPath), Description: "Backup SSH config"}
-	cmdVerifyUser := types.Command{Command: fmt.Sprintf(`id %s && groups %s | grep -q sudo`, nonRootUser, nonRootUser), Description: "Verify non-root user exists"}
+	cmdBackup := types.Command{Command: fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d)'`, sshConfigPath, sshConfigPath), Description: "Backup SSH config"}
+	cmdVerifyUser := types.Command{Command: fmt.Sprintf(`sh -c 'id %s && groups %s | grep -q sudo'`, nonRootUser, nonRootUser), Description: "Verify non-root user exists"}
 	cmdValidate := types.Command{Command: fmt.Sprintf(`sshd -t -f %s`, sshConfigPath), Description: "Validate SSH config"}
-	cmdRestore := types.Command{Command: fmt.Sprintf(`cp %s.backup.$(date +%%Y%%m%%d) %s`, sshConfigPath, sshConfigPath), Description: "Restore SSH config backup"}
+	cmdRestore := types.Command{Command: fmt.Sprintf(`sh -c 'cp %s.backup.$(date +%%Y%%m%%d) %s'`, sshConfigPath, sshConfigPath), Description: "Restore SSH config backup"}
 	cmdRestart := types.Command{Command: "systemctl restart sshd", Description: "Restart SSH service"}
 
 	// Apply security settings

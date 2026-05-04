@@ -74,7 +74,7 @@ func (k *KernelHarden) Run() types.Result {
 	cfg.GetLoggerOrDefault().Warn("this will disable IPv6 system-wide")
 
 	// Define commands
-	cmdBackup := types.Command{Command: fmt.Sprintf(`cp %s %s.backup.$(date +%%Y%%m%%d)`, sysctlConfigPath, sysctlConfigPath), Description: "Backup sysctl config"}
+	cmdBackup := types.Command{Command: fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d)'`, sysctlConfigPath, sysctlConfigPath), Description: "Backup sysctl config"}
 	cmdCreateConfig := types.Command{Command: fmt.Sprintf(`cat >> %s << 'EOF'
 # IP Spoofing protection
 net.ipv4.conf.all.rp_filter = 1
