@@ -82,15 +82,29 @@ func (s *SshChangePort) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("changing SSH port", "port", newPort)
 
 	// Define commands
-	cmdBackup := types.Command{Command: `cat /etc/ssh/sshd_config > /etc/ssh/sshd_config.backup`, Description: "Backup SSH config", Required: true}
-	cmdUpdatePort := types.Command{Command: fmt.Sprintf(`sed -i 's/^#*Port .*/Port %s/' /etc/ssh/sshd_config`, newPort), Description: "Update SSH port in config", Required: true}
-	cmdValidate := types.Command{Command: `sshd -t`, Description: "Validate SSH config", Required: true}
-	cmdRestore := types.Command{Command: `cat /etc/ssh/sshd_config.backup > /etc/ssh/sshd_config`, Description: "Restore SSH config backup", Required: true}
-	cmdRestart := types.Command{Command: `systemctl restart sshd`, Description: "Restart SSH service", Required: true}
+	cmdUpdatePort := types.Command{
+		Command:     fmt.Sprintf(`sed -i 's/^#*Port .*/Port %s/' /etc/ssh/sshd_config`, newPort),
+		Description: "Update SSH port in config",
+		Required:    true,
+	}
+	cmdValidate := types.Command{
+		Command:     `sshd -t`,
+		Description: "Validate SSH config",
+		Required:    true,
+	}
+	cmdRestart := types.Command{
+		Command:     `systemctl restart sshd || systemctl restart ssh`,
+		Description: "Restart SSH service",
+		Required:    true,
+	}
+	cmdCheckPort := types.Command{
+		Command:     fmt.Sprintf(`ss -tlnp | grep -q ':%s'`, newPort),
+		Description: "Verify SSH is listening on new port",
+		Required:    true,
+	}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command, "description", cmdBackup.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpdatePort.Command, "description", cmdUpdatePort.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdValidate.Command, "description", cmdValidate.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
@@ -100,32 +114,64 @@ func (s *SshChangePort) Run() types.Result {
 		}
 	}
 
-	// Backup
-	cfg.GetLoggerOrDefault().Info("backing up SSH configuration")
-	_, err = ssh.Run(cfg, cmdBackup)
-	if err != nil {
-		cfg.GetLoggerOrDefault().Warn("backup failed, continuing without backup (you have a snapshot)", "error", err)
-	}
-
 	// Update SSH port
-	_, err = ssh.Run(cfg, cmdUpdatePort)
+	cfg.GetLoggerOrDefault().Info("updating SSH port in config", "command", cmdUpdatePort.Command)
+	updateOutput, err := ssh.Run(cfg, cmdUpdatePort)
 	if err != nil {
-		return types.Result{Changed: false, Message: "Failed to update SSH port in config", Error: err}
+		return types.Result{
+			Changed: false,
+			Message: fmt.Sprintf("Failed to update SSH port in config: %v", err),
+			Error:   err,
+			Details: map[string]string{
+				"output":  updateOutput,
+				"command": cmdUpdatePort.Command,
+			},
+		}
 	}
 
 	// Validate
-	_, err = ssh.Run(cfg, cmdValidate)
+	cfg.GetLoggerOrDefault().Info("validating SSH configuration", "command", cmdValidate.Command)
+	validateOutput, err := ssh.Run(cfg, cmdValidate)
 	if err != nil {
-		_, _ = ssh.Run(cfg, cmdRestore)
-		return types.Result{Changed: false, Message: "SSH configuration validation failed, backup restored", Error: err}
+		return types.Result{
+			Changed: false,
+			Message: fmt.Sprintf("SSH configuration validation failed: %v", err),
+			Error:   err,
+			Details: map[string]string{
+				"output":  validateOutput,
+				"command": cmdValidate.Command,
+			},
+		}
 	}
 
 	// Restart SSH
-	_, err = ssh.Run(cfg, cmdRestart)
+	cfg.GetLoggerOrDefault().Info("restarting SSH service", "command", cmdRestart.Command)
+	restartOutput, err := ssh.Run(cfg, cmdRestart)
 	if err != nil {
-		_, _ = ssh.Run(cfg, cmdRestore)
-		_, _ = ssh.Run(cfg, cmdRestart)
-		return types.Result{Changed: false, Message: "Failed to restart SSH, backup restored and SSH restarted", Error: err}
+		return types.Result{
+			Changed: false,
+			Message: fmt.Sprintf("Failed to restart SSH service: %v", err),
+			Error:   err,
+			Details: map[string]string{
+				"output":  restartOutput,
+				"command": cmdRestart.Command,
+			},
+		}
+	}
+
+	// Verify SSH is listening on new port
+	cfg.GetLoggerOrDefault().Info("verifying SSH is listening on new port", "port", newPort)
+	checkOutput, err := ssh.Run(cfg, cmdCheckPort)
+	if err != nil {
+		return types.Result{
+			Changed: false,
+			Message: fmt.Sprintf("SSH service restarted but not listening on port %s: %v", newPort, err),
+			Error:   err,
+			Details: map[string]string{
+				"output":  checkOutput,
+				"command": cmdCheckPort.Command,
+			},
+		}
 	}
 
 	cfg.GetLoggerOrDefault().Info("SSH port change complete")
