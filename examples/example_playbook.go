@@ -18,7 +18,10 @@ func NewExamplePlaybook() types.RunnableInterface {
 	pb := ork.NewPlaybook().
 		WithID("example-playbook").
 		WithDescription("Example playbook demonstrating sequential skill execution")
-	return &ExamplePlaybook{BasePlaybook: pb}
+
+	return &ExamplePlaybook{
+		BasePlaybook: pb,
+	}
 }
 
 // Run executes the playbook with custom orchestration logic.
