@@ -62,8 +62,14 @@ func (u *AllowMariaDB) Check() (bool, error) {
 // Run executes the skill and returns detailed result.
 func (u *AllowMariaDB) Run() types.Result {
 	cfg := u.GetNodeConfig()
-	ip := cfg.GetArgOr(ArgIP, "")
-	mariaDBPort := cfg.GetArgOr(ArgPort, "3306")
+	ip := u.GetArg(ArgIP)
+	if ip == "" {
+		ip = cfg.GetArgOr(ArgIP, "")
+	}
+	mariaDBPort := u.GetArg(ArgPort)
+	if mariaDBPort == "" {
+		mariaDBPort = cfg.GetArgOr(ArgPort, "3306")
+	}
 
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {
