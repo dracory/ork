@@ -26,7 +26,7 @@ func TestAptUpgrade_Run_DryRun(t *testing.T) {
 	// For now, let's just verify it doesn't crash
 	if result.Error == nil {
 		// If somehow Check succeeded in dry-run, verify the dry-run message
-		if result.Message == "Would upgrade packages: apt-get upgrade -y" {
+		if result.Message == "Would upgrade packages: DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\"" {
 			// This is the expected dry-run behavior
 			if !result.Changed {
 				t.Error("Expected Changed to be true in dry-run mode")
@@ -51,7 +51,7 @@ func TestAptUpgrade_Run_NotDryRun(t *testing.T) {
 
 	// In non-dry-run mode, it will try to execute SSH commands and likely fail
 	// since there's no real SSH server. We just verify it doesn't return the dry-run message.
-	if result.Message == "Would upgrade packages: apt-get upgrade -y" {
+	if result.Message == "Would upgrade packages: DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\"" {
 		t.Error("Should not return dry-run message when IsDryRunMode is false")
 	}
 }
