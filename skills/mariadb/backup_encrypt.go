@@ -74,7 +74,8 @@ func (b *BackupEncrypt) Run() types.Result {
 	timestamp := time.Now().Format("20060102_150405")
 
 	// Define commands
-	cmdMkdir := types.Command{Command: fmt.Sprintf(`mkdir -p %s`, backupDir), Description: "Create backup directory"}
+	shellEscapedBackupDir := mariadbEscapeShellQuote(backupDir)
+	cmdMkdir := types.Command{Command: fmt.Sprintf(`mkdir -p '%s'`, shellEscapedBackupDir), Description: "Create backup directory"}
 	cmdCheckOpenSSLStr := ""
 	cmdCheckOpenSSLStr += "which openssl"                      // check if openssl exists
 	cmdCheckOpenSSLStr += " || " + skills.DebianNonInteractive // if not, prevent interactive prompts
@@ -82,8 +83,9 @@ func (b *BackupEncrypt) Run() types.Result {
 	cmdCheckOpenSSLStr += skills.DpkgConfOptions               // keep local config, use maintainer default if unmodified
 
 	cmdCheckOpenSSLCmd := types.Command{Command: cmdCheckOpenSSLStr, Description: "Ensure openssl is installed"}
-	cmdBackup := types.Command{Command: fmt.Sprintf(`(umask 077 && MYSQL_PWD='%s' mysqldump -u root --single-transaction --routines --triggers --events '%s' | gzip | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:MYSQL_PWD -out %s/%s_%s.sql.gz.enc)`,
-		rootPassword, dbName, backupDir, dbName, timestamp), Description: "Create encrypted backup"}
+	shellEscapedPassword := mariadbEscapeShellQuote(rootPassword)
+	cmdBackup := types.Command{Command: fmt.Sprintf(`(umask 077 && MYSQL_PWD='%s' mysqldump -u root --single-transaction --routines --triggers --events '%s' | gzip | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:MYSQL_PWD -out '%s'/%s_%s.sql.gz.enc)`,
+		shellEscapedPassword, dbName, shellEscapedBackupDir, dbName, timestamp), Description: "Create encrypted backup"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {

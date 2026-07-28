@@ -47,7 +47,9 @@ func (m *CreateDB) Check() (bool, error) {
 		return true, nil
 	}
 
-	cmdCheck := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 1 FROM information_schema.schemata WHERE schema_name = '%s';"`, rootPassword, dbName), Description: "Check if database exists"}
+	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+	sqlEscapedDb := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLQuote(dbName))
+	cmdCheck := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SELECT 1 FROM information_schema.schemata WHERE schema_name = '%s';"`, shellEscapedPwd, sqlEscapedDb), Description: "Check if database exists"}
 	output, _ := ssh.Run(cfg, cmdCheck)
 	return output == "", nil
 }
@@ -76,7 +78,9 @@ func (m *CreateDB) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("creating database", "database", dbName)
 
-	cmdCreate := types.Command{Command: fmt.Sprintf("mysql -u root -p\"%s\" -e \"CREATE DATABASE IF NOT EXISTS `%s` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\"", rootPassword, dbName), Description: "Create database"}
+	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+	sqlEscapedDbId := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLIdentifier(dbName))
+	cmdCreate := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "CREATE DATABASE IF NOT EXISTS `+shellEscapedBacktick+`%s`+shellEscapedBacktick+` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"`, shellEscapedPwd, sqlEscapedDbId), Description: "Create database"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {

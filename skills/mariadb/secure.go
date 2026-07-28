@@ -57,12 +57,13 @@ func (m *Secure) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("securing MariaDB installation")
 
-	// Define commands
-	cmdAnon := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='';"`, rootPassword), Description: "Remove anonymous users"}
-	cmdRoot := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"`, rootPassword), Description: "Restrict root remote access"}
-	cmdTestDb := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DROP DATABASE IF EXISTS test;"`, rootPassword), Description: "Remove test database"}
-	cmdTestPriv := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%%';"`, rootPassword), Description: "Remove test database privileges"}
-	cmdFlush := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword), Description: "Flush privileges"}
+	// Define commands — use MYSQL_PWD env var to avoid shell injection via -p argument
+	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+	cmdAnon := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "DELETE FROM mysql.user WHERE User='';"`, shellEscapedPwd), Description: "Remove anonymous users"}
+	cmdRoot := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"`, shellEscapedPwd), Description: "Restrict root remote access"}
+	cmdTestDb := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "DROP DATABASE IF EXISTS test;"`, shellEscapedPwd), Description: "Remove test database"}
+	cmdTestPriv := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "DELETE FROM mysql.db WHERE Db='test' OR Db='test\\_%%';"`, shellEscapedPwd), Description: "Remove test database privileges"}
+	cmdFlush := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "FLUSH PRIVILEGES;"`, shellEscapedPwd), Description: "Flush privileges"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {

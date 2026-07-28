@@ -119,11 +119,12 @@ func (m *Install) Run() types.Result {
 		}
 	}
 
-	// Set root password using mysql command with password via stdin (more secure than command-line)
-	// This avoids SQL injection by not interpolating the password into the SQL command
+	// Set root password — use MYSQL_PWD env var (avoids shell injection) + SQL-escape the password
 	cfg.GetLoggerOrDefault().Info("setting root password")
+	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+	sqlEscapedPwd := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLQuote(rootPassword))
 	cmdSetPassword := types.Command{
-		Command:     fmt.Sprintf(`mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '%s';"`, rootPassword),
+		Command:     fmt.Sprintf(`MYSQL_PWD='%s' mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED BY '%s';"`, shellEscapedPwd, sqlEscapedPwd),
 		Description: "Set root password",
 	}
 	passwordOutput, err := ssh.Run(cfg, cmdSetPassword)

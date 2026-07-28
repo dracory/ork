@@ -78,12 +78,17 @@ func (m *Backup) Run() types.Result {
 
 	backupPath := fmt.Sprintf("%s/%s", backupDir, backupFile)
 
-	// Define commands
-	cmdMkdir := types.Command{Command: fmt.Sprintf("mkdir -p %s", backupDir), Description: "Create backup directory"}
-	cmdDump := types.Command{Command: fmt.Sprintf(`mysqldump -u root -p"%s" --single-transaction --routines --triggers "%s" > "%s"`,
-		rootPassword, dbName, backupPath), Description: "Create database backup"}
-	cmdCompress := types.Command{Command: fmt.Sprintf("gzip -f %s", backupPath), Description: "Compress backup"}
-	cmdChecksum := types.Command{Command: fmt.Sprintf("sha256sum %s.gz > %s.gz.sha256", backupPath, backupPath), Description: "Generate backup checksum"}
+	// Define commands — use MYSQL_PWD env var to avoid shell injection via -p argument
+	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+	shellEscapedBackupDir := mariadbEscapeShellQuote(backupDir)
+	shellEscapedDbName := mariadbEscapeShellDoubleQuote(dbName)
+	shellEscapedBackupPath := mariadbEscapeShellQuote(backupPath)
+	shellDoubleEscapedBackupPath := mariadbEscapeShellDoubleQuote(backupPath)
+	cmdMkdir := types.Command{Command: fmt.Sprintf("mkdir -p '%s'", shellEscapedBackupDir), Description: "Create backup directory"}
+	cmdDump := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysqldump -u root --single-transaction --routines --triggers \"%s\" > \"%s\"`,
+		shellEscapedPwd, shellEscapedDbName, shellDoubleEscapedBackupPath), Description: "Create database backup"}
+	cmdCompress := types.Command{Command: fmt.Sprintf("gzip -f '%s'", shellEscapedBackupPath), Description: "Compress backup"}
+	cmdChecksum := types.Command{Command: fmt.Sprintf("sha256sum '%s.gz' > '%s.gz.sha256'", shellEscapedBackupPath, shellEscapedBackupPath), Description: "Generate backup checksum"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {

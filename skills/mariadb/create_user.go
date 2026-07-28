@@ -56,7 +56,10 @@ func (m *CreateUser) Check() (bool, error) {
 		return true, nil
 	}
 
-	cmdCheck := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 1 FROM mysql.user WHERE user='%s' AND host='%s';"`, rootPassword, username, host), Description: "Check if user exists"}
+	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+	sqlEscapedUsername := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLQuote(username))
+	sqlEscapedHost := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLQuote(host))
+	cmdCheck := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SELECT 1 FROM mysql.user WHERE user='%s' AND host='%s';"`, shellEscapedPwd, sqlEscapedUsername, sqlEscapedHost), Description: "Check if user exists"}
 	output, _ := ssh.Run(cfg, cmdCheck)
 	return output == "", nil
 }
@@ -97,25 +100,29 @@ func (m *CreateUser) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("creating database user", "username", username, "host", host)
 
-	// Create user
-	cmdCreate := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "CREATE USER IF NOT EXISTS '%s'@'%s' IDENTIFIED BY '%s';"`,
-		rootPassword, username, host, password), Description: "Create database user"}
-	cmdFlush := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "FLUSH PRIVILEGES;"`, rootPassword), Description: "Flush privileges"}
+	// Create user — use MYSQL_PWD env var to avoid shell injection, SQL-escape all string literals
+	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+	sqlEscapedUsername := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLQuote(username))
+	sqlEscapedHost := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLQuote(host))
+	sqlEscapedPassword := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLQuote(password))
+	cmdCreate := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "CREATE USER IF NOT EXISTS '%s'@'%s' IDENTIFIED BY '%s';"`,
+		shellEscapedPwd, sqlEscapedUsername, sqlEscapedHost, sqlEscapedPassword), Description: "Create database user"}
+	cmdFlush := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "FLUSH PRIVILEGES;"`, shellEscapedPwd), Description: "Flush privileges"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCreate.Command, "description", cmdCreate.Description)
 		if dbName != "" {
 			if dbName == "*" {
-				cmdGrantAll := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "GRANT ALL PRIVILEGES ON *.* TO '%s'@'%s';"`,
-					rootPassword, username, host), Description: "Grant all privileges"}
+				cmdGrantAll := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO '%s'@'%s';"`,
+					shellEscapedPwd, sqlEscapedUsername, sqlEscapedHost), Description: "Grant all privileges"}
 				cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdGrantAll.Command, "description", cmdGrantAll.Description)
 			} else {
 				databases := strings.Split(dbName, ",")
 				for _, db := range databases {
 					db = strings.TrimSpace(db)
-					cmdGrantDb := types.Command{Command: fmt.Sprintf("mysql -u root -p\"%s\" -e \"GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%s';\"",
-						rootPassword, db, username, host), Description: "Grant database privileges"}
+					cmdGrantDb := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "GRANT ALL PRIVILEGES ON `+shellEscapedBacktick+`%s`+shellEscapedBacktick+`.* TO '%s'@'%s';"`,
+						shellEscapedPwd, mariadbEscapeShellDoubleQuote(mariadbEscapeSQLIdentifier(db)), sqlEscapedUsername, sqlEscapedHost), Description: "Grant database privileges"}
 					cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdGrantDb.Command, "description", cmdGrantDb.Description)
 				}
 			}
@@ -140,8 +147,8 @@ func (m *CreateUser) Run() types.Result {
 	grantedDBs := []string{}
 	if dbName != "" {
 		if dbName == "*" {
-			cmdGrantAll := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "GRANT ALL PRIVILEGES ON *.* TO '%s'@'%s';"`,
-				rootPassword, username, host), Description: "Grant all privileges"}
+			cmdGrantAll := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "GRANT ALL PRIVILEGES ON *.* TO '%s'@'%s';"`,
+				shellEscapedPwd, sqlEscapedUsername, sqlEscapedHost), Description: "Grant all privileges"}
 			_, _ = ssh.Run(cfg, cmdGrantAll)
 			grantedDBs = append(grantedDBs, "*")
 			cfg.GetLoggerOrDefault().Info("granted all privileges", "username", username, "host", host)
@@ -149,8 +156,8 @@ func (m *CreateUser) Run() types.Result {
 			databases := strings.Split(dbName, ",")
 			for _, db := range databases {
 				db = strings.TrimSpace(db)
-				cmdGrantDb := types.Command{Command: fmt.Sprintf("mysql -u root -p\"%s\" -e \"GRANT ALL PRIVILEGES ON `%s`.* TO '%s'@'%s';\"",
-					rootPassword, db, username, host), Description: "Grant database privileges"}
+				cmdGrantDb := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "GRANT ALL PRIVILEGES ON `+shellEscapedBacktick+`%s`+shellEscapedBacktick+`.* TO '%s'@'%s';"`,
+					shellEscapedPwd, mariadbEscapeShellDoubleQuote(mariadbEscapeSQLIdentifier(db)), sqlEscapedUsername, sqlEscapedHost), Description: "Grant database privileges"}
 				_, err = ssh.Run(cfg, cmdGrantDb)
 				if err != nil {
 					cfg.GetLoggerOrDefault().Warn("could not grant privileges", "database", db, "error", err)

@@ -56,11 +56,12 @@ func (m *SecurityAudit) Run() types.Result {
 		}
 	}
 
-	// Define commands
-	cmdAnon := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE User='';"`, rootPassword), Description: "Check for anonymous users"}
-	cmdTestDb := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES LIKE 'test';"`, rootPassword), Description: "Check for test database"}
-	cmdSsl := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW VARIABLES LIKE 'have_ssl';"`, rootPassword), Description: "Check SSL status"}
-	cmdWildcard := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user WHERE Host='%%';"`, rootPassword), Description: "Check wildcard hosts"}
+	// Define commands — use MYSQL_PWD env var to avoid shell injection via -p argument
+	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+	cmdAnon := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SELECT User, Host FROM mysql.user WHERE User='';"`, shellEscapedPwd), Description: "Check for anonymous users"}
+	cmdTestDb := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SHOW DATABASES LIKE 'test';"`, shellEscapedPwd), Description: "Check for test database"}
+	cmdSsl := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SHOW VARIABLES LIKE 'have_ssl';"`, shellEscapedPwd), Description: "Check SSL status"}
+	cmdWildcard := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SELECT User, Host FROM mysql.user WHERE Host='%%';"`, shellEscapedPwd), Description: "Check wildcard hosts"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {

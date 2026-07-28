@@ -57,8 +57,9 @@ func (m *ListDBs) Run() types.Result {
 		}
 	}
 
+	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
 	cmdList := types.Command{
-		Command:     fmt.Sprintf(`mysql -u root -p"%s" -e "SHOW DATABASES;"`, rootPassword),
+		Command:     fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SHOW DATABASES;"`, shellEscapedPwd),
 		Description: "List all databases",
 	}
 

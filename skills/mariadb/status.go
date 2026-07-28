@@ -2,6 +2,7 @@ package mariadb
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/dracory/ork/skills"
@@ -45,6 +46,13 @@ func (m *Status) Run() types.Result {
 	if mariaDBPort == "" {
 		mariaDBPort = DefaultPort
 	}
+	if !regexp.MustCompile(`^\d{1,5}$`).MatchString(mariaDBPort) {
+		return types.Result{
+			Changed: false,
+			Message: "Invalid port number",
+			Error:   fmt.Errorf("port must be a numeric value (1-5 digits), got: %s", mariaDBPort),
+		}
+	}
 
 	// Check service status
 	cmdService := types.Command{Command: "systemctl status mariadb --no-pager", Description: "Check MariaDB service status"}
@@ -52,7 +60,8 @@ func (m *Status) Run() types.Result {
 	cmdVersion := types.Command{Command: "mysql --version", Description: "Check MariaDB version"}
 	var cmdConn types.Command
 	if rootPassword != "" {
-		cmdConn = types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT 'MariaDB is working' as status;"`, rootPassword), Description: "Test MariaDB connection"}
+		shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+		cmdConn = types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SELECT 'MariaDB is working' as status;"`, shellEscapedPwd), Description: "Test MariaDB connection"}
 	}
 
 	// Check for dry-run mode - display actual commands

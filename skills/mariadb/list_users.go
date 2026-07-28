@@ -61,7 +61,8 @@ func (m *ListUsers) Run() types.Result {
 		}
 	}
 
-	cmdList := types.Command{Command: fmt.Sprintf(`mysql -u root -p"%s" -e "SELECT User, Host FROM mysql.user;"`, rootPassword), Description: "List all database users"}
+	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+	cmdList := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SELECT User, Host FROM mysql.user;"`, shellEscapedPwd), Description: "List all database users"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
