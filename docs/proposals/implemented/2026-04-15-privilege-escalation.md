@@ -1,7 +1,8 @@
 # Privilege Escalation (Become)
 
-**Status:** Proposed
+**Status:** Completed
 **Created:** 2026-04-15
+**Completed:** 2026-05-05
 **Author:** Kiro AI
 
 ## Problem Statement
@@ -44,7 +45,7 @@ func (b *BaseBecome) GetBecomeUser() string {
 
 ### Integration
 
-Embed in `RunnerInterface` and `RunnableInterface`:
+Embedded in `RunnerInterface` and `RunnableInterface`:
 
 ```go
 type RunnerInterface interface {
@@ -63,10 +64,17 @@ type RunnableInterface interface {
 ```go
 // In ssh.Run()
 func Run(cfg NodeConfig, cmd Command) (string, error) {
-    if cfg.BecomeUser != "" {
-        cmd.Command = fmt.Sprintf("sudo -u %s %s", cfg.BecomeUser, cmd.Command)
+    // Command-level BecomeUser takes precedence over config-level
+    becomeUser := cmd.BecomeUser
+    if becomeUser == "" {
+        becomeUser = cfg.BecomeUser
     }
-    return executeCommand(cfg, cmd)
+
+    commandToRun := cmd.Command
+    if becomeUser != "" {
+        commandToRun = fmt.Sprintf("sudo -u %s %s", becomeUser, cmd.Command)
+    }
+    // ...
 }
 ```
 
@@ -118,21 +126,39 @@ deploy ALL=(ALL) NOPASSWD: ALL
 
 **Never hardcode passwords.** Use vault or prompts if passwords are required.
 
-## Implementation
+## Implementation Status
 
-1. Add `BecomeInterface` to types
-2. Embed in `RunnerInterface` and `RunnableInterface`
-3. Add `BecomeUser` field to `NodeConfig`
-4. Wrap commands in `ssh.Run()`
-5. Copy become user from interface to config in `GetNodeConfig()`
+All steps completed:
+
+- [x] `BecomeInterface` defined in `types/become_interface.go` with `SetBecomeUser` / `GetBecomeUser`
+- [x] `BaseBecome` struct provides default implementation, embedded in `types/BaseSkill` and `types/BasePlaybook`
+- [x] `BecomeInterface` embedded in `types/RunnerInterface` and `types/RunnableInterface`
+- [x] `BecomeUser` field added to `types/NodeConfig`
+- [x] `WithBecomeUser` fluent method added to `types/NodeConfig`
+- [x] Command wrapping implemented in `ssh/functions.go` — command-level `BecomeUser` takes precedence over config-level
+- [x] `BecomeUser` propagated from node config to skill in `node_implementation.go` (`Run`, `RunByID`)
+- [x] `SetBecomeUser` / `GetBecomeUser` implemented on `nodeImplementation`
+- [x] `WithBecomeUser` fluent helper added to `CommandInterface` and `command_implementation.go`
+- [x] `BecomeUser` field added to `types/Command` for per-command override
+- [x] Tests added: `TestRun_CommandBecomeUser`, `TestRun_ConfigBecomeUser`, `TestRun_CombinedChdirAndBecomeUser` in `ssh/ssh_test.go`
+- [x] Tests added: `TestNewSkill_WithBecomeUser` in `skill_test.go`
+
+## Notes on Scope
+
+The implementation follows the simple design from this proposal rather than the expanded design in [Privilege Escalation (Expanded)](2026-04-15-privilege-escalation-expanded.md). Specifically:
+
+- Only `sudo -u <user>` is supported (no `su`, `doas`, etc.)
+- No become password support
+- No `SetBecome(bool)` enable/disable flag — an empty `BecomeUser` means no escalation
+- No custom flags
+
+These were intentional omissions per the "start simple" principle. See the expanded proposal if those features are needed.
 
 ## Future Enhancements
 
 - Support `su`, `doas` (if needed)
 - Custom flags (if needed)
 - Password support (if needed)
-
-Start simple. Add complexity only when actually needed.
 
 ## See Also
 
