@@ -103,20 +103,14 @@ func (a *AptUpgrade) Run() types.Result {
 	}
 
 	cfg := a.GetNodeConfig()
-	// DEBIAN_FRONTEND=noninteractive prevents dpkg from prompting for user input
-	// (e.g. the "What do you want to do about modified configuration file?" prompt
-	// for /etc/ssh/sshd_config and other conffiles), which would hang the SSH session.
-	// --force-confdef installs the package maintainer's default config when the user
-	// hasn't modified it, and --force-confold keeps the locally modified version when
-	// the user has. This matches Ansible's apt module defaults and is the safest
-	// behavior for unattended server upgrades.
+	// See skills.DebianNonInteractive and skills.DpkgConfOptions for details
+	cmdUpgradeStr := ""
+	cmdUpgradeStr += skills.DebianNonInteractive // prevent interactive prompts
+	cmdUpgradeStr += " apt-get upgrade -y"       // upgrade all packages, auto-confirm
+	cmdUpgradeStr += skills.DpkgConfOptions      // keep local config, use maintainer default if unmodified
+
 	cmdUpgrade := types.Command{
-		Command: strings.Join([]string{
-			"DEBIAN_FRONTEND=noninteractive",         // prevent interactive prompts
-			"apt-get upgrade -y",                     // upgrade all packages, auto-confirm
-			"-o Dpkg::Options::=\"--force-confdef\"", // use maintainer default if config unmodified
-			"-o Dpkg::Options::=\"--force-confold\"", // keep local config if user modified it
-		}, " "),
+		Command:     cmdUpgradeStr,
 		Description: "Upgrade packages (keep local config files)",
 	}
 

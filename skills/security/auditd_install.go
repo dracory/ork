@@ -69,7 +69,12 @@ func (a *AuditdInstall) Run() types.Result {
 	cfg := a.GetNodeConfig()
 
 	// Define commands
-	cmdInstall := types.Command{Command: `DEBIAN_FRONTEND=noninteractive apt-get install -y auditd audispd-plugins`, Description: "Install auditd package"}
+	cmdInstallStr := ""
+	cmdInstallStr += skills.DebianNonInteractive                  // prevent interactive prompts
+	cmdInstallStr += " apt-get install -y auditd audispd-plugins" // install auditd, auto-confirm
+	cmdInstallStr += skills.DpkgConfOptions                       // keep local config, use maintainer default if unmodified
+
+	cmdInstall := types.Command{Command: cmdInstallStr, Description: "Install auditd package"}
 	cmdRules := types.Command{Command: `cat > /etc/audit/rules.d/audit.rules << 'EOF'
 # Remove any existing rules
 -D

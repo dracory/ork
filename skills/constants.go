@@ -1,5 +1,26 @@
 package skills
 
+// DebianNonInteractive prevents dpkg from prompting for user input during
+// package operations (e.g. the "What do you want to do about modified
+// configuration file?" prompt), which would hang the SSH session.
+const DebianNonInteractive = "DEBIAN_FRONTEND=noninteractive"
+
+// DpkgConfDef uses the package maintainer's default config when the user
+// hasn't modified it locally. Matches Ansible's apt module default.
+const DpkgConfDef = " -o Dpkg::Options::=\"--force-confdef\""
+
+// DpkgConfOld keeps the locally modified config when the user has changed it.
+// Matches Ansible's apt module default.
+const DpkgConfOld = " -o Dpkg::Options::=\"--force-confold\""
+
+// DpkgConfOptions combines DpkgConfDef and DpkgConfOld for convenience.
+// This matches Ansible's apt module defaults for unattended package operations.
+//
+// Usage: append to any apt-get command string, e.g.:
+//
+//	cmdStr += skills.DpkgConfOptions
+const DpkgConfOptions = DpkgConfDef + DpkgConfOld
+
 // Skill ID constants for use with RunSkill.
 // These constants provide compile-time safety and IDE autocomplete for skill IDs.
 //

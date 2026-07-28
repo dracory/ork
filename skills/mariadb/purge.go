@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -55,8 +56,18 @@ func (m *Purge) Run() types.Result {
 
 	// Define commands
 	cmdStop := types.Command{Command: "systemctl stop mariadb", Description: "Stop MariaDB service"}
-	cmdPurge := types.Command{Command: "apt-get purge -y mariadb-server mariadb-client mariadb-common", Description: "Remove MariaDB packages"}
-	cmdAutoremove := types.Command{Command: "apt-get autoremove -y", Description: "Remove unused dependencies"}
+	cmdPurgeStr := ""
+	cmdPurgeStr += skills.DebianNonInteractive                                      // prevent interactive prompts
+	cmdPurgeStr += " apt-get purge -y mariadb-server mariadb-client mariadb-common" // purge MariaDB packages
+	cmdPurgeStr += skills.DpkgConfOptions                                           // keep local config, use maintainer default if unmodified
+
+	cmdPurge := types.Command{Command: cmdPurgeStr, Description: "Remove MariaDB packages"}
+	cmdAutoremoveStr := ""
+	cmdAutoremoveStr += skills.DebianNonInteractive // prevent interactive prompts
+	cmdAutoremoveStr += " apt-get autoremove -y"    // remove unused dependencies, auto-confirm
+	cmdAutoremoveStr += skills.DpkgConfOptions      // keep local config, use maintainer default if unmodified
+
+	cmdAutoremove := types.Command{Command: cmdAutoremoveStr, Description: "Remove unused dependencies"}
 	cmdRemoveConfig := types.Command{Command: "rm -rf /etc/mysql", Description: "Remove MariaDB configuration"}
 	cmdRemoveData := types.Command{Command: "rm -rf /var/lib/mysql", Description: "Remove MariaDB data directory"}
 	cmdRemoveLog := types.Command{Command: "rm -rf /var/log/mysql", Description: "Remove MariaDB logs"}

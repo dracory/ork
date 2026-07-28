@@ -63,8 +63,14 @@ func (u *UfwInstall) Run() types.Result {
 	cfg := u.GetNodeConfig()
 
 	// Define commands
-	cmdInstall := types.Command{
-		Command:     "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y ufw",
+	cmdInstallStr := ""
+	cmdInstallStr += "apt-get update -y"                  // refresh package lists
+	cmdInstallStr += " && " + skills.DebianNonInteractive // prevent interactive prompts
+	cmdInstallStr += " apt-get install -y ufw"            // install ufw, auto-confirm
+	cmdInstallStr += skills.DpkgConfOptions               // keep local config, use maintainer default if unmodified
+
+	cmdInstallCmd := types.Command{
+		Command:     cmdInstallStr,
 		Description: "Install UFW package",
 	}
 	cmdReset := types.Command{
@@ -109,7 +115,7 @@ func (u *UfwInstall) Run() types.Result {
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall.Command)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstallCmd.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdReset.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdDefaults.Command)
 		if allowSSH == "true" {
@@ -140,7 +146,7 @@ func (u *UfwInstall) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("installing UFW firewall")
 
 	// Install UFW
-	output, err := ssh.Run(cfg, cmdInstall)
+	output, err := ssh.Run(cfg, cmdInstallCmd)
 	if err != nil {
 		return types.Result{
 			Changed: false,

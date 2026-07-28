@@ -59,7 +59,13 @@ func (m *Install) Run() types.Result {
 	rootPassword := m.GetArg(ArgRootPassword)
 
 	// Define commands
-	cmdInstall := types.Command{Command: `apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y mariadb-server mariadb-client`, Description: "Install MariaDB packages"}
+	cmdInstallStr := ""
+	cmdInstallStr += "apt-get update -y"                                 // refresh package lists
+	cmdInstallStr += " && " + skills.DebianNonInteractive                // prevent interactive prompts
+	cmdInstallStr += " apt-get install -y mariadb-server mariadb-client" // install MariaDB, auto-confirm
+	cmdInstallStr += skills.DpkgConfOptions                              // keep local config, use maintainer default if unmodified
+
+	cmdInstallCmd := types.Command{Command: cmdInstallStr, Description: "Install MariaDB packages"}
 	cmdStartEnable := types.Command{Command: "systemctl start mariadb && systemctl enable mariadb", Description: "Start and enable MariaDB"}
 	cmdWaitReady := types.Command{Command: "until mysqladmin ping --silent; do sleep 1; done", Description: "Wait for MariaDB to be ready"}
 	cmdBindAddr := types.Command{Command: `sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mariadb.conf.d/50-server.cnf || sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/my.cnf.d/mariadb-server.cnf || true`, Description: "Configure bind address"}
@@ -67,7 +73,7 @@ func (m *Install) Run() types.Result {
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall.Command, "description", cmdInstall.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstallCmd.Command, "description", cmdInstallCmd.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdStartEnable.Command, "description", cmdStartEnable.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdWaitReady.Command, "description", cmdWaitReady.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would set root password")
@@ -82,7 +88,7 @@ func (m *Install) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("installing MariaDB server")
 
 	// Update package list and install MariaDB
-	installOutput, err := ssh.Run(cfg, cmdInstall)
+	installOutput, err := ssh.Run(cfg, cmdInstallCmd)
 	if err != nil {
 		return types.Result{
 			Changed: false,

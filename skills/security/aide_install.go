@@ -68,7 +68,12 @@ func (a *AideInstall) Run() types.Result {
 	cfg := a.GetNodeConfig()
 
 	// Define commands
-	cmdInstall := types.Command{Command: `DEBIAN_FRONTEND=noninteractive apt-get install -y aide aide-common`, Description: "Install AIDE package"}
+	cmdInstallStr := ""
+	cmdInstallStr += skills.DebianNonInteractive            // prevent interactive prompts
+	cmdInstallStr += " apt-get install -y aide aide-common" // install AIDE, auto-confirm
+	cmdInstallStr += skills.DpkgConfOptions                 // keep local config, use maintainer default if unmodified
+
+	cmdInstall := types.Command{Command: cmdInstallStr, Description: "Install AIDE package"}
 	cmdConfigure := types.Command{Command: `cat >> /etc/aide/aide.conf << 'EOF'
 
 # Custom monitoring rules

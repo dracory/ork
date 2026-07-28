@@ -75,14 +75,20 @@ func (b *BackupEncrypt) Run() types.Result {
 
 	// Define commands
 	cmdMkdir := types.Command{Command: fmt.Sprintf(`mkdir -p %s`, backupDir), Description: "Create backup directory"}
-	cmdCheckOpenSSL := types.Command{Command: `which openssl || DEBIAN_FRONTEND=noninteractive apt-get install -y openssl`, Description: "Ensure openssl is installed"}
+	cmdCheckOpenSSLStr := ""
+	cmdCheckOpenSSLStr += "which openssl"                      // check if openssl exists
+	cmdCheckOpenSSLStr += " || " + skills.DebianNonInteractive // if not, prevent interactive prompts
+	cmdCheckOpenSSLStr += " apt-get install -y openssl"        // install openssl, auto-confirm
+	cmdCheckOpenSSLStr += skills.DpkgConfOptions               // keep local config, use maintainer default if unmodified
+
+	cmdCheckOpenSSLCmd := types.Command{Command: cmdCheckOpenSSLStr, Description: "Ensure openssl is installed"}
 	cmdBackup := types.Command{Command: fmt.Sprintf(`(umask 077 && MYSQL_PWD='%s' mysqldump -u root --single-transaction --routines --triggers --events '%s' | gzip | openssl enc -aes-256-cbc -salt -pbkdf2 -pass env:MYSQL_PWD -out %s/%s_%s.sql.gz.enc)`,
 		rootPassword, dbName, backupDir, dbName, timestamp), Description: "Create encrypted backup"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdMkdir.Command, "description", cmdMkdir.Description)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCheckOpenSSL.Command, "description", cmdCheckOpenSSL.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCheckOpenSSLCmd.Command, "description", cmdCheckOpenSSLCmd.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command, "description", cmdBackup.Description)
 		return types.Result{
 			Changed: true,
@@ -92,7 +98,7 @@ func (b *BackupEncrypt) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("creating encrypted database backup", "database", dbName)
 	_, _ = ssh.Run(cfg, cmdMkdir)
-	_, _ = ssh.Run(cfg, cmdCheckOpenSSL)
+	_, _ = ssh.Run(cfg, cmdCheckOpenSSLCmd)
 
 	cfg.GetLoggerOrDefault().Info("creating encrypted backup")
 	_, err := ssh.Run(cfg, cmdBackup)

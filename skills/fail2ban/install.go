@@ -67,8 +67,14 @@ func (f *Fail2banInstall) Check() (bool, error) {
 func (f *Fail2banInstall) Run() types.Result {
 	cfg := f.GetNodeConfig()
 
-	cmdInstall := types.Command{
-		Command:     "apt-get update -y && DEBIAN_FRONTEND=noninteractive apt-get install -y fail2ban",
+	cmdInstallStr := ""
+	cmdInstallStr += "apt-get update -y"                  // refresh package lists
+	cmdInstallStr += " && " + skills.DebianNonInteractive // prevent interactive prompts
+	cmdInstallStr += " apt-get install -y fail2ban"       // install fail2ban, auto-confirm
+	cmdInstallStr += skills.DpkgConfOptions               // keep local config, use maintainer default if unmodified
+
+	cmdInstallCmd := types.Command{
+		Command:     cmdInstallStr,
 		Description: "Install fail2ban",
 	}
 	cmdEnable := types.Command{
@@ -79,8 +85,8 @@ func (f *Fail2banInstall) Run() types.Result {
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command",
-			"cmd:", cmdInstall.Command,
-			"description:", cmdInstall.Description)
+			"cmd:", cmdInstallCmd.Command,
+			"description:", cmdInstallCmd.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command",
 			"cmd:", cmdEnable.Command,
 			"description:", cmdEnable.Description)
@@ -93,7 +99,7 @@ func (f *Fail2banInstall) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("installing fail2ban")
 
-	output, err := ssh.Run(cfg, cmdInstall)
+	output, err := ssh.Run(cfg, cmdInstallCmd)
 	if err != nil {
 		return types.Result{
 			Changed: false,
