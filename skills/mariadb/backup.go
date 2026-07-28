@@ -85,7 +85,7 @@ func (m *Backup) Run() types.Result {
 	shellEscapedBackupPath := mariadbEscapeShellQuote(backupPath)
 	shellDoubleEscapedBackupPath := mariadbEscapeShellDoubleQuote(backupPath)
 	cmdMkdir := types.Command{Command: fmt.Sprintf("mkdir -p '%s'", shellEscapedBackupDir), Description: "Create backup directory"}
-	cmdDump := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysqldump -u root --single-transaction --routines --triggers \"%s\" > \"%s\"`,
+	cmdDump := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysqldump -u root --single-transaction --routines --triggers "%s" > "%s"`,
 		shellEscapedPwd, shellEscapedDbName, shellDoubleEscapedBackupPath), Description: "Create database backup"}
 	cmdCompress := types.Command{Command: fmt.Sprintf("gzip -f '%s'", shellEscapedBackupPath), Description: "Compress backup"}
 	cmdChecksum := types.Command{Command: fmt.Sprintf("sha256sum '%s.gz' > '%s.gz.sha256'", shellEscapedBackupPath, shellEscapedBackupPath), Description: "Generate backup checksum"}

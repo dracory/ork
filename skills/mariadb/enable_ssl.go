@@ -65,17 +65,19 @@ func (m *EnableSSL) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("enabling MariaDB SSL/TLS")
 
 	// Define commands
-	cmdGenCert := types.Command{Command: fmt.Sprintf(`mysql_ssl_rsa_setup --datadir=%s`, dataDir), Description: "Generate SSL certificates"}
-	cmdChown := types.Command{Command: fmt.Sprintf(`chown mysql:mysql %s/*.pem`, dataDir), Description: "Set SSL cert ownership"}
-	cmdChmod := types.Command{Command: fmt.Sprintf(`sh -c 'chmod 600 %s/*-key.pem && chmod 644 %s/*.pem'`, dataDir, dataDir), Description: "Set SSL cert permissions"}
-	cmdBackup := types.Command{Command: fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d)'`, configPath, configPath), Description: "Backup MariaDB config"}
-	cmdConfigure := types.Command{Command: fmt.Sprintf(`grep -q "ssl-ca" %s || cat >> %s << 'EOF'
+	shellEscapedDataDir := mariadbEscapeShellQuote(dataDir)
+	shellEscapedConfigPath := mariadbEscapeShellQuote(configPath)
+	cmdGenCert := types.Command{Command: fmt.Sprintf(`mysql_ssl_rsa_setup --datadir='%s'`, shellEscapedDataDir), Description: "Generate SSL certificates"}
+	cmdChown := types.Command{Command: fmt.Sprintf(`chown mysql:mysql '%s'/*.pem`, shellEscapedDataDir), Description: "Set SSL cert ownership"}
+	cmdChmod := types.Command{Command: fmt.Sprintf(`sh -c 'chmod 600 %s/*-key.pem && chmod 644 %s/*.pem'`, shellEscapedDataDir, shellEscapedDataDir), Description: "Set SSL cert permissions"}
+	cmdBackup := types.Command{Command: fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d)'`, shellEscapedConfigPath, shellEscapedConfigPath), Description: "Backup MariaDB config"}
+	cmdConfigure := types.Command{Command: fmt.Sprintf(`grep -q "ssl-ca" '%s' || cat >> '%s' << 'EOF'
 
 # SSL/TLS Configuration
 ssl-ca=%s/ca.pem
 ssl-cert=%s/server-cert.pem
 ssl-key=%s/server-key.pem
-EOF`, configPath, configPath, dataDir, dataDir, dataDir), Description: "Configure SSL in MariaDB"}
+EOF`, shellEscapedConfigPath, shellEscapedConfigPath, dataDir, dataDir, dataDir), Description: "Configure SSL in MariaDB"}
 	cmdRestart := types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB"}
 
 	// Check for dry-run mode - display actual commands

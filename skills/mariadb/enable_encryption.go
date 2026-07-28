@@ -72,28 +72,31 @@ func (m *EnableEncryption) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("enabling MariaDB encryption at rest")
 
 	// Define commands
+	keyDir := filepath.Dir(keyFilePath)
+	shellEscapedConfigPath := mariadbEscapeShellQuote(configPath)
+	shellEscapedKeyFilePath := mariadbEscapeShellQuote(keyFilePath)
+	shellEscapedKeyDir := mariadbEscapeShellQuote(keyDir)
 	cmdBackup := types.Command{
-		Command:     fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)'`, configPath, configPath),
+		Command:     fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)'`, shellEscapedConfigPath, shellEscapedConfigPath),
 		Description: "Backup MariaDB config",
 	}
-	keyDir := filepath.Dir(keyFilePath)
 	cmdMkdir := types.Command{
-		Command:     fmt.Sprintf(`mkdir -p %s`, keyDir),
+		Command:     fmt.Sprintf(`mkdir -p '%s'`, shellEscapedKeyDir),
 		Description: "Create key directory",
 		Required:    true,
 	}
 	cmdGenKey := types.Command{
-		Command:     fmt.Sprintf(`openssl rand -hex 32 | awk '{print "1;" $0}' > %s`, keyFilePath),
+		Command:     fmt.Sprintf(`openssl rand -hex 32 | awk '{print "1;" $0}' > '%s'`, shellEscapedKeyFilePath),
 		Description: "Generate encryption key",
 		Required:    true,
 	}
 	cmdPerms := types.Command{
-		Command:     fmt.Sprintf(`chown mysql:mysql %s && chmod 600 %s`, keyFilePath, keyFilePath),
+		Command:     fmt.Sprintf(`chown mysql:mysql '%s' && chmod 600 '%s'`, shellEscapedKeyFilePath, shellEscapedKeyFilePath),
 		Description: "Set key file permissions",
 		Required:    true,
 	}
 	cmdConfigure := types.Command{
-		Command: fmt.Sprintf(`grep -q "file_key_management_filename" %s || cat >> %s << 'EOF'
+		Command: fmt.Sprintf(`grep -q "file_key_management_filename" '%s' || cat >> '%s' << 'EOF'
 
 # Encryption at Rest Configuration
 plugin_load_add = file_key_management
@@ -102,7 +105,7 @@ file_key_management_encryption_algorithm = AES_CBC
 innodb_encrypt_tables = ON
 innodb_encrypt_log = ON
 encrypt_tmp_files = ON
-EOF`, configPath, configPath, keyFilePath),
+EOF`, shellEscapedConfigPath, shellEscapedConfigPath, keyFilePath),
 		Description: "Configure encryption",
 		Required:    true,
 	}

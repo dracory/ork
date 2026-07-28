@@ -72,10 +72,11 @@ func (m *ChangePort) Run() types.Result {
 	}
 
 	// Define commands with Chdir, BecomeUser, and Required support
-	cmdBackup := types.Command{Command: fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)'`, configPath, configPath), Description: "Backup MariaDB config", Required: true}
+	shellEscapedConfigPath := mariadbEscapeShellQuote(configPath)
+	cmdBackup := types.Command{Command: fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)'`, shellEscapedConfigPath, shellEscapedConfigPath), Description: "Backup MariaDB config", Required: true}
 	cmdCheckUfw := types.Command{Command: `sh -c 'ufw status | grep -q "Status: active" && echo "ACTIVE" || echo "INACTIVE"'`, Description: "Check UFW status", Required: false}
 	cmdAllowPort := types.Command{Command: fmt.Sprintf(`ufw allow %s/tcp comment 'MariaDB on custom port'`, newPort), Description: "Allow MariaDB custom port in UFW", Required: false}
-	cmdUpdatePort := types.Command{Command: fmt.Sprintf(`sh -c 'grep -q "^port[[:space:]]*=" %s && sed -i "s/^port[[:space:]]*=.*/port = %s/" %s || sed -i "/^\[mysqld\]/a port = %s" %s'`, configPath, newPort, configPath, newPort, configPath), Description: "Update MariaDB port in config", Required: true}
+	cmdUpdatePort := types.Command{Command: fmt.Sprintf(`sh -c 'grep -q "^port[[:space:]]*=" %s && sed -i "s/^port[[:space:]]*=.*/port = %s/" %s || sed -i "/^\[mysqld\]/a port = %s" %s'`, shellEscapedConfigPath, newPort, shellEscapedConfigPath, newPort, shellEscapedConfigPath), Description: "Update MariaDB port in config", Required: true}
 	cmdRestart := types.Command{Command: `systemctl restart mariadb`, Description: "Restart MariaDB service", Required: true}
 
 	// Check for dry-run mode - display actual commands
