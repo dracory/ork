@@ -15,15 +15,25 @@ var DefaultKexAlgorithms = []string{
 	"diffie-hellman-group14-sha256",
 }
 
+// Host key algorithm constants for use with NodeConfig.HostKeyAlgorithms.
+const (
+	HostKeyAlgoECDSA256 = "ecdsa-sha2-nistp256"
+	HostKeyAlgoECDSA384 = "ecdsa-sha2-nistp384"
+	HostKeyAlgoECDSA521 = "ecdsa-sha2-nistp521"
+	HostKeyAlgoRSA256   = "rsa-sha2-256"
+	HostKeyAlgoRSA512   = "rsa-sha2-512"
+	HostKeyAlgoED25519  = "ssh-ed25519"
+)
+
 // DefaultHostKeyAlgorithms are the default host key algorithms for SSH.
 // These are widely compatible with modern SSH servers while being supported by golang.org/x/crypto/ssh.
 var DefaultHostKeyAlgorithms = []string{
-	"ecdsa-sha2-nistp256",
-	"ecdsa-sha2-nistp384",
-	"ecdsa-sha2-nistp521",
-	"rsa-sha2-256",
-	"rsa-sha2-512",
-	"ssh-ed25519",
+	HostKeyAlgoECDSA256,
+	HostKeyAlgoECDSA384,
+	HostKeyAlgoECDSA521,
+	HostKeyAlgoRSA256,
+	HostKeyAlgoRSA512,
+	HostKeyAlgoED25519,
 }
 
 // NodeConfig holds all configuration variables for remote server operations.
