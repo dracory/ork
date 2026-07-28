@@ -2,6 +2,7 @@ package apt
 
 import (
 	"log/slog"
+	"strings"
 	"testing"
 
 	"github.com/dracory/ork/types"
@@ -21,17 +22,17 @@ func TestAptUpgrade_Run_DryRun(t *testing.T) {
 
 	result := pb.Run()
 
-	// In dry-run mode, Check will fail due to no SSH server, but the dry-run should still work
-	// The implementation calls Check() first, which will fail, so we need to handle this
-	// For now, let's just verify it doesn't crash
-	if result.Error == nil {
-		// If somehow Check succeeded in dry-run, verify the dry-run message
-		if result.Message == "Would upgrade packages: DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\"" {
-			// This is the expected dry-run behavior
-			if !result.Changed {
-				t.Error("Expected Changed to be true in dry-run mode")
-			}
-		}
+	// In dry-run mode, Check() returns (true, nil) without SSH, so Run() reaches its dry-run guard
+	if result.Error != nil {
+		t.Fatalf("Expected no error in dry-run mode, got: %v", result.Error)
+	}
+
+	if !strings.HasPrefix(result.Message, "Would upgrade packages:") {
+		t.Errorf("Expected dry-run message prefix 'Would upgrade packages:', got: %s", result.Message)
+	}
+
+	if !result.Changed {
+		t.Error("Expected Changed to be true in dry-run mode")
 	}
 }
 
@@ -51,7 +52,7 @@ func TestAptUpgrade_Run_NotDryRun(t *testing.T) {
 
 	// In non-dry-run mode, it will try to execute SSH commands and likely fail
 	// since there's no real SSH server. We just verify it doesn't return the dry-run message.
-	if result.Message == "Would upgrade packages: DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::=\"--force-confdef\" -o Dpkg::Options::=\"--force-confold\"" {
+	if strings.HasPrefix(result.Message, "Would upgrade packages:") {
 		t.Error("Should not return dry-run message when IsDryRunMode is false")
 	}
 }

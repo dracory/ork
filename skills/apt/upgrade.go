@@ -55,6 +55,12 @@ type AptUpgrade struct {
 // then counts upgradable packages using apt list --upgradable.
 func (a *AptUpgrade) Check() (bool, error) {
 	cfg := a.GetNodeConfig()
+
+	// In dry-run mode, assume upgrades are needed so Run() reaches its dry-run guard
+	if cfg.IsDryRunMode {
+		return true, nil
+	}
+
 	// First ensure package lists are updated
 	cmdUpdate := types.Command{Command: "apt-get update -qq", Description: "Update package lists"}
 	_, err := ssh.Run(cfg, cmdUpdate)
