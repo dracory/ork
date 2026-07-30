@@ -25,7 +25,7 @@ func (u *UserDelete) Check() (bool, error) {
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
 	}
-	cmdCheck := types.Command{Command: fmt.Sprintf("id %s", shellEscapeArg(username)), Description: "Check if user exists"}
+	cmdCheck := types.Command{Command: fmt.Sprintf("id %s", skills.ShellEscapeArg(username)), Description: "Check if user exists"}
 	output, _ := ssh.Run(cfg, cmdCheck)
 	return strings.Contains(output, username), nil
 }
@@ -82,7 +82,7 @@ func (u *UserDelete) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("deleting user", "username", username)
 
 	// Delete user and home directory (try -r first, then without)
-	cmdDelete := types.Command{Command: fmt.Sprintf("userdel -r %s 2>/dev/null || userdel %s", shellEscapeArg(username), shellEscapeArg(username)), Description: "Delete user"}
+	cmdDelete := types.Command{Command: fmt.Sprintf("userdel -r %s 2>/dev/null || userdel %s", skills.ShellEscapeArg(username), skills.ShellEscapeArg(username)), Description: "Delete user"}
 
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {

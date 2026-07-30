@@ -31,9 +31,14 @@ func (u *UserAddToGroup) Check() (bool, error) {
 	if group == "" {
 		return false, fmt.Errorf("group is required (pass via --arg=group=value)")
 	}
-	cmdCheck := types.Command{Command: fmt.Sprintf("groups %s", shellEscapeArg(username)), Description: "Check user group membership"}
+	cmdCheck := types.Command{Command: fmt.Sprintf("groups %s", skills.ShellEscapeArg(username)), Description: "Check user group membership"}
 	output, _ := ssh.Run(cfg, cmdCheck)
-	return !strings.Contains(output, group), nil
+	for field := range strings.FieldsSeq(output) {
+		if field == group {
+			return false, nil // already in group
+		}
+	}
+	return true, nil // not in group
 }
 
 // Run adds a user to a supplementary group using usermod -aG.
@@ -87,7 +92,7 @@ func (u *UserAddToGroup) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("adding user to group", "username", username, "group", group)
 
 	cmdAdd := types.Command{
-		Command:     fmt.Sprintf("usermod -aG %s %s", shellEscapeArg(group), shellEscapeArg(username)),
+		Command:     fmt.Sprintf("usermod -aG %s %s", skills.ShellEscapeArg(group), skills.ShellEscapeArg(username)),
 		Description: "Add user to supplementary group",
 	}
 

@@ -38,6 +38,9 @@ const (
 	// IDAptUpgrade installs available updates
 	IDAptUpgrade = "apt-upgrade"
 
+	// IDAptInstall installs one or more packages (requires "packages" arg)
+	IDAptInstall = "apt-install"
+
 	// IDAptStatus shows available updates
 	IDAptStatus = "apt-status"
 

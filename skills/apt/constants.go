@@ -1,4 +1,5 @@
 package apt
 
-// No argument constants needed for apt playbooks.
-// Apt playbooks operate without additional arguments.
+// ArgPackages is the argument key for specifying packages to install.
+// Value should be a space-separated list of package names, e.g. "nodejs npm".
+const ArgPackages = "packages"
