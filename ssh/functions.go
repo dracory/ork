@@ -80,7 +80,7 @@ func PrivateKeyPath(sshKey string) string {
 // It wraps the value in single quotes and escapes any embedded single quotes
 // using the POSIX sequence '\”. This is the same logic as skills.ShellEscapeArg,
 // duplicated here to avoid a circular import (skills imports ssh).
-func shellEscapeArg(s string) string {
+func ShellEscapeArg(s string) string {
 	return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'"
 }
 
@@ -137,12 +137,12 @@ func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 	// Wrap command with sudo if become user is set
 	commandToRun := cmd.Command
 	if becomeUser != "" {
-		commandToRun = fmt.Sprintf("sudo -u %s %s", shellEscapeArg(becomeUser), cmd.Command)
+		commandToRun = fmt.Sprintf("sudo -u %s %s", ShellEscapeArg(becomeUser), cmd.Command)
 	}
 
 	// Wrap command with cd if chdir is set (outside sudo)
 	if chdir != "" {
-		commandToRun = fmt.Sprintf("cd %s && %s", shellEscapeArg(chdir), commandToRun)
+		commandToRun = fmt.Sprintf("cd %s && %s", ShellEscapeArg(chdir), commandToRun)
 	}
 
 	output, err := runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description}, cfg.KexAlgorithms, cfg.HostKeyAlgorithms)
