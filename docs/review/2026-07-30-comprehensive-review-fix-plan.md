@@ -1,6 +1,6 @@
 # Comprehensive Review Fix Plan: Concurrent Safe Skill Execution
 
-This document analyzes the critical issue of shared, mutable skill instances during concurrent `Inventory` or `Group` execution in `ork` and proposes four potential solutions (including breaking changes).
+This document analyzes the critical issue of shared, mutable skill instances during concurrent `Inventory` or `Group` execution in `ork` and proposes multiple potential solutions (including breaking changes). It also highlights existing patterns in the codebase that can be reused to solve this cleanly.
 
 ---
 
@@ -17,13 +17,27 @@ Because `types.BaseSkill` lacks synchronization and mutates state directly (e.g.
 
 ---
 
-## Proposed Solutions
+## Existing Codebase Patterns & Capabilities to Reuse
 
-We have researched and formulated four distinct solutions to resolve this issue. They range from non-breaking/backward-compatible changes to highly robust breaking API redesigns.
+When looking at how `ork` is currently designed, there is already a strong, established design pattern of **defensive copying** to prevent concurrent modifications and state leaks. We can reuse this pattern's design philosophy to solve the skill concurrency issue.
+
+Existing examples in the codebase include:
+1. **`Node.GetNodeConfig()`**: Returns a deep copy of the underlying `types.NodeConfig` (including a freshly copied `Args` map) so external modifications do not leak back into the node.
+2. **`NewNodeFromConfig()`**: Deep-copies the provided `types.NodeConfig` immediately to ensure isolation.
+3. **`Group.GetNodes()` / `Inventory.GetNodes()`**: Returns a copied slice of `NodeInterface` to prevent external modification of the internal slice.
+4. **`Group.GetArgs()`**: Returns a copy of the arguments map.
+
+By leveraging a similar **defensive copying (cloning) pattern** for skills, we naturally align with `ork`'s existing architectural conventions and design principles.
 
 ---
 
-### Solution 1: Add Explicit Clone Support to `RunnableInterface` (Breaking Change)
+## Proposed Solutions
+
+We have researched and formulated six distinct solutions to resolve this issue. They range from non-breaking/backward-compatible changes to highly robust breaking API redesigns.
+
+---
+
+### Solution 1: Add Explicit Clone Support to `RunnableInterface` (Breaking Change - Recommended)
 
 Add a `Clone() RunnableInterface` method to the `RunnableInterface` in `types/runnable_interface.go`. Every skill (both built-in and user-defined) must implement this method.
 
@@ -73,6 +87,7 @@ Add a `Clone() RunnableInterface` method to the `RunnableInterface` in `types/ru
   - **Type-safe & Idiomatic:** The Go compiler guarantees that any skill registered or run implements `Clone()`.
   - **Completely Isolated:** No concurrent writes, read-after-write anomalies, or sharing of any state.
   - **Clear Contract:** Extensible for custom user-created skills.
+  - **Reuses Existing Design Philosophy:** Leverages defensive copying, matching current patterns in `GetNodeConfig` and `GetNodes`.
 * **Cons:**
   - **Breaking Change:** Any external/user-defined skill that implements `RunnableInterface` will fail to compile until they implement `Clone()`.
   - **Boilerplate:** Requires adding a simple boilerplate `Clone` method to every single built-in skill struct.
@@ -176,9 +191,61 @@ Completely redesign the `RunnableInterface` and skill lifecycle. Instead of conf
 
 ---
 
+### Solution 5: Synchronization / Mutex-Protected BaseSkill (Incomplete Solution)
+
+Protect state modification inside `BaseSkill` using a `sync.RWMutex` to avoid Go runtime map crashes.
+
+#### Details
+
+1. Add a `sync.RWMutex` field to `types.BaseSkill`.
+2. Wrap every getter/setter (e.g., `GetArg`, `SetArg`, `SetNodeConfig`, `IsDryRun`) in `RWMutex` locks.
+
+#### Pros & Cons
+
+* **Pros:**
+  - **Non-breaking Change:** Extremely simple to implement with minimal changes.
+  - Prevents the unrecoverable Go runtime panic (fatal concurrent map write).
+* **Cons:**
+  - **Does Not Prevent Logic/State Races:** While it prevents the application from crashing, it does *not* prevent different execution goroutines from overwriting each other's configurations or arguments before they call `Run()`. For example, Node A's args could be updated to Node B's values right before Node A's runner executes, leading to silent, incorrect executions. Thus, this is not a viable stand-alone solution.
+
+---
+
+### Solution 6: Context-Bound Configuration Storage (Modern Go Approach - Breaking Change)
+
+Pass execution context (such as the target node configuration and parameters) using Go's `context.Context` instead of storing them as fields on the skill.
+
+#### Details
+
+1. Keep getters and setters on `BaseSkill` for default properties (id, description), but remove `SetNodeConfig`, `SetArgs`, and `SetDryRun`.
+2. Change execution signatures to accept a context:
+   ```go
+   type RunnableInterface interface {
+       GetID() string
+       GetDescription() string
+       Check(ctx context.Context) (bool, error)
+       Run(ctx context.Context) Result
+   }
+   ```
+3. Store the active `NodeConfig` inside the `context.Context` under a custom type key prior to calling `Run(ctx)`.
+4. In the skill's `Run` implementation, retrieve the config from the context:
+   ```go
+   cfg, ok := types.NodeConfigFromContext(ctx)
+   ```
+
+#### Pros & Cons
+
+* **Pros:**
+  - **Idiomatic Go:** Passing request/execution scoped parameters via context is standard pattern in modern Go libraries.
+  - Fully concurrent-safe since the context is request-scoped and immutable across goroutine branches.
+* **Cons:**
+  - **Breaking Change:** Requires modifying the method signature of `Run()` and `Check()` on all skills.
+  - Sightly less explicit than direct parameter passing (Solution 4).
+
+---
+
 ## Recommendation & Action Plan
 
-We highly recommend **Solution 1 (explicit `Clone` in `RunnableInterface`)**. Although it is technically a breaking change for custom skills, it provides **absolute compile-time correctness**, ensures Go idiomatic design, and completely avoids complex/fragile reflection hacks. Since `ork` is still under active development, implementing this now prevents legacy design debt.
+We highly recommend **Solution 1 (explicit `Clone` in `RunnableInterface`)**. Although it is technically a breaking change for custom skills, it provides **absolute compile-time correctness**, ensures Go idiomatic design, and completely avoids complex/fragile reflection hacks. Crucially, **it reuses the established design pattern of defensive copying already used extensively for `NodeConfig`, `Group` and `Inventory` structures in `ork`.** Since `ork` is still under active development, implementing this now prevents legacy design debt.
 
 ### Next Steps for Implementation:
 1. Update `types/runnable_interface.go` to include `Clone() RunnableInterface`.
