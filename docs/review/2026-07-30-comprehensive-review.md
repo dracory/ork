@@ -12,7 +12,7 @@ The codebase is well-documented and disciplined: fluent APIs, consistent skill b
 
 ## Critical
 
-### 1. Shared, mutable skill instances make concurrent `Inventory`/`Group` execution unsafe
+### 1. Shared, mutable skill instances make concurrent `Inventory`/`Group` execution unsafe — ☐ OPEN
 
 `Inventory.Run()` / `RunByID()` / `Check()` spin up one goroutine per node (`inventory_implementation.go:170-223`) and call `skill.SetNodeConfig(...)`, `skill.SetArgs(...)`, `skill.Run()` on **the same `RunnableInterface` instance** for every node when:
 
@@ -36,7 +36,7 @@ This affects the primary, documented usage pattern, not an edge case.
 
 ## High
 
-### 2. Nine fully-implemented skills are unreachable via the registry / `RunByID`
+### 2. Nine fully-implemented skills are unreachable via the registry / `RunByID` — ☐ OPEN
 
 `skills/constants.go` defines IDs and every skill has full docs/tests, but `NewDefaultRegistry()` (`registry.go:68-108`) never registers:
 
@@ -46,7 +46,7 @@ This affects the primary, documented usage pattern, not an edge case.
 
 Anyone calling `node.RunByID("ufw-allow")` (exactly as instructed in that skill's own doc comment) gets `"skill 'ufw-allow' not found in registry"`. This is a straightforward oversight — add these to the `skills` slice in `NewDefaultRegistry`.
 
-### 3. Inconsistent shell-argument escaping — real injection vectors
+### 3. Inconsistent shell-argument escaping — real injection vectors — ✅ FIXED
 
 Most skills are careful (see `skills.ShellEscapeArg`, `apt.shellEscapePackages`, the MariaDB SQL/shell double-escaping helpers in `skills/mariadb/functions.go`), but a few aren't:
 
@@ -55,7 +55,7 @@ Most skills are careful (see `skills.ShellEscapeArg`, `apt.shellEscapePackages`,
 
 Given the codebase already has `skills.ShellEscapeArg` for exactly this purpose, these two spots should use it (and reject/validate the port and swap path more strictly).
 
-### 4. Widespread stale documentation: `--playbook=<id> --arg=key=value` CLI does not exist
+### 4. Widespread stale documentation: `--playbook=<id> --arg=key=value` CLI does not exist — ✅ FIXED
 
 Every skill file's doc comment (~40 occurrences, e.g. `skills/user/add_to_group.go:48-51`) documents usage as `go run . --playbook=user-add-to-group --arg=username=...`, but `cmd/ork/main.go` only implements `vault` and `help` subcommands — there is no `--playbook` / `--arg` flag parsing anywhere in the repo (`grep` for `"playbook"`, `ArgPlaybook`, `flag.Parse` in skills/cmd returns nothing beyond these doc comments). This will mislead every user who reads GoDoc and tries to run a skill from the CLI as documented. Either implement this CLI runner or fix the docs to reflect the actual (Go API) usage.
 
@@ -63,15 +63,15 @@ Every skill file's doc comment (~40 occurrences, e.g. `skills/user/add_to_group.
 
 ## Medium
 
-### 5. `groupImplementation` has inconsistent locking
+### 5. `groupImplementation` has inconsistent locking — ✅ FIXED
 
 `groupImplementation` has a `sync.RWMutex` (`g.mu`) but it only guards `dryRunMode` / `becomeUser`. `AddNode` / `GetNodes` mutate/read `g.nodes` (and `SetArg` / `GetArg` / `GetArgs` touch `g.args`) with **no lock at all** (`group_implementation.go:37-73`). If a group is mutated (`AddNode`) concurrently with reads (e.g. from an `Inventory` that has this group and is running nodes concurrently, or from another goroutine), this is a data race. Either the mutex should also protect `nodes` / `args`, or document that groups must be fully built before use across goroutines (and this should be enforced/asserted, since `inventoryImplementation.GetNodes()` calls `group.GetNodes()` concurrently with the app potentially still calling `AddNode`).
 
-### 6. `Group` runs sequentially while `Inventory` runs concurrently — inconsistent semantics
+### 6. `Group` runs sequentially while `Inventory` runs concurrently — inconsistent semantics — ✅ FIXED (documented)
 
 `groupImplementation.RunCommand` / `Run` / `RunByID` / `Check` all loop over nodes sequentially (`group_implementation.go:92-104`), whereas `inventoryImplementation`'s equivalents spawn a goroutine per node with a semaphore (`inventory_implementation.go:112-167`). A user building a `Group` and calling `.Run()` directly gets no concurrency at all, while putting the same nodes into an `Inventory` does. This asymmetry isn't documented and is a likely source of surprise/performance bugs; consider giving `Group` the same concurrency model (which would also make findings #1 and #5 more urgent) or explicitly documenting that only `Inventory` parallelizes.
 
-### 7. `CommandInterface.WithTimeout(timeout interface{})` breaks type safety
+### 7. `CommandInterface.WithTimeout(timeout interface{})` breaks type safety — ✅ FIXED
 
 `command_implementation.go:217-223` takes `interface{}` and silently no-ops if the argument isn't a `time.Duration`:
 
@@ -90,8 +90,8 @@ This is the only `interface{}`-typed setter in an otherwise strongly-typed fluen
 
 ## Low / Style
 
-- `ssh/functions.go`'s `Run()` wraps commands with `sudo -u %s %s` and `cd %s && %s` using raw `fmt.Sprintf` (`ssh/functions.go:130-138`) without escaping `becomeUser` / `chdir`. These generally come from trusted playbook authors rather than end-user input, but since the rest of the codebase treats shell-injection as worth guarding against, consider validating/escaping these too for defense in depth.
-- `RunnerInterface.RunByID` is marked `// Deprecated: Use Run() instead` (`runner_interface.go:23-25`), but `Run()` has the identical shared-instance hazard described in finding #1 — the deprecation doesn't actually steer users away from the underlying problem.
+- ✅ FIXED: `ssh/functions.go`'s `Run()` now escapes `becomeUser` / `chdir` with `ShellEscapeArg` (`ssh/functions.go:140-145`).
+- ☐ OPEN: `RunnerInterface.RunByID` is marked `// Deprecated: Use Run() instead` (`runner_interface.go:23-25`), but `Run()` has the identical shared-instance hazard described in finding #1 — the deprecation doesn't actually steer users away from the underlying problem.
 
 ---
 
