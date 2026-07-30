@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-change-port --arg=port=<new_port> [--arg=root-password=<password>]
+//	node.Run(mariadb.NewChangePort().SetArg("port", "<new_port>").SetArg("root-password", "<password>"))
 //
 // Args:
 //   - port: New port number (1024-65535, not 3306) (required)

@@ -47,7 +47,7 @@ func (u *UserAddToGroup) Check() (bool, error) {
 //
 // Usage:
 //
-//	go run . --playbook=user-add-to-group --arg=username=<name> --arg=group=<name>
+//	node.Run(user.NewUserAddToGroup().SetArg("username", "<name>").SetArg("group", "<name>"))
 //
 // Parameters (passed via args):
 //   - username (string, required): Name of the user to add to the group

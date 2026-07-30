@@ -215,10 +215,8 @@ func (c *commandImplementation) WithDryRun(dryRun bool) CommandInterface {
 }
 
 // WithTimeout sets the timeout and returns CommandInterface for chaining.
-func (c *commandImplementation) WithTimeout(timeout interface{}) CommandInterface {
-	if td, ok := timeout.(time.Duration); ok {
-		c.BaseSkill.SetTimeout(td)
-	}
+func (c *commandImplementation) WithTimeout(timeout time.Duration) CommandInterface {
+	c.BaseSkill.SetTimeout(timeout)
 	return c
 }
 

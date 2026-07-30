@@ -1,6 +1,10 @@
 package ork
 
-import "github.com/dracory/ork/types"
+import (
+	"time"
+
+	"github.com/dracory/ork/types"
+)
 
 // CommandInterface defines a fluent interface for executing shell commands.
 // It provides a fluent builder pattern for configuring one-off commands
@@ -79,7 +83,7 @@ type CommandInterface interface {
 
 	// WithTimeout sets the timeout and returns CommandInterface for chaining.
 	// Use this instead of SetTimeout when you need fluent chaining.
-	WithTimeout(timeout interface{}) CommandInterface
+	WithTimeout(timeout time.Duration) CommandInterface
 
 	// WithBecomeUser sets the become user and returns CommandInterface for chaining.
 	// Use this instead of SetBecomeUser when you need fluent chaining.

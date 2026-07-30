@@ -14,15 +14,15 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ufw-delete --arg=number=<rule_number>
+//	node.Run(ufw.NewDelete().SetArg("number", "<rule_number>"))
 //
 // Args:
 //   - number: Rule number to delete (required)
 //
 // Execution Flow:
-//   1. Validates rule number parameter
-//   2. Executes `ufw delete <number>`
-//   3. Returns success/failure result
+//  1. Validates rule number parameter
+//  2. Executes `ufw delete <number>`
+//  3. Returns success/failure result
 //
 // Prerequisites:
 //   - UFW must be installed and enabled

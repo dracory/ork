@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-enable-encryption
+//	node.Run(mariadb.NewEnableEncryption())
 //
 // Execution Flow:
 //  1. Backs up current MariaDB configuration

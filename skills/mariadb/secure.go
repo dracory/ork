@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-secure [--arg=root-password=<password>]
+//	node.Run(mariadb.NewSecure().SetArg("root-password", "<password>"))
 //
 // Security Actions Performed:
 //  1. Remove anonymous users (users with empty username)

@@ -17,7 +17,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=user-list
+//	node.Run(user.NewUserList())
 //
 // Execution Flow:
 //  1. Parses /etc/passwd to find non-system users (UID >= 1000, < 65534)

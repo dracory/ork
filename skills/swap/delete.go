@@ -18,7 +18,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=swap-delete
+//	node.Run(swap.NewSwapDelete())
 //
 // Execution Flow:
 //  1. Checks if swap exists using swapon --show
@@ -82,6 +82,14 @@ func (s *SwapDelete) Run() types.Result {
 		swapFilePath = DefaultSwapFilePath
 	}
 
+	if err := validateSwapFilePath(swapFilePath); err != nil {
+		return types.Result{
+			Changed: false,
+			Message: "Invalid swap file path",
+			Error:   err,
+		}
+	}
+
 	// Check if swap exists
 	needsDelete, err := s.Check()
 	if err != nil {
@@ -99,9 +107,11 @@ func (s *SwapDelete) Run() types.Result {
 		}
 	}
 
-	cmdSwapoff := types.Command{Command: fmt.Sprintf("swapoff %s 2>/dev/null || true", swapFilePath), Description: "Disable swap"}
-	cmdFstab := types.Command{Command: fmt.Sprintf(`sed -i '/%s/d' /etc/fstab`, swapFilePath), Description: "Remove swap from fstab"}
-	cmdRm := types.Command{Command: fmt.Sprintf("rm -f %s", swapFilePath), Description: "Delete swap file"}
+	escapedPath := skills.ShellEscapeArg(swapFilePath)
+
+	cmdSwapoff := types.Command{Command: fmt.Sprintf("swapoff %s 2>/dev/null || true", escapedPath), Description: "Disable swap"}
+	cmdFstab := types.Command{Command: fmt.Sprintf("sed -i '\\|%s|d' /etc/fstab", escapedPath), Description: "Remove swap from fstab"}
+	cmdRm := types.Command{Command: fmt.Sprintf("rm -f %s", escapedPath), Description: "Delete swap file"}
 
 	cfg.GetLoggerOrDefault().Info("removing swap file", "path", swapFilePath)
 

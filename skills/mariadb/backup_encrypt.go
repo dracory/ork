@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-backup-encrypt --arg=dbname=<database_name> [--arg=dir=/path/to/backups]
+//	node.Run(mariadb.NewBackupEncrypt().SetArg("dbname", "<database_name>").SetArg("dir", "/path/to/backups"))
 //
 // Args:
 //   - dbname: Name of the database to backup (required)

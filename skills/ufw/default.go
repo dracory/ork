@@ -14,16 +14,16 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ufw-default --arg=incoming=<deny|allow|reject> --arg=outgoing=<deny|allow|reject>
+//	node.Run(ufw.NewDefault().SetArg("incoming", "<deny|allow|reject>").SetArg("outgoing", "<deny|allow|reject>"))
 //
 // Args:
 //   - incoming: Policy for incoming traffic - "deny", "allow", or "reject" (default: "deny")
 //   - outgoing: Policy for outgoing traffic - "deny", "allow", or "reject" (default: "allow")
 //
 // Execution Flow:
-//   1. Validates policy parameters
-//   2. Executes `ufw default <incoming> incoming` and `ufw default <outgoing> outgoing`
-//   3. Returns success/failure result
+//  1. Validates policy parameters
+//  2. Executes `ufw default <incoming> incoming` and `ufw default <outgoing> outgoing`
+//  3. Returns success/failure result
 //
 // Prerequisites:
 //   - UFW must be installed

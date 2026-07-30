@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-list-users [--arg=root-password=<password>]
+//	node.Run(mariadb.NewListUsers().SetArg("root-password", "<password>"))
 //
 // Args:
 //   - root-password: MariaDB root password (required)

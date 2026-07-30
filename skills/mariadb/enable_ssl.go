@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-enable-ssl [--arg=root-password=<password>]
+//	node.Run(mariadb.NewEnableSSL().SetArg("root-password", "<password>"))
 //
 // Args:
 //   - root-password: MariaDB root password (optional)

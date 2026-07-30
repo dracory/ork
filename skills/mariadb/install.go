@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-install [--arg=root-password=<password>]
+//	node.Run(mariadb.NewInstall().SetArg("root-password", "<password>"))
 //
 // Execution Flow:
 //  1. Updates package lists and installs mariadb-server and mariadb-client

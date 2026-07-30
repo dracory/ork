@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=auditd-install
+//	node.Run(security.NewAuditdInstall())
 //
 // Execution Flow:
 //  1. Installs auditd and audispd-plugins packages

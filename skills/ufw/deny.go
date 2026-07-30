@@ -14,7 +14,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ufw-deny --arg=port=<port> [--arg=protocol=<tcp|udp>] [--arg=comment=<comment>]
+//	node.Run(ufw.NewDeny().SetArg("port", "<port>").SetArg("protocol", "<tcp|udp>").SetArg("comment", "<comment>"))
 //
 // Args:
 //   - port: Port number to deny (required)
@@ -22,9 +22,9 @@ import (
 //   - comment: Optional comment for the rule
 //
 // Execution Flow:
-//   1. Validates port parameter
-//   2. Executes `ufw deny <port>/<protocol> [comment]`
-//   3. Returns success/failure result
+//  1. Validates port parameter
+//  2. Executes `ufw deny <port>/<protocol> [comment]`
+//  3. Returns success/failure result
 //
 // Prerequisites:
 //   - UFW must be installed and enabled
@@ -69,7 +69,7 @@ func (d *Deny) Run() types.Result {
 	// Build the command
 	cmdStr := fmt.Sprintf("ufw deny %s/%s", port, protocol)
 	if comment != "" {
-		cmdStr += fmt.Sprintf(" comment '%s'", comment)
+		cmdStr += fmt.Sprintf(" comment %s", skills.ShellEscapeArg(comment))
 	}
 
 	// Add the deny rule

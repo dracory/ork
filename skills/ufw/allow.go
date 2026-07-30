@@ -14,7 +14,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ufw-allow --arg=port=<port> [--arg=protocol=<tcp|udp>] [--arg=comment=<comment>]
+//	node.Run(ufw.NewAllow().SetArg("port", "<port>").SetArg("protocol", "<tcp|udp>").SetArg("comment", "<comment>"))
 //
 // Args:
 //   - port: Port number to allow (required)
@@ -78,7 +78,7 @@ func (a *Allow) Run() types.Result {
 	// Build the command
 	cmdStr := fmt.Sprintf("ufw allow %s/%s", port, protocol)
 	if comment != "" {
-		cmdStr += fmt.Sprintf(" comment '%s'", comment)
+		cmdStr += fmt.Sprintf(" comment %s", skills.ShellEscapeArg(comment))
 	}
 
 	// Add the port rule

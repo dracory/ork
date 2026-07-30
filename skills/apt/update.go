@@ -18,7 +18,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=apt-update
+//	node.Run(apt.NewAptUpdate())
 //
 // Execution Flow:
 //  1. Connects to remote server via SSH

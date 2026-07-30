@@ -19,7 +19,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=swap-status
+//	node.Run(swap.NewSwapStatus())
 //
 // Execution Flow:
 //  1. Connects to remote server via SSH

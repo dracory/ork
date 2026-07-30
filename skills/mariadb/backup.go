@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-backup --arg=db-name=<database_name> [--arg=backup-dir=/path/to/backups]
+//	node.Run(mariadb.NewBackup().SetArg("db-name", "<database_name>").SetArg("backup-dir", "/path/to/backups"))
 //
 // Args:
 //   - db-name: Name of the database to backup (required)

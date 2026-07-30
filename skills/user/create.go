@@ -36,7 +36,7 @@ func (u *UserCreate) Check() (bool, error) {
 //
 // Usage:
 //
-//	go run . --playbook=user-create [--arg=username=<name>] [--arg=ssh-key=<public_key>] [--arg=password=<password>]
+//	node.Run(user.NewUserCreate().SetArg("username", "<name>").SetArg("ssh-key", "<public_key>").SetArg("password", "<password>"))
 //
 // Parameters (passed via args):
 //   - username: Name of the user to create (required, via --arg=username=<name>)

@@ -18,7 +18,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=reboot
+//	node.Run(reboot.NewReboot())
 //
 // Execution Flow (without wait):
 //  1. Connects to remote server via SSH

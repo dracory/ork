@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-security-audit [--arg=root-password=<password>]
+//	node.Run(mariadb.NewSecurityAudit().SetArg("root-password", "<password>"))
 //
 // Args:
 //   - root-password: MariaDB root password (required)

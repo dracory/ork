@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=kernel-harden
+//	node.Run(security.NewKernelHarden())
 //
 // Security Parameters Applied:
 //   - IP Spoofing Protection: rp_filter enabled on all interfaces

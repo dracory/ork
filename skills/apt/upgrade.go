@@ -19,7 +19,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=apt-upgrade
+//	node.Run(apt.NewAptUpgrade())
 //
 // Execution Flow:
 //  1. Runs apt-get update to refresh package lists

@@ -35,7 +35,9 @@ func (g *groupImplementation) GetName() string {
 
 // AddNode adds a node to this group.
 func (g *groupImplementation) AddNode(node NodeInterface) GroupInterface {
+	g.mu.Lock()
 	g.nodes = append(g.nodes, node)
+	g.mu.Unlock()
 	// Propagate dry-run mode to new node for consistency
 	if node.GetDryRunMode() != g.GetDryRunMode() {
 		node.SetDryRunMode(g.GetDryRunMode())
@@ -49,6 +51,8 @@ func (g *groupImplementation) AddNode(node NodeInterface) GroupInterface {
 
 // GetNodes returns all nodes in this group.
 func (g *groupImplementation) GetNodes() []NodeInterface {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
 	result := make([]NodeInterface, len(g.nodes))
 	copy(result, g.nodes)
 	return result
@@ -56,17 +60,23 @@ func (g *groupImplementation) GetNodes() []NodeInterface {
 
 // SetArg sets an argument for this group.
 func (g *groupImplementation) SetArg(key, value string) GroupInterface {
+	g.mu.Lock()
 	g.args[key] = value
+	g.mu.Unlock()
 	return g
 }
 
 // GetArg retrieves an argument value by key.
 func (g *groupImplementation) GetArg(key string) string {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
 	return g.args[key]
 }
 
 // GetArgs returns a copy of all arguments defined for this group.
 func (g *groupImplementation) GetArgs() map[string]string {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
 	result := make(map[string]string, len(g.args))
 	maps.Copy(result, g.args)
 	return result
@@ -81,8 +91,10 @@ func (g *groupImplementation) WithArg(key, value string) GroupInterface {
 func (g *groupImplementation) propagateDryRun() {
 	g.mu.RLock()
 	mode := g.dryRunMode
+	nodesCopy := make([]NodeInterface, len(g.nodes))
+	copy(nodesCopy, g.nodes)
 	g.mu.RUnlock()
-	for _, node := range g.nodes {
+	for _, node := range nodesCopy {
 		if node.GetDryRunMode() != mode {
 			node.SetDryRunMode(mode)
 		}
@@ -90,13 +102,16 @@ func (g *groupImplementation) propagateDryRun() {
 }
 
 // RunCommand executes a shell command across all nodes in this group.
+//
+// Note: Group executes nodes sequentially. For concurrent execution across
+// nodes, use Inventory instead, which supports SetMaxConcurrency.
 func (g *groupImplementation) RunCommand(cmd string) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
 
 	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
-	for _, node := range g.nodes {
+	for _, node := range g.GetNodes() {
 		nodeResults := node.RunCommand(cmd)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
@@ -104,13 +119,16 @@ func (g *groupImplementation) RunCommand(cmd string) types.Results {
 }
 
 // Run executes a skill across all nodes in this group.
+//
+// Note: Group executes nodes sequentially. For concurrent execution across
+// nodes, use Inventory instead, which supports SetMaxConcurrency.
 func (g *groupImplementation) Run(runnable types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
 
 	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
-	for _, node := range g.nodes {
+	for _, node := range g.GetNodes() {
 		nodeResults := node.Run(runnable)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
@@ -118,6 +136,9 @@ func (g *groupImplementation) Run(runnable types.RunnableInterface) types.Result
 }
 
 // RunByID executes a skill by ID across all nodes in this group.
+//
+// Note: Group executes nodes sequentially. For concurrent execution across
+// nodes, use Inventory instead, which supports SetMaxConcurrency.
 func (g *groupImplementation) RunByID(id string, opts ...types.RunnableOptions) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
@@ -125,7 +146,7 @@ func (g *groupImplementation) RunByID(id string, opts ...types.RunnableOptions) 
 
 	g.propagateDryRun()
 
-	for _, node := range g.nodes {
+	for _, node := range g.GetNodes() {
 		nodeResults := node.RunByID(id, opts...)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
@@ -133,6 +154,9 @@ func (g *groupImplementation) RunByID(id string, opts ...types.RunnableOptions) 
 }
 
 // Check runs the skill's check mode across all nodes in this group.
+//
+// Note: Group executes nodes sequentially. For concurrent execution across
+// nodes, use Inventory instead, which supports SetMaxConcurrency.
 func (g *groupImplementation) Check(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
@@ -140,7 +164,7 @@ func (g *groupImplementation) Check(skill types.RunnableInterface) types.Results
 
 	g.propagateDryRun() // !!! Important: propagate dry-run mode to nodes
 
-	for _, node := range g.nodes {
+	for _, node := range g.GetNodes() {
 		nodeResults := node.Check(skill)
 		maps.Copy(results.Results, nodeResults.Results)
 	}
@@ -204,8 +228,10 @@ func (g *groupImplementation) GetBecomeUser() string {
 func (g *groupImplementation) propagateBecomeUser() {
 	g.mu.RLock()
 	user := g.becomeUser
+	nodesCopy := make([]NodeInterface, len(g.nodes))
+	copy(nodesCopy, g.nodes)
 	g.mu.RUnlock()
-	for _, node := range g.nodes {
+	for _, node := range nodesCopy {
 		if node.GetBecomeUser() != user {
 			node.SetBecomeUser(user)
 		}

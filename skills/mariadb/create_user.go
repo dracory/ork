@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-create-user --arg=username=<name> --arg=password=<pass> [--arg=db-name=<db>] [--arg=host=<host>]
+//	node.Run(mariadb.NewCreateUser().SetArg("username", "<name>").SetArg("password", "<pass>").SetArg("db-name", "<db>").SetArg("host", "<host>"))
 //
 // Args:
 //   - username: Database username to create (required)

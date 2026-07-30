@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=fail2ban-status
+//	node.Run(fail2ban.NewFail2banStatus())
 //
 // Execution Flow:
 //  1. Checks fail2ban service status using systemctl

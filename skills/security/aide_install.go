@@ -14,7 +14,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=aide-install
+//	node.Run(security.NewAideInstall())
 //
 // Execution Flow:
 //  1. Installs AIDE and aide-common packages

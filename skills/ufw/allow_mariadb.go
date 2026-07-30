@@ -17,7 +17,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ufw-allow-mariadb [--arg=ip=<ip_address>] [--arg=port=<port>]
+//	node.Run(ufw.NewAllowMariaDB().SetArg("ip", "<ip_address>").SetArg("port", "<port>"))
 //
 // Args:
 //   - ip: IP address(es) to allow (default: "any" - allows all IPs)

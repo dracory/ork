@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=fail2ban-install
+//	node.Run(fail2ban.NewFail2banInstall())
 //
 // Execution Flow:
 //  1. Updates package lists via apt-get update

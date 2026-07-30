@@ -17,7 +17,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=user-status --arg=username=<name>
+//	node.Run(user.NewUserStatus().SetArg("username", "<name>"))
 //
 // Arguments:
 //   - username: Specific user to query (required)

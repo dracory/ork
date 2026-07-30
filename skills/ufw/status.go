@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ufw-status
+//	node.Run(ufw.NewUfwStatus())
 //
 // Execution Flow:
 //  1. Runs 'ufw status verbose' to get detailed status

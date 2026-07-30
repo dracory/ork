@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-status [--arg=root-password=<password>] [--arg=port=<port>]
+//	node.Run(mariadb.NewStatus().SetArg("root-password", "<password>").SetArg("port", "<port>"))
 //
 // Args:
 //   - root-password: MariaDB root password (optional, for connection test)

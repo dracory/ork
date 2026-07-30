@@ -17,7 +17,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ufw-install [--arg=allow-ssh=true] [--arg=allow-http=true] [--arg=allow-https=true] [--arg=allow-ports=8080,9000]
+//	node.Run(ufw.NewUfwInstall().SetArg("allow-ssh", "true").SetArg("allow-http", "true").SetArg("allow-https", "true").SetArg("allow-ports", "8080,9000"))
 //
 // Execution Flow:
 //  1. Updates package lists via apt-get update

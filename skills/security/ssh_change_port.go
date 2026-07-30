@@ -22,7 +22,7 @@ const (
 //
 // Usage:
 //
-//	go run . --playbook=ssh-change-port --arg=port=2222
+//	node.Run(security.NewSshChangePort().SetArg("port", "2222"))
 //
 // Execution Flow:
 //  1. Validates new port number (1024-65535)

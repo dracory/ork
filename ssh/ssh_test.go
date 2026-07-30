@@ -262,7 +262,7 @@ func TestRun_CommandChdir(t *testing.T) {
 	Run(cfg, cmd)
 
 	// Command-level Chdir should take precedence
-	if capturedCmd.Command != "cd /command/dir && ls -la" {
+	if capturedCmd.Command != "cd '/command/dir' && ls -la" {
 		t.Errorf("Expected command to be wrapped with command-level chdir, got: %s", capturedCmd.Command)
 	}
 }
@@ -295,7 +295,7 @@ func TestRun_ConfigChdir(t *testing.T) {
 	Run(cfg, cmd)
 
 	// Config-level Chdir should be used
-	if capturedCmd.Command != "cd /config/dir && ls -la" {
+	if capturedCmd.Command != "cd '/config/dir' && ls -la" {
 		t.Errorf("Expected command to be wrapped with config-level chdir, got: %s", capturedCmd.Command)
 	}
 }
@@ -329,7 +329,7 @@ func TestRun_CommandBecomeUser(t *testing.T) {
 	Run(cfg, cmd)
 
 	// Command-level BecomeUser should take precedence
-	if capturedCmd.Command != "sudo -u postgres psql -l" {
+	if capturedCmd.Command != "sudo -u 'postgres' psql -l" {
 		t.Errorf("Expected command to be wrapped with command-level become user, got: %s", capturedCmd.Command)
 	}
 }
@@ -362,7 +362,7 @@ func TestRun_ConfigBecomeUser(t *testing.T) {
 	Run(cfg, cmd)
 
 	// Config-level BecomeUser should be used
-	if capturedCmd.Command != "sudo -u config-user psql -l" {
+	if capturedCmd.Command != "sudo -u 'config-user' psql -l" {
 		t.Errorf("Expected command to be wrapped with config-level become user, got: %s", capturedCmd.Command)
 	}
 }
@@ -396,7 +396,7 @@ func TestRun_CombinedChdirAndBecomeUser(t *testing.T) {
 	Run(cfg, cmd)
 
 	// Should wrap with cd first (outside sudo), then become
-	expected := "cd /var/lib/postgresql && sudo -u postgres psql -l"
+	expected := "cd '/var/lib/postgresql' && sudo -u 'postgres' psql -l"
 	if capturedCmd.Command != expected {
 		t.Errorf("Expected command to be wrapped with chdir and become user, got: %s", capturedCmd.Command)
 	}

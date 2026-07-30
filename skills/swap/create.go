@@ -21,7 +21,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=swap-create [--arg=size=2] [--arg=unit=gb] [--arg=swappiness=10]
+//	node.Run(swap.NewSwapCreate().SetArg("size", "2").SetArg("unit", "gb").SetArg("swappiness", "10"))
 //
 // Arguments:
 //   - size: Swap file size as integer (default: "1")
@@ -119,6 +119,14 @@ func (s *SwapCreate) Run() types.Result {
 		swapFilePath = DefaultSwapFilePath
 	}
 
+	if err := validateSwapFilePath(swapFilePath); err != nil {
+		return types.Result{
+			Changed: false,
+			Message: "Invalid swap file path",
+			Error:   err,
+		}
+	}
+
 	size, err := strconv.Atoi(sizeStr)
 	if err != nil || size < 1 {
 		return types.Result{
@@ -166,19 +174,21 @@ func (s *SwapCreate) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("creating swap file", "size", sizeDesc, "path", swapFilePath)
 
-	cmdCreate := types.Command{Command: fmt.Sprintf("dd if=/dev/zero of=%s bs=1M count=%d && chmod 600 %s", swapFilePath, sizeMB, swapFilePath), Description: "Create swap file"}
-	cmdMakeSwap := types.Command{Command: fmt.Sprintf("mkswap %s", swapFilePath), Description: "Make swap file"}
-	cmdCheckFstab := types.Command{Command: fmt.Sprintf("grep -q '%s none swap sw 0 0' /etc/fstab && echo 'exists' || echo 'missing'", swapFilePath), Description: "Check if swap in fstab"}
-	cmdAddFstab := types.Command{Command: fmt.Sprintf("echo '%s none swap sw 0 0' | tee -a /etc/fstab", swapFilePath), Description: "Add swap to fstab"}
+	escapedPath := skills.ShellEscapeArg(swapFilePath)
+
+	cmdCreate := types.Command{Command: fmt.Sprintf("dd if=/dev/zero of=%s bs=1M count=%d && chmod 600 %s", escapedPath, sizeMB, escapedPath), Description: "Create swap file"}
+	cmdMakeSwap := types.Command{Command: fmt.Sprintf("mkswap %s", escapedPath), Description: "Make swap file"}
+	cmdCheckFstab := types.Command{Command: fmt.Sprintf("grep -q %s none swap sw 0 0 /etc/fstab && echo 'exists' || echo 'missing'", escapedPath), Description: "Check if swap in fstab"}
+	cmdAddFstab := types.Command{Command: fmt.Sprintf("echo %s none swap sw 0 0 | tee -a /etc/fstab", escapedPath), Description: "Add swap to fstab"}
 	cmdSwappiness := types.Command{Command: fmt.Sprintf("sysctl vm.swappiness=%s && grep -q 'vm.swappiness' /etc/sysctl.conf && sed -i 's/vm.swappiness=.*/vm.swappiness=%s/' /etc/sysctl.conf || echo 'vm.swappiness=%s' | tee -a /etc/sysctl.conf", swappiness, swappiness, swappiness), Description: "Configure swappiness"}
 	cmdStatus := types.Command{Command: "swapon --show", Description: "Get swap status"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		dryRunCreateCmd := fmt.Sprintf("dd if=/dev/zero of=%s bs=1M count=%d && chmod 600 %s", swapFilePath, sizeMB, swapFilePath)
+		dryRunCreateCmd := fmt.Sprintf("dd if=/dev/zero of=%s bs=1M count=%d && chmod 600 %s", escapedPath, sizeMB, escapedPath)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", dryRunCreateCmd)
 		cfg.GetLoggerOrDefault().Info("dry-run: would make swap", "cmd", cmdMakeSwap.Command)
-		cfg.GetLoggerOrDefault().Info("dry-run: would enable swap", "cmd", fmt.Sprintf("swapon %s", swapFilePath))
+		cfg.GetLoggerOrDefault().Info("dry-run: would enable swap", "cmd", fmt.Sprintf("swapon %s", escapedPath))
 		cfg.GetLoggerOrDefault().Info("dry-run: would check fstab", "cmd", cmdCheckFstab.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would add to fstab", "cmd", cmdAddFstab.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would configure swappiness", "cmd", cmdSwappiness.Command)
@@ -209,7 +219,7 @@ func (s *SwapCreate) Run() types.Result {
 	}
 
 	// Enable swap
-	cmdEnableSwap := types.Command{Command: fmt.Sprintf("swapon %s", swapFilePath), Description: "Enable swap"}
+	cmdEnableSwap := types.Command{Command: fmt.Sprintf("swapon %s", escapedPath), Description: "Enable swap"}
 	_, err = ssh.Run(cfg, cmdEnableSwap)
 	if err != nil {
 		return types.Result{

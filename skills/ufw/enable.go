@@ -13,7 +13,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ufw-enable
+//	node.Run(ufw.NewEnable())
 //
 // Execution Flow:
 //  1. Executes `ufw --force enable`

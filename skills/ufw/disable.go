@@ -13,7 +13,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ufw-disable
+//	node.Run(ufw.NewDisable())
 //
 // Execution Flow:
 //  1. Executes `ufw disable`

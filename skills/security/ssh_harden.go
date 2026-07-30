@@ -25,7 +25,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ssh-harden [--arg=non-root-user=<username>]
+//	node.Run(security.NewSshHarden().SetArg("non-root-user", "<username>"))
 //
 // Security Changes Applied:
 //   - Disable root login (PermitRootLogin no)

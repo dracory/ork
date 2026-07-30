@@ -13,7 +13,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=ufw-reset
+//	node.Run(ufw.NewReset())
 //
 // Execution Flow:
 //  1. Executes `ufw --force reset`

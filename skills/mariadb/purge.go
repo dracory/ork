@@ -18,7 +18,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-purge
+//	node.Run(mariadb.NewPurge())
 //
 // Execution Flow:
 //  1. Stops MariaDB service if running

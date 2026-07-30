@@ -36,7 +36,7 @@ func (u *UserDelete) Check() (bool, error) {
 //
 // Usage:
 //
-//	go run . --playbook=user-delete [--arg=username=<name>]
+//	node.Run(user.NewUserDelete().SetArg("username", "<name>"))
 //
 // Parameters (passed via args):
 //   - username (string, required): Name of the user to delete (cannot be 'root')

@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=mariadb-create-db --arg=db-name=<database_name> [--arg=root-password=<password>]
+//	node.Run(mariadb.NewCreateDB().SetArg("db-name", "<database_name>").SetArg("root-password", "<password>"))
 //
 // Args:
 //   - db-name: Name of the database to create (required)

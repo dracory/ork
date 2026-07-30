@@ -19,7 +19,7 @@ import (
 //
 // Usage:
 //
-//	go run . --playbook=apt-status
+//	node.Run(apt.NewAptStatus())
 //
 // Execution Flow:
 //  1. Runs apt-get update to refresh package lists
