@@ -110,7 +110,7 @@ func (s *SwapDelete) Run() types.Result {
 	escapedPath := skills.ShellEscapeArg(swapFilePath)
 
 	cmdSwapoff := types.Command{Command: fmt.Sprintf("swapoff %s 2>/dev/null || true", escapedPath), Description: "Disable swap"}
-	cmdFstab := types.Command{Command: fmt.Sprintf("sed -i '\\|%s|d' /etc/fstab", escapedPath), Description: "Remove swap from fstab"}
+	cmdFstab := types.Command{Command: fmt.Sprintf("sed -i '\\|%s|d' /etc/fstab", swapFilePath), Description: "Remove swap from fstab"}
 	cmdRm := types.Command{Command: fmt.Sprintf("rm -f %s", escapedPath), Description: "Delete swap file"}
 
 	cfg.GetLoggerOrDefault().Info("removing swap file", "path", swapFilePath)

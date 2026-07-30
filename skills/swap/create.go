@@ -136,6 +136,16 @@ func (s *SwapCreate) Run() types.Result {
 		}
 	}
 
+	// Validate swappiness is a number 0-100
+	swappinessVal, err := strconv.Atoi(swappiness)
+	if err != nil || swappinessVal < 0 || swappinessVal > 100 {
+		return types.Result{
+			Changed: false,
+			Message: "Invalid swappiness",
+			Error:   fmt.Errorf("invalid swappiness: %s (must be integer 0-100)", swappiness),
+		}
+	}
+
 	// Normalize unit and convert to megabytes
 	unit = strings.ToLower(unit)
 	var sizeMB int
@@ -178,8 +188,8 @@ func (s *SwapCreate) Run() types.Result {
 
 	cmdCreate := types.Command{Command: fmt.Sprintf("dd if=/dev/zero of=%s bs=1M count=%d && chmod 600 %s", escapedPath, sizeMB, escapedPath), Description: "Create swap file"}
 	cmdMakeSwap := types.Command{Command: fmt.Sprintf("mkswap %s", escapedPath), Description: "Make swap file"}
-	cmdCheckFstab := types.Command{Command: fmt.Sprintf("grep -q %s none swap sw 0 0 /etc/fstab && echo 'exists' || echo 'missing'", escapedPath), Description: "Check if swap in fstab"}
-	cmdAddFstab := types.Command{Command: fmt.Sprintf("echo %s none swap sw 0 0 | tee -a /etc/fstab", escapedPath), Description: "Add swap to fstab"}
+	cmdCheckFstab := types.Command{Command: fmt.Sprintf("grep -q '%s none swap sw 0 0' /etc/fstab && echo 'exists' || echo 'missing'", swapFilePath), Description: "Check if swap in fstab"}
+	cmdAddFstab := types.Command{Command: fmt.Sprintf("echo '%s none swap sw 0 0' | tee -a /etc/fstab", swapFilePath), Description: "Add swap to fstab"}
 	cmdSwappiness := types.Command{Command: fmt.Sprintf("sysctl vm.swappiness=%s && grep -q 'vm.swappiness' /etc/sysctl.conf && sed -i 's/vm.swappiness=.*/vm.swappiness=%s/' /etc/sysctl.conf || echo 'vm.swappiness=%s' | tee -a /etc/sysctl.conf", swappiness, swappiness, swappiness), Description: "Configure swappiness"}
 	cmdStatus := types.Command{Command: "swapon --show", Description: "Get swap status"}
 

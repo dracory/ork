@@ -2,6 +2,8 @@ package ufw
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/dracory/ork/skills"
@@ -64,6 +66,26 @@ func (a *Allow) Run() types.Result {
 			Changed: false,
 			Message: "Port parameter is required",
 			Error:   fmt.Errorf("use --arg=port=<port_number>"),
+		}
+	}
+
+	// Validate port is numeric and in valid range
+	portNum, err := strconv.Atoi(port)
+	if err != nil || portNum < 1 || portNum > 65535 {
+		return types.Result{
+			Changed: false,
+			Message: "Invalid port",
+			Error:   fmt.Errorf("invalid port: %s (must be integer 1-65535)", port),
+		}
+	}
+
+	// Validate protocol
+	protocol = strings.ToLower(protocol)
+	if protocol != "tcp" && protocol != "udp" {
+		return types.Result{
+			Changed: false,
+			Message: "Invalid protocol",
+			Error:   fmt.Errorf("invalid protocol: %s (must be 'tcp' or 'udp')", protocol),
 		}
 	}
 
