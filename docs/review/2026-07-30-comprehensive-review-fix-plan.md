@@ -33,7 +33,7 @@ By leveraging a similar **defensive copying (cloning) pattern** for skills, we n
 
 ## Proposed Solutions
 
-We have researched and formulated six distinct solutions to resolve this issue. They range from non-breaking/backward-compatible changes to highly robust breaking API redesigns.
+We have researched and formulated multiple distinct solutions to resolve this issue. They range from non-breaking/backward-compatible changes to highly robust breaking API redesigns.
 
 ---
 
@@ -243,9 +243,144 @@ Pass execution context (such as the target node configuration and parameters) us
 
 ---
 
-## Recommendation & Action Plan
+## Highly Unorthodox & Alternative Solutions (Principal Engineer Perspectives)
 
-We highly recommend **Solution 1 (explicit `Clone` in `RunnableInterface`)**. Although it is technically a breaking change for custom skills, it provides **absolute compile-time correctness**, ensures Go idiomatic design, and completely avoids complex/fragile reflection hacks. Crucially, **it reuses the established design pattern of defensive copying already used extensively for `NodeConfig`, `Group` and `Inventory` structures in `ork`.** Since `ork` is still under active development, implementing this now prevents legacy design debt.
+As a Go Principal Systems Architect, we have researched and documented four unorthodox/unconventional techniques. While they may violate some standard idiomatic conventions, they present fascinating architectural trade-offs that can address this problem uniquely.
+
+---
+
+### Solution 7: Goroutine-Local Storage (GLS) Multiplexing (Highly Unorthodox - Non-breaking)
+
+Multiplex the `nodeCfg` and `args` variables internally inside `BaseSkill` based on the calling Goroutine ID instead of mutating single instances.
+
+#### Details
+
+1. Implement Goroutine ID detection. Since Go standard library doesn't expose Goroutine ID, this can be done via runtime stack parsing or via unsafe offset pointer manipulation:
+   ```go
+   // Highly Unorthodox Goroutine ID acquisition
+   func getGoroutineID() int64 {
+       var buf [64]byte
+       n := runtime.Stack(buf[:], false)
+       idField := strings.Fields(strings.TrimPrefix(string(buf[:n]), "goroutine "))[0]
+       id, _ := strconv.ParseInt(idField, 10, 64)
+       return id
+   }
+   ```
+2. Modify `types.BaseSkill` to maintain a thread-safe, concurrent map mapping Goroutine IDs to localized state:
+   ```go
+   type goroutineState struct {
+       nodeCfg NodeConfig
+       args    map[string]string
+       dryRun  bool
+   }
+
+   type BaseSkill struct {
+       BaseBecome
+       id          string
+       description string
+       states      sync.Map // Map[int64]*goroutineState
+       timeout     time.Duration
+   }
+   ```
+3. Update all getters/setters in `BaseSkill` to fetch or set values in `states.Load(getGoroutineID())`.
+
+#### Pros & Cons
+
+* **Pros:**
+  - **Zero Breaking Changes:** Maintains full signature backward compatibility. The exact same instance of `RunnableInterface` can be passed concurrently without races or logical leaks.
+  - Seamlessly solves the issue transparently for any third-party/legacy skill.
+* **Cons:**
+  - **Go Anti-Pattern:** The Go Core Team explicitly discourages goroutine-local storage as it obscures control flow.
+  - **Performance Penalty:** Parsing `runtime.Stack()` is highly computationally expensive and introduces heavy CPU overhead on hot execution paths.
+
+---
+
+### Solution 8: AST-Based Code Generation (Unorthodox Tooling Solution - Breaking Change)
+
+Solve the boilerplate burden of Solution 1 (adding a manual `Clone()` method to all 45+ built-in skills) by compiling a custom Go Parser tool to auto-generate cloning code.
+
+#### Details
+
+1. Write a custom `go generate` CLI tool using Go's `go/ast`, `go/parser`, and `go/token` packages.
+2. The tool scans all files in `skills/` and finds any struct type that contains an embedded pointer `*types.BaseSkill`.
+3. For each found struct, it automatically produces a sibling code file (e.g., `ping_clone.go`) with the auto-generated `Clone() types.RunnableInterface` boilerplate.
+4. Users and framework contributors run `go generate ./...` prior to building.
+
+#### Pros & Cons
+
+* **Pros:**
+  - **Boilerplate Elimination:** We get the absolute compile-time safety and performance of Solution 1 without manually writing/maintaining clone blocks in 45+ files.
+  - Completely robust and zero overhead at runtime.
+* **Cons:**
+  - **Tooling Overhead:** Developers must remember to execute `go generate` and configure build tooling, adding an extra step to build workflows.
+
+---
+
+### Solution 9: Gob / JSON Serialization-Based Deep Copying (Creative Non-breaking Clone)
+
+Use binary/Gob encoding or JSON serialization to instantly clone the concrete skill struct at runtime within `inventory_implementation.go` and `node_implementation.go`.
+
+#### Details
+
+1. Create a generic clone function in `types`:
+   ```go
+   func DeepCopySkill(src RunnableInterface) (RunnableInterface, error) {
+       var buf bytes.Buffer
+       // Register concrete type if using gob, or use standard json
+       if err := json.NewEncoder(&buf).Encode(src); err != nil {
+           return nil, err
+       }
+
+       // Allocate fresh struct of the same concrete type
+       t := reflect.TypeOf(src).Elem()
+       dst := reflect.New(t).Interface().(RunnableInterface)
+
+       if err := json.NewDecoder(&buf).Decode(dst); err != nil {
+           return nil, err
+       }
+       return dst, nil
+   }
+   ```
+2. Before executing any skill per-node, perform the dynamic deep copy.
+
+#### Pros & Cons
+
+* **Pros:**
+  - **Non-breaking & Transparent:** No custom `Clone()` methods required.
+  - Extremely robust deep-copying, capturing maps, sub-structs, and nested slices flawlessly.
+* **Cons:**
+  - **High Performance Cost:** Encoding and decoding structures dynamically involves substantial memory allocations and CPU cycles (though negligible in context of external SSH latency).
+  - Only works on structs whose fields are serializable (e.g., fields containing active channels, function values, or raw OS descriptors cannot be copied).
+
+---
+
+### Solution 10: Actor Model/Channel-Multiplexed Stateful Agent (State Architect Solution - Non-breaking)
+
+Treat `RunnableInterface` instances as stateful "Actor" processes that run an event loop rather than passive data containers.
+
+#### Details
+
+1. Upon creation, each skill boots an active background goroutine running a `select` event loop.
+2. State mutations (`SetNodeConfig`, `SetArg`) are converted into messages sent to the actor's request channel.
+3. For concurrent node execution, the actor spins up a scoped child actor per node context or routes messages dynamically based on context tags.
+
+#### Pros & Cons
+
+* **Pros:**
+  - Purely concurrent-safe and idiomatic with Go's "share memory by communicating" CSP philosophy.
+  - Unlocks highly resilient state recovery and state tracking for complex skills.
+* **Cons:**
+  - **High Complexity:** Immensely overcomplicates standard, straightforward imperative skill implementations.
+  - High resource usage (thousands of background actor goroutines for large-scale operations).
+
+---
+
+## Final Recommendation & Action Plan
+
+We still highly recommend **Solution 1 (explicit `Clone` in `RunnableInterface`)**, optionally combined with **Solution 8 (AST-Based Code Generation)** to automatically emit the boilerplate. This hybrid approach offers:
+1. **Absolute Compile-Time Correctness**
+2. **Defensive copying alignment** with existing `GetNodeConfig` and `GetNodes` conventions in `ork`
+3. **Developer Ergonomics** via automated tooling.
 
 ### Next Steps for Implementation:
 1. Update `types/runnable_interface.go` to include `Clone() RunnableInterface`.
