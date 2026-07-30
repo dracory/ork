@@ -65,6 +65,9 @@ const (
 	// IDUserStatus shows user info (requires "username" arg)
 	IDUserStatus = "user-status"
 
+	// IDUserAddToGroup adds a user to a supplementary group (requires "username" and "group" args)
+	IDUserAddToGroup = "user-add-to-group"
+
 	// IDFail2banInstall installs fail2ban intrusion prevention
 	IDFail2banInstall = "fail2ban-install"
 

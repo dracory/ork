@@ -25,7 +25,7 @@ func (u *UserCreate) Check() (bool, error) {
 	if username == "" {
 		return false, fmt.Errorf("username is required (pass via --arg=username=value)")
 	}
-	cmdCheck := types.Command{Command: fmt.Sprintf("id %s", username), Description: "Check if user exists"}
+	cmdCheck := types.Command{Command: fmt.Sprintf("id %s", shellEscapeArg(username)), Description: "Check if user exists"}
 	output, _ := ssh.Run(cfg, cmdCheck)
 	return !strings.Contains(output, username), nil
 }
@@ -99,12 +99,12 @@ func (u *UserCreate) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("creating user", "username", username)
 
 	// Build useradd command with options
-	useraddOpts := fmt.Sprintf("-m -s %s", shell)
+	useraddOpts := fmt.Sprintf("-m -s %s", shellEscapeArg(shell))
 	if group != "" {
-		useraddOpts = fmt.Sprintf("%s -g %s", useraddOpts, group)
+		useraddOpts = fmt.Sprintf("%s -g %s", useraddOpts, shellEscapeArg(group))
 	}
-	cmdCreateStr := fmt.Sprintf("id %s &>/dev/null || useradd %s %s", username, useraddOpts, username)
-	cmdSudoStr := fmt.Sprintf("usermod -aG %s %s", sudoGroup, username)
+	cmdCreateStr := fmt.Sprintf("id %s &>/dev/null || useradd %s %s", shellEscapeArg(username), useraddOpts, shellEscapeArg(username))
+	cmdSudoStr := fmt.Sprintf("usermod -aG %s %s", shellEscapeArg(sudoGroup), shellEscapeArg(username))
 	cmdCreate := types.Command{Command: cmdCreateStr, Description: "Create user"}
 	cmdSudo := types.Command{Command: cmdSudoStr, Description: "Add user to sudo group"}
 
@@ -115,13 +115,13 @@ func (u *UserCreate) Run() types.Result {
 	}
 	var cmdPass, cmdSSHDir, cmdAuthKey, cmdSSHPerms types.Command
 	if password != "" {
-		passStr := fmt.Sprintf("echo '%s:%s' | chpasswd", username, password)
+		passStr := fmt.Sprintf("echo %s | chpasswd", shellEscapeArg(username+":"+password))
 		cmdPass = types.Command{Command: passStr, Description: "Set user password"}
 	}
 	if sshKey != "" {
-		sshDirStr := fmt.Sprintf("mkdir -p %s/.ssh && chmod 700 %s/.ssh", homeDir, homeDir)
-		authKeyStr := fmt.Sprintf("echo '%s' > %s/.ssh/authorized_keys", sshKey, homeDir)
-		sshPermsStr := fmt.Sprintf("chmod 600 %s/.ssh/authorized_keys && chown -R %s:%s %s/.ssh", homeDir, username, username, homeDir)
+		sshDirStr := fmt.Sprintf("mkdir -p %s && chmod 700 %s", shellEscapeArg(homeDir+"/.ssh"), shellEscapeArg(homeDir+"/.ssh"))
+		authKeyStr := fmt.Sprintf("echo %s > %s", shellEscapeArg(sshKey), shellEscapeArg(homeDir+"/.ssh/authorized_keys"))
+		sshPermsStr := fmt.Sprintf("chmod 600 %s && chown -R %s %s", shellEscapeArg(homeDir+"/.ssh/authorized_keys"), shellEscapeArg(username+":"+username), shellEscapeArg(homeDir+"/.ssh"))
 		cmdSSHDir = types.Command{Command: sshDirStr, Description: "Create SSH directory"}
 		cmdAuthKey = types.Command{Command: authKeyStr, Description: "Add SSH authorized key"}
 		cmdSSHPerms = types.Command{Command: sshPermsStr, Description: "Set SSH key permissions"}

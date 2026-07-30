@@ -76,11 +76,11 @@ func (u *UserStatus) Run() types.Result {
 
 	// Define commands for specific user check
 	cmdID := types.Command{
-		Command:     fmt.Sprintf("id %s", username),
+		Command:     fmt.Sprintf("id %s", shellEscapeArg(username)),
 		Description: "Get user info",
 	}
 	cmdGroups := types.Command{
-		Command:     fmt.Sprintf("groups %s", username),
+		Command:     fmt.Sprintf("groups %s", shellEscapeArg(username)),
 		Description: "Get user groups",
 	}
 
