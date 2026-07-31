@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewBackup().SetArg("db-name", "<database_name>").SetArg("backup-dir", "/path/to/backups"))
+//	node.Run(mariadb.NewBackup().SetDbName("<database_name>").SetBackupDir("/path/to/backups"))
 //
 // Args:
 //   - db-name: Name of the database to backup (required)
@@ -143,6 +143,24 @@ func (b *Backup) SetArgs(args map[string]string) types.RunnableInterface {
 	return b
 }
 
+// SetRootPassword sets the MariaDB root password and returns Backup for chaining.
+func (b *Backup) SetRootPassword(password string) *Backup {
+	b.BaseSkill.SetArg(ArgRootPassword, password)
+	return b
+}
+
+// SetDbName sets the database name to backup and returns Backup for chaining.
+func (b *Backup) SetDbName(name string) *Backup {
+	b.BaseSkill.SetArg(ArgDbName, name)
+	return b
+}
+
+// SetBackupDir sets the backup directory and returns Backup for chaining.
+func (b *Backup) SetBackupDir(dir string) *Backup {
+	b.BaseSkill.SetArg(ArgBackupDir, dir)
+	return b
+}
+
 // SetArg sets a single argument for MariaDB backup.
 // Returns Backup for fluent method chaining.
 func (b *Backup) SetArg(key, value string) types.RunnableInterface {
@@ -172,7 +190,7 @@ func (b *Backup) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewBackup creates a new mariadb-backup skill.
-func NewBackup() types.RunnableInterface {
+func NewBackup() *Backup {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbBackup)
 	pb.SetDescription("Create a compressed SQL dump of a MariaDB database")

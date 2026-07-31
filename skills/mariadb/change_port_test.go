@@ -202,3 +202,35 @@ func TestChangePort_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestChangePort_SetPort verifies that SetPort sets the port arg.
+func TestChangePort_SetPort(t *testing.T) {
+	skill := NewChangePort().SetPort("3307")
+
+	if skill.GetArg(ArgPort) != "3307" {
+		t.Errorf("Expected port '3307', got '%s'", skill.GetArg(ArgPort))
+	}
+}
+
+// TestChangePort_SetConfigPath verifies that SetConfigPath sets the config-path arg.
+func TestChangePort_SetConfigPath(t *testing.T) {
+	skill := NewChangePort().SetConfigPath("/etc/mysql/my.cnf")
+
+	if skill.GetArg(ArgConfigPath) != "/etc/mysql/my.cnf" {
+		t.Errorf("Expected config-path '/etc/mysql/my.cnf', got '%s'", skill.GetArg(ArgConfigPath))
+	}
+}
+
+// TestChangePort_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestChangePort_TypedSetters_Chaining(t *testing.T) {
+	skill := NewChangePort().
+		SetPort("3307").
+		SetConfigPath("/etc/mysql/my.cnf")
+
+	if skill.GetArg(ArgPort) != "3307" {
+		t.Errorf("Expected port '3307', got '%s'", skill.GetArg(ArgPort))
+	}
+	if skill.GetArg(ArgConfigPath) != "/etc/mysql/my.cnf" {
+		t.Errorf("Expected config-path '/etc/mysql/my.cnf', got '%s'", skill.GetArg(ArgConfigPath))
+	}
+}

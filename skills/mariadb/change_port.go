@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewChangePort().SetArg("port", "<new_port>").SetArg("root-password", "<password>"))
+//	node.Run(mariadb.NewChangePort().SetPort("<new_port>").SetConfigPath("<config_path>"))
 //
 // Args:
 //   - port: New port number (1024-65535, not 3306) (required)
@@ -141,6 +141,18 @@ func (c *ChangePort) SetArgs(args map[string]string) types.RunnableInterface {
 	return c
 }
 
+// SetPort sets the new MariaDB port and returns ChangePort for chaining.
+func (c *ChangePort) SetPort(port string) *ChangePort {
+	c.BaseSkill.SetArg(ArgPort, port)
+	return c
+}
+
+// SetConfigPath sets the MariaDB config file path and returns ChangePort for chaining.
+func (c *ChangePort) SetConfigPath(path string) *ChangePort {
+	c.BaseSkill.SetArg(ArgConfigPath, path)
+	return c
+}
+
 // SetArg sets a single argument for changing MariaDB port.
 // Returns ChangePort for fluent method chaining.
 func (c *ChangePort) SetArg(key, value string) types.RunnableInterface {
@@ -170,7 +182,7 @@ func (c *ChangePort) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewChangePort creates a new mariadb-change-port skill.
-func NewChangePort() types.RunnableInterface {
+func NewChangePort() *ChangePort {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbChangePort)
 	pb.SetDescription("Change the MariaDB server port from default 3306")

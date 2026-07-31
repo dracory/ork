@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewSecurityAudit().SetArg("root-password", "<password>"))
+//	node.Run(mariadb.NewSecurityAudit().SetRootPassword("<password>"))
 //
 // Args:
 //   - root-password: MariaDB root password (required)
@@ -105,6 +105,12 @@ func (s *SecurityAudit) SetArgs(args map[string]string) types.RunnableInterface 
 	return s
 }
 
+// SetRootPassword sets the MariaDB root password and returns SecurityAudit for chaining.
+func (s *SecurityAudit) SetRootPassword(password string) *SecurityAudit {
+	s.BaseSkill.SetArg(ArgRootPassword, password)
+	return s
+}
+
 // SetArg sets a single argument for MariaDB security audit.
 // Returns SecurityAudit for fluent method chaining.
 func (s *SecurityAudit) SetArg(key, value string) types.RunnableInterface {
@@ -134,7 +140,7 @@ func (s *SecurityAudit) SetTimeout(timeout time.Duration) types.RunnableInterfac
 }
 
 // NewSecurityAudit creates a new mariadb-security-audit skill.
-func NewSecurityAudit() types.RunnableInterface {
+func NewSecurityAudit() *SecurityAudit {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbSecurityAudit)
 	pb.SetDescription("Perform a comprehensive security audit of MariaDB (read-only)")

@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewCreateDB().SetArg("db-name", "<database_name>").SetArg("root-password", "<password>"))
+//	node.Run(mariadb.NewCreateDB().SetDbName("<database_name>").SetRootPassword("<password>"))
 //
 // Args:
 //   - db-name: Name of the database to create (required)
@@ -116,6 +116,18 @@ func (c *CreateDB) SetArgs(args map[string]string) types.RunnableInterface {
 	return c
 }
 
+// SetRootPassword sets the MariaDB root password and returns CreateDB for chaining.
+func (c *CreateDB) SetRootPassword(password string) *CreateDB {
+	c.BaseSkill.SetArg(ArgRootPassword, password)
+	return c
+}
+
+// SetDbName sets the database name and returns CreateDB for chaining.
+func (c *CreateDB) SetDbName(name string) *CreateDB {
+	c.BaseSkill.SetArg(ArgDbName, name)
+	return c
+}
+
 // SetArg sets a single argument for creating MariaDB database.
 // Returns CreateDB for fluent method chaining.
 func (c *CreateDB) SetArg(key, value string) types.RunnableInterface {
@@ -145,7 +157,7 @@ func (c *CreateDB) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewCreateDB creates a new mariadb-create-db skill.
-func NewCreateDB() types.RunnableInterface {
+func NewCreateDB() *CreateDB {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbCreateDB)
 	pb.SetDescription("Create a new MariaDB database with UTF-8 encoding")

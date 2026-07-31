@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewEnableSSL().SetArg("root-password", "<password>"))
+//	node.Run(mariadb.NewEnableSSL().SetDataDir("<data_dir>").SetConfigPath("<config_path>"))
 //
 // Args:
 //   - root-password: MariaDB root password (optional)
@@ -138,6 +138,18 @@ func (e *EnableSSL) SetArgs(args map[string]string) types.RunnableInterface {
 	return e
 }
 
+// SetDataDir sets the MariaDB data directory and returns EnableSSL for chaining.
+func (e *EnableSSL) SetDataDir(dir string) *EnableSSL {
+	e.BaseSkill.SetArg(ArgDataDir, dir)
+	return e
+}
+
+// SetConfigPath sets the MariaDB config file path and returns EnableSSL for chaining.
+func (e *EnableSSL) SetConfigPath(path string) *EnableSSL {
+	e.BaseSkill.SetArg(ArgConfigPath, path)
+	return e
+}
+
 // SetArg sets a single argument for enabling SSL.
 // Returns EnableSSL for fluent method chaining.
 func (e *EnableSSL) SetArg(key, value string) types.RunnableInterface {
@@ -167,7 +179,7 @@ func (e *EnableSSL) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewEnableSSL creates a new mariadb-enable-ssl skill.
-func NewEnableSSL() types.RunnableInterface {
+func NewEnableSSL() *EnableSSL {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbEnableSSL)
 	pb.SetDescription("Enable SSL/TLS encryption for MariaDB connections")

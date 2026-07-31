@@ -205,3 +205,35 @@ func TestCreateDB_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestCreateDB_SetRootPassword verifies that SetRootPassword sets the root-password arg.
+func TestCreateDB_SetRootPassword(t *testing.T) {
+	skill := NewCreateDB().SetRootPassword("s3cret")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+}
+
+// TestCreateDB_SetDbName verifies that SetDbName sets the db-name arg.
+func TestCreateDB_SetDbName(t *testing.T) {
+	skill := NewCreateDB().SetDbName("mydb")
+
+	if skill.GetArg(ArgDbName) != "mydb" {
+		t.Errorf("Expected db-name 'mydb', got '%s'", skill.GetArg(ArgDbName))
+	}
+}
+
+// TestCreateDB_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestCreateDB_TypedSetters_Chaining(t *testing.T) {
+	skill := NewCreateDB().
+		SetRootPassword("s3cret").
+		SetDbName("mydb")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+	if skill.GetArg(ArgDbName) != "mydb" {
+		t.Errorf("Expected db-name 'mydb', got '%s'", skill.GetArg(ArgDbName))
+	}
+}

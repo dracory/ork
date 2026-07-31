@@ -205,3 +205,48 @@ func TestBackup_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestBackup_SetRootPassword verifies that SetRootPassword sets the root-password arg.
+func TestBackup_SetRootPassword(t *testing.T) {
+	skill := NewBackup().SetRootPassword("s3cret")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+}
+
+// TestBackup_SetDbName verifies that SetDbName sets the db-name arg.
+func TestBackup_SetDbName(t *testing.T) {
+	skill := NewBackup().SetDbName("mydb")
+
+	if skill.GetArg(ArgDbName) != "mydb" {
+		t.Errorf("Expected db-name 'mydb', got '%s'", skill.GetArg(ArgDbName))
+	}
+}
+
+// TestBackup_SetBackupDir verifies that SetBackupDir sets the backup-dir arg.
+func TestBackup_SetBackupDir(t *testing.T) {
+	skill := NewBackup().SetBackupDir("/var/backups")
+
+	if skill.GetArg(ArgBackupDir) != "/var/backups" {
+		t.Errorf("Expected backup-dir '/var/backups', got '%s'", skill.GetArg(ArgBackupDir))
+	}
+}
+
+// TestBackup_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestBackup_TypedSetters_Chaining(t *testing.T) {
+	skill := NewBackup().
+		SetRootPassword("s3cret").
+		SetDbName("mydb").
+		SetBackupDir("/var/backups")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+	if skill.GetArg(ArgDbName) != "mydb" {
+		t.Errorf("Expected db-name 'mydb', got '%s'", skill.GetArg(ArgDbName))
+	}
+	if skill.GetArg(ArgBackupDir) != "/var/backups" {
+		t.Errorf("Expected backup-dir '/var/backups', got '%s'", skill.GetArg(ArgBackupDir))
+	}
+}

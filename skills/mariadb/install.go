@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewInstall().SetArg("root-password", "<password>"))
+//	node.Run(mariadb.NewInstall().SetRootPassword("<password>"))
 //
 // Execution Flow:
 //  1. Updates package lists and installs mariadb-server and mariadb-client
@@ -170,6 +170,12 @@ func (i *Install) SetArgs(args map[string]string) types.RunnableInterface {
 	return i
 }
 
+// SetRootPassword sets the MariaDB root password and returns Install for chaining.
+func (i *Install) SetRootPassword(password string) *Install {
+	i.BaseSkill.SetArg(ArgRootPassword, password)
+	return i
+}
+
 // SetArg sets a single argument for MariaDB installation.
 // Returns Install for fluent method chaining.
 func (i *Install) SetArg(key, value string) types.RunnableInterface {
@@ -199,7 +205,7 @@ func (i *Install) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewInstall creates a new mariadb-install skill.
-func NewInstall() types.RunnableInterface {
+func NewInstall() *Install {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbInstall)
 	pb.SetDescription("Install and configure MariaDB database server")

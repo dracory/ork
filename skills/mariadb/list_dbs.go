@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewListDBs().SetArg("root-password", "<password>"))
+//	node.Run(mariadb.NewListDBs().SetRootPassword("<password>"))
 //
 // Args:
 //   - root-password: MariaDB root password (required)
@@ -103,6 +103,12 @@ func (l *ListDBs) SetArgs(args map[string]string) types.RunnableInterface {
 	return l
 }
 
+// SetRootPassword sets the MariaDB root password and returns ListDBs for chaining.
+func (l *ListDBs) SetRootPassword(password string) *ListDBs {
+	l.BaseSkill.SetArg(ArgRootPassword, password)
+	return l
+}
+
 // SetArg sets a single argument for listing MariaDB databases.
 // Returns ListDBs for fluent method chaining.
 func (l *ListDBs) SetArg(key, value string) types.RunnableInterface {
@@ -132,7 +138,7 @@ func (l *ListDBs) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewListDBs creates a new mariadb-list-dbs skill.
-func NewListDBs() types.RunnableInterface {
+func NewListDBs() *ListDBs {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbListDBs)
 	pb.SetDescription("Display all databases in the MariaDB server (read-only)")

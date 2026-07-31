@@ -205,3 +205,12 @@ func TestListDBs_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestListDBs_SetRootPassword verifies that SetRootPassword sets the root-password arg.
+func TestListDBs_SetRootPassword(t *testing.T) {
+	skill := NewListDBs().SetRootPassword("s3cret")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+}

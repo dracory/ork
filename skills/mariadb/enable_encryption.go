@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewEnableEncryption())
+//	node.Run(mariadb.NewEnableEncryption().SetConfigPath("<config_path>").SetKeyFilePath("<keyfile_path>"))
 //
 // Execution Flow:
 //  1. Backs up current MariaDB configuration
@@ -187,6 +187,18 @@ func (e *EnableEncryption) SetArgs(args map[string]string) types.RunnableInterfa
 	return e
 }
 
+// SetConfigPath sets the MariaDB config file path and returns EnableEncryption for chaining.
+func (e *EnableEncryption) SetConfigPath(path string) *EnableEncryption {
+	e.BaseSkill.SetArg(ArgConfigPath, path)
+	return e
+}
+
+// SetKeyFilePath sets the encryption key file path and returns EnableEncryption for chaining.
+func (e *EnableEncryption) SetKeyFilePath(path string) *EnableEncryption {
+	e.BaseSkill.SetArg(ArgKeyFilePath, path)
+	return e
+}
+
 // SetArg sets a single argument for enabling encryption.
 // Returns EnableEncryption for fluent method chaining.
 func (e *EnableEncryption) SetArg(key, value string) types.RunnableInterface {
@@ -216,7 +228,7 @@ func (e *EnableEncryption) SetTimeout(timeout time.Duration) types.RunnableInter
 }
 
 // NewEnableEncryption creates a new mariadb-enable-encryption skill.
-func NewEnableEncryption() types.RunnableInterface {
+func NewEnableEncryption() *EnableEncryption {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbEnableEncryption)
 	pb.SetDescription("Enable data-at-rest encryption for MariaDB")

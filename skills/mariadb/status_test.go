@@ -211,3 +211,35 @@ func TestStatus_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestStatus_SetRootPassword verifies that SetRootPassword sets the root-password arg.
+func TestStatus_SetRootPassword(t *testing.T) {
+	skill := NewStatus().SetRootPassword("s3cret")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+}
+
+// TestStatus_SetPort verifies that SetPort sets the port arg.
+func TestStatus_SetPort(t *testing.T) {
+	skill := NewStatus().SetPort("3307")
+
+	if skill.GetArg(ArgPort) != "3307" {
+		t.Errorf("Expected port '3307', got '%s'", skill.GetArg(ArgPort))
+	}
+}
+
+// TestStatus_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestStatus_TypedSetters_Chaining(t *testing.T) {
+	skill := NewStatus().
+		SetRootPassword("s3cret").
+		SetPort("3307")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+	if skill.GetArg(ArgPort) != "3307" {
+		t.Errorf("Expected port '3307', got '%s'", skill.GetArg(ArgPort))
+	}
+}

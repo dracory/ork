@@ -215,3 +215,74 @@ func TestCreateUser_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestCreateUser_SetRootPassword verifies that SetRootPassword sets the root-password arg.
+func TestCreateUser_SetRootPassword(t *testing.T) {
+	skill := NewCreateUser().SetRootPassword("s3cret")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+}
+
+// TestCreateUser_SetUsername verifies that SetUsername sets the username arg.
+func TestCreateUser_SetUsername(t *testing.T) {
+	skill := NewCreateUser().SetUsername("alice")
+
+	if skill.GetArg(ArgUsername) != "alice" {
+		t.Errorf("Expected username 'alice', got '%s'", skill.GetArg(ArgUsername))
+	}
+}
+
+// TestCreateUser_SetPassword verifies that SetPassword sets the password arg.
+func TestCreateUser_SetPassword(t *testing.T) {
+	skill := NewCreateUser().SetPassword("p@ss")
+
+	if skill.GetArg(ArgPassword) != "p@ss" {
+		t.Errorf("Expected password 'p@ss', got '%s'", skill.GetArg(ArgPassword))
+	}
+}
+
+// TestCreateUser_SetDbName verifies that SetDbName sets the db-name arg.
+func TestCreateUser_SetDbName(t *testing.T) {
+	skill := NewCreateUser().SetDbName("mydb")
+
+	if skill.GetArg(ArgDbName) != "mydb" {
+		t.Errorf("Expected db-name 'mydb', got '%s'", skill.GetArg(ArgDbName))
+	}
+}
+
+// TestCreateUser_SetHost verifies that SetHost sets the host arg.
+func TestCreateUser_SetHost(t *testing.T) {
+	skill := NewCreateUser().SetHost("10.0.0.1")
+
+	if skill.GetArg(ArgHost) != "10.0.0.1" {
+		t.Errorf("Expected host '10.0.0.1', got '%s'", skill.GetArg(ArgHost))
+	}
+}
+
+// TestCreateUser_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestCreateUser_TypedSetters_Chaining(t *testing.T) {
+	skill := NewCreateUser().
+		SetRootPassword("s3cret").
+		SetUsername("alice").
+		SetPassword("p@ss").
+		SetDbName("mydb").
+		SetHost("10.0.0.1")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+	if skill.GetArg(ArgUsername) != "alice" {
+		t.Errorf("Expected username 'alice', got '%s'", skill.GetArg(ArgUsername))
+	}
+	if skill.GetArg(ArgPassword) != "p@ss" {
+		t.Errorf("Expected password 'p@ss', got '%s'", skill.GetArg(ArgPassword))
+	}
+	if skill.GetArg(ArgDbName) != "mydb" {
+		t.Errorf("Expected db-name 'mydb', got '%s'", skill.GetArg(ArgDbName))
+	}
+	if skill.GetArg(ArgHost) != "10.0.0.1" {
+		t.Errorf("Expected host '10.0.0.1', got '%s'", skill.GetArg(ArgHost))
+	}
+}

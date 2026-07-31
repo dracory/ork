@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewStatus().SetArg("root-password", "<password>").SetArg("port", "<port>"))
+//	node.Run(mariadb.NewStatus().SetRootPassword("<password>").SetPort("<port>"))
 //
 // Args:
 //   - root-password: MariaDB root password (optional, for connection test)
@@ -133,6 +133,18 @@ func (s *Status) SetArgs(args map[string]string) types.RunnableInterface {
 	return s
 }
 
+// SetRootPassword sets the MariaDB root password and returns Status for chaining.
+func (s *Status) SetRootPassword(password string) *Status {
+	s.BaseSkill.SetArg(ArgRootPassword, password)
+	return s
+}
+
+// SetPort sets the MariaDB port and returns Status for chaining.
+func (s *Status) SetPort(port string) *Status {
+	s.BaseSkill.SetArg(ArgPort, port)
+	return s
+}
+
 // SetArg sets a single argument for MariaDB status.
 // Returns Status for fluent method chaining.
 func (s *Status) SetArg(key, value string) types.RunnableInterface {
@@ -162,7 +174,7 @@ func (s *Status) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewStatus creates a new mariadb-status skill.
-func NewStatus() types.RunnableInterface {
+func NewStatus() *Status {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbStatus)
 	pb.SetDescription("Display MariaDB server status information (read-only)")

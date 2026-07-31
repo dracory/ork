@@ -194,7 +194,7 @@ func (p *Purge) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewPurge creates a new MariaDB purge skill.
-func NewPurge() types.RunnableInterface {
+func NewPurge() *Purge {
 	pb := types.NewBaseSkill()
 	pb.SetID("mariadb-purge")
 	pb.SetDescription("Remove MariaDB database server and all associated data")

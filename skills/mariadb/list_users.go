@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewListUsers().SetArg("root-password", "<password>"))
+//	node.Run(mariadb.NewListUsers().SetRootPassword("<password>"))
 //
 // Args:
 //   - root-password: MariaDB root password (required)
@@ -104,6 +104,12 @@ func (l *ListUsers) SetArgs(args map[string]string) types.RunnableInterface {
 	return l
 }
 
+// SetRootPassword sets the MariaDB root password and returns ListUsers for chaining.
+func (l *ListUsers) SetRootPassword(password string) *ListUsers {
+	l.BaseSkill.SetArg(ArgRootPassword, password)
+	return l
+}
+
 // SetArg sets a single argument for listing MariaDB users.
 // Returns ListUsers for fluent method chaining.
 func (l *ListUsers) SetArg(key, value string) types.RunnableInterface {
@@ -133,7 +139,7 @@ func (l *ListUsers) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewListUsers creates a new mariadb-list-users skill.
-func NewListUsers() types.RunnableInterface {
+func NewListUsers() *ListUsers {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbListUsers)
 	pb.SetDescription("Display all database user accounts and their allowed hosts (read-only)")

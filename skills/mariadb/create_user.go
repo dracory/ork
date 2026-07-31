@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewCreateUser().SetArg("username", "<name>").SetArg("password", "<pass>").SetArg("db-name", "<db>").SetArg("host", "<host>"))
+//	node.Run(mariadb.NewCreateUser().SetUsername("<name>").SetPassword("<pass>").SetDbName("<db>").SetHost("<host>"))
 //
 // Args:
 //   - username: Database username to create (required)
@@ -191,6 +191,36 @@ func (c *CreateUser) SetArgs(args map[string]string) types.RunnableInterface {
 	return c
 }
 
+// SetRootPassword sets the MariaDB root password and returns CreateUser for chaining.
+func (c *CreateUser) SetRootPassword(password string) *CreateUser {
+	c.BaseSkill.SetArg(ArgRootPassword, password)
+	return c
+}
+
+// SetUsername sets the username and returns CreateUser for chaining.
+func (c *CreateUser) SetUsername(username string) *CreateUser {
+	c.BaseSkill.SetArg(ArgUsername, username)
+	return c
+}
+
+// SetPassword sets the user's password and returns CreateUser for chaining.
+func (c *CreateUser) SetPassword(password string) *CreateUser {
+	c.BaseSkill.SetArg(ArgPassword, password)
+	return c
+}
+
+// SetDbName sets the database name and returns CreateUser for chaining.
+func (c *CreateUser) SetDbName(name string) *CreateUser {
+	c.BaseSkill.SetArg(ArgDbName, name)
+	return c
+}
+
+// SetHost sets the host for user grants and returns CreateUser for chaining.
+func (c *CreateUser) SetHost(host string) *CreateUser {
+	c.BaseSkill.SetArg(ArgHost, host)
+	return c
+}
+
 // SetArg sets a single argument for creating MariaDB user.
 // Returns CreateUser for fluent method chaining.
 func (c *CreateUser) SetArg(key, value string) types.RunnableInterface {
@@ -220,7 +250,7 @@ func (c *CreateUser) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewCreateUser creates a new mariadb-create-user skill.
-func NewCreateUser() types.RunnableInterface {
+func NewCreateUser() *CreateUser {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbCreateUser)
 	pb.SetDescription("Create a new MariaDB user with configurable privileges")

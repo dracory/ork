@@ -155,3 +155,35 @@ func TestEnableEncryption_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestEnableEncryption_SetConfigPath verifies that SetConfigPath sets the config-path arg.
+func TestEnableEncryption_SetConfigPath(t *testing.T) {
+	skill := NewEnableEncryption().SetConfigPath("/etc/mysql/my.cnf")
+
+	if skill.GetArg(ArgConfigPath) != "/etc/mysql/my.cnf" {
+		t.Errorf("Expected config-path '/etc/mysql/my.cnf', got '%s'", skill.GetArg(ArgConfigPath))
+	}
+}
+
+// TestEnableEncryption_SetKeyFilePath verifies that SetKeyFilePath sets the keyfile-path arg.
+func TestEnableEncryption_SetKeyFilePath(t *testing.T) {
+	skill := NewEnableEncryption().SetKeyFilePath("/var/lib/mysql-keyfile/keyfile.enc")
+
+	if skill.GetArg(ArgKeyFilePath) != "/var/lib/mysql-keyfile/keyfile.enc" {
+		t.Errorf("Expected keyfile-path '/var/lib/mysql-keyfile/keyfile.enc', got '%s'", skill.GetArg(ArgKeyFilePath))
+	}
+}
+
+// TestEnableEncryption_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestEnableEncryption_TypedSetters_Chaining(t *testing.T) {
+	skill := NewEnableEncryption().
+		SetConfigPath("/etc/mysql/my.cnf").
+		SetKeyFilePath("/var/lib/mysql-keyfile/keyfile.enc")
+
+	if skill.GetArg(ArgConfigPath) != "/etc/mysql/my.cnf" {
+		t.Errorf("Expected config-path '/etc/mysql/my.cnf', got '%s'", skill.GetArg(ArgConfigPath))
+	}
+	if skill.GetArg(ArgKeyFilePath) != "/var/lib/mysql-keyfile/keyfile.enc" {
+		t.Errorf("Expected keyfile-path '/var/lib/mysql-keyfile/keyfile.enc', got '%s'", skill.GetArg(ArgKeyFilePath))
+	}
+}

@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewBackupEncrypt().SetArg("dbname", "<database_name>").SetArg("dir", "/path/to/backups"))
+//	node.Run(mariadb.NewBackupEncrypt().SetDBName("<database_name>"))
 //
 // Args:
 //   - dbname: Name of the database to backup (required)
@@ -44,8 +44,14 @@ func (b *BackupEncrypt) Check() (bool, error) {
 // Run executes the skill and returns detailed result.
 func (b *BackupEncrypt) Run() types.Result {
 	cfg := b.GetNodeConfig()
-	rootPassword := cfg.GetArg(ArgRootPassword)
-	dbName := cfg.GetArg(ArgDBName)
+	rootPassword := b.GetArg(ArgRootPassword)
+	if rootPassword == "" {
+		rootPassword = cfg.GetArg(ArgRootPassword)
+	}
+	dbName := b.GetArg(ArgDBName)
+	if dbName == "" {
+		dbName = cfg.GetArg(ArgDBName)
+	}
 
 	if dbName == "" {
 		return types.Result{
@@ -128,6 +134,18 @@ func (b *BackupEncrypt) SetArgs(args map[string]string) types.RunnableInterface 
 	return b
 }
 
+// SetRootPassword sets the MariaDB root password and returns BackupEncrypt for chaining.
+func (b *BackupEncrypt) SetRootPassword(password string) *BackupEncrypt {
+	b.BaseSkill.SetArg(ArgRootPassword, password)
+	return b
+}
+
+// SetDBName sets the database name and returns BackupEncrypt for chaining.
+func (b *BackupEncrypt) SetDBName(name string) *BackupEncrypt {
+	b.BaseSkill.SetArg(ArgDBName, name)
+	return b
+}
+
 // SetArg sets a single argument for encrypted MariaDB backup.
 // Returns BackupEncrypt for fluent method chaining.
 func (b *BackupEncrypt) SetArg(key, value string) types.RunnableInterface {
@@ -157,7 +175,7 @@ func (b *BackupEncrypt) SetTimeout(timeout time.Duration) types.RunnableInterfac
 }
 
 // NewBackupEncrypt creates a new mariadb-backup-encrypt skill.
-func NewBackupEncrypt() types.RunnableInterface {
+func NewBackupEncrypt() *BackupEncrypt {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbBackupEncrypt)
 	pb.SetDescription("Create an encrypted backup of a MariaDB database")

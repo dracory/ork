@@ -15,7 +15,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(mariadb.NewSecure().SetArg("root-password", "<password>"))
+//	node.Run(mariadb.NewSecure().SetRootPassword("<password>"))
 //
 // Security Actions Performed:
 //  1. Remove anonymous users (users with empty username)
@@ -138,6 +138,12 @@ func (s *Secure) SetArgs(args map[string]string) types.RunnableInterface {
 	return s
 }
 
+// SetRootPassword sets the MariaDB root password and returns Secure for chaining.
+func (s *Secure) SetRootPassword(password string) *Secure {
+	s.BaseSkill.SetArg(ArgRootPassword, password)
+	return s
+}
+
 // SetArg sets a single argument for MariaDB secure.
 // Returns Secure for fluent method chaining.
 func (s *Secure) SetArg(key, value string) types.RunnableInterface {
@@ -167,7 +173,7 @@ func (s *Secure) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewSecure creates a new mariadb-secure skill.
-func NewSecure() types.RunnableInterface {
+func NewSecure() *Secure {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDMariadbSecure)
 	pb.SetDescription("Perform basic security hardening on MariaDB installation")

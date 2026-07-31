@@ -155,3 +155,35 @@ func TestEnableSSL_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestEnableSSL_SetDataDir verifies that SetDataDir sets the data-dir arg.
+func TestEnableSSL_SetDataDir(t *testing.T) {
+	skill := NewEnableSSL().SetDataDir("/var/lib/mysql")
+
+	if skill.GetArg(ArgDataDir) != "/var/lib/mysql" {
+		t.Errorf("Expected data-dir '/var/lib/mysql', got '%s'", skill.GetArg(ArgDataDir))
+	}
+}
+
+// TestEnableSSL_SetConfigPath verifies that SetConfigPath sets the config-path arg.
+func TestEnableSSL_SetConfigPath(t *testing.T) {
+	skill := NewEnableSSL().SetConfigPath("/etc/mysql/my.cnf")
+
+	if skill.GetArg(ArgConfigPath) != "/etc/mysql/my.cnf" {
+		t.Errorf("Expected config-path '/etc/mysql/my.cnf', got '%s'", skill.GetArg(ArgConfigPath))
+	}
+}
+
+// TestEnableSSL_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestEnableSSL_TypedSetters_Chaining(t *testing.T) {
+	skill := NewEnableSSL().
+		SetDataDir("/var/lib/mysql").
+		SetConfigPath("/etc/mysql/my.cnf")
+
+	if skill.GetArg(ArgDataDir) != "/var/lib/mysql" {
+		t.Errorf("Expected data-dir '/var/lib/mysql', got '%s'", skill.GetArg(ArgDataDir))
+	}
+	if skill.GetArg(ArgConfigPath) != "/etc/mysql/my.cnf" {
+		t.Errorf("Expected config-path '/etc/mysql/my.cnf', got '%s'", skill.GetArg(ArgConfigPath))
+	}
+}
