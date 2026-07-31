@@ -184,7 +184,7 @@ func (a *AptUpgrade) SetTimeout(timeout time.Duration) types.RunnableInterface {
 //
 //	A PlaybookInterface implementation configured with IDAptUpgrade identifier
 //	and description "Install available package updates (apt-get upgrade)".
-func NewAptUpgrade() types.RunnableInterface {
+func NewAptUpgrade() *AptUpgrade {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAptUpgrade)
 	pb.SetDescription("Install available package updates (apt-get upgrade)")

@@ -222,3 +222,41 @@ func TestAptInstall_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestAptInstall_SetPackages verifies that SetPackages sets the packages arg (variadic, joined with spaces).
+func TestAptInstall_SetPackages(t *testing.T) {
+	skill := NewAptInstall()
+	skill.SetPackages("nodejs", "npm")
+
+	if skill.GetArg(ArgPackages) != "nodejs npm" {
+		t.Errorf("Expected packages 'nodejs npm', got '%s'", skill.GetArg(ArgPackages))
+	}
+}
+
+// TestAptInstall_SetPackages_Single verifies that SetPackages works with a single package.
+func TestAptInstall_SetPackages_Single(t *testing.T) {
+	skill := NewAptInstall()
+	skill.SetPackages("curl")
+
+	if skill.GetArg(ArgPackages) != "curl" {
+		t.Errorf("Expected packages 'curl', got '%s'", skill.GetArg(ArgPackages))
+	}
+}
+
+// TestAptInstall_SetPackages_Chaining verifies that SetPackages chains with other setters.
+func TestAptInstall_SetPackages_Chaining(t *testing.T) {
+	skill := NewAptInstall().
+		SetPackages("nodejs", "npm", "curl").
+		SetID("custom-id").
+		SetDescription("custom description")
+
+	if skill.GetArg(ArgPackages) != "nodejs npm curl" {
+		t.Errorf("Expected packages 'nodejs npm curl', got '%s'", skill.GetArg(ArgPackages))
+	}
+	if skill.GetID() != "custom-id" {
+		t.Error("Chaining should set ID")
+	}
+	if skill.GetDescription() != "custom description" {
+		t.Error("Chaining should set description")
+	}
+}

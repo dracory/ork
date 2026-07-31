@@ -13,10 +13,12 @@ import (
 )
 
 // AptInstall installs one or more packages using apt-get.
-// Packages are specified as a space-separated list via the ArgPackages argument.
+// Packages are specified via the SetPackages method (variadic) or ArgPackages argument (space-separated string).
 //
 // Usage:
 //
+//	node.Run(apt.NewAptInstall().SetPackages("nodejs", "npm"))
+//	// or equivalently:
 //	node.Run(apt.NewAptInstall().SetArg(apt.ArgPackages, "nodejs npm"))
 //
 // Execution Flow:
@@ -176,6 +178,14 @@ func (a *AptInstall) SetArgs(args map[string]string) types.RunnableInterface {
 	return a
 }
 
+// SetPackages sets the packages to install and returns AptInstall for chaining.
+// Packages are joined with spaces internally to match the ArgPackages format.
+// Example: SetPackages("nodejs", "npm", "curl")
+func (a *AptInstall) SetPackages(packages ...string) *AptInstall {
+	a.BaseSkill.SetArg(ArgPackages, strings.Join(packages, " "))
+	return a
+}
+
 // WithNodeConfig sets the node config and returns AptInstall for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (a *AptInstall) WithNodeConfig(cfg types.NodeConfig) *AptInstall {
@@ -212,7 +222,7 @@ func (a *AptInstall) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewAptInstall creates a new apt-install skill.
-// Set the packages to install via SetArg(apt.ArgPackages, "pkg1 pkg2").
+// Set the packages to install via SetPackages("pkg1", "pkg2").
 //
 // Returns:
 //
@@ -221,8 +231,8 @@ func (a *AptInstall) SetTimeout(timeout time.Duration) types.RunnableInterface {
 //
 // Example:
 //
-//	node.Run(apt.NewAptInstall().SetArg(apt.ArgPackages, "nodejs npm"))
-func NewAptInstall() types.RunnableInterface {
+//	node.Run(apt.NewAptInstall().SetPackages("nodejs", "npm"))
+func NewAptInstall() *AptInstall {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAptInstall)
 	pb.SetDescription("Install packages (apt-get install)")

@@ -155,7 +155,7 @@ func (a *AptStatus) SetTimeout(timeout time.Duration) types.RunnableInterface {
 //
 //	A PlaybookInterface implementation configured with IDAptStatus identifier
 //	and description "Show available package updates (read-only)".
-func NewAptStatus() types.RunnableInterface {
+func NewAptStatus() *AptStatus {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAptStatus)
 	pb.SetDescription("Show available package updates (read-only)")
