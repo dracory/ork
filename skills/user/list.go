@@ -142,7 +142,7 @@ func (u *UserList) SetTimeout(timeout time.Duration) types.RunnableInterface {
 //
 //	A PlaybookInterface implementation configured with IDUserList identifier
 //	and description "List all non-system users".
-func NewUserList() types.RunnableInterface {
+func NewUserList() *UserList {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUserList)
 	pb.SetDescription("List all non-system users")

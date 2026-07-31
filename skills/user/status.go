@@ -17,7 +17,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(user.NewUserStatus().SetArg("username", "<name>"))
+//	node.Run(user.NewUserStatus().SetUsername("<name>"))
 //
 // Arguments:
 //   - username: Specific user to query (required)
@@ -130,6 +130,12 @@ func (u *UserStatus) SetArgs(args map[string]string) types.RunnableInterface {
 	return u
 }
 
+// SetUsername sets the username to query and returns UserStatus for chaining.
+func (u *UserStatus) SetUsername(username string) *UserStatus {
+	u.BaseSkill.SetArg(ArgUsername, username)
+	return u
+}
+
 // SetArg sets a single argument for user status.
 // Returns UserStatus for fluent method chaining.
 func (u *UserStatus) SetArg(key, value string) types.RunnableInterface {
@@ -169,7 +175,7 @@ func (u *UserStatus) SetTimeout(timeout time.Duration) types.RunnableInterface {
 //
 //	Pass ArgUsername via --arg=username=<name> to query a specific user.
 //	Omit the username argument to list all non-system users.
-func NewUserStatus() types.RunnableInterface {
+func NewUserStatus() *UserStatus {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUserStatus)
 	pb.SetDescription("Show user information")

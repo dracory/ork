@@ -234,3 +234,100 @@ func TestUserCreate_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set ssh-key arg")
 	}
 }
+
+// TestUserCreate_SetUsername verifies that SetUsername sets the username arg.
+func TestUserCreate_SetUsername(t *testing.T) {
+	skill := NewUserCreate().SetUsername("alice")
+
+	if skill.GetArg(ArgUsername) != "alice" {
+		t.Errorf("Expected username 'alice', got '%s'", skill.GetArg(ArgUsername))
+	}
+}
+
+// TestUserCreate_SetSSHKey verifies that SetSSHKey sets the ssh-key arg.
+func TestUserCreate_SetSSHKey(t *testing.T) {
+	skill := NewUserCreate().SetSSHKey("ssh-rsa AAAAB3Nza...")
+
+	if skill.GetArg(ArgSSHKey) != "ssh-rsa AAAAB3Nza..." {
+		t.Errorf("Expected ssh-key to match, got '%s'", skill.GetArg(ArgSSHKey))
+	}
+}
+
+// TestUserCreate_SetPassword verifies that SetPassword sets the password arg.
+func TestUserCreate_SetPassword(t *testing.T) {
+	skill := NewUserCreate().SetPassword("s3cret")
+
+	if skill.GetArg(ArgPassword) != "s3cret" {
+		t.Errorf("Expected password 's3cret', got '%s'", skill.GetArg(ArgPassword))
+	}
+}
+
+// TestUserCreate_SetShell verifies that SetShell sets the shell arg.
+func TestUserCreate_SetShell(t *testing.T) {
+	skill := NewUserCreate().SetShell("/bin/zsh")
+
+	if skill.GetArg(ArgShell) != "/bin/zsh" {
+		t.Errorf("Expected shell '/bin/zsh', got '%s'", skill.GetArg(ArgShell))
+	}
+}
+
+// TestUserCreate_SetGroup verifies that SetGroup sets the group arg.
+func TestUserCreate_SetGroup(t *testing.T) {
+	skill := NewUserCreate().SetGroup("developers")
+
+	if skill.GetArg(ArgGroup) != "developers" {
+		t.Errorf("Expected group 'developers', got '%s'", skill.GetArg(ArgGroup))
+	}
+}
+
+// TestUserCreate_SetSudoGroup verifies that SetSudoGroup sets the sudo-group arg.
+func TestUserCreate_SetSudoGroup(t *testing.T) {
+	skill := NewUserCreate().SetSudoGroup("wheel")
+
+	if skill.GetArg(ArgSudoGroup) != "wheel" {
+		t.Errorf("Expected sudo-group 'wheel', got '%s'", skill.GetArg(ArgSudoGroup))
+	}
+}
+
+// TestUserCreate_SetHomeDir verifies that SetHomeDir sets the home-dir arg.
+func TestUserCreate_SetHomeDir(t *testing.T) {
+	skill := NewUserCreate().SetHomeDir("/home/alice")
+
+	if skill.GetArg(ArgHomeDir) != "/home/alice" {
+		t.Errorf("Expected home-dir '/home/alice', got '%s'", skill.GetArg(ArgHomeDir))
+	}
+}
+
+// TestUserCreate_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestUserCreate_TypedSetters_Chaining(t *testing.T) {
+	skill := NewUserCreate().
+		SetUsername("alice").
+		SetSSHKey("ssh-rsa AAAAB3Nza...").
+		SetPassword("s3cret").
+		SetShell("/bin/zsh").
+		SetGroup("developers").
+		SetSudoGroup("wheel").
+		SetHomeDir("/home/alice")
+
+	if skill.GetArg(ArgUsername) != "alice" {
+		t.Errorf("Expected username 'alice', got '%s'", skill.GetArg(ArgUsername))
+	}
+	if skill.GetArg(ArgSSHKey) != "ssh-rsa AAAAB3Nza..." {
+		t.Errorf("Expected ssh-key to match, got '%s'", skill.GetArg(ArgSSHKey))
+	}
+	if skill.GetArg(ArgPassword) != "s3cret" {
+		t.Errorf("Expected password 's3cret', got '%s'", skill.GetArg(ArgPassword))
+	}
+	if skill.GetArg(ArgShell) != "/bin/zsh" {
+		t.Errorf("Expected shell '/bin/zsh', got '%s'", skill.GetArg(ArgShell))
+	}
+	if skill.GetArg(ArgGroup) != "developers" {
+		t.Errorf("Expected group 'developers', got '%s'", skill.GetArg(ArgGroup))
+	}
+	if skill.GetArg(ArgSudoGroup) != "wheel" {
+		t.Errorf("Expected sudo-group 'wheel', got '%s'", skill.GetArg(ArgSudoGroup))
+	}
+	if skill.GetArg(ArgHomeDir) != "/home/alice" {
+		t.Errorf("Expected home-dir '/home/alice', got '%s'", skill.GetArg(ArgHomeDir))
+	}
+}

@@ -116,3 +116,35 @@ func TestUserAddToGroup_NewUserAddToGroup(t *testing.T) {
 		t.Error("Expected non-empty description")
 	}
 }
+
+// TestUserAddToGroup_SetUsername verifies that SetUsername sets the username arg.
+func TestUserAddToGroup_SetUsername(t *testing.T) {
+	skill := NewUserAddToGroup().SetUsername("alice")
+
+	if skill.GetArg(ArgUsername) != "alice" {
+		t.Errorf("Expected username 'alice', got '%s'", skill.GetArg(ArgUsername))
+	}
+}
+
+// TestUserAddToGroup_SetGroup verifies that SetGroup sets the group arg.
+func TestUserAddToGroup_SetGroup(t *testing.T) {
+	skill := NewUserAddToGroup().SetGroup("docker")
+
+	if skill.GetArg(ArgGroup) != "docker" {
+		t.Errorf("Expected group 'docker', got '%s'", skill.GetArg(ArgGroup))
+	}
+}
+
+// TestUserAddToGroup_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestUserAddToGroup_TypedSetters_Chaining(t *testing.T) {
+	skill := NewUserAddToGroup().
+		SetUsername("alice").
+		SetGroup("docker")
+
+	if skill.GetArg(ArgUsername) != "alice" {
+		t.Errorf("Expected username 'alice', got '%s'", skill.GetArg(ArgUsername))
+	}
+	if skill.GetArg(ArgGroup) != "docker" {
+		t.Errorf("Expected group 'docker', got '%s'", skill.GetArg(ArgGroup))
+	}
+}

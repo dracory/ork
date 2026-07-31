@@ -50,7 +50,7 @@ func (u *UserAddToGroup) Check() (bool, error) {
 //
 // Usage:
 //
-//	node.Run(user.NewUserAddToGroup().SetArg("username", "<name>").SetArg("group", "<name>"))
+//	node.Run(user.NewUserAddToGroup().SetUsername("<name>").SetGroup("<name>"))
 //
 // Parameters (passed via args):
 //   - username (string, required): Name of the user to add to the group
@@ -130,6 +130,18 @@ func (u *UserAddToGroup) SetArgs(args map[string]string) types.RunnableInterface
 	return u
 }
 
+// SetUsername sets the username to add to a group and returns UserAddToGroup for chaining.
+func (u *UserAddToGroup) SetUsername(username string) *UserAddToGroup {
+	u.BaseSkill.SetArg(ArgUsername, username)
+	return u
+}
+
+// SetGroup sets the group name and returns UserAddToGroup for chaining.
+func (u *UserAddToGroup) SetGroup(group string) *UserAddToGroup {
+	u.BaseSkill.SetArg(ArgGroup, group)
+	return u
+}
+
 // SetArg sets a single argument for adding user to group.
 // Returns UserAddToGroup for fluent method chaining.
 func (u *UserAddToGroup) SetArg(key, value string) types.RunnableInterface {
@@ -159,7 +171,7 @@ func (u *UserAddToGroup) SetTimeout(timeout time.Duration) types.RunnableInterfa
 }
 
 // NewUserAddToGroup creates a new user-add-to-group skill.
-func NewUserAddToGroup() types.RunnableInterface {
+func NewUserAddToGroup() *UserAddToGroup {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUserAddToGroup)
 	pb.SetDescription("Add a user to a supplementary group (username via args['username'], group via args['group'])")

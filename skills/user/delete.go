@@ -39,7 +39,7 @@ func (u *UserDelete) Check() (bool, error) {
 //
 // Usage:
 //
-//	node.Run(user.NewUserDelete().SetArg("username", "<name>"))
+//	node.Run(user.NewUserDelete().SetUsername("<name>"))
 //
 // Parameters (passed via args):
 //   - username (string, required): Name of the user to delete (cannot be 'root')
@@ -119,6 +119,12 @@ func (u *UserDelete) SetArgs(args map[string]string) types.RunnableInterface {
 	return u
 }
 
+// SetUsername sets the username to delete and returns UserDelete for chaining.
+func (u *UserDelete) SetUsername(username string) *UserDelete {
+	u.BaseSkill.SetArg(ArgUsername, username)
+	return u
+}
+
 // SetArg sets a single argument for user deletion.
 // Returns UserDelete for fluent method chaining.
 func (u *UserDelete) SetArg(key, value string) types.RunnableInterface {
@@ -148,7 +154,7 @@ func (u *UserDelete) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewUserDelete creates a new user-delete skill.
-func NewUserDelete() types.RunnableInterface {
+func NewUserDelete() *UserDelete {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUserDelete)
 	pb.SetDescription("Delete a user (username via args['username'])")

@@ -39,7 +39,7 @@ func (u *UserCreate) Check() (bool, error) {
 //
 // Usage:
 //
-//	node.Run(user.NewUserCreate().SetArg("username", "<name>").SetArg("ssh-key", "<public_key>").SetArg("password", "<password>"))
+//	node.Run(user.NewUserCreate().SetUsername("<name>").SetSSHKey("<public_key>").SetPassword("<password>"))
 //
 // Parameters (passed via args):
 //   - username: Name of the user to create (required, via --arg=username=<name>)
@@ -211,6 +211,48 @@ func (u *UserCreate) SetArgs(args map[string]string) types.RunnableInterface {
 	return u
 }
 
+// SetUsername sets the username to create and returns UserCreate for chaining.
+func (u *UserCreate) SetUsername(username string) *UserCreate {
+	u.BaseSkill.SetArg(ArgUsername, username)
+	return u
+}
+
+// SetSSHKey sets the SSH public key and returns UserCreate for chaining.
+func (u *UserCreate) SetSSHKey(key string) *UserCreate {
+	u.BaseSkill.SetArg(ArgSSHKey, key)
+	return u
+}
+
+// SetPassword sets the initial password and returns UserCreate for chaining.
+func (u *UserCreate) SetPassword(password string) *UserCreate {
+	u.BaseSkill.SetArg(ArgPassword, password)
+	return u
+}
+
+// SetShell sets the login shell and returns UserCreate for chaining.
+func (u *UserCreate) SetShell(shell string) *UserCreate {
+	u.BaseSkill.SetArg(ArgShell, shell)
+	return u
+}
+
+// SetGroup sets the primary group and returns UserCreate for chaining.
+func (u *UserCreate) SetGroup(group string) *UserCreate {
+	u.BaseSkill.SetArg(ArgGroup, group)
+	return u
+}
+
+// SetSudoGroup sets the sudo/admin group and returns UserCreate for chaining.
+func (u *UserCreate) SetSudoGroup(group string) *UserCreate {
+	u.BaseSkill.SetArg(ArgSudoGroup, group)
+	return u
+}
+
+// SetHomeDir sets the home directory path and returns UserCreate for chaining.
+func (u *UserCreate) SetHomeDir(path string) *UserCreate {
+	u.BaseSkill.SetArg(ArgHomeDir, path)
+	return u
+}
+
 // SetArg sets a single argument for user creation.
 // Returns UserCreate for fluent method chaining.
 func (u *UserCreate) SetArg(key, value string) types.RunnableInterface {
@@ -240,7 +282,7 @@ func (u *UserCreate) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewUserCreate creates a new user-create skill.
-func NewUserCreate() types.RunnableInterface {
+func NewUserCreate() *UserCreate {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUserCreate)
 	pb.SetDescription("Create a new user with sudo access (username via args['username'])")

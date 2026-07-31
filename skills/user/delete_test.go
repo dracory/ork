@@ -117,3 +117,12 @@ func TestUserDelete_NewUserDelete(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestUserDelete_SetUsername verifies that SetUsername sets the username arg.
+func TestUserDelete_SetUsername(t *testing.T) {
+	skill := NewUserDelete().SetUsername("testuser")
+
+	if skill.GetArg(ArgUsername) != "testuser" {
+		t.Errorf("Expected username 'testuser', got '%s'", skill.GetArg(ArgUsername))
+	}
+}

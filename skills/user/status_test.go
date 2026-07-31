@@ -94,3 +94,12 @@ func TestUserStatus_NewUserStatus(t *testing.T) {
 		t.Errorf("Expected description '%s', got '%s'", expectedDescription, pb.GetDescription())
 	}
 }
+
+// TestUserStatus_SetUsername verifies that SetUsername sets the username arg.
+func TestUserStatus_SetUsername(t *testing.T) {
+	skill := NewUserStatus().SetUsername("alice")
+
+	if skill.GetArg(ArgUsername) != "alice" {
+		t.Errorf("Expected username 'alice', got '%s'", skill.GetArg(ArgUsername))
+	}
+}
