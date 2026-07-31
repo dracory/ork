@@ -5,6 +5,7 @@ import (
 
 	"github.com/dracory/ork/skills/apt"
 	"github.com/dracory/ork/skills/fail2ban"
+	"github.com/dracory/ork/skills/fs"
 	"github.com/dracory/ork/skills/mariadb"
 	"github.com/dracory/ork/skills/ping"
 	"github.com/dracory/ork/skills/reboot"
@@ -114,6 +115,18 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		user.NewUserDelete(),
 		user.NewUserList(),
 		user.NewUserStatus(),
+		fs.NewDirCreate(),
+		fs.NewDirExists(),
+		fs.NewDirDelete(),
+		fs.NewFileCreate(),
+		fs.NewFileExists(),
+		fs.NewFileDelete(),
+		fs.NewFileCopy(),
+		fs.NewChangeOwner(),
+		fs.NewChangeMode(),
+		fs.NewSymlinkCreate(),
+		fs.NewRename(),
+		fs.NewRemove(),
 	}
 
 	if err := reg.SetAll(skills); err != nil {

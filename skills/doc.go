@@ -5,6 +5,7 @@
 //
 //   - apt: Package management (update, upgrade, status)
 //   - fail2ban: Fail2ban service management (status, start, stop)
+//   - fs: Filesystem operations (mkdir, chown, chmod, ln, cp, mv, rm, test)
 //   - mariadb: MariaDB database management (status, start, stop)
 //   - ping: SSH connectivity checks
 //   - reboot: Server reboot with optional reconnection wait

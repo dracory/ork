@@ -161,4 +161,41 @@ const (
 
 	// IDMariadbBackupEncrypt creates an encrypted backup
 	IDMariadbBackupEncrypt = "mariadb-backup-encrypt"
+
+	// Filesystem skills (general-purpose primitives)
+	// IDFSDirCreate creates a directory with ownership and permissions
+	IDFSDirCreate = "fs-dir-create"
+
+	// IDFSDirExists checks if a directory exists (read-only)
+	IDFSDirExists = "fs-dir-exists"
+
+	// IDFSDirDelete deletes a directory
+	IDFSDirDelete = "fs-dir-delete"
+
+	// IDFSFileCreate creates a file with content, ownership, and permissions
+	IDFSFileCreate = "fs-file-create"
+
+	// IDFSFileExists checks if a file exists (read-only)
+	IDFSFileExists = "fs-file-exists"
+
+	// IDFSFileDelete deletes a single file
+	IDFSFileDelete = "fs-file-delete"
+
+	// IDFSFileCopy copies a file on the remote server
+	IDFSFileCopy = "fs-file-copy"
+
+	// IDFSChangeOwner changes file/directory ownership (chown)
+	IDFSChangeOwner = "fs-change-owner"
+
+	// IDFSChangeMode changes file/directory permissions (chmod)
+	IDFSChangeMode = "fs-change-mode"
+
+	// IDFSSymlinkCreate creates or updates a symbolic link (ln -sf)
+	IDFSSymlinkCreate = "fs-symlink-create"
+
+	// IDFSRename renames/moves a file or directory (mv)
+	IDFSRename = "fs-rename"
+
+	// IDFSRemove removes a file or directory (rm)
+	IDFSRemove = "fs-remove"
 )
