@@ -258,8 +258,7 @@ func TestDirCreate_MethodChaining_PreservesType(t *testing.T) {
 
 // TestDirCreate_SetPath verifies that SetPath sets the path arg and returns *DirCreate.
 func TestDirCreate_SetPath(t *testing.T) {
-	skill := NewDirCreate()
-	skill.SetPath("/var/www/myapp")
+	skill := NewDirCreate().SetPath("/var/www/myapp")
 
 	if skill.GetArg(ArgPath) != "/var/www/myapp" {
 		t.Errorf("Expected path '/var/www/myapp', got '%s'", skill.GetArg(ArgPath))
@@ -268,8 +267,7 @@ func TestDirCreate_SetPath(t *testing.T) {
 
 // TestDirCreate_SetOwner verifies that SetOwner sets the owner arg and returns *DirCreate.
 func TestDirCreate_SetOwner(t *testing.T) {
-	skill := NewDirCreate()
-	skill.SetOwner("www-data:www-data")
+	skill := NewDirCreate().SetOwner("www-data:www-data")
 
 	if skill.GetArg(ArgOwner) != "www-data:www-data" {
 		t.Errorf("Expected owner 'www-data:www-data', got '%s'", skill.GetArg(ArgOwner))
@@ -278,8 +276,7 @@ func TestDirCreate_SetOwner(t *testing.T) {
 
 // TestDirCreate_SetMode verifies that SetMode sets the mode arg and returns *DirCreate.
 func TestDirCreate_SetMode(t *testing.T) {
-	skill := NewDirCreate()
-	skill.SetMode("755")
+	skill := NewDirCreate().SetMode("755")
 
 	if skill.GetArg(ArgMode) != "755" {
 		t.Errorf("Expected mode '755', got '%s'", skill.GetArg(ArgMode))
@@ -288,8 +285,7 @@ func TestDirCreate_SetMode(t *testing.T) {
 
 // TestDirCreate_SetParents verifies that SetParents sets the parents arg as a string bool and returns *DirCreate.
 func TestDirCreate_SetParents(t *testing.T) {
-	skill := NewDirCreate()
-	skill.SetParents(true)
+	skill := NewDirCreate().SetParents(true)
 
 	if skill.GetArg(ArgParents) != "true" {
 		t.Errorf("Expected parents 'true', got '%s'", skill.GetArg(ArgParents))

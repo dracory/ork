@@ -234,8 +234,7 @@ func TestChangeMode_MethodChaining_PreservesType(t *testing.T) {
 
 // TestChangeMode_SetPath verifies that SetPath sets the path arg and returns *ChangeMode.
 func TestChangeMode_SetPath(t *testing.T) {
-	skill := NewChangeMode()
-	skill.SetPath("/var/www/myapp")
+	skill := NewChangeMode().SetPath("/var/www/myapp")
 
 	if skill.GetArg(ArgPath) != "/var/www/myapp" {
 		t.Errorf("Expected path '/var/www/myapp', got '%s'", skill.GetArg(ArgPath))
@@ -244,8 +243,7 @@ func TestChangeMode_SetPath(t *testing.T) {
 
 // TestChangeMode_SetMode verifies that SetMode sets the mode arg and returns *ChangeMode.
 func TestChangeMode_SetMode(t *testing.T) {
-	skill := NewChangeMode()
-	skill.SetMode("755")
+	skill := NewChangeMode().SetMode("755")
 
 	if skill.GetArg(ArgMode) != "755" {
 		t.Errorf("Expected mode '755', got '%s'", skill.GetArg(ArgMode))
@@ -254,8 +252,7 @@ func TestChangeMode_SetMode(t *testing.T) {
 
 // TestChangeMode_SetRecursive verifies that SetRecursive sets the recursive arg as a string bool and returns *ChangeMode.
 func TestChangeMode_SetRecursive(t *testing.T) {
-	skill := NewChangeMode()
-	skill.SetRecursive(true)
+	skill := NewChangeMode().SetRecursive(true)
 
 	if skill.GetArg(ArgRecursive) != "true" {
 		t.Errorf("Expected recursive 'true', got '%s'", skill.GetArg(ArgRecursive))

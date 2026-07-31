@@ -208,8 +208,7 @@ func TestRemove_MethodChaining_PreservesType(t *testing.T) {
 
 // TestRemove_SetPath verifies that SetPath sets the path arg and returns *Remove.
 func TestRemove_SetPath(t *testing.T) {
-	skill := NewRemove()
-	skill.SetPath("/tmp/old-data")
+	skill := NewRemove().SetPath("/tmp/old-data")
 
 	if skill.GetArg(ArgPath) != "/tmp/old-data" {
 		t.Errorf("Expected path '/tmp/old-data', got '%s'", skill.GetArg(ArgPath))
@@ -218,8 +217,7 @@ func TestRemove_SetPath(t *testing.T) {
 
 // TestRemove_SetRecursive verifies that SetRecursive sets the recursive arg and returns *Remove.
 func TestRemove_SetRecursive(t *testing.T) {
-	skill := NewRemove()
-	skill.SetRecursive(true)
+	skill := NewRemove().SetRecursive(true)
 
 	if skill.GetArg(ArgRecursive) != "true" {
 		t.Errorf("Expected recursive 'true', got '%s'", skill.GetArg(ArgRecursive))
@@ -233,8 +231,7 @@ func TestRemove_SetRecursive(t *testing.T) {
 
 // TestRemove_SetForce verifies that SetForce sets the force arg and returns *Remove.
 func TestRemove_SetForce(t *testing.T) {
-	skill := NewRemove()
-	skill.SetForce(true)
+	skill := NewRemove().SetForce(true)
 
 	if skill.GetArg(ArgForce) != "true" {
 		t.Errorf("Expected force 'true', got '%s'", skill.GetArg(ArgForce))

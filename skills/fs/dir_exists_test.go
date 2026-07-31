@@ -204,8 +204,7 @@ func TestDirExists_MethodChaining_PreservesType(t *testing.T) {
 
 // TestDirExists_SetPath verifies that SetPath sets the path arg and returns *DirExists.
 func TestDirExists_SetPath(t *testing.T) {
-	skill := NewDirExists()
-	skill.SetPath("/var/www")
+	skill := NewDirExists().SetPath("/var/www")
 
 	if skill.GetArg(ArgPath) != "/var/www" {
 		t.Errorf("Expected path '/var/www', got '%s'", skill.GetArg(ArgPath))

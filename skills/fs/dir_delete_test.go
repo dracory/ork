@@ -206,8 +206,7 @@ func TestDirDelete_MethodChaining_PreservesType(t *testing.T) {
 
 // TestDirDelete_SetPath verifies that SetPath sets the path arg and returns *DirDelete.
 func TestDirDelete_SetPath(t *testing.T) {
-	skill := NewDirDelete()
-	skill.SetPath("/tmp/old-build")
+	skill := NewDirDelete().SetPath("/tmp/old-build")
 
 	if skill.GetArg(ArgPath) != "/tmp/old-build" {
 		t.Errorf("Expected path '/tmp/old-build', got '%s'", skill.GetArg(ArgPath))
@@ -216,8 +215,7 @@ func TestDirDelete_SetPath(t *testing.T) {
 
 // TestDirDelete_SetRecursive verifies that SetRecursive sets the recursive arg and returns *DirDelete.
 func TestDirDelete_SetRecursive(t *testing.T) {
-	skill := NewDirDelete()
-	skill.SetRecursive(true)
+	skill := NewDirDelete().SetRecursive(true)
 
 	if skill.GetArg(ArgRecursive) != "true" {
 		t.Errorf("Expected recursive 'true', got '%s'", skill.GetArg(ArgRecursive))
@@ -231,8 +229,7 @@ func TestDirDelete_SetRecursive(t *testing.T) {
 
 // TestDirDelete_SetForce verifies that SetForce sets the force arg and returns *DirDelete.
 func TestDirDelete_SetForce(t *testing.T) {
-	skill := NewDirDelete()
-	skill.SetForce(true)
+	skill := NewDirDelete().SetForce(true)
 
 	if skill.GetArg(ArgForce) != "true" {
 		t.Errorf("Expected force 'true', got '%s'", skill.GetArg(ArgForce))

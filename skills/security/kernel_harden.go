@@ -203,6 +203,20 @@ func (k *KernelHarden) SetArgs(args map[string]string) types.RunnableInterface {
 	return k
 }
 
+// SetSysctlConfigPath sets the sysctl configuration file path.
+// Returns KernelHarden for chaining.
+func (k *KernelHarden) SetSysctlConfigPath(path string) *KernelHarden {
+	k.BaseSkill.SetArg(ArgSysctlConfigPath, path)
+	return k
+}
+
+// SetSysctlDropInPath sets the sysctl drop-in file path.
+// Returns KernelHarden for chaining.
+func (k *KernelHarden) SetSysctlDropInPath(path string) *KernelHarden {
+	k.BaseSkill.SetArg(ArgSysctlDropInPath, path)
+	return k
+}
+
 // SetArg sets a single argument for kernel hardening.
 // Returns KernelHarden for fluent method chaining.
 func (k *KernelHarden) SetArg(key, value string) types.RunnableInterface {
@@ -232,7 +246,7 @@ func (k *KernelHarden) SetTimeout(timeout time.Duration) types.RunnableInterface
 }
 
 // NewKernelHarden creates a new kernel-harden skill.
-func NewKernelHarden() types.RunnableInterface {
+func NewKernelHarden() *KernelHarden {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDKernelHarden)
 	pb.SetDescription("Apply security-focused kernel parameters via sysctl")

@@ -235,8 +235,7 @@ func TestRename_MethodChaining_PreservesType(t *testing.T) {
 
 // TestRename_SetSrc verifies that SetSrc sets the src arg and returns *Rename.
 func TestRename_SetSrc(t *testing.T) {
-	skill := NewRename()
-	skill.SetSrc("/tmp/config.tmp")
+	skill := NewRename().SetSrc("/tmp/config.tmp")
 
 	if skill.GetArg(ArgSrc) != "/tmp/config.tmp" {
 		t.Errorf("Expected src '/tmp/config.tmp', got '%s'", skill.GetArg(ArgSrc))
@@ -245,8 +244,7 @@ func TestRename_SetSrc(t *testing.T) {
 
 // TestRename_SetDst verifies that SetDst sets the dst arg and returns *Rename.
 func TestRename_SetDst(t *testing.T) {
-	skill := NewRename()
-	skill.SetDst("/etc/myapp/config")
+	skill := NewRename().SetDst("/etc/myapp/config")
 
 	if skill.GetArg(ArgDst) != "/etc/myapp/config" {
 		t.Errorf("Expected dst '/etc/myapp/config', got '%s'", skill.GetArg(ArgDst))
@@ -255,8 +253,7 @@ func TestRename_SetDst(t *testing.T) {
 
 // TestRename_SetForce verifies that SetForce sets the force arg and returns *Rename.
 func TestRename_SetForce(t *testing.T) {
-	skill := NewRename()
-	skill.SetForce(true)
+	skill := NewRename().SetForce(true)
 
 	if skill.GetArg(ArgForce) != "true" {
 		t.Errorf("Expected force 'true', got '%s'", skill.GetArg(ArgForce))

@@ -175,7 +175,7 @@ func (a *AideInstall) SetTimeout(timeout time.Duration) types.RunnableInterface 
 }
 
 // NewAideInstall creates a new aide-install skill.
-func NewAideInstall() types.RunnableInterface {
+func NewAideInstall() *AideInstall {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAideInstall)
 	pb.SetDescription("Install and configure AIDE file integrity monitoring")

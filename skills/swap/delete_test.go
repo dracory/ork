@@ -68,8 +68,7 @@ func TestSwapDelete_NewSwapDelete(t *testing.T) {
 
 // TestSwapDelete_SetSwapFilePath verifies that SetSwapFilePath sets the swapfile-path arg.
 func TestSwapDelete_SetSwapFilePath(t *testing.T) {
-	skill := NewSwapDelete()
-	skill.SetSwapFilePath("/mnt/swapfile")
+	skill := NewSwapDelete().SetSwapFilePath("/mnt/swapfile")
 
 	if skill.GetArg(ArgSwapFilePath) != "/mnt/swapfile" {
 		t.Errorf("Expected swapfile-path '/mnt/swapfile', got '%s'", skill.GetArg(ArgSwapFilePath))

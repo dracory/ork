@@ -153,3 +153,74 @@ func TestSshHarden_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestSshHarden_SetNonRootUser verifies that SetNonRootUser sets the non-root-user arg.
+func TestSshHarden_SetNonRootUser(t *testing.T) {
+	skill := NewSshHarden().SetNonRootUser("deploy")
+
+	if skill.GetArg(ArgNonRootUser) != "deploy" {
+		t.Errorf("Expected non-root-user 'deploy', got '%s'", skill.GetArg(ArgNonRootUser))
+	}
+}
+
+// TestSshHarden_SetSSHConfigPath verifies that SetSSHConfigPath sets the ssh-config-path arg.
+func TestSshHarden_SetSSHConfigPath(t *testing.T) {
+	skill := NewSshHarden().SetSSHConfigPath("/etc/ssh/sshd_config")
+
+	if skill.GetArg(ArgSSHConfigPath) != "/etc/ssh/sshd_config" {
+		t.Errorf("Expected ssh-config-path '/etc/ssh/sshd_config', got '%s'", skill.GetArg(ArgSSHConfigPath))
+	}
+}
+
+// TestSshHarden_SetMaxAuthTries verifies that SetMaxAuthTries sets the max-auth-tries arg as a string int.
+func TestSshHarden_SetMaxAuthTries(t *testing.T) {
+	skill := NewSshHarden().SetMaxAuthTries(5)
+
+	if skill.GetArg(ArgMaxAuthTries) != "5" {
+		t.Errorf("Expected max-auth-tries '5', got '%s'", skill.GetArg(ArgMaxAuthTries))
+	}
+}
+
+// TestSshHarden_SetClientAliveInterval verifies that SetClientAliveInterval sets the client-alive-interval arg as a string int.
+func TestSshHarden_SetClientAliveInterval(t *testing.T) {
+	skill := NewSshHarden().SetClientAliveInterval(300)
+
+	if skill.GetArg(ArgClientAliveInterval) != "300" {
+		t.Errorf("Expected client-alive-interval '300', got '%s'", skill.GetArg(ArgClientAliveInterval))
+	}
+}
+
+// TestSshHarden_SetClientAliveCountMax verifies that SetClientAliveCountMax sets the client-alive-count-max arg as a string int.
+func TestSshHarden_SetClientAliveCountMax(t *testing.T) {
+	skill := NewSshHarden().SetClientAliveCountMax(2)
+
+	if skill.GetArg(ArgClientAliveCountMax) != "2" {
+		t.Errorf("Expected client-alive-count-max '2', got '%s'", skill.GetArg(ArgClientAliveCountMax))
+	}
+}
+
+// TestSshHarden_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestSshHarden_TypedSetters_Chaining(t *testing.T) {
+	skill := NewSshHarden().
+		SetNonRootUser("deploy").
+		SetSSHConfigPath("/etc/ssh/sshd_config").
+		SetMaxAuthTries(3).
+		SetClientAliveInterval(300).
+		SetClientAliveCountMax(2)
+
+	if skill.GetArg(ArgNonRootUser) != "deploy" {
+		t.Errorf("Expected non-root-user 'deploy', got '%s'", skill.GetArg(ArgNonRootUser))
+	}
+	if skill.GetArg(ArgSSHConfigPath) != "/etc/ssh/sshd_config" {
+		t.Errorf("Expected ssh-config-path '/etc/ssh/sshd_config', got '%s'", skill.GetArg(ArgSSHConfigPath))
+	}
+	if skill.GetArg(ArgMaxAuthTries) != "3" {
+		t.Errorf("Expected max-auth-tries '3', got '%s'", skill.GetArg(ArgMaxAuthTries))
+	}
+	if skill.GetArg(ArgClientAliveInterval) != "300" {
+		t.Errorf("Expected client-alive-interval '300', got '%s'", skill.GetArg(ArgClientAliveInterval))
+	}
+	if skill.GetArg(ArgClientAliveCountMax) != "2" {
+		t.Errorf("Expected client-alive-count-max '2', got '%s'", skill.GetArg(ArgClientAliveCountMax))
+	}
+}

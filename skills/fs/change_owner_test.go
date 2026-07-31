@@ -234,8 +234,7 @@ func TestChangeOwner_MethodChaining_PreservesType(t *testing.T) {
 
 // TestChangeOwner_SetPath verifies that SetPath sets the path arg and returns *ChangeOwner.
 func TestChangeOwner_SetPath(t *testing.T) {
-	skill := NewChangeOwner()
-	skill.SetPath("/var/www/myapp")
+	skill := NewChangeOwner().SetPath("/var/www/myapp")
 
 	if skill.GetArg(ArgPath) != "/var/www/myapp" {
 		t.Errorf("Expected path '/var/www/myapp', got '%s'", skill.GetArg(ArgPath))
@@ -244,8 +243,7 @@ func TestChangeOwner_SetPath(t *testing.T) {
 
 // TestChangeOwner_SetOwner verifies that SetOwner sets the owner arg and returns *ChangeOwner.
 func TestChangeOwner_SetOwner(t *testing.T) {
-	skill := NewChangeOwner()
-	skill.SetOwner("www-data:www-data")
+	skill := NewChangeOwner().SetOwner("www-data:www-data")
 
 	if skill.GetArg(ArgOwner) != "www-data:www-data" {
 		t.Errorf("Expected owner 'www-data:www-data', got '%s'", skill.GetArg(ArgOwner))
@@ -254,8 +252,7 @@ func TestChangeOwner_SetOwner(t *testing.T) {
 
 // TestChangeOwner_SetRecursive verifies that SetRecursive sets the recursive arg as a string bool and returns *ChangeOwner.
 func TestChangeOwner_SetRecursive(t *testing.T) {
-	skill := NewChangeOwner()
-	skill.SetRecursive(true)
+	skill := NewChangeOwner().SetRecursive(true)
 
 	if skill.GetArg(ArgRecursive) != "true" {
 		t.Errorf("Expected recursive 'true', got '%s'", skill.GetArg(ArgRecursive))

@@ -235,8 +235,7 @@ func TestFileCopy_MethodChaining_PreservesType(t *testing.T) {
 
 // TestFileCopy_SetSrc verifies that SetSrc sets the src arg and returns *FileCopy.
 func TestFileCopy_SetSrc(t *testing.T) {
-	skill := NewFileCopy()
-	skill.SetSrc("/etc/ssh/sshd_config")
+	skill := NewFileCopy().SetSrc("/etc/ssh/sshd_config")
 
 	if skill.GetArg(ArgSrc) != "/etc/ssh/sshd_config" {
 		t.Errorf("Expected src '/etc/ssh/sshd_config', got '%s'", skill.GetArg(ArgSrc))
@@ -245,8 +244,7 @@ func TestFileCopy_SetSrc(t *testing.T) {
 
 // TestFileCopy_SetDst verifies that SetDst sets the dst arg and returns *FileCopy.
 func TestFileCopy_SetDst(t *testing.T) {
-	skill := NewFileCopy()
-	skill.SetDst("/etc/ssh/sshd_config.bak")
+	skill := NewFileCopy().SetDst("/etc/ssh/sshd_config.bak")
 
 	if skill.GetArg(ArgDst) != "/etc/ssh/sshd_config.bak" {
 		t.Errorf("Expected dst '/etc/ssh/sshd_config.bak', got '%s'", skill.GetArg(ArgDst))
@@ -255,8 +253,7 @@ func TestFileCopy_SetDst(t *testing.T) {
 
 // TestFileCopy_SetForce verifies that SetForce sets the force arg and returns *FileCopy.
 func TestFileCopy_SetForce(t *testing.T) {
-	skill := NewFileCopy()
-	skill.SetForce(true)
+	skill := NewFileCopy().SetForce(true)
 
 	if skill.GetArg(ArgForce) != "true" {
 		t.Errorf("Expected force 'true', got '%s'", skill.GetArg(ArgForce))

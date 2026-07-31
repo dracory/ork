@@ -22,7 +22,7 @@ const (
 //
 // Usage:
 //
-//	node.Run(security.NewSshChangePort().SetArg("port", "2222"))
+//	node.Run(security.NewSshChangePort().SetPort(2222))
 //
 // Execution Flow:
 //  1. Validates new port number (1024-65535)
@@ -194,6 +194,13 @@ func (s *SshChangePort) SetArgs(args map[string]string) types.RunnableInterface 
 	return s
 }
 
+// SetPort sets the new SSH port number (1024-65535).
+// Returns SshChangePort for chaining.
+func (s *SshChangePort) SetPort(port int) *SshChangePort {
+	s.BaseSkill.SetArg(ArgPort, fmt.Sprintf("%d", port))
+	return s
+}
+
 // SetArg sets a single argument for SSH port change.
 // Returns SshChangePort for fluent method chaining.
 func (s *SshChangePort) SetArg(key, value string) types.RunnableInterface {
@@ -223,7 +230,7 @@ func (s *SshChangePort) SetTimeout(timeout time.Duration) types.RunnableInterfac
 }
 
 // NewSshChangePort creates a new ssh-change-port skill.
-func NewSshChangePort() types.RunnableInterface {
+func NewSshChangePort() *SshChangePort {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSshChangePort)
 	pb.SetDescription("Change the SSH port to reduce automated scanning")

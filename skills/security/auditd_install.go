@@ -212,7 +212,7 @@ func (a *AuditdInstall) SetTimeout(timeout time.Duration) types.RunnableInterfac
 }
 
 // NewAuditdInstall creates a new auditd-install skill.
-func NewAuditdInstall() types.RunnableInterface {
+func NewAuditdInstall() *AuditdInstall {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDAuditdInstall)
 	pb.SetDescription("Install and configure the Linux Audit Framework")

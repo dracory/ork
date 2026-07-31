@@ -153,3 +153,35 @@ func TestKernelHarden_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestKernelHarden_SetSysctlConfigPath verifies that SetSysctlConfigPath sets the sysctl-config-path arg.
+func TestKernelHarden_SetSysctlConfigPath(t *testing.T) {
+	skill := NewKernelHarden().SetSysctlConfigPath("/etc/sysctl.conf")
+
+	if skill.GetArg(ArgSysctlConfigPath) != "/etc/sysctl.conf" {
+		t.Errorf("Expected sysctl-config-path '/etc/sysctl.conf', got '%s'", skill.GetArg(ArgSysctlConfigPath))
+	}
+}
+
+// TestKernelHarden_SetSysctlDropInPath verifies that SetSysctlDropInPath sets the sysctl-dropin-path arg.
+func TestKernelHarden_SetSysctlDropInPath(t *testing.T) {
+	skill := NewKernelHarden().SetSysctlDropInPath("/etc/sysctl.d/99-hardening.conf")
+
+	if skill.GetArg(ArgSysctlDropInPath) != "/etc/sysctl.d/99-hardening.conf" {
+		t.Errorf("Expected sysctl-dropin-path '/etc/sysctl.d/99-hardening.conf', got '%s'", skill.GetArg(ArgSysctlDropInPath))
+	}
+}
+
+// TestKernelHarden_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestKernelHarden_TypedSetters_Chaining(t *testing.T) {
+	skill := NewKernelHarden().
+		SetSysctlConfigPath("/etc/sysctl.conf").
+		SetSysctlDropInPath("/etc/sysctl.d/99-hardening.conf")
+
+	if skill.GetArg(ArgSysctlConfigPath) != "/etc/sysctl.conf" {
+		t.Errorf("Expected sysctl-config-path '/etc/sysctl.conf', got '%s'", skill.GetArg(ArgSysctlConfigPath))
+	}
+	if skill.GetArg(ArgSysctlDropInPath) != "/etc/sysctl.d/99-hardening.conf" {
+		t.Errorf("Expected sysctl-dropin-path '/etc/sysctl.d/99-hardening.conf', got '%s'", skill.GetArg(ArgSysctlDropInPath))
+	}
+}

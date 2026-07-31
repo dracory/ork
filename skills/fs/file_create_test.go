@@ -262,8 +262,7 @@ func TestFileCreate_MethodChaining_PreservesType(t *testing.T) {
 
 // TestFileCreate_SetPath verifies that SetPath sets the path arg and returns *FileCreate.
 func TestFileCreate_SetPath(t *testing.T) {
-	skill := NewFileCreate()
-	skill.SetPath("/var/www/myapp/config.json")
+	skill := NewFileCreate().SetPath("/var/www/myapp/config.json")
 
 	if skill.GetArg(ArgPath) != "/var/www/myapp/config.json" {
 		t.Errorf("Expected path '/var/www/myapp/config.json', got '%s'", skill.GetArg(ArgPath))
@@ -272,8 +271,7 @@ func TestFileCreate_SetPath(t *testing.T) {
 
 // TestFileCreate_SetContent verifies that SetContent sets the content arg and returns *FileCreate.
 func TestFileCreate_SetContent(t *testing.T) {
-	skill := NewFileCreate()
-	skill.SetContent(`{"key": "value"}`)
+	skill := NewFileCreate().SetContent(`{"key": "value"}`)
 
 	if skill.GetArg(ArgContent) != `{"key": "value"}` {
 		t.Errorf("Expected content to match, got '%s'", skill.GetArg(ArgContent))
@@ -282,8 +280,7 @@ func TestFileCreate_SetContent(t *testing.T) {
 
 // TestFileCreate_SetOwner verifies that SetOwner sets the owner arg and returns *FileCreate.
 func TestFileCreate_SetOwner(t *testing.T) {
-	skill := NewFileCreate()
-	skill.SetOwner("www-data:www-data")
+	skill := NewFileCreate().SetOwner("www-data:www-data")
 
 	if skill.GetArg(ArgOwner) != "www-data:www-data" {
 		t.Errorf("Expected owner 'www-data:www-data', got '%s'", skill.GetArg(ArgOwner))
@@ -292,8 +289,7 @@ func TestFileCreate_SetOwner(t *testing.T) {
 
 // TestFileCreate_SetMode verifies that SetMode sets the mode arg and returns *FileCreate.
 func TestFileCreate_SetMode(t *testing.T) {
-	skill := NewFileCreate()
-	skill.SetMode("644")
+	skill := NewFileCreate().SetMode("644")
 
 	if skill.GetArg(ArgMode) != "644" {
 		t.Errorf("Expected mode '644', got '%s'", skill.GetArg(ArgMode))
@@ -302,8 +298,7 @@ func TestFileCreate_SetMode(t *testing.T) {
 
 // TestFileCreate_SetOverwrite verifies that SetOverwrite sets the overwrite arg and returns *FileCreate.
 func TestFileCreate_SetOverwrite(t *testing.T) {
-	skill := NewFileCreate()
-	skill.SetOverwrite(true)
+	skill := NewFileCreate().SetOverwrite(true)
 
 	if skill.GetArg(ArgOverwrite) != "true" {
 		t.Errorf("Expected overwrite 'true', got '%s'", skill.GetArg(ArgOverwrite))

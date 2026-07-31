@@ -202,3 +202,30 @@ func TestSshChangePort_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestSshChangePort_SetPort verifies that SetPort sets the port arg as a string int.
+func TestSshChangePort_SetPort(t *testing.T) {
+	skill := NewSshChangePort().SetPort(2222)
+
+	if skill.GetArg(ArgPort) != "2222" {
+		t.Errorf("Expected port '2222', got '%s'", skill.GetArg(ArgPort))
+	}
+}
+
+// TestSshChangePort_SetPort_Chaining verifies that SetPort chains with other setters.
+func TestSshChangePort_SetPort_Chaining(t *testing.T) {
+	skill := NewSshChangePort().
+		SetPort(2222).
+		SetID("custom-id").
+		SetDescription("custom description")
+
+	if skill.GetArg(ArgPort) != "2222" {
+		t.Errorf("Expected port '2222', got '%s'", skill.GetArg(ArgPort))
+	}
+	if skill.GetID() != "custom-id" {
+		t.Error("Chaining should set ID")
+	}
+	if skill.GetDescription() != "custom description" {
+		t.Error("Chaining should set description")
+	}
+}

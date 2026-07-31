@@ -25,7 +25,13 @@ import (
 //
 // Usage:
 //
-//	node.Run(security.NewSshHarden().SetArg("non-root-user", "<username>"))
+//	node.Run(security.NewSshHarden().SetNonRootUser("<username>"))
+//	// or with full configuration:
+//	node.Run(security.NewSshHarden().
+//	    SetNonRootUser("deploy").
+//	    SetMaxAuthTries(3).
+//	    SetClientAliveInterval(300).
+//	    SetClientAliveCountMax(2))
 //
 // Security Changes Applied:
 //   - Disable root login (PermitRootLogin no)
@@ -204,6 +210,41 @@ func (s *SshHarden) SetArgs(args map[string]string) types.RunnableInterface {
 	return s
 }
 
+// SetNonRootUser sets the non-root username to verify before disabling root login.
+// Returns SshHarden for chaining.
+func (s *SshHarden) SetNonRootUser(username string) *SshHarden {
+	s.BaseSkill.SetArg(ArgNonRootUser, username)
+	return s
+}
+
+// SetSSHConfigPath sets the SSH configuration file path.
+// Returns SshHarden for chaining.
+func (s *SshHarden) SetSSHConfigPath(path string) *SshHarden {
+	s.BaseSkill.SetArg(ArgSSHConfigPath, path)
+	return s
+}
+
+// SetMaxAuthTries sets the maximum authentication attempts.
+// Returns SshHarden for chaining.
+func (s *SshHarden) SetMaxAuthTries(max int) *SshHarden {
+	s.BaseSkill.SetArg(ArgMaxAuthTries, fmt.Sprintf("%d", max))
+	return s
+}
+
+// SetClientAliveInterval sets the client alive interval in seconds.
+// Returns SshHarden for chaining.
+func (s *SshHarden) SetClientAliveInterval(interval int) *SshHarden {
+	s.BaseSkill.SetArg(ArgClientAliveInterval, fmt.Sprintf("%d", interval))
+	return s
+}
+
+// SetClientAliveCountMax sets the client alive count max.
+// Returns SshHarden for chaining.
+func (s *SshHarden) SetClientAliveCountMax(count int) *SshHarden {
+	s.BaseSkill.SetArg(ArgClientAliveCountMax, fmt.Sprintf("%d", count))
+	return s
+}
+
 // SetArg sets a single argument for SSH hardening.
 // Returns SshHarden for fluent method chaining.
 func (s *SshHarden) SetArg(key, value string) types.RunnableInterface {
@@ -240,7 +281,7 @@ func (s *SshHarden) SetTimeout(timeout time.Duration) types.RunnableInterface {
 //   - Root login will be disabled - ensure non-root user exists and can use sudo
 //   - Verify a separate SSH session can log in as the non-root user before running
 //   - Keep the current root SSH session open until the hardened SSH configuration is tested
-func NewSshHarden() types.RunnableInterface {
+func NewSshHarden() *SshHarden {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSshHarden)
 	pb.SetDescription("Apply security hardening to SSH server configuration")

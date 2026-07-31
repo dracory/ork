@@ -225,8 +225,7 @@ func TestAptInstall_MethodChaining_PreservesType(t *testing.T) {
 
 // TestAptInstall_SetPackages verifies that SetPackages sets the packages arg (variadic, joined with spaces).
 func TestAptInstall_SetPackages(t *testing.T) {
-	skill := NewAptInstall()
-	skill.SetPackages("nodejs", "npm")
+	skill := NewAptInstall().SetPackages("nodejs", "npm")
 
 	if skill.GetArg(ArgPackages) != "nodejs npm" {
 		t.Errorf("Expected packages 'nodejs npm', got '%s'", skill.GetArg(ArgPackages))
@@ -235,8 +234,7 @@ func TestAptInstall_SetPackages(t *testing.T) {
 
 // TestAptInstall_SetPackages_Single verifies that SetPackages works with a single package.
 func TestAptInstall_SetPackages_Single(t *testing.T) {
-	skill := NewAptInstall()
-	skill.SetPackages("curl")
+	skill := NewAptInstall().SetPackages("curl")
 
 	if skill.GetArg(ArgPackages) != "curl" {
 		t.Errorf("Expected packages 'curl', got '%s'", skill.GetArg(ArgPackages))

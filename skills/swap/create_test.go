@@ -178,8 +178,7 @@ func TestSwapCreate_MethodChaining_PreservesType(t *testing.T) {
 
 // TestSwapCreate_SetSize verifies that SetSize sets the size arg as a string int.
 func TestSwapCreate_SetSize(t *testing.T) {
-	skill := NewSwapCreate()
-	skill.SetSize(2)
+	skill := NewSwapCreate().SetSize(2)
 
 	if skill.GetArg(ArgSize) != "2" {
 		t.Errorf("Expected size '2', got '%s'", skill.GetArg(ArgSize))
@@ -188,8 +187,7 @@ func TestSwapCreate_SetSize(t *testing.T) {
 
 // TestSwapCreate_SetUnit verifies that SetUnit sets the unit arg.
 func TestSwapCreate_SetUnit(t *testing.T) {
-	skill := NewSwapCreate()
-	skill.SetUnit("mb")
+	skill := NewSwapCreate().SetUnit("mb")
 
 	if skill.GetArg(ArgUnit) != "mb" {
 		t.Errorf("Expected unit 'mb', got '%s'", skill.GetArg(ArgUnit))
@@ -198,8 +196,7 @@ func TestSwapCreate_SetUnit(t *testing.T) {
 
 // TestSwapCreate_SetSwappiness verifies that SetSwappiness sets the swappiness arg as a string int.
 func TestSwapCreate_SetSwappiness(t *testing.T) {
-	skill := NewSwapCreate()
-	skill.SetSwappiness(20)
+	skill := NewSwapCreate().SetSwappiness(20)
 
 	if skill.GetArg(ArgSwappiness) != "20" {
 		t.Errorf("Expected swappiness '20', got '%s'", skill.GetArg(ArgSwappiness))
@@ -208,8 +205,7 @@ func TestSwapCreate_SetSwappiness(t *testing.T) {
 
 // TestSwapCreate_SetSwapFilePath verifies that SetSwapFilePath sets the swapfile-path arg.
 func TestSwapCreate_SetSwapFilePath(t *testing.T) {
-	skill := NewSwapCreate()
-	skill.SetSwapFilePath("/mnt/swapfile")
+	skill := NewSwapCreate().SetSwapFilePath("/mnt/swapfile")
 
 	if skill.GetArg(ArgSwapFilePath) != "/mnt/swapfile" {
 		t.Errorf("Expected swapfile-path '/mnt/swapfile', got '%s'", skill.GetArg(ArgSwapFilePath))
