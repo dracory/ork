@@ -3,6 +3,8 @@ package ork
 import (
 	"fmt"
 	"log/slog"
+	"reflect"
+	"unsafe"
 
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
@@ -472,24 +474,106 @@ func (n *nodeImplementation) RunCommand(cmd string) types.Results {
 	return results
 }
 
+// cloneFromMap creates a fresh instance of the same type as template,
+// initializes its embedded *BaseSkill (or *BasePlaybook), and populates it
+// from the map. This is used to create per-goroutine clones of shared skills
+// for concurrency safety.
+//
+// After FromMap, non-serializable fields (function pointers like runFunc,
+// checkFunc) are copied from the original template to the clone, since they
+// cannot survive the ToMap/FromMap round-trip.
+//
+// Requirements for skill types that use cloneFromMap:
+//   - Must embed *types.BaseSkill or *types.BasePlaybook (for initialization).
+//   - Must implement ToMap()/FromMap() to serialize any custom non-func fields.
+//     Fields that are NOT serialized via ToMap/FromMap and are NOT function-typed
+//     will be lost on clone. For example, commandImplementation overrides
+//     ToMap/FromMap to preserve command/required/chdir.
+//   - Function-typed fields (e.g. test mock closures) are copied via reflection.
+//     Unexported function fields use unsafe.Pointer — this is safe for simple
+//     function pointers but fragile for complex interface values.
+func cloneFromMap(template types.RunnableInterface, m map[string]any) (types.RunnableInterface, error) {
+	typ := reflect.TypeOf(template).Elem()
+	clonePtr := reflect.New(typ)
+
+	// Initialize the embedded *BaseSkill or *BasePlaybook
+	// Look for a field named "BaseSkill" first, then "BasePlaybook"
+	for _, fieldName := range []string{types.FieldBaseSkill, types.FieldBasePlaybook} {
+		if f := clonePtr.Elem().FieldByName(fieldName); f.IsValid() && f.CanSet() {
+			if fieldName == types.FieldBaseSkill {
+				f.Set(reflect.ValueOf(types.NewBaseSkill()))
+			} else {
+				f.Set(reflect.ValueOf(types.NewBasePlaybook()))
+			}
+			break
+		}
+	}
+
+	clone := clonePtr.Interface().(types.RunnableInterface)
+	clone.FromMap(m)
+
+	// Copy non-serializable fields (function pointers) from the original.
+	// These cannot survive ToMap/FromMap, so we copy them directly.
+	// This is safe because function pointers are immutable (read-only).
+	// Uses unsafe.Pointer for unexported fields (CanSet() returns false for them).
+	templateVal := reflect.ValueOf(template).Elem()
+	cloneVal := clonePtr.Elem()
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		// Skip the embedded BaseSkill/BasePlaybook (already initialized above)
+		if field.Name == types.FieldBaseSkill || field.Name == types.FieldBasePlaybook {
+			continue
+		}
+		// Copy function-typed fields
+		if field.Type.Kind() == reflect.Func {
+			srcField := templateVal.Field(i)
+			dstField := cloneVal.Field(i)
+			if dstField.CanSet() {
+				dstField.Set(srcField)
+			} else {
+				// Unexported field — use unsafe to copy the function value.
+				// reflect.NewAt creates a settable pointer to the unexported field.
+				srcAddr := unsafe.Pointer(srcField.UnsafeAddr())
+				dstAddr := unsafe.Pointer(dstField.UnsafeAddr())
+				srcSettable := reflect.NewAt(field.Type, srcAddr).Elem()
+				dstSettable := reflect.NewAt(field.Type, dstAddr).Elem()
+				dstSettable.Set(srcSettable)
+			}
+		}
+	}
+
+	return clone, nil
+}
+
 // Run executes a skill instance directly and returns detailed result information.
 // This is the preferred method for executing skills.
 //
-// The skill is configured with the node's settings and executed immediately.
-// This method allows running custom or programmatically created skills without registry lookup.
+// The skill is cloned before mutation to ensure concurrency safety.
+// Each call gets its own isolated clone — the original shared instance is never mutated.
+// This prevents data races when multiple goroutines execute the same skill concurrently.
 func (n *nodeImplementation) Run(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
 
-	skill.SetNodeConfig(n.cfg)
-	// Propagate node's dry-run mode to skill
-	skill.SetDryRun(n.cfg.IsDryRunMode)
-	// Propagate node's become user to skill only if skill doesn't already have one
-	if skill.GetBecomeUser() == "" {
-		skill.SetBecomeUser(n.cfg.BecomeUser)
+	// Clone the skill to avoid mutating the shared instance
+	clone, err := cloneFromMap(skill, skill.ToMap())
+	if err != nil {
+		results.Results[n.GetHost()] = types.Result{
+			Changed: false,
+			Message: fmt.Sprintf("failed to clone skill: %v", err),
+			Error:   err,
+		}
+		return results
 	}
-	result := skill.Run()
+
+	// Set execution-time config on the clone (not shared, safe to mutate)
+	clone.SetNodeConfig(n.cfg)
+	clone.SetDryRun(n.cfg.IsDryRunMode)
+	if clone.GetBecomeUser() == "" {
+		clone.SetBecomeUser(n.cfg.BecomeUser)
+	}
+	result := clone.Run()
 
 	results.Results[n.GetHost()] = types.Result{
 		Changed: result.Changed,
@@ -503,6 +587,7 @@ func (n *nodeImplementation) Run(skill types.RunnableInterface) types.Results {
 // RunByID executes a skill by ID from the registry.
 // This is useful when you want to run skills by string identifier.
 //
+// The skill is cloned before mutation to ensure concurrency safety.
 // Optional RunnableOptions can be provided to override node-level arguments for this
 // specific execution. Skill-level args take precedence over node-level args.
 func (n *nodeImplementation) RunByID(id string, opts ...types.RunnableOptions) types.Results {
@@ -530,20 +615,30 @@ func (n *nodeImplementation) RunByID(id string, opts ...types.RunnableOptions) t
 		return results
 	}
 
-	skill.SetNodeConfig(n.cfg)
-	// Start with node's dry-run mode, allow opts to override
-	skill.SetDryRun(n.cfg.IsDryRunMode)
-	// Start with node's become user, only if skill doesn't already have one
-	if skill.GetBecomeUser() == "" {
-		skill.SetBecomeUser(n.cfg.BecomeUser)
-	}
-	if len(opts) > 0 {
-		skill.SetArgs(opts[0].Args)
-		skill.SetDryRun(opts[0].DryRun)
-		skill.SetTimeout(opts[0].Timeout)
+	// Clone the skill to avoid mutating the shared registry instance
+	clone, err := cloneFromMap(skill, skill.ToMap())
+	if err != nil {
+		results.Results[n.GetHost()] = types.Result{
+			Changed: false,
+			Message: fmt.Sprintf("failed to clone skill '%s': %v", id, err),
+			Error:   fmt.Errorf("failed to clone skill '%s': %w", id, err),
+		}
+		return results
 	}
 
-	result := skill.Run()
+	// Set execution-time config on the clone (not shared, safe to mutate)
+	clone.SetNodeConfig(n.cfg)
+	clone.SetDryRun(n.cfg.IsDryRunMode)
+	if clone.GetBecomeUser() == "" {
+		clone.SetBecomeUser(n.cfg.BecomeUser)
+	}
+	if len(opts) > 0 {
+		clone.SetArgs(opts[0].Args)
+		clone.SetDryRun(opts[0].DryRun)
+		clone.SetTimeout(opts[0].Timeout)
+	}
+
+	result := clone.Run()
 	results.Results[n.GetHost()] = types.Result{
 		Changed: result.Changed,
 		Message: result.Message,
@@ -555,13 +650,33 @@ func (n *nodeImplementation) RunByID(id string, opts ...types.RunnableOptions) t
 
 // Check implements RunnerInterface.
 // Runs skill in dry-run mode to check if changes are needed.
+//
+// The skill is cloned before mutation to ensure concurrency safety.
+// Also fixes a previous bug where Check() only set DryRun but not NodeConfig,
+// causing skills to run without SSH connection details during check mode.
 func (n *nodeImplementation) Check(skill types.RunnableInterface) types.Results {
 	results := types.Results{
 		Results: make(map[string]types.Result),
 	}
-	// Use node's dry-run mode setting (may be already set via SetDryRunMode)
-	skill.SetDryRun(n.cfg.IsDryRunMode)
-	result := skill.Run()
+
+	// Clone the skill to avoid mutating the shared instance
+	clone, err := cloneFromMap(skill, skill.ToMap())
+	if err != nil {
+		results.Results[n.GetHost()] = types.Result{
+			Changed: false,
+			Message: fmt.Sprintf("failed to clone skill: %v", err),
+			Error:   err,
+		}
+		return results
+	}
+
+	// Set full config on the clone (fixes previous bug: Check only set DryRun)
+	clone.SetNodeConfig(n.cfg)
+	clone.SetDryRun(n.cfg.IsDryRunMode)
+	if clone.GetBecomeUser() == "" {
+		clone.SetBecomeUser(n.cfg.BecomeUser)
+	}
+	result := clone.Run()
 	results.Results[n.GetHost()] = types.Result{
 		Changed: result.Changed,
 		Message: result.Message,

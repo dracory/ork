@@ -92,4 +92,13 @@ type RunnableInterface interface {
 	// Uses the config and options set via SetConfig/SetOptions.
 	// The Result.Changed field indicates whether any changes were made.
 	Run() Result
+
+	// ToMap returns the skill's state as a map for cloning.
+	// The framework uses this to clone the skill before mutation,
+	// ensuring each goroutine has its own isolated copy.
+	ToMap() map[string]any
+
+	// FromMap populates the skill's state from a map (inverse of ToMap).
+	// Used by the framework to create a fresh clone with the same state.
+	FromMap(m map[string]any)
 }

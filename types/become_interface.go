@@ -20,6 +20,11 @@ type BecomeInterface interface {
 
 // BaseBecome provides a default implementation of BecomeInterface.
 // Embed this in structs that need privilege escalation support.
+//
+// Note: BaseSkill and BasePlaybook no longer embed BaseBecome — they store
+// becomeUser as an omni.Atom property for thread-safe cloning. BaseBecome
+// is retained for backward compatibility and for custom types that need
+// BecomeInterface without the full BaseSkill/BasePlaybook machinery.
 type BaseBecome struct {
 	becomeUser string
 }

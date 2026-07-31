@@ -766,3 +766,28 @@ func (m *invTestMockPlaybook) Run() types.Result {
 		Message: "Success",
 	}
 }
+
+func (m *invTestMockPlaybook) ToMap() map[string]any {
+	return map[string]any{
+		"id":         m.name,
+		"type":       "invTestMockPlaybook",
+		"nodeConfig": m.cfg,
+		"dryRun":     m.dryRun,
+		"timeout":    m.timeout,
+	}
+}
+
+func (m *invTestMockPlaybook) FromMap(mp map[string]any) {
+	if v, ok := mp["id"].(string); ok {
+		m.name = v
+	}
+	if v, ok := mp["nodeConfig"].(types.NodeConfig); ok {
+		m.cfg = v
+	}
+	if v, ok := mp["dryRun"].(bool); ok {
+		m.dryRun = v
+	}
+	if v, ok := mp["timeout"].(time.Duration); ok {
+		m.timeout = v
+	}
+}
