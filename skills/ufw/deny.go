@@ -1,4 +1,4 @@
-package ufw
+﻿package ufw
 
 import (
 	"fmt"
@@ -39,6 +39,9 @@ import (
 type Deny struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Deny implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Deny)(nil)
 
 // Check determines if the rule needs to be added.
 func (d *Deny) Check() (bool, error) {

@@ -1,4 +1,4 @@
-package user
+﻿package user
 
 // Package user documentation is in status.go
 
@@ -16,6 +16,9 @@ import (
 type UserDelete struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that UserDelete implements types.RunnableInterface.
+var _ types.RunnableInterface = (*UserDelete)(nil)
 
 // Check determines if user exists and can be deleted.
 // Returns true if user exists, false if user doesn't exist.

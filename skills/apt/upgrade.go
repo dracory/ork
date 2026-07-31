@@ -1,4 +1,4 @@
-package apt
+﻿package apt
 
 // Package apt documentation is in status.go
 
@@ -46,6 +46,9 @@ import (
 type AptUpgrade struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that AptUpgrade implements types.RunnableInterface.
+var _ types.RunnableInterface = (*AptUpgrade)(nil)
 
 // Check determines if there are packages that need upgrading.
 // Per the skill interface convention, returns true if upgrades are available

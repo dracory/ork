@@ -1,4 +1,4 @@
-package ufw
+﻿package ufw
 
 import (
 	"fmt"
@@ -45,6 +45,9 @@ import (
 type UfwStatus struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that UfwStatus implements types.RunnableInterface.
+var _ types.RunnableInterface = (*UfwStatus)(nil)
 
 // Check always returns false since this is a read-only skill.
 func (u *UfwStatus) Check() (bool, error) {

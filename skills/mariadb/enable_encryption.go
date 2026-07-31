@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -49,6 +49,9 @@ import (
 type EnableEncryption struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that EnableEncryption implements types.RunnableInterface.
+var _ types.RunnableInterface = (*EnableEncryption)(nil)
 
 // Check determines if encryption needs to be enabled.
 func (m *EnableEncryption) Check() (bool, error) {

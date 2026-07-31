@@ -1,4 +1,4 @@
-package ufw
+﻿package ufw
 
 import (
 	"fmt"
@@ -35,6 +35,9 @@ import (
 type Delete struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Delete implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Delete)(nil)
 
 // Check determines if the rule needs to be deleted.
 func (d *Delete) Check() (bool, error) {

@@ -1,4 +1,4 @@
-package security
+﻿package security
 
 import (
 	"time"
@@ -55,6 +55,9 @@ import (
 type AuditdInstall struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that AuditdInstall implements types.RunnableInterface.
+var _ types.RunnableInterface = (*AuditdInstall)(nil)
 
 // Check determines if auditd needs to be installed.
 func (a *AuditdInstall) Check() (bool, error) {

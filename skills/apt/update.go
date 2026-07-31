@@ -1,4 +1,4 @@
-package apt
+﻿package apt
 
 // Package apt documentation is in status.go
 
@@ -43,6 +43,9 @@ import (
 type AptUpdate struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that AptUpdate implements types.RunnableInterface.
+var _ types.RunnableInterface = (*AptUpdate)(nil)
 
 // Check always returns true for apt-update since cache refresh is always beneficial.
 // Per the skill interface convention, the bool return indicates whether

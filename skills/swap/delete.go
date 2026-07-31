@@ -1,4 +1,4 @@
-package swap
+﻿package swap
 
 // Package swap documentation is in create.go
 
@@ -52,6 +52,9 @@ import (
 type SwapDelete struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that SwapDelete implements types.RunnableInterface.
+var _ types.RunnableInterface = (*SwapDelete)(nil)
 
 // Check determines if swap needs to be removed.
 // Per the skill interface convention, returns true if swap exists
@@ -159,6 +162,13 @@ func (s *SwapDelete) SetArgs(args map[string]string) types.RunnableInterface {
 	return s
 }
 
+// SetSwapFilePath sets the swap file path and returns SwapDelete for chaining.
+// The path must be absolute (e.g. "/swapfile").
+func (s *SwapDelete) SetSwapFilePath(path string) *SwapDelete {
+	s.BaseSkill.SetArg(ArgSwapFilePath, path)
+	return s
+}
+
 // SetArg sets a single argument for swap deletion.
 // Returns SwapDelete for fluent method chaining.
 func (s *SwapDelete) SetArg(key, value string) types.RunnableInterface {
@@ -193,7 +203,7 @@ func (s *SwapDelete) SetTimeout(timeout time.Duration) types.RunnableInterface {
 //
 //	A PlaybookInterface implementation configured with IDSwapDelete identifier
 //	and description "Remove the swap file".
-func NewSwapDelete() types.RunnableInterface {
+func NewSwapDelete() *SwapDelete {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSwapDelete)
 	pb.SetDescription("Remove the swap file")

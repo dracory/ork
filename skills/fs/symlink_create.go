@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -29,6 +29,9 @@ import (
 type SymlinkCreate struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that SymlinkCreate implements types.RunnableInterface.
+var _ types.RunnableInterface = (*SymlinkCreate)(nil)
 
 // Check determines if the symlink needs to be created or updated.
 // Returns true if symlink is missing or points to wrong target.

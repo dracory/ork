@@ -1,4 +1,4 @@
-package security
+﻿package security
 
 import (
 	"fmt"
@@ -50,6 +50,9 @@ import (
 type KernelHarden struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that KernelHarden implements types.RunnableInterface.
+var _ types.RunnableInterface = (*KernelHarden)(nil)
 
 // Check always returns true since we want to verify and apply security settings.
 func (k *KernelHarden) Check() (bool, error) {

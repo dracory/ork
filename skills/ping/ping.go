@@ -1,4 +1,4 @@
-// Package ping provides a skill for testing SSH connectivity to remote servers.
+﻿// Package ping provides a skill for testing SSH connectivity to remote servers.
 // It is the simplest health check skill, used to verify SSH configuration
 // and server accessibility before running more complex operations.
 package ping
@@ -41,6 +41,9 @@ import (
 type Ping struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Ping implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Ping)(nil)
 
 // Check verifies SSH connectivity to the remote server.
 // Per the skill interface convention, the bool return indicates whether

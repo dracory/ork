@@ -1,4 +1,4 @@
-// Package swap provides playbooks for managing swap files on Linux systems.
+﻿// Package swap provides playbooks for managing swap files on Linux systems.
 // It supports creating, deleting, and checking swap file status with configurable
 // size, unit, and swappiness settings.
 package swap
@@ -21,6 +21,8 @@ import (
 //
 // Usage:
 //
+//	node.Run(swap.NewSwapCreate().SetSize(2).SetUnit("gb").SetSwappiness(10))
+//	// or equivalently:
 //	node.Run(swap.NewSwapCreate().SetArg("size", "2").SetArg("unit", "gb").SetArg("swappiness", "10"))
 //
 // Arguments:
@@ -66,6 +68,9 @@ import (
 type SwapCreate struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that SwapCreate implements types.RunnableInterface.
+var _ types.RunnableInterface = (*SwapCreate)(nil)
 
 // Check determines if swap needs to be created.
 // Per the skill interface convention, returns true if swap needs to be
@@ -277,6 +282,33 @@ func (s *SwapCreate) SetArgs(args map[string]string) types.RunnableInterface {
 	return s
 }
 
+// SetSize sets the swap file size and returns SwapCreate for chaining.
+// Example: SetSize(2) for a 2GB swap file (with default unit "gb").
+func (s *SwapCreate) SetSize(size int) *SwapCreate {
+	s.BaseSkill.SetArg(ArgSize, fmt.Sprintf("%d", size))
+	return s
+}
+
+// SetUnit sets the size unit ("gb" or "mb") and returns SwapCreate for chaining.
+func (s *SwapCreate) SetUnit(unit string) *SwapCreate {
+	s.BaseSkill.SetArg(ArgUnit, unit)
+	return s
+}
+
+// SetSwappiness sets the kernel swappiness value (0-100) and returns SwapCreate for chaining.
+// Lower values prefer RAM over swap, better for database workloads.
+func (s *SwapCreate) SetSwappiness(swappiness int) *SwapCreate {
+	s.BaseSkill.SetArg(ArgSwappiness, fmt.Sprintf("%d", swappiness))
+	return s
+}
+
+// SetSwapFilePath sets the swap file path and returns SwapCreate for chaining.
+// The path must be absolute (e.g. "/swapfile").
+func (s *SwapCreate) SetSwapFilePath(path string) *SwapCreate {
+	s.BaseSkill.SetArg(ArgSwapFilePath, path)
+	return s
+}
+
 // SetArg sets a single argument for swap creation.
 // Returns SwapCreate for fluent method chaining.
 func (s *SwapCreate) SetArg(key, value string) types.RunnableInterface {
@@ -318,7 +350,7 @@ func (s *SwapCreate) SetTimeout(timeout time.Duration) types.RunnableInterface {
 //	- size: "1" (1 unit)
 //	- unit: "gb" (gigabytes)
 //	- swappiness: "10" (low swappiness, prefers RAM)
-func NewSwapCreate() types.RunnableInterface {
+func NewSwapCreate() *SwapCreate {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSwapCreate)
 	pb.SetDescription("Create a swap file (size via args['size'], unit via args['unit']='gb'|'mb', swappiness via args['swappiness']=10, defaults: 1GB, swappiness=10)")

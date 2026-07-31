@@ -1,4 +1,4 @@
-package user
+﻿package user
 
 // Package user documentation is in status.go
 
@@ -16,6 +16,9 @@ import (
 type UserCreate struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that UserCreate implements types.RunnableInterface.
+var _ types.RunnableInterface = (*UserCreate)(nil)
 
 // Check determines if user needs to be created.
 // Returns true if user doesn't exist, false if user already exists.

@@ -1,4 +1,4 @@
-package ufw
+﻿package ufw
 
 import (
 	"time"
@@ -35,6 +35,9 @@ import (
 type Reset struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Reset implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Reset)(nil)
 
 // Check determines if UFW needs to be reset.
 func (r *Reset) Check() (bool, error) {

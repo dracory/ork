@@ -175,3 +175,65 @@ func TestSwapCreate_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestSwapCreate_SetSize verifies that SetSize sets the size arg as a string int.
+func TestSwapCreate_SetSize(t *testing.T) {
+	skill := NewSwapCreate()
+	skill.SetSize(2)
+
+	if skill.GetArg(ArgSize) != "2" {
+		t.Errorf("Expected size '2', got '%s'", skill.GetArg(ArgSize))
+	}
+}
+
+// TestSwapCreate_SetUnit verifies that SetUnit sets the unit arg.
+func TestSwapCreate_SetUnit(t *testing.T) {
+	skill := NewSwapCreate()
+	skill.SetUnit("mb")
+
+	if skill.GetArg(ArgUnit) != "mb" {
+		t.Errorf("Expected unit 'mb', got '%s'", skill.GetArg(ArgUnit))
+	}
+}
+
+// TestSwapCreate_SetSwappiness verifies that SetSwappiness sets the swappiness arg as a string int.
+func TestSwapCreate_SetSwappiness(t *testing.T) {
+	skill := NewSwapCreate()
+	skill.SetSwappiness(20)
+
+	if skill.GetArg(ArgSwappiness) != "20" {
+		t.Errorf("Expected swappiness '20', got '%s'", skill.GetArg(ArgSwappiness))
+	}
+}
+
+// TestSwapCreate_SetSwapFilePath verifies that SetSwapFilePath sets the swapfile-path arg.
+func TestSwapCreate_SetSwapFilePath(t *testing.T) {
+	skill := NewSwapCreate()
+	skill.SetSwapFilePath("/mnt/swapfile")
+
+	if skill.GetArg(ArgSwapFilePath) != "/mnt/swapfile" {
+		t.Errorf("Expected swapfile-path '/mnt/swapfile', got '%s'", skill.GetArg(ArgSwapFilePath))
+	}
+}
+
+// TestSwapCreate_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestSwapCreate_TypedSetters_Chaining(t *testing.T) {
+	skill := NewSwapCreate().
+		SetSize(4).
+		SetUnit("gb").
+		SetSwappiness(15).
+		SetSwapFilePath("/mnt/swapfile")
+
+	if skill.GetArg(ArgSize) != "4" {
+		t.Errorf("Expected size '4', got '%s'", skill.GetArg(ArgSize))
+	}
+	if skill.GetArg(ArgUnit) != "gb" {
+		t.Errorf("Expected unit 'gb', got '%s'", skill.GetArg(ArgUnit))
+	}
+	if skill.GetArg(ArgSwappiness) != "15" {
+		t.Errorf("Expected swappiness '15', got '%s'", skill.GetArg(ArgSwappiness))
+	}
+	if skill.GetArg(ArgSwapFilePath) != "/mnt/swapfile" {
+		t.Errorf("Expected swapfile-path '/mnt/swapfile', got '%s'", skill.GetArg(ArgSwapFilePath))
+	}
+}

@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -32,6 +32,9 @@ import (
 type Status struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Status implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Status)(nil)
 
 // Check always returns false since this is a read-only skill.
 func (m *Status) Check() (bool, error) {

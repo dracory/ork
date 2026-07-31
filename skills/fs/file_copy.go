@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 )
 
 // FileCopy copies a file on the remote server (cp).
-// This is NOT an upload from local — both src and dst are remote paths.
+// This is NOT an upload from local â€” both src and dst are remote paths.
 //
 // Usage:
 //
@@ -32,6 +32,9 @@ type FileCopy struct {
 	*types.BaseSkill
 }
 
+// Compile-time assertion that FileCopy implements types.RunnableInterface.
+var _ types.RunnableInterface = (*FileCopy)(nil)
+
 // Check determines if the copy needs to happen.
 // Returns true if dst doesn't exist or content differs from src.
 func (f *FileCopy) Check() (bool, error) {
@@ -52,27 +55,27 @@ func (f *FileCopy) Check() (bool, error) {
 		return true, nil
 	}
 
-	// Check if src exists — if not, nothing to copy
+	// Check if src exists â€” if not, nothing to copy
 	if !fileExists(cfg, src) {
 		return false, nil
 	}
 
 	// Check if dst exists
 	if !fileExists(cfg, dst) {
-		// dst doesn't exist — needs copy
+		// dst doesn't exist â€” needs copy
 		return true, nil
 	}
 
-	// dst exists — check force flag
+	// dst exists â€” check force flag
 	force := f.GetArg(ArgForce)
 	if !isTrue(force) {
-		// Don't overwrite — no change needed
+		// Don't overwrite â€” no change needed
 		return false, nil
 	}
 
-	// force is true — check if content differs
+	// force is true â€” check if content differs
 	if !filesIdentical(cfg, src, dst) {
-		// Content differs — needs copy
+		// Content differs â€” needs copy
 		return true, nil
 	}
 

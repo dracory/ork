@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -25,6 +25,9 @@ import (
 type FileDelete struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that FileDelete implements types.RunnableInterface.
+var _ types.RunnableInterface = (*FileDelete)(nil)
 
 // Check determines if the file needs to be deleted.
 // Returns true if the file exists, false if it doesn't.

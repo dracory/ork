@@ -1,4 +1,4 @@
-// Package reboot provides a skill for rebooting remote servers.
+﻿// Package reboot provides a skill for rebooting remote servers.
 // It supports both immediate reboot and wait-for-reconnect functionality
 // to ensure the server comes back online after rebooting.
 package reboot
@@ -60,6 +60,9 @@ type Reboot struct {
 	// MaxWaitTime is the maximum time to wait for reconnection (default: 5m)
 	MaxWaitTime time.Duration
 }
+
+// Compile-time assertion that Reboot implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Reboot)(nil)
 
 // Check always returns true for reboot since it's an explicit action.
 // Per the skill interface convention, the bool return indicates whether

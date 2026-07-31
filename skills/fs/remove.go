@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -31,6 +31,9 @@ import (
 type Remove struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Remove implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Remove)(nil)
 
 // Check determines if the path needs to be removed.
 // Returns true if the path exists, false if it doesn't.

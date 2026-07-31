@@ -1,4 +1,4 @@
-package user
+﻿package user
 
 // Package user documentation is in status.go
 
@@ -18,6 +18,9 @@ import (
 type UserAddToGroup struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that UserAddToGroup implements types.RunnableInterface.
+var _ types.RunnableInterface = (*UserAddToGroup)(nil)
 
 // Check determines if the user needs to be added to the group.
 // Returns true if the user is not already a member of the group.

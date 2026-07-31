@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 )
 
 // FileExists checks if a file exists on the remote server.
-// This is a read-only skill — it never modifies the system.
+// This is a read-only skill â€” it never modifies the system.
 //
 // Usage:
 //
@@ -27,7 +27,10 @@ type FileExists struct {
 	*types.BaseSkill
 }
 
-// Check always returns false — this is a read-only skill that never needs changes.
+// Compile-time assertion that FileExists implements types.RunnableInterface.
+var _ types.RunnableInterface = (*FileExists)(nil)
+
+// Check always returns false â€” this is a read-only skill that never needs changes.
 func (f *FileExists) Check() (bool, error) {
 	return false, nil
 }

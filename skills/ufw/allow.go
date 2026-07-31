@@ -1,4 +1,4 @@
-package ufw
+﻿package ufw
 
 import (
 	"fmt"
@@ -39,6 +39,9 @@ import (
 type Allow struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Allow implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Allow)(nil)
 
 // Check determines if the rule needs to be added.
 func (a *Allow) Check() (bool, error) {

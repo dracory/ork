@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -41,6 +41,9 @@ import (
 type Purge struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Purge implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Purge)(nil)
 
 // Check determines if MariaDB needs to be purged.
 func (m *Purge) Check() (bool, error) {

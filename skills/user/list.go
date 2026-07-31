@@ -1,4 +1,4 @@
-// Package user provides playbooks for managing Linux user accounts.
+﻿// Package user provides playbooks for managing Linux user accounts.
 // It supports creating users with SSH key authentication, deleting users,
 // and querying user status and group membership.
 package user
@@ -40,6 +40,9 @@ import (
 type UserList struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that UserList implements types.RunnableInterface.
+var _ types.RunnableInterface = (*UserList)(nil)
 
 // Check always returns false since UserList is read-only.
 // Per the skill interface convention, the bool return indicates whether

@@ -1,4 +1,4 @@
-package apt
+﻿package apt
 
 // Package apt documentation is in status.go
 
@@ -47,6 +47,9 @@ import (
 type AptInstall struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that AptInstall implements types.RunnableInterface.
+var _ types.RunnableInterface = (*AptInstall)(nil)
 
 // shellEscapePackages splits a space-separated package list, escapes each
 // name with skills.ShellEscapeArg, and rejoins them. This prevents shell

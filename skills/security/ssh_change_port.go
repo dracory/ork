@@ -1,4 +1,4 @@
-package security
+﻿package security
 
 import (
 	"fmt"
@@ -50,6 +50,9 @@ const (
 type SshChangePort struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that SshChangePort implements types.RunnableInterface.
+var _ types.RunnableInterface = (*SshChangePort)(nil)
 
 // Check determines if port change is needed.
 func (s *SshChangePort) Check() (bool, error) {

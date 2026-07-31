@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -42,6 +42,9 @@ type Backup struct {
 	*types.BaseSkill
 }
 
+// Compile-time assertion that Backup implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Backup)(nil)
+
 // Check always returns true since we always want to create a fresh backup.
 func (m *Backup) Check() (bool, error) {
 	return true, nil
@@ -78,7 +81,7 @@ func (m *Backup) Run() types.Result {
 
 	backupPath := fmt.Sprintf("%s/%s", backupDir, backupFile)
 
-	// Define commands — use MYSQL_PWD env var to avoid shell injection via -p argument
+	// Define commands â€” use MYSQL_PWD env var to avoid shell injection via -p argument
 	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
 	shellEscapedBackupDir := mariadbEscapeShellQuote(backupDir)
 	shellEscapedDbName := mariadbEscapeShellDoubleQuote(dbName)

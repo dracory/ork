@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -44,6 +44,9 @@ import (
 type Install struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Install implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Install)(nil)
 
 // Check determines if MariaDB needs to be installed.
 func (m *Install) Check() (bool, error) {
@@ -119,7 +122,7 @@ func (m *Install) Run() types.Result {
 		}
 	}
 
-	// Set root password — use MYSQL_PWD env var (avoids shell injection) + SQL-escape the password
+	// Set root password â€” use MYSQL_PWD env var (avoids shell injection) + SQL-escape the password
 	cfg.GetLoggerOrDefault().Info("setting root password")
 	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
 	sqlEscapedPwd := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLQuote(rootPassword))

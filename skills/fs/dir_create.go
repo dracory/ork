@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -33,6 +33,9 @@ type DirCreate struct {
 	*types.BaseSkill
 }
 
+// Compile-time assertion that DirCreate implements types.RunnableInterface.
+var _ types.RunnableInterface = (*DirCreate)(nil)
+
 // Check determines if the directory needs to be created or fixed.
 // Returns true if the directory doesn't exist or ownership/permissions mismatch.
 func (d *DirCreate) Check() (bool, error) {
@@ -51,11 +54,11 @@ func (d *DirCreate) Check() (bool, error) {
 
 	// Check if directory exists
 	if !dirExists(cfg, path) {
-		// Directory doesn't exist — needs creation
+		// Directory doesn't exist â€” needs creation
 		return true, nil
 	}
 
-	// Directory exists — check if owner/mode need fixing
+	// Directory exists â€” check if owner/mode need fixing
 	owner := d.GetArg(ArgOwner)
 	mode := d.GetArg(ArgMode)
 	if mode == "" {
@@ -180,7 +183,7 @@ func (d *DirCreate) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("creating directory", "path", path)
 
-	// Create directory (use mkdir -p which is idempotent — won't fail if exists)
+	// Create directory (use mkdir -p which is idempotent â€” won't fail if exists)
 	output, err := ssh.Run(cfg, cmdMkdir)
 	if err != nil {
 		return types.Result{

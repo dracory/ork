@@ -1,4 +1,4 @@
-package fail2ban
+﻿package fail2ban
 
 import (
 	"fmt"
@@ -55,6 +55,9 @@ import (
 type Fail2banStatus struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Fail2banStatus implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Fail2banStatus)(nil)
 
 // Check always returns false since this is a read-only skill.
 func (f *Fail2banStatus) Check() (bool, error) {

@@ -1,4 +1,4 @@
-package fail2ban
+﻿package fail2ban
 
 import (
 	"fmt"
@@ -50,6 +50,9 @@ import (
 type Fail2banInstall struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Fail2banInstall implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Fail2banInstall)(nil)
 
 // Check determines if fail2ban needs to be installed.
 func (f *Fail2banInstall) Check() (bool, error) {

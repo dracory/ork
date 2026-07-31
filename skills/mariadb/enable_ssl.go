@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -42,6 +42,9 @@ import (
 type EnableSSL struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that EnableSSL implements types.RunnableInterface.
+var _ types.RunnableInterface = (*EnableSSL)(nil)
 
 // Check determines if SSL needs to be enabled.
 func (m *EnableSSL) Check() (bool, error) {

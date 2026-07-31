@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -37,6 +37,9 @@ type Secure struct {
 	*types.BaseSkill
 }
 
+// Compile-time assertion that Secure implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Secure)(nil)
+
 // Check always returns true since we always want to ensure security settings are applied.
 func (m *Secure) Check() (bool, error) {
 	return true, nil
@@ -57,7 +60,7 @@ func (m *Secure) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("securing MariaDB installation")
 
-	// Define commands — use MYSQL_PWD env var to avoid shell injection via -p argument
+	// Define commands â€” use MYSQL_PWD env var to avoid shell injection via -p argument
 	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
 	cmdAnon := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "DELETE FROM mysql.user WHERE User='';"`, shellEscapedPwd), Description: "Remove anonymous users"}
 	cmdRoot := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "DELETE FROM mysql.user WHERE User='root' AND Host NOT IN ('localhost', '127.0.0.1', '::1');"`, shellEscapedPwd), Description: "Restrict root remote access"}

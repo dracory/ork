@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -32,6 +32,9 @@ import (
 type BackupEncrypt struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that BackupEncrypt implements types.RunnableInterface.
+var _ types.RunnableInterface = (*BackupEncrypt)(nil)
 
 // Check determines if backup can be created.
 func (b *BackupEncrypt) Check() (bool, error) {

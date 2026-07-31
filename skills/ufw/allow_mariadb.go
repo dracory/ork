@@ -1,4 +1,4 @@
-package ufw
+﻿package ufw
 
 import (
 	"fmt"
@@ -53,6 +53,9 @@ import (
 type AllowMariaDB struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that AllowMariaDB implements types.RunnableInterface.
+var _ types.RunnableInterface = (*AllowMariaDB)(nil)
 
 // Check determines if UFW rules need to be configured.
 func (u *AllowMariaDB) Check() (bool, error) {

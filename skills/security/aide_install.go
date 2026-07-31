@@ -1,4 +1,4 @@
-package security
+﻿package security
 
 import (
 	"time"
@@ -54,6 +54,9 @@ import (
 type AideInstall struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that AideInstall implements types.RunnableInterface.
+var _ types.RunnableInterface = (*AideInstall)(nil)
 
 // Check determines if AIDE needs to be installed.
 func (a *AideInstall) Check() (bool, error) {

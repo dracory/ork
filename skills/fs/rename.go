@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -31,6 +31,9 @@ type Rename struct {
 	*types.BaseSkill
 }
 
+// Compile-time assertion that Rename implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Rename)(nil)
+
 // Check determines if the rename needs to happen.
 // Returns true if src exists (needs rename), false if src is gone and dst exists.
 func (r *Rename) Check() (bool, error) {
@@ -53,12 +56,12 @@ func (r *Rename) Check() (bool, error) {
 
 	// Check if src exists
 	if !pathExists(cfg, src) {
-		// src doesn't exist — check if dst exists (already renamed)
+		// src doesn't exist â€” check if dst exists (already renamed)
 		if pathExists(cfg, dst) {
-			// dst exists, src doesn't — already renamed
+			// dst exists, src doesn't â€” already renamed
 			return false, nil
 		}
-		// Neither exists — nothing to do
+		// Neither exists â€” nothing to do
 		return false, nil
 	}
 

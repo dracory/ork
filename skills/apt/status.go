@@ -1,4 +1,4 @@
-// Package apt provides playbooks for managing Debian/Ubuntu packages via apt.
+﻿// Package apt provides playbooks for managing Debian/Ubuntu packages via apt.
 // It includes operations for checking package status, updating the package database,
 // and installing available upgrades.
 package apt
@@ -41,6 +41,9 @@ import (
 type AptStatus struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that AptStatus implements types.RunnableInterface.
+var _ types.RunnableInterface = (*AptStatus)(nil)
 
 // Check always returns false since AptStatus is read-only.
 // Per the skill interface convention, the bool return indicates whether

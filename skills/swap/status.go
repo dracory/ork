@@ -1,4 +1,4 @@
-package swap
+﻿package swap
 
 // Package swap documentation is in create.go
 
@@ -45,6 +45,9 @@ import (
 type SwapStatus struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that SwapStatus implements types.RunnableInterface.
+var _ types.RunnableInterface = (*SwapStatus)(nil)
 
 // Check always returns false since SwapStatus is read-only.
 // Per the skill interface convention, the bool return indicates whether
@@ -145,7 +148,7 @@ func (s *SwapStatus) SetTimeout(timeout time.Duration) types.RunnableInterface {
 //
 //	A PlaybookInterface implementation configured with IDSwapStatus identifier
 //	and description "Show swap status and usage".
-func NewSwapStatus() types.RunnableInterface {
+func NewSwapStatus() *SwapStatus {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDSwapStatus)
 	pb.SetDescription("Show swap status and usage")

@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -38,6 +38,9 @@ type SecurityAudit struct {
 	*types.BaseSkill
 }
 
+// Compile-time assertion that SecurityAudit implements types.RunnableInterface.
+var _ types.RunnableInterface = (*SecurityAudit)(nil)
+
 // Check always returns false since this is a read-only skill.
 func (m *SecurityAudit) Check() (bool, error) {
 	return false, nil
@@ -56,7 +59,7 @@ func (m *SecurityAudit) Run() types.Result {
 		}
 	}
 
-	// Define commands — use MYSQL_PWD env var to avoid shell injection via -p argument
+	// Define commands â€” use MYSQL_PWD env var to avoid shell injection via -p argument
 	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
 	cmdAnon := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SELECT User, Host FROM mysql.user WHERE User='';"`, shellEscapedPwd), Description: "Check for anonymous users"}
 	cmdTestDb := types.Command{Command: fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SHOW DATABASES LIKE 'test';"`, shellEscapedPwd), Description: "Check for test database"}

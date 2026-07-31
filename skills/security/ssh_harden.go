@@ -1,4 +1,4 @@
-package security
+﻿package security
 
 import (
 	"fmt"
@@ -62,6 +62,9 @@ import (
 type SshHarden struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that SshHarden implements types.RunnableInterface.
+var _ types.RunnableInterface = (*SshHarden)(nil)
 
 // Check always returns true since we want to verify and apply security settings.
 func (s *SshHarden) Check() (bool, error) {

@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -38,6 +38,9 @@ import (
 type ChangePort struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that ChangePort implements types.RunnableInterface.
+var _ types.RunnableInterface = (*ChangePort)(nil)
 
 // Check always returns true to apply the port change.
 func (m *ChangePort) Check() (bool, error) {

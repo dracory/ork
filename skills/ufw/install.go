@@ -1,4 +1,4 @@
-package ufw
+﻿package ufw
 
 import (
 	"fmt"
@@ -49,6 +49,9 @@ import (
 type UfwInstall struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that UfwInstall implements types.RunnableInterface.
+var _ types.RunnableInterface = (*UfwInstall)(nil)
 
 // Check determines if UFW needs to be installed.
 func (u *UfwInstall) Check() (bool, error) {

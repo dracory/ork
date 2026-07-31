@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -41,6 +41,9 @@ import (
 type CreateUser struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that CreateUser implements types.RunnableInterface.
+var _ types.RunnableInterface = (*CreateUser)(nil)
 
 // Check determines if the user already exists.
 func (m *CreateUser) Check() (bool, error) {
@@ -100,7 +103,7 @@ func (m *CreateUser) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("creating database user", "username", username, "host", host)
 
-	// Create user — use MYSQL_PWD env var to avoid shell injection, SQL-escape all string literals
+	// Create user â€” use MYSQL_PWD env var to avoid shell injection, SQL-escape all string literals
 	shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
 	sqlEscapedUsername := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLQuote(username))
 	sqlEscapedHost := mariadbEscapeShellDoubleQuote(mariadbEscapeSQLQuote(host))

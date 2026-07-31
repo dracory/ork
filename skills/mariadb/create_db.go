@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -36,6 +36,9 @@ import (
 type CreateDB struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that CreateDB implements types.RunnableInterface.
+var _ types.RunnableInterface = (*CreateDB)(nil)
 
 // Check determines if the database already exists.
 func (m *CreateDB) Check() (bool, error) {

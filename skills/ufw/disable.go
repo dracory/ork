@@ -1,4 +1,4 @@
-package ufw
+﻿package ufw
 
 import (
 	"time"
@@ -33,6 +33,9 @@ import (
 type Disable struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Disable implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Disable)(nil)
 
 // Check determines if UFW needs to be disabled.
 func (d *Disable) Check() (bool, error) {

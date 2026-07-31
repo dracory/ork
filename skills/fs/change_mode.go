@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -30,6 +30,9 @@ import (
 type ChangeMode struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that ChangeMode implements types.RunnableInterface.
+var _ types.RunnableInterface = (*ChangeMode)(nil)
 
 // Check determines if mode needs to be changed.
 // Returns true if current mode doesn't match desired mode.

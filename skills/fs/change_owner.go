@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -31,6 +31,9 @@ import (
 type ChangeOwner struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that ChangeOwner implements types.RunnableInterface.
+var _ types.RunnableInterface = (*ChangeOwner)(nil)
 
 // Check determines if ownership needs to be changed.
 // Returns true if current owner doesn't match desired owner.

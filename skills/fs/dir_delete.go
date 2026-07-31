@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -28,6 +28,9 @@ import (
 type DirDelete struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that DirDelete implements types.RunnableInterface.
+var _ types.RunnableInterface = (*DirDelete)(nil)
 
 // Check determines if the directory needs to be deleted.
 // Returns true if the directory exists, false if it doesn't.

@@ -1,4 +1,4 @@
-package mariadb
+﻿package mariadb
 
 import (
 	"fmt"
@@ -38,6 +38,9 @@ import (
 type ListDBs struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that ListDBs implements types.RunnableInterface.
+var _ types.RunnableInterface = (*ListDBs)(nil)
 
 // Check always returns false since this is a read-only skill.
 func (m *ListDBs) Check() (bool, error) {

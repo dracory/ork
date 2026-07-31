@@ -1,4 +1,4 @@
-package fs
+﻿package fs
 
 import (
 	"fmt"
@@ -37,6 +37,9 @@ type FileCreate struct {
 	*types.BaseSkill
 }
 
+// Compile-time assertion that FileCreate implements types.RunnableInterface.
+var _ types.RunnableInterface = (*FileCreate)(nil)
+
 // Check determines if the file needs to be created or updated.
 // Returns true if file doesn't exist or content/mode mismatch.
 func (f *FileCreate) Check() (bool, error) {
@@ -55,25 +58,25 @@ func (f *FileCreate) Check() (bool, error) {
 
 	// Check if file exists
 	if !fileExists(cfg, path) {
-		// File doesn't exist — needs creation
+		// File doesn't exist â€” needs creation
 		return true, nil
 	}
 
-	// File exists — check overwrite flag
+	// File exists â€” check overwrite flag
 	overwrite := f.GetArg(ArgOverwrite)
 	if !isTrue(overwrite) {
-		// Don't overwrite — no change needed
+		// Don't overwrite â€” no change needed
 		return false, nil
 	}
 
-	// Overwrite is true — check if content differs
+	// Overwrite is true â€” check if content differs
 	content := f.GetArg(ArgContent)
 	currentContent := fileContent(cfg, path)
 	if currentContent != content {
 		return true, nil
 	}
 
-	// Content matches — check mode
+	// Content matches â€” check mode
 	mode := f.GetArg(ArgMode)
 	if mode == "" {
 		mode = DefaultFileMode
@@ -231,7 +234,7 @@ func (f *FileCreate) Run() types.Result {
 
 // shellEscapeContent escapes file content for safe use in a printf '%s' argument.
 // It wraps the content in single quotes and escapes embedded single quotes
-// using the POSIX sequence '\”.
+// using the POSIX sequence '\â€.
 func shellEscapeContent(content string) string {
 	return "'" + strings.ReplaceAll(content, "'", "'\\''") + "'"
 }

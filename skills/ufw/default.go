@@ -1,4 +1,4 @@
-package ufw
+﻿package ufw
 
 import (
 	"fmt"
@@ -39,6 +39,9 @@ import (
 type Default struct {
 	*types.BaseSkill
 }
+
+// Compile-time assertion that Default implements types.RunnableInterface.
+var _ types.RunnableInterface = (*Default)(nil)
 
 // Check determines if default policies need to be set.
 func (d *Default) Check() (bool, error) {
