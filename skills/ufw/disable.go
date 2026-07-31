@@ -115,7 +115,7 @@ func (d *Disable) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewDisable creates a new ufw-disable skill.
-func NewDisable() types.RunnableInterface {
+func NewDisable() *Disable {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwDisable)
 	pb.SetDescription("Disable UFW firewall")

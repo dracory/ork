@@ -117,7 +117,7 @@ func (r *Reset) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewReset creates a new ufw-reset skill.
-func NewReset() types.RunnableInterface {
+func NewReset() *Reset {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwReset)
 	pb.SetDescription("Reset UFW to factory defaults")

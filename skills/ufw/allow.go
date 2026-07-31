@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(ufw.NewAllow().SetArg("port", "<port>").SetArg("protocol", "<tcp|udp>").SetArg("comment", "<comment>"))
+//	node.Run(ufw.NewAllow().SetPort("<port>").SetProtocol("<tcp|udp>").SetComment("<comment>"))
 //
 // Args:
 //   - port: Port number to allow (required)
@@ -138,6 +138,24 @@ func (a *Allow) SetArgs(args map[string]string) types.RunnableInterface {
 	return a
 }
 
+// SetPort sets the port number to allow and returns Allow for chaining.
+func (a *Allow) SetPort(port string) *Allow {
+	a.BaseSkill.SetArg(ArgPort, port)
+	return a
+}
+
+// SetProtocol sets the protocol ("tcp" or "udp") and returns Allow for chaining.
+func (a *Allow) SetProtocol(protocol string) *Allow {
+	a.BaseSkill.SetArg(ArgProtocol, protocol)
+	return a
+}
+
+// SetComment sets an optional comment for the rule and returns Allow for chaining.
+func (a *Allow) SetComment(comment string) *Allow {
+	a.BaseSkill.SetArg(ArgComment, comment)
+	return a
+}
+
 // SetArg sets a single argument for the allow rule.
 // Returns Allow for fluent method chaining.
 func (a *Allow) SetArg(key, value string) types.RunnableInterface {
@@ -167,7 +185,7 @@ func (a *Allow) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewAllow creates a new ufw-allow skill.
-func NewAllow() types.RunnableInterface {
+func NewAllow() *Allow {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwAllow)
 	pb.SetDescription("Allow port in UFW firewall")

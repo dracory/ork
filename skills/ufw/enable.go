@@ -113,7 +113,7 @@ func (e *Enable) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewEnable creates a new ufw-enable skill.
-func NewEnable() types.RunnableInterface {
+func NewEnable() *Enable {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwEnable)
 	pb.SetDescription("Enable UFW firewall")

@@ -14,7 +14,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(ufw.NewDelete().SetArg("number", "<rule_number>"))
+//	node.Run(ufw.NewDelete().SetNumber("<rule_number>"))
 //
 // Args:
 //   - number: Rule number to delete (required)
@@ -47,7 +47,10 @@ func (d *Delete) Check() (bool, error) {
 // Run executes the skill and deletes the UFW rule.
 func (d *Delete) Run() types.Result {
 	cfg := d.GetNodeConfig()
-	number := cfg.GetArgOr(ArgNumber, "")
+	number := d.GetArg(ArgNumber)
+	if number == "" {
+		number = cfg.GetArgOr(ArgNumber, "")
+	}
 
 	if number == "" {
 		return types.Result{
@@ -97,6 +100,12 @@ func (d *Delete) SetArgs(args map[string]string) types.RunnableInterface {
 	return d
 }
 
+// SetNumber sets the rule number to delete and returns Delete for chaining.
+func (d *Delete) SetNumber(number string) *Delete {
+	d.BaseSkill.SetArg(ArgNumber, number)
+	return d
+}
+
 // SetArg sets a single argument for the delete operation.
 // Returns Delete for fluent method chaining.
 func (d *Delete) SetArg(key, value string) types.RunnableInterface {
@@ -126,7 +135,7 @@ func (d *Delete) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewDelete creates a new ufw-delete skill.
-func NewDelete() types.RunnableInterface {
+func NewDelete() *Delete {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwDelete)
 	pb.SetDescription("Delete UFW firewall rule by number")

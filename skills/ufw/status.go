@@ -125,7 +125,7 @@ func (u *UfwStatus) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewUfwStatus creates a new ufw-status skill.
-func NewUfwStatus() types.RunnableInterface {
+func NewUfwStatus() *UfwStatus {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwStatus)
 	pb.SetDescription("Display UFW firewall configuration and status (read-only)")

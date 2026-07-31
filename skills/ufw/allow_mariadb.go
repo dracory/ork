@@ -17,7 +17,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(ufw.NewAllowMariaDB().SetArg("ip", "<ip_address>").SetArg("port", "<port>"))
+//	node.Run(ufw.NewAllowMariaDB().SetIP("<ip_address>").SetPort("<port>"))
 //
 // Args:
 //   - ip: IP address(es) to allow (default: "any" - allows all IPs)
@@ -117,6 +117,18 @@ func (u *AllowMariaDB) SetArgs(args map[string]string) types.RunnableInterface {
 	return u
 }
 
+// SetIP sets the IP address(es) to allow and returns AllowMariaDB for chaining.
+func (u *AllowMariaDB) SetIP(ip string) *AllowMariaDB {
+	u.BaseSkill.SetArg(ArgIP, ip)
+	return u
+}
+
+// SetPort sets the MariaDB port and returns AllowMariaDB for chaining.
+func (u *AllowMariaDB) SetPort(port string) *AllowMariaDB {
+	u.BaseSkill.SetArg(ArgPort, port)
+	return u
+}
+
 // SetArg sets a single argument for MariaDB UFW rules.
 // Returns AllowMariaDB for fluent method chaining.
 func (u *AllowMariaDB) SetArg(key, value string) types.RunnableInterface {
@@ -211,7 +223,7 @@ func (u *AllowMariaDB) allowSpecificIPs(cfg types.NodeConfig, ips []string, mari
 }
 
 // NewAllowMariaDB creates a new ufw-allow-mariadb skill.
-func NewAllowMariaDB() types.RunnableInterface {
+func NewAllowMariaDB() *AllowMariaDB {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwAllowMariaDB)
 	pb.SetDescription("Configure UFW firewall rules for MariaDB access")

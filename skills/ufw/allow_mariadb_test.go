@@ -374,3 +374,35 @@ func TestAllowMariaDB_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestAllowMariaDB_SetIP verifies that SetIP sets the ip arg.
+func TestAllowMariaDB_SetIP(t *testing.T) {
+	skill := NewAllowMariaDB().SetIP("10.0.0.5")
+
+	if skill.GetArg(ArgIP) != "10.0.0.5" {
+		t.Errorf("Expected ip '10.0.0.5', got '%s'", skill.GetArg(ArgIP))
+	}
+}
+
+// TestAllowMariaDB_SetPort verifies that SetPort sets the port arg.
+func TestAllowMariaDB_SetPort(t *testing.T) {
+	skill := NewAllowMariaDB().SetPort("3307")
+
+	if skill.GetArg(ArgPort) != "3307" {
+		t.Errorf("Expected port '3307', got '%s'", skill.GetArg(ArgPort))
+	}
+}
+
+// TestAllowMariaDB_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestAllowMariaDB_TypedSetters_Chaining(t *testing.T) {
+	skill := NewAllowMariaDB().
+		SetIP("10.0.0.5").
+		SetPort("3306")
+
+	if skill.GetArg(ArgIP) != "10.0.0.5" {
+		t.Errorf("Expected ip '10.0.0.5', got '%s'", skill.GetArg(ArgIP))
+	}
+	if skill.GetArg(ArgPort) != "3306" {
+		t.Errorf("Expected port '3306', got '%s'", skill.GetArg(ArgPort))
+	}
+}

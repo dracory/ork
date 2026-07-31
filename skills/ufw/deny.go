@@ -16,7 +16,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(ufw.NewDeny().SetArg("port", "<port>").SetArg("protocol", "<tcp|udp>").SetArg("comment", "<comment>"))
+//	node.Run(ufw.NewDeny().SetPort("<port>").SetProtocol("<tcp|udp>").SetComment("<comment>"))
 //
 // Args:
 //   - port: Port number to deny (required)
@@ -51,9 +51,18 @@ func (d *Deny) Check() (bool, error) {
 // Run executes the skill and adds the UFW deny rule.
 func (d *Deny) Run() types.Result {
 	cfg := d.GetNodeConfig()
-	port := cfg.GetArgOr(ArgPort, "")
-	protocol := cfg.GetArgOr(ArgProtocol, "tcp")
-	comment := cfg.GetArgOr(ArgComment, "")
+	port := d.GetArg(ArgPort)
+	if port == "" {
+		port = cfg.GetArgOr(ArgPort, "")
+	}
+	protocol := d.GetArg(ArgProtocol)
+	if protocol == "" {
+		protocol = cfg.GetArgOr(ArgProtocol, "tcp")
+	}
+	comment := d.GetArg(ArgComment)
+	if comment == "" {
+		comment = cfg.GetArgOr(ArgComment, "")
+	}
 
 	if port == "" {
 		return types.Result{
@@ -129,6 +138,24 @@ func (d *Deny) SetArgs(args map[string]string) types.RunnableInterface {
 	return d
 }
 
+// SetPort sets the port number to deny and returns Deny for chaining.
+func (d *Deny) SetPort(port string) *Deny {
+	d.BaseSkill.SetArg(ArgPort, port)
+	return d
+}
+
+// SetProtocol sets the protocol ("tcp" or "udp") and returns Deny for chaining.
+func (d *Deny) SetProtocol(protocol string) *Deny {
+	d.BaseSkill.SetArg(ArgProtocol, protocol)
+	return d
+}
+
+// SetComment sets an optional comment for the rule and returns Deny for chaining.
+func (d *Deny) SetComment(comment string) *Deny {
+	d.BaseSkill.SetArg(ArgComment, comment)
+	return d
+}
+
 // SetArg sets a single argument for the deny rule.
 // Returns Deny for fluent method chaining.
 func (d *Deny) SetArg(key, value string) types.RunnableInterface {
@@ -158,7 +185,7 @@ func (d *Deny) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewDeny creates a new ufw-deny skill.
-func NewDeny() types.RunnableInterface {
+func NewDeny() *Deny {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwDeny)
 	pb.SetDescription("Deny port in UFW firewall")

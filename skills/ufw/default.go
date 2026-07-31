@@ -14,7 +14,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(ufw.NewDefault().SetArg("incoming", "<deny|allow|reject>").SetArg("outgoing", "<deny|allow|reject>"))
+//	node.Run(ufw.NewDefault().SetIncoming("<deny|allow|reject>").SetOutgoing("<deny|allow|reject>"))
 //
 // Args:
 //   - incoming: Policy for incoming traffic - "deny", "allow", or "reject" (default: "deny")
@@ -51,8 +51,14 @@ func (d *Default) Check() (bool, error) {
 // Run executes the skill and sets default policies.
 func (d *Default) Run() types.Result {
 	cfg := d.GetNodeConfig()
-	incoming := cfg.GetArgOr(ArgIncoming, "deny")
-	outgoing := cfg.GetArgOr(ArgOutgoing, "allow")
+	incoming := d.GetArg(ArgIncoming)
+	if incoming == "" {
+		incoming = cfg.GetArgOr(ArgIncoming, "deny")
+	}
+	outgoing := d.GetArg(ArgOutgoing)
+	if outgoing == "" {
+		outgoing = cfg.GetArgOr(ArgOutgoing, "allow")
+	}
 
 	// Validate policies
 	validPolicies := map[string]bool{"deny": true, "allow": true, "reject": true}
@@ -122,6 +128,18 @@ func (d *Default) SetArgs(args map[string]string) types.RunnableInterface {
 	return d
 }
 
+// SetIncoming sets the incoming policy ("deny", "allow", "reject") and returns Default for chaining.
+func (d *Default) SetIncoming(policy string) *Default {
+	d.BaseSkill.SetArg(ArgIncoming, policy)
+	return d
+}
+
+// SetOutgoing sets the outgoing policy ("deny", "allow", "reject") and returns Default for chaining.
+func (d *Default) SetOutgoing(policy string) *Default {
+	d.BaseSkill.SetArg(ArgOutgoing, policy)
+	return d
+}
+
 // SetArg sets a single argument for default policies.
 // Returns Default for fluent method chaining.
 func (d *Default) SetArg(key, value string) types.RunnableInterface {
@@ -151,7 +169,7 @@ func (d *Default) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewDefault creates a new ufw-default skill.
-func NewDefault() types.RunnableInterface {
+func NewDefault() *Default {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwDefault)
 	pb.SetDescription("Set UFW default policies")

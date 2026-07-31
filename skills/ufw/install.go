@@ -17,7 +17,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(ufw.NewUfwInstall().SetArg("allow-ssh", "true").SetArg("allow-http", "true").SetArg("allow-https", "true").SetArg("allow-ports", "8080,9000"))
+//	node.Run(ufw.NewUfwInstall().SetAllowSSH(true).SetAllowHTTP(true).SetAllowHTTPS(true).SetAllowPorts("8080,9000"))
 //
 // Execution Flow:
 //  1. Updates package lists via apt-get update
@@ -239,6 +239,30 @@ func (u *UfwInstall) SetArgs(args map[string]string) types.RunnableInterface {
 	return u
 }
 
+// SetAllowSSH sets whether to allow SSH (port 22) and returns UfwInstall for chaining.
+func (u *UfwInstall) SetAllowSSH(allow bool) *UfwInstall {
+	u.BaseSkill.SetArg(ArgAllowSSH, fmt.Sprintf("%v", allow))
+	return u
+}
+
+// SetAllowHTTP sets whether to allow HTTP (port 80) and returns UfwInstall for chaining.
+func (u *UfwInstall) SetAllowHTTP(allow bool) *UfwInstall {
+	u.BaseSkill.SetArg(ArgAllowHTTP, fmt.Sprintf("%v", allow))
+	return u
+}
+
+// SetAllowHTTPS sets whether to allow HTTPS (port 443) and returns UfwInstall for chaining.
+func (u *UfwInstall) SetAllowHTTPS(allow bool) *UfwInstall {
+	u.BaseSkill.SetArg(ArgAllowHTTPS, fmt.Sprintf("%v", allow))
+	return u
+}
+
+// SetAllowPorts sets custom ports to allow (comma-separated) and returns UfwInstall for chaining.
+func (u *UfwInstall) SetAllowPorts(ports string) *UfwInstall {
+	u.BaseSkill.SetArg(ArgAllowPorts, ports)
+	return u
+}
+
 // SetArg sets a single argument for UFW installation.
 // Returns UfwInstall for fluent method chaining.
 func (u *UfwInstall) SetArg(key, value string) types.RunnableInterface {
@@ -268,7 +292,7 @@ func (u *UfwInstall) SetTimeout(timeout time.Duration) types.RunnableInterface {
 }
 
 // NewUfwInstall creates a new ufw-install skill.
-func NewUfwInstall() types.RunnableInterface {
+func NewUfwInstall() *UfwInstall {
 	pb := types.NewBaseSkill()
 	pb.SetID(skills.IDUfwInstall)
 	pb.SetDescription("Install and configure UFW firewall with secure defaults")

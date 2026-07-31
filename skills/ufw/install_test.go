@@ -422,3 +422,61 @@ func TestUfwInstall_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestUfwInstall_SetAllowSSH verifies that SetAllowSSH sets the allow-ssh arg as a string bool.
+func TestUfwInstall_SetAllowSSH(t *testing.T) {
+	skill := NewUfwInstall().SetAllowSSH(true)
+
+	if skill.GetArg(ArgAllowSSH) != "true" {
+		t.Errorf("Expected allow-ssh 'true', got '%s'", skill.GetArg(ArgAllowSSH))
+	}
+}
+
+// TestUfwInstall_SetAllowHTTP verifies that SetAllowHTTP sets the allow-http arg as a string bool.
+func TestUfwInstall_SetAllowHTTP(t *testing.T) {
+	skill := NewUfwInstall().SetAllowHTTP(true)
+
+	if skill.GetArg(ArgAllowHTTP) != "true" {
+		t.Errorf("Expected allow-http 'true', got '%s'", skill.GetArg(ArgAllowHTTP))
+	}
+}
+
+// TestUfwInstall_SetAllowHTTPS verifies that SetAllowHTTPS sets the allow-https arg as a string bool.
+func TestUfwInstall_SetAllowHTTPS(t *testing.T) {
+	skill := NewUfwInstall().SetAllowHTTPS(true)
+
+	if skill.GetArg(ArgAllowHTTPS) != "true" {
+		t.Errorf("Expected allow-https 'true', got '%s'", skill.GetArg(ArgAllowHTTPS))
+	}
+}
+
+// TestUfwInstall_SetAllowPorts verifies that SetAllowPorts sets the allow-ports arg.
+func TestUfwInstall_SetAllowPorts(t *testing.T) {
+	skill := NewUfwInstall().SetAllowPorts("8080,9000")
+
+	if skill.GetArg(ArgAllowPorts) != "8080,9000" {
+		t.Errorf("Expected allow-ports '8080,9000', got '%s'", skill.GetArg(ArgAllowPorts))
+	}
+}
+
+// TestUfwInstall_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestUfwInstall_TypedSetters_Chaining(t *testing.T) {
+	skill := NewUfwInstall().
+		SetAllowSSH(true).
+		SetAllowHTTP(true).
+		SetAllowHTTPS(true).
+		SetAllowPorts("8080,9000")
+
+	if skill.GetArg(ArgAllowSSH) != "true" {
+		t.Errorf("Expected allow-ssh 'true', got '%s'", skill.GetArg(ArgAllowSSH))
+	}
+	if skill.GetArg(ArgAllowHTTP) != "true" {
+		t.Errorf("Expected allow-http 'true', got '%s'", skill.GetArg(ArgAllowHTTP))
+	}
+	if skill.GetArg(ArgAllowHTTPS) != "true" {
+		t.Errorf("Expected allow-https 'true', got '%s'", skill.GetArg(ArgAllowHTTPS))
+	}
+	if skill.GetArg(ArgAllowPorts) != "8080,9000" {
+		t.Errorf("Expected allow-ports '8080,9000', got '%s'", skill.GetArg(ArgAllowPorts))
+	}
+}
