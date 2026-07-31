@@ -33,9 +33,8 @@ This directory contains proposals for enhancing the Ork infrastructure automatio
    - Status: Not Implemented
    - Blocked by: Connection Pool
 
-7. **[Playbook Dependencies](2026-04-12-playbook-dependencies.md)** - Auto-resolve dependencies
-   - Status: Not Implemented
-   - Unblocked: Idempotency Framework now implemented
+7. **[Playbook Dependencies](rejected/2026-04-12-skill-dependencies.md)** - Auto-resolve dependencies
+   - Status: Rejected (superseded by Playbooks; built on deprecated APIs)
 
 8. **[Rollback Support](2026-04-12-rollback-support.md)** - Undo changes on failure
    - Status: Not Implemented
@@ -54,10 +53,9 @@ This directory contains proposals for enhancing the Ork infrastructure automatio
 ### Phase 3: Scale
 5. **Connection Pool** - Multi-host resource management
 6. **Parallel Execution** - Fleet operations (blocked by Connection Pool)
-7. **Playbook Dependencies** - Auto-resolution
 
 ### Phase 4: Advanced
-8. **Rollback Support** - Transaction management
+7. **Rollback Support** - Transaction management
 
 ## Summary
 
@@ -69,7 +67,7 @@ This directory contains proposals for enhancing the Ork infrastructure automatio
 | Dry-Run Mode | Not Implemented | - |
 | Connection Pooling | Partially Implemented | - |
 | Parallel Execution | Not Implemented | Connection Pooling |
-| Playbook Dependencies | Not Implemented | - |
+| Playbook Dependencies | Rejected (superseded by Playbooks) | - |
 | Rollback Support | Not Implemented | - |
 
 ## Contributing

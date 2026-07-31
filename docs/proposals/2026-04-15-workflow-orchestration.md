@@ -1,8 +1,83 @@
 # Workflow Orchestration Layer
 
-**Status:** Proposed
+**Status:** Rejected. Wrong abstraction layer; built on dead APIs.
 **Created:** 2026-04-15
+**Rejected:** 2026-07-31
 **Author:** @dracory
+
+> **Why rejected:** This proposal introduces a parallel orchestration model
+> (`Workflow` / `WorkflowStage` / `WorkflowStep` / `WorkflowContext` with its own
+> `node.RunWorkflow(workflow)` entry point) on top of a codebase that has since
+> standardized on a single execution API (`node.Run(runnable)` via
+> `RunnableInterface`). Playbooks — shipped in the same release cycle
+> (see [../implemented/2026-04-15-playbooks.md](../implemented/2026-04-15-playbooks.md)
+> and [../playbooks.html](../../playbooks.html)) — are the intended extension point
+> for complex orchestration: a playbook *is* a `RunnableInterface`, so it flows through
+> the same `node.Run` / `group.Run` / `inventory.Run` path as skills, with no new entry
+> points and no new result types.
+>
+> To be precise about coverage: playbooks today ship **only** the seam
+> (`BasePlaybook` + `RunnableInterface` + unified execution). They do **not** ship
+> helpers for parallel execution, retry, dependency ordering, or inter-step state.
+> The five needs listed in this proposal's Problem Statement are therefore *addressable*
+> by writing ordinary Go in a playbook's `Run()` method, but not *provided* as framework
+> features. The right fix for that gap is small composable helpers (`RunSequential`,
+> `RunParallel`, `RunWithRetry`) on top of the existing `node.Run` API — which the
+> playbooks proposal already sketches in its unimplemented "Helper Utilities" section —
+> not a whole new orchestration type hierarchy.
+>
+> Beyond the layering argument, the proposal as written is not buildable in its current
+> form:
+>
+> 1. **Built on `types.SkillInterface`, which no longer exists in that form.** Every
+>    signature in the proposal (`WorkflowStep.Skills []types.SkillInterface`,
+>    `AddSkill(skill types.SkillInterface)`, `executeWithRetry(skill types.SkillInterface, ...)`)
+>    references the pre-unification skill interface. The shipped codebase standardized on
+>    `types.RunnableInterface`. All signatures would need rewriting.
+>
+> 2. **Introduces a third execution path.** `node.RunWorkflow(workflow)` returning
+>    `WorkflowResult` sits alongside `node.Run(runnable)` (the unified path) and the
+>    now-deprecated `node.RunByID(id)`. This is the same API-fragmentation problem that
+>    got the Composites proposal rejected (see
+>    [rejected/2026-04-15-composites.md](rejected/2026-04-15-composites.md)). Callers
+>    would need to know whether a given orchestration is a "workflow", a "playbook", or
+>    a raw skill to know which method to call and which result type to unpack.
+>
+> 3. **The `If`/`Else`/`Then`/`Parallel` builder DSL doesn't cleanly express nested
+>    control flow.** Go method chaining has no block terminator (no `EndIf`), so nested
+>    branches are ambiguous in a chain — see the "Complex Multi-Stage Workflow" example
+>    (lines 373-391 of this proposal), which is missing a comma between steps and has an
+>    `If(...).Then(...)` with no closing delimiter. This is a real design problem the
+>    proposal never resolves. Playbooks sidestep it by using Go's native braced control
+>    flow.
+>
+> 4. **`DependsOn` reimplements what call order already gives you, and underspecifies
+>    the parallel case.** Inside a `Run()` method, "B depends on A" is just
+>    `a.Run(); b.Run()`. The proposal's `DependsOn` adds a step-ID-keyed results map and
+>    a dependency-wait loop to reproduce sequential statements — and its `executeStep`
+>    sketch (lines 466-475) just reads `ctx.Results[depID]` synchronously without
+>    actually waiting, so the dependency semantics for parallel stages are undefined.
+>
+> 5. **`WorkflowContext.State` as `map[string]interface{}`** is strictly less ergonomic
+>    and less type-safe than local variables in a `Run()` method. The proposal introduces
+>    a mutex-guarded string-keyed map plus `SetState`/`GetState` accessors to do what
+>    `appVersion := "2.0.0"` does natively.
+>
+> 6. **Open Question #3 ("Roles as reusable workflow templates") points at the rejected
+>    Roles proposal** (see [rejected/2026-04-15-roles.md](rejected/2026-04-15-roles.md)).
+>    That cross-dependency is now dead.
+>
+> **What is genuinely worth keeping** (and belongs in a future, smaller proposal if
+> needed): structured per-step result aggregation for observability — i.e. a
+> result-collector that records each skill's outcome within a playbook `Run()` and
+> returns a summary. But that is a reporting concern, not an orchestration-model
+> concern, and can be added as a helper without a new top-level `Workflow` type.
+>
+> **Path forward:** If the parallel-execution / retry / state-passing ergonomics turn
+> out to matter in practice, pursue the helper-utilities package from the playbooks
+> proposal (`RunSequential`, `RunParallel`, `RunWithRetry`, `ParseResult`) as a
+> separate, smaller proposal. That keeps a single orchestration primitive (playbooks),
+> a single execution API (`node.Run`), and adds convenience without divergence.
 
 ## Problem Statement
 
