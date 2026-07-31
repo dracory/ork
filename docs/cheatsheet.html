@@ -264,7 +264,15 @@ skills.IDMariadbCreateDB
 import (
     "log"
     "github.com/dracory/ork"
-    "github.com/dracory/ork/skills"
+    "github.com/dracory/ork/skills/apt"
+    "github.com/dracory/ork/skills/fail2ban"
+    "github.com/dracory/ork/skills/mariadb"
+    "github.com/dracory/ork/skills/ping"
+    "github.com/dracory/ork/skills/reboot"
+    "github.com/dracory/ork/skills/security"
+    "github.com/dracory/ork/skills/swap"
+    "github.com/dracory/ork/skills/ufw"
+    "github.com/dracory/ork/skills/user"
 )
 
 func main() {
