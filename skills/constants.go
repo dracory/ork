@@ -198,4 +198,20 @@ const (
 
 	// IDFSRemove removes a file or directory (rm)
 	IDFSRemove = "fs-remove"
+
+	// PHP skills
+	// IDPhpInstall installs PHP with extensions and configures FPM
+	IDPhpInstall = "php-install"
+
+	// IDPhpUninstall removes PHP packages and FPM configuration
+	IDPhpUninstall = "php-uninstall"
+
+	// IDPhpInstallComposer installs Composer (PHP dependency manager)
+	IDPhpInstallComposer = "php-install-composer"
+
+	// IDPhpUninstallComposer removes Composer binary
+	IDPhpUninstallComposer = "php-uninstall-composer"
+
+	// IDPhpUpdateComposer updates Composer to the latest version
+	IDPhpUpdateComposer = "php-update-composer"
 )
