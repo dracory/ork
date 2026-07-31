@@ -39,7 +39,9 @@ import (
 //   - MariaDB 10.1.3 or later (encryption support)
 //
 // Args:
-//   - root-password: MariaDB root password (optional)
+//   - root-password: MariaDB root password (optional). When set, Run() verifies
+//     encryption is active after the restart; when unset, the post-restart
+//     verification is skipped.
 //   - config-path: MariaDB config file path (default: /etc/mysql/mariadb.conf.d/50-server.cnf)
 //   - keyfile-path: Encryption key file path (default: /var/lib/mysql-keyfile/keyfile.enc)
 //
@@ -169,6 +171,28 @@ EOF`, shellEscapedConfigPath, shellEscapedConfigPath, keyFilePath),
 		return types.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
 
+	// Optional post-restart verification: when a root password is provided,
+	// confirm encryption is active on the server. Skipped when no password is set.
+	rootPassword := m.GetArg(ArgRootPassword)
+	verified := "skipped"
+	if rootPassword != "" {
+		shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+		cmdVerify := types.Command{
+			Command:     fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SHOW VARIABLES LIKE 'innodb_encrypt_tables';"`, shellEscapedPwd),
+			Description: "Verify encryption is enabled",
+			Required:    false,
+		}
+		cfg.GetLoggerOrDefault().Info("verifying MariaDB encryption is active")
+		if _, vErr := ssh.Run(cfg, cmdVerify); vErr != nil {
+			return types.Result{
+				Changed: false,
+				Message: "Encryption configured but verification failed",
+				Error:   fmt.Errorf("encryption configured but could not verify innodb_encrypt_tables: %w", vErr),
+			}
+		}
+		verified = "ok"
+	}
+
 	cfg.GetLoggerOrDefault().Info("MariaDB encryption at rest enabled")
 	return types.Result{
 		Changed: true,
@@ -176,6 +200,7 @@ EOF`, shellEscapedConfigPath, shellEscapedConfigPath, keyFilePath),
 		Details: map[string]string{
 			"key_file":    keyFilePath,
 			"config_path": configPath,
+			"verified":    verified,
 		},
 	}
 }
@@ -196,6 +221,14 @@ func (e *EnableEncryption) SetConfigPath(path string) *EnableEncryption {
 // SetKeyFilePath sets the encryption key file path and returns EnableEncryption for chaining.
 func (e *EnableEncryption) SetKeyFilePath(path string) *EnableEncryption {
 	e.BaseSkill.SetArg(ArgKeyFilePath, path)
+	return e
+}
+
+// SetRootPassword sets the MariaDB root password and returns EnableEncryption for
+// chaining. When set, Run() uses it to verify encryption is active after the
+// restart; when unset, the post-restart verification is skipped.
+func (e *EnableEncryption) SetRootPassword(password string) *EnableEncryption {
+	e.BaseSkill.SetArg(ArgRootPassword, password)
 	return e
 }
 

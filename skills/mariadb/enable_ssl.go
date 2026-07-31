@@ -18,7 +18,9 @@ import (
 //	node.Run(mariadb.NewEnableSSL().SetDataDir("<data_dir>").SetConfigPath("<config_path>"))
 //
 // Args:
-//   - root-password: MariaDB root password (optional)
+//   - root-password: MariaDB root password (optional). When set, Run() verifies
+//     SSL is active after the restart; when unset, the post-restart
+//     verification is skipped.
 //   - data-dir: MariaDB data directory (default: /var/lib/mysql)
 //   - config-path: MariaDB config file path (default: /etc/mysql/mariadb.conf.d/50-server.cnf)
 //
@@ -119,6 +121,28 @@ EOF`, shellEscapedConfigPath, shellEscapedConfigPath, dataDir, dataDir, dataDir)
 		return types.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
 
+	// Optional post-restart verification: when a root password is provided,
+	// confirm SSL is active on the server. Skipped when no password is set.
+	rootPassword := m.GetArg(ArgRootPassword)
+	verified := "skipped"
+	if rootPassword != "" {
+		shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+		cmdVerify := types.Command{
+			Command:     fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -e "SHOW VARIABLES LIKE 'have_ssl';"`, shellEscapedPwd),
+			Description: "Verify SSL is enabled",
+			Required:    false,
+		}
+		cfg.GetLoggerOrDefault().Info("verifying MariaDB SSL is active")
+		if _, vErr := ssh.Run(cfg, cmdVerify); vErr != nil {
+			return types.Result{
+				Changed: false,
+				Message: "SSL configured but verification failed",
+				Error:   fmt.Errorf("SSL configured but could not verify have_ssl: %w", vErr),
+			}
+		}
+		verified = "ok"
+	}
+
 	cfg.GetLoggerOrDefault().Info("MariaDB SSL/TLS configuration complete")
 	return types.Result{
 		Changed: true,
@@ -127,6 +151,7 @@ EOF`, shellEscapedConfigPath, shellEscapedConfigPath, dataDir, dataDir, dataDir)
 			"cert_path":   dataDir,
 			"data_dir":    dataDir,
 			"config_path": configPath,
+			"verified":    verified,
 		},
 	}
 }
@@ -147,6 +172,14 @@ func (e *EnableSSL) SetDataDir(dir string) *EnableSSL {
 // SetConfigPath sets the MariaDB config file path and returns EnableSSL for chaining.
 func (e *EnableSSL) SetConfigPath(path string) *EnableSSL {
 	e.BaseSkill.SetArg(ArgConfigPath, path)
+	return e
+}
+
+// SetRootPassword sets the MariaDB root password and returns EnableSSL for chaining.
+// When set, Run() uses it to verify SSL is active after the restart; when unset,
+// the post-restart verification is skipped.
+func (e *EnableSSL) SetRootPassword(password string) *EnableSSL {
+	e.BaseSkill.SetArg(ArgRootPassword, password)
 	return e
 }
 

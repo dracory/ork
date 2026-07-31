@@ -20,7 +20,9 @@ import (
 //
 // Args:
 //   - port: New port number (1024-65535, not 3306) (required)
-//   - root-password: MariaDB root password (optional)
+//   - root-password: MariaDB root password (optional). When set, Run() verifies
+//     the server is accepting connections on the new port after the restart;
+//     when unset, the post-restart verification is skipped.
 //   - config-path: MariaDB config file path (default: /etc/mysql/mariadb.conf.d/50-server.cnf)
 //
 // IMPORTANT:
@@ -123,6 +125,29 @@ func (m *ChangePort) Run() types.Result {
 		return types.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
 	}
 
+	// Optional post-restart verification: when a root password is provided,
+	// confirm the server is accepting connections on the new port. Skipped
+	// when no password is set (the arg is optional).
+	rootPassword := m.GetArg(ArgRootPassword)
+	verified := "skipped"
+	if rootPassword != "" {
+		shellEscapedPwd := mariadbEscapeShellQuote(rootPassword)
+		cmdVerify := types.Command{
+			Command:     fmt.Sprintf(`MYSQL_PWD='%s' mysql -u root -h 127.0.0.1 -P %s -e "SELECT 1;"`, shellEscapedPwd, newPort),
+			Description: "Verify MariaDB accepts connections on the new port",
+			Required:    false,
+		}
+		cfg.GetLoggerOrDefault().Info("verifying MariaDB on new port", "port", newPort)
+		if _, vErr := ssh.Run(cfg, cmdVerify); vErr != nil {
+			return types.Result{
+				Changed: false,
+				Message: "MariaDB port changed but verification failed",
+				Error:   fmt.Errorf("port changed to %s but could not connect on the new port: %w", newPort, vErr),
+			}
+		}
+		verified = "ok"
+	}
+
 	cfg.GetLoggerOrDefault().Info("MariaDB port change complete")
 	return types.Result{
 		Changed: true,
@@ -130,6 +155,7 @@ func (m *ChangePort) Run() types.Result {
 		Details: map[string]string{
 			"new_port":    newPort,
 			"config_path": configPath,
+			"verified":    verified,
 		},
 	}
 }
@@ -150,6 +176,14 @@ func (c *ChangePort) SetPort(port string) *ChangePort {
 // SetConfigPath sets the MariaDB config file path and returns ChangePort for chaining.
 func (c *ChangePort) SetConfigPath(path string) *ChangePort {
 	c.BaseSkill.SetArg(ArgConfigPath, path)
+	return c
+}
+
+// SetRootPassword sets the MariaDB root password and returns ChangePort for chaining.
+// When set, Run() uses it to verify the new port is accepting connections after
+// the service restart. When unset, the post-restart verification is skipped.
+func (c *ChangePort) SetRootPassword(password string) *ChangePort {
+	c.BaseSkill.SetArg(ArgRootPassword, password)
 	return c
 }
 

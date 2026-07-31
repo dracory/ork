@@ -221,16 +221,29 @@ func TestChangePort_SetConfigPath(t *testing.T) {
 	}
 }
 
+// TestChangePort_SetRootPassword verifies that SetRootPassword sets the root-password arg.
+func TestChangePort_SetRootPassword(t *testing.T) {
+	skill := NewChangePort().SetRootPassword("s3cret")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+}
+
 // TestChangePort_TypedSetters_Chaining verifies that all typed setters chain correctly.
 func TestChangePort_TypedSetters_Chaining(t *testing.T) {
 	skill := NewChangePort().
 		SetPort("3307").
-		SetConfigPath("/etc/mysql/my.cnf")
+		SetConfigPath("/etc/mysql/my.cnf").
+		SetRootPassword("s3cret")
 
 	if skill.GetArg(ArgPort) != "3307" {
 		t.Errorf("Expected port '3307', got '%s'", skill.GetArg(ArgPort))
 	}
 	if skill.GetArg(ArgConfigPath) != "/etc/mysql/my.cnf" {
 		t.Errorf("Expected config-path '/etc/mysql/my.cnf', got '%s'", skill.GetArg(ArgConfigPath))
+	}
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
 	}
 }

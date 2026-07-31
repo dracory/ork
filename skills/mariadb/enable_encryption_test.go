@@ -174,16 +174,29 @@ func TestEnableEncryption_SetKeyFilePath(t *testing.T) {
 	}
 }
 
+// TestEnableEncryption_SetRootPassword verifies that SetRootPassword sets the root-password arg.
+func TestEnableEncryption_SetRootPassword(t *testing.T) {
+	skill := NewEnableEncryption().SetRootPassword("s3cret")
+
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
+	}
+}
+
 // TestEnableEncryption_TypedSetters_Chaining verifies that all typed setters chain correctly.
 func TestEnableEncryption_TypedSetters_Chaining(t *testing.T) {
 	skill := NewEnableEncryption().
 		SetConfigPath("/etc/mysql/my.cnf").
-		SetKeyFilePath("/var/lib/mysql-keyfile/keyfile.enc")
+		SetKeyFilePath("/var/lib/mysql-keyfile/keyfile.enc").
+		SetRootPassword("s3cret")
 
 	if skill.GetArg(ArgConfigPath) != "/etc/mysql/my.cnf" {
 		t.Errorf("Expected config-path '/etc/mysql/my.cnf', got '%s'", skill.GetArg(ArgConfigPath))
 	}
 	if skill.GetArg(ArgKeyFilePath) != "/var/lib/mysql-keyfile/keyfile.enc" {
 		t.Errorf("Expected keyfile-path '/var/lib/mysql-keyfile/keyfile.enc', got '%s'", skill.GetArg(ArgKeyFilePath))
+	}
+	if skill.GetArg(ArgRootPassword) != "s3cret" {
+		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
 	}
 }
