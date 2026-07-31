@@ -34,7 +34,7 @@
     <p>This document describes the architecture of Ork, including design patterns, component relationships, and key architectural decisions.</p>
 
     <h2>System Overview</h2>
-    <p>Ork is organized into a layered set of packages. User code interacts with the <code>ork</code> package, which exposes <code>NodeInterface</code>, <code>GroupInterface</code>, and <code>InventoryInterface</code>. These rely on the <code>ssh</code> package for connectivity and the <code>types</code> package for shared types and the skill system. Skill implementations live under <code>skills/</code> (apt, user, swap, mariadb, security, ufw, fail2ban, ping, reboot).</p>
+    <p>Ork is organized into a layered set of packages. User code interacts with the <code>ork</code> package, which exposes <code>NodeInterface</code>, <code>GroupInterface</code>, and <code>InventoryInterface</code>. These rely on the <code>ssh</code> package for connectivity and the <code>types</code> package for shared types and the skill system. Skill implementations live under <code>skills/</code> (apt, user, swap, mariadb, security, ufw, fail2ban, ping, reboot, fs, php).</p>
 <div class="diagram">User Code
   └── ork Package
         ├── NodeInterface ──┬── ssh Package ── SSH Server ── Remote Server
@@ -133,7 +133,7 @@ type InventoryInterface interface {
     <p>Skill registry (<code>types.Registry</code>) for ID-based lookup. The global registry is a lazily-initialized singleton (<code>ork.GetGlobalSkillRegistry()</code>).</p>
 
     <h3>3. Strategy Pattern</h3>
-    <p>Different skills implement the same <code>RunnableInterface</code>: <code>AptUpdate</code>, <code>UserCreate</code>, <code>SwapCreate</code>, <code>MariaDBInstall</code>, <code>SecurityHarden</code>, etc.</p>
+    <p>Different skills implement the same <code>RunnableInterface</code>: <code>apt.AptUpdate</code>, <code>user.UserCreate</code>, <code>swap.SwapCreate</code>, <code>mariadb.Install</code>, <code>security.SshHarden</code>, etc.</p>
 
     <h3>4. Composite Pattern</h3>
     <p>Inventory / Group / Node hierarchy. All implement <code>RunnerInterface</code> with unified execution.</p>
@@ -201,7 +201,7 @@ Node checks IsDryRunMode
     Node returns [dry-run] marker
   else Normal Execution:
     if persistent connection: Node ──&gt; SSH Client: Run(cmd)
-    else: Node ──&gt; SSH: RunOnce(host, port, user, key, cmd)
+    else: Node ──&gt; SSH: Run(cfg, cmd)
     SSH ──&gt; Remote: Execute command
     Remote ──&gt; SSH: Return output
     SSH ──&gt; Node: Return output
@@ -231,7 +231,7 @@ Node wraps in Results ──&gt; User</div>
     <p>Example implementation:</p>
 <pre><code>func (p *MySkill) Check() (bool, error) {
     // Check current state
-    output, _ := ssh.Run(cfg, "check command")
+    output, _ := ssh.Run(cfg, types.Command{Command: "check command"})
     return !isAlreadyConfigured(output), nil
 }
 
@@ -242,7 +242,7 @@ func (p *MySkill) Run() Result {
     }
 
     // Apply changes
-    _, err := ssh.Run(cfg, "apply command")
+    _, err := ssh.Run(cfg, types.Command{Command: "apply command"})
     if err != nil {
         return Result{Changed: false, Error: err}
     }

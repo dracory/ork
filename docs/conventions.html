@@ -63,8 +63,8 @@ type groupImplementation struct { }</code></pre>
 <pre><code>func NewNodeForHost(host string) NodeInterface
 func NewGroup(name string) GroupInterface
 func NewInventory() InventoryInterface
-func NewPing() types.RunnableInterface
-func NewAptUpdate() types.RunnableInterface</code></pre>
+func ping.NewPing() types.RunnableInterface
+func apt.NewAptUpdate() types.RunnableInterface</code></pre>
 
     <h3>Constants</h3>
     <ul>
@@ -180,7 +180,7 @@ func (m *MySkill) Check() (bool, error) {
     parameter := m.GetArg(ArgParameter)
 
     // Check current state
-    output, _ := ssh.Run(cfg, fmt.Sprintf("check %s", parameter))
+    output, _ := ssh.Run(cfg, types.Command{Command: fmt.Sprintf("check %s", parameter)})
     return output == "", nil
 }
 
@@ -211,7 +211,7 @@ func (m *MySkill) Run() types.Result {
     }
 
     // Apply changes
-    _, err := ssh.Run(cfg, fmt.Sprintf("apply %s", parameter))
+    _, err := ssh.Run(cfg, types.Command{Command: fmt.Sprintf("apply %s", parameter)})
     if err != nil {
         return types.Result{
             Changed: false,

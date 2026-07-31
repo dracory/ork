@@ -508,7 +508,7 @@ for host, result := range results.Results {
 
 func (p *MySkill) Check() (bool, error) {
     cfg := p.GetNodeConfig()
-    output, _ := ssh.Run(cfg, "check command")
+    output, _ := ssh.Run(cfg, types.Command{Command: "check command"})
     return !strings.Contains(output, "configured"), nil
 }
 
@@ -522,7 +522,7 @@ func (p *MySkill) Run() types.Result {
     }
 
     cfg := p.GetNodeConfig()
-    _, err := ssh.Run(cfg, "apply command")
+    _, err := ssh.Run(cfg, types.Command{Command: "apply command"})
     if err != nil {
         return types.Result{
             Changed: false,

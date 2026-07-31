@@ -87,13 +87,15 @@ results := node.RunByID(skills.IDPing)</code></pre>
 
     <table>
         <tr><th>Category</th><th>Skills</th></tr>
-        <tr><td><strong>System</strong></td><td>ping, reboot, apt-update, apt-upgrade, apt-status</td></tr>
-        <tr><td><strong>Users</strong></td><td>user-create, user-delete, user-status</td></tr>
+        <tr><td><strong>System</strong></td><td>ping, reboot, apt-install, apt-update, apt-upgrade, apt-status</td></tr>
+        <tr><td><strong>Users</strong></td><td>user-create, user-delete, user-list, user-status, user-add-to-group</td></tr>
         <tr><td><strong>Swap</strong></td><td>swap-create, swap-delete, swap-status</td></tr>
         <tr><td><strong>Security</strong></td><td>ssh-harden, kernel-harden, aide-install, auditd-install, ssh-change-port</td></tr>
-        <tr><td><strong>Firewall</strong></td><td>ufw-install, ufw-status, ufw-allow-mariadb</td></tr>
+        <tr><td><strong>Firewall</strong></td><td>ufw-install, ufw-status, ufw-allow, ufw-deny, ufw-delete, ufw-enable, ufw-disable, ufw-reset, ufw-default, ufw-allow-mariadb</td></tr>
         <tr><td><strong>Fail2ban</strong></td><td>fail2ban-install, fail2ban-status</td></tr>
-        <tr><td><strong>MariaDB</strong></td><td>mariadb-install, mariadb-secure, mariadb-create-db, mariadb-create-user, mariadb-status, mariadb-backup</td></tr>
+        <tr><td><strong>MariaDB</strong></td><td>mariadb-install, mariadb-secure, mariadb-create-db, mariadb-create-user, mariadb-status, mariadb-list-dbs, mariadb-list-users, mariadb-backup, mariadb-backup-encrypt, mariadb-security-audit, mariadb-change-port, mariadb-enable-ssl, mariadb-enable-encryption, mariadb-purge</td></tr>
+        <tr><td><strong>Filesystem</strong></td><td>fs-dir-create, fs-dir-exists, fs-dir-delete, fs-file-create, fs-file-exists, fs-file-delete, fs-file-copy, fs-change-owner, fs-change-mode, fs-symlink-create, fs-rename, fs-remove</td></tr>
+        <tr><td><strong>PHP</strong></td><td>php-install, php-uninstall, php-install-composer, php-uninstall-composer, php-update-composer</td></tr>
     </table>
 
     <h2>Quick Example</h2>

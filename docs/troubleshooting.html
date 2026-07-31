@@ -183,7 +183,7 @@ chmod 600 ~/.ssh/authorized_keys</code></pre></li>
     <p class="problem"><strong>Problem</strong>: Commands are executing even with dry-run enabled.</p>
     <p class="solution"><strong>Solution</strong>: This should not happen. Ensure you're using Ork's SSH functions:</p>
 <pre><code>// Use ssh.Run which checks IsDryRunMode
-output, err := ssh.Run(cfg, "command")
+output, err := ssh.Run(cfg, types.Command{Command: "command"})
 
 // NOT os/exec or other methods</code></pre>
 

@@ -205,7 +205,9 @@ func NewMyCustomPlaybook() types.RunnableInterface {
 import (
     "log"
 
-    "github.com/dracory/ork/skills"
+    "github.com/dracory/ork/skills/apt"
+    "github.com/dracory/ork/skills/ping"
+    "github.com/dracory/ork/skills/swap"
     "github.com/dracory/ork/types"
 )
 
@@ -218,9 +220,9 @@ func main() {
     }
 
     // Ping server to check connectivity
-    ping := ping.NewPing()
-    ping.SetNodeConfig(cfg)
-    result := ping.Run()
+    pingSkill := ping.NewPing()
+    pingSkill.SetNodeConfig(cfg)
+    result := pingSkill.Run()
     if result.Error != nil {
         log.Fatal(result.Error)
     }

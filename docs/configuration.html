@@ -264,7 +264,7 @@ results := inv.Run(apt.NewAptUpgrade())
     }
 
     // Normal execution
-    output, err := ssh.Run(cfg, "some-command")
+    output, err := ssh.Run(cfg, types.Command{Command: "some-command"})
     // ...
 }</code></pre>
 
@@ -331,8 +331,6 @@ import (
     "log/slog"
     "os"
     "github.com/dracory/ork"
-    "github.com/dracory/ork/skills/apt"
-    "github.com/dracory/ork/skills/mariadb"
     "github.com/dracory/ork/skills/ping"
     "github.com/dracory/ork/skills/user"
     "github.com/dracory/ork/types"
