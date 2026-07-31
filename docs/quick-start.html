@@ -99,7 +99,7 @@ output2 := results2.Results["server.example.com"].Message</code></pre>
     SetArg("username", "alice").
     SetArg("shell", "/bin/bash")
 
-results := node.Run(skills.NewUserCreate())
+results := node.Run(user.NewUserCreate())
 result := results.Results["server.example.com"]
 if result.Error != nil {
     log.Fatalf("Skill failed: %v", result.Error)
@@ -123,7 +123,7 @@ webGroup.WithArg("env", "production")
 inv.AddGroup(webGroup)
 
 // Run skill on entire inventory
-results := inv.Run(skills.NewPing())
+results := inv.Run(ping.NewPing())
 
 // Check summary
 summary := results.Summary()

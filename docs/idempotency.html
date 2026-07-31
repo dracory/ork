@@ -34,13 +34,13 @@
     <h2>Check Before Run</h2>
     <p>Use <code>Check()</code> to determine if changes would be made:</p>
 <pre><code>// Check if changes would be made
-results := node.Check(skills.NewAptUpgrade())
+results := node.Check(apt.NewAptUpgrade())
 result := results.Results["server.example.com"]
 
 if result.Changed {
     log.Printf("Would upgrade packages: %s", result.Message)
     // Now actually run it
-    results = node.Run(skills.NewAptUpgrade())
+    results = node.Run(apt.NewAptUpgrade())
 }</code></pre>
 
     <h2>Result Structure</h2>
@@ -67,7 +67,7 @@ type Summary struct {
 
     <h2>Using Results Summary</h2>
     <p>When working with multiple nodes, use the summary to get an overview:</p>
-<pre><code>results := inv.Run(skills.NewAptUpdate())
+<pre><code>results := inv.Run(apt.NewAptUpdate())
 summary := results.Summary()
 
 fmt.Printf("Total: %d, Changed: %d, Unchanged: %d, Failed: %d\n",
@@ -81,12 +81,12 @@ fmt.Printf("Total: %d, Changed: %d, Unchanged: %d, Failed: %d\n",
 )
 
 // Execute directly with config
-aptUpgrade := skills.NewAptUpgrade()
+aptUpgrade := apt.NewAptUpgrade()
 aptUpgrade.SetNodeConfig(cfg)
 result := aptUpgrade.Run()
 
 // Or check before running via Check
-swapCreate := skills.NewSwapCreate()
+swapCreate := swap.NewSwapCreate()
 swapCreate.SetNodeConfig(cfg)
 needsChange, _ := swapCreate.Check()
 if !needsChange {

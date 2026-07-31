@@ -72,14 +72,14 @@ results2 := node.RunCommand("df -h")</code></pre>
 
     <h3>Run Skills</h3>
 <pre><code>// Direct instance (preferred)
-results := node.Run(skills.NewPing())
-results := node.Run(skills.NewAptUpdate())
+results := node.Run(ping.NewPing())
+results := node.Run(apt.NewAptUpdate())
 
 // By ID (deprecated, prefer Run() with a direct instance)
 results := node.RunByID(skills.IDPing)
 
 // Check mode (dry-run for single skill)
-results := node.Check(skills.NewAptUpgrade())</code></pre>
+results := node.Check(apt.NewAptUpgrade())</code></pre>
 
     <h2>Working with Groups</h2>
 <pre><code>// Create group
@@ -93,7 +93,7 @@ group.AddNode(node2)
 group.WithArg("env", "production")
 
 // Run on all nodes
-results := group.Run(skills.NewAptUpdate())</code></pre>
+results := group.Run(apt.NewAptUpdate())</code></pre>
 
     <h2>Working with Inventory</h2>
 <pre><code>// Create inventory
@@ -110,10 +110,10 @@ inv.AddNode(node)
 inv.SetMaxConcurrency(20)
 
 // Run on all nodes across all groups
-results := inv.Run(skills.NewPing())</code></pre>
+results := inv.Run(ping.NewPing())</code></pre>
 
     <h2>Result Handling</h2>
-<pre><code>results := inv.Run(skills.NewAptUpdate())
+<pre><code>results := inv.Run(apt.NewAptUpdate())
 
 // Get summary
 summary := results.Summary()
@@ -134,59 +134,59 @@ for host, result := range results.Results {
     <h2>Common Skills</h2>
 
     <h3>System</h3>
-<pre><code>skills.NewPing()        // Check connectivity
-skills.NewAptUpdate()   // Update package lists
-skills.NewAptUpgrade()  // Upgrade packages
-skills.NewAptStatus()   // Check for updates
-skills.NewReboot()      // Reboot server</code></pre>
+<pre><code>ping.NewPing()        // Check connectivity
+apt.NewAptUpdate()   // Update package lists
+apt.NewAptUpgrade()  // Upgrade packages
+apt.NewAptStatus()   // Check for updates
+reboot.NewReboot()      // Reboot server</code></pre>
 
     <h3>Users</h3>
 <pre><code>node.SetArg("username", "alice")
 node.SetArg("shell", "/bin/bash")
-results := node.Run(skills.NewUserCreate())
+results := node.Run(user.NewUserCreate())
 
 node.SetArg("username", "bob")
-results := node.Run(skills.NewUserDelete())
+results := node.Run(user.NewUserDelete())
 
-results := node.Run(skills.NewUserStatus())</code></pre>
+results := node.Run(user.NewUserStatus())</code></pre>
 
     <h3>Swap</h3>
 <pre><code>node.SetArg("size", "2")
 node.SetArg("swappiness", "10")
-results := node.Run(skills.NewSwapCreate())
+results := node.Run(swap.NewSwapCreate())
 
-results := node.Run(skills.NewSwapDelete())
-results := node.Run(skills.NewSwapStatus())</code></pre>
+results := node.Run(swap.NewSwapDelete())
+results := node.Run(swap.NewSwapStatus())</code></pre>
 
     <h3>MariaDB</h3>
-<pre><code>results := node.Run(skills.NewMariadbInstall())
+<pre><code>results := node.Run(mariadb.NewInstall())
 
 node.SetArg("root-password", "secret")
-results := node.Run(skills.NewSecure())
+results := node.Run(mariadb.NewSecure())
 
 node.SetArg("database", "myapp")
-results := node.Run(skills.NewCreateDB())
+results := node.Run(mariadb.NewCreateDB())
 
 node.SetArg("username", "appuser")
 node.SetArg("password", "apppass")
-results := node.Run(skills.NewCreateUser())</code></pre>
+results := node.Run(mariadb.NewCreateUser())</code></pre>
 
     <h3>Security</h3>
-<pre><code>results := node.Run(skills.NewSshHarden())
-results := node.Run(skills.NewKernelHarden())
-results := node.Run(skills.NewAideInstall())
+<pre><code>results := node.Run(security.NewSshHarden())
+results := node.Run(security.NewKernelHarden())
+results := node.Run(security.NewAideInstall())
 
 node.SetArg("port", "2222")
-results := node.Run(skills.NewSshChangePort())</code></pre>
+results := node.Run(security.NewSshChangePort())</code></pre>
 
     <h3>Firewall</h3>
-<pre><code>results := node.Run(skills.NewUfwInstall())
-results := node.Run(skills.NewUfwStatus())
-results := node.Run(skills.NewAllowMariaDB())</code></pre>
+<pre><code>results := node.Run(ufw.NewUfwInstall())
+results := node.Run(ufw.NewUfwStatus())
+results := node.Run(ufw.NewAllowMariaDB())</code></pre>
 
     <h3>Fail2ban</h3>
-<pre><code>results := node.Run(skills.NewFail2banInstall())
-results := node.Run(skills.NewFail2banStatus())</code></pre>
+<pre><code>results := node.Run(fail2ban.NewFail2banInstall())
+results := node.Run(fail2ban.NewFail2banStatus())</code></pre>
 
     <h2>Dry-Run Mode</h2>
 <pre><code>// Node level
@@ -274,13 +274,13 @@ func main() {
         SetUser("deploy")
 
     // Check connectivity
-    results := node.Run(skills.NewPing())
+    results := node.Run(ping.NewPing())
     if results.Results["server.example.com"].Error != nil {
         log.Fatal("Connection failed")
     }
 
     // Update packages
-    results = node.Run(skills.NewAptUpdate())
+    results = node.Run(apt.NewAptUpdate())
     if results.Results["server.example.com"].Error != nil {
         log.Printf("Update failed: %v", results.Results["server.example.com"].Error)
     }
@@ -288,14 +288,14 @@ func main() {
     // Create user (dry-run first)
     node.SetDryRunMode(true)
     node.SetArg("username", "alice")
-    results = node.Run(skills.NewUserCreate())
+    results = node.Run(user.NewUserCreate())
 
     if results.Results["server.example.com"].Changed {
         log.Println("Would create user")
 
         // Actually create
         node.SetDryRunMode(false)
-        results = node.Run(skills.NewUserCreate())
+        results = node.Run(user.NewUserCreate())
         log.Println(results.Results["server.example.com"].Message)
     }
 }</code></pre>

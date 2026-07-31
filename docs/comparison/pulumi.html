@@ -78,7 +78,7 @@
             <tr>
                 <td><strong>Idempotency</strong></td>
                 <td>Built into providers</td>
-                <td>Playbook-level</td>
+                <td>Skill-level</td>
             </tr>
             <tr>
                 <td><strong>Lifecycle</strong></td>
@@ -252,10 +252,10 @@ func main() {
 
     // Configure the server with playbooks
     results := node.
-        Run(skills.NewAptUpdate()).
-        Run(skills.NewAptUpgrade()).
-        Run(skills.NewUfwInstall()).
-        Run(skills.NewNginxInstall())
+        Run(apt.NewAptUpdate()).
+        Run(apt.NewAptUpgrade()).
+        Run(ufw.NewUfwInstall()).
+        Run(apt.NewAptInstall().SetArg("packages", "nginx"))
 
     // Check results
     result := results.Results[serverIP]
@@ -282,7 +282,7 @@ for _, ip := range webServerIPs { // From Pulumi outputs
 inv.AddGroup(webGroup)
 
 // Configure all web servers in parallel
-results := inv.Run(skills.NewNginxInstall())
+results := inv.Run(apt.NewAptInstall().SetArg("packages", "nginx"))
 summary := results.Summary()
 fmt.Printf("Changed: %d, Failed: %d\n", summary.Changed, summary.Failed)</code></pre>
 
@@ -303,7 +303,7 @@ pulumi stack output serverIp</code></pre>
 serverIP := pulumiStack.Output("serverIp")
 
 node := ork.NewNodeForHost(serverIP)
-results := node.Run(skills.NewUfwInstall())</code></pre>
+results := node.Run(ufw.NewUfwInstall())</code></pre>
 
     <h3>Phase 3: Integration</h3>
     <pre><code># Combined workflow
@@ -340,13 +340,13 @@ pulumi state rm aws:ec2/instance:Instance web-server</code></pre>
     </ul>
 
     <pre><code>// Check what would change
-results := node.Check(skills.NewUfwInstall())
+results := node.Check(ufw.NewUfwInstall())
 if results.Results[host].Changed {
     fmt.Println("Changes would be made")
 }
 
 // Actually apply
-results = node.Run(skills.NewUfwInstall())</code></pre>
+results = node.Run(ufw.NewUfwInstall())</code></pre>
 
     <h2>Drift Detection</h2>
 
@@ -359,11 +359,11 @@ pulumi diff</code></pre>
 
     <h3>Ork Drift Detection</h3>
     <pre><code>// Check if configuration matches desired state
-results := node.Check(skills.NewUfwInstall())
+results := node.Check(ufw.NewUfwInstall())
 if results.Results[host].Changed {
     fmt.Println("Configuration has drifted")
     // Re-apply skill
-    node.Run(skills.NewUfwInstall())
+    node.Run(ufw.NewUfwInstall())
 }</code></pre>
 
     <h2>Multi-Language Support</h2>
@@ -549,7 +549,7 @@ if results.Results[host].Changed {
             <tr>
                 <td><strong>Secrets Management</strong></td>
                 <td>✅ Pulumi Secrets</td>
-                <td>✅ envenc vault</td>
+                <td>✅ Ork vault</td>
                 <td>Both handle secrets</td>
             </tr>
             <tr>

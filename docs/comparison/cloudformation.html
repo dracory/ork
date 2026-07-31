@@ -80,7 +80,7 @@
 <tr>
 <td><strong>Idempotency</strong></td>
 <td>Built-in (resource properties)</td>
-<td>Playbook-level</td>
+<td>Skill-level</td>
 </tr>
 <tr>
 <td><strong>Lifecycle</strong></td>
@@ -276,10 +276,10 @@ func main() {
     
     // Configure the server with playbooks
     results := node.
-        Run(skills.NewAptUpdate()).
-        Run(skills.NewAptUpgrade()).
-        Run(skills.NewUfwInstall()).
-        Run(skills.NewNginxInstall())
+        Run(apt.NewAptUpdate()).
+        Run(apt.NewAptUpgrade()).
+        Run(ufw.NewUfwInstall()).
+        Run(apt.NewAptInstall().SetArg("packages", "nginx"))
     
     // Check results
     result := results.Results[serverIP]
@@ -304,7 +304,7 @@ for _, ip := range webServerIPs { // From CloudFormation outputs
 inv.AddGroup(webGroup)
 
 // Configure all web servers in parallel
-results := inv.Run(skills.NewNginxInstall())
+results := inv.Run(apt.NewAptInstall().SetArg("packages", "nginx"))
 summary := results.Summary()
 fmt.Printf("Changed: %d, Failed: %d\n", summary.Changed, summary.Failed)</code></pre>
 <h2>Typical Workflow</h2>
@@ -327,7 +327,7 @@ aws cloudformation describe-stacks \
 serverIP := getCloudFormationOutput("PublicIP")
 
 node := ork.NewNodeForHost(serverIP)
-results := node.Run(skills.NewUfwInstall())</code></pre>
+results := node.Run(ufw.NewUfwInstall())</code></pre>
 <h3>Phase 3: Integration</h3>
 <pre><code># Combined workflow
 aws cloudformation create-stack ...  # Create infrastructure
@@ -361,13 +361,13 @@ aws cloudformation create-stack ...  # Create infrastructure
 // - Check mode for preview
 // - Reusable across servers
 
-results := node.Run(skills.NewNginxInstall())
+results := node.Run(apt.NewAptInstall().SetArg("packages", "nginx"))
 if results.Results[host].Error != nil {
     log.Printf("Error: %v", results.Results[host].Error)
 }
 
 // Check what would change
-checkResults := node.Check(skills.NewNginxInstall())
+checkResults := node.Check(apt.NewAptInstall().SetArg("packages", "nginx"))
 if checkResults.Results[host].Changed {
     fmt.Println("Nginx would be installed")
 }</code></pre>
@@ -408,13 +408,13 @@ aws cloudformation delete-stack --stack-name my-stack</code></pre>
 <li>Results returned after each run</li>
 </ul>
 <pre><code>// Check what would change
-results := node.Check(skills.NewUfwInstall())
+results := node.Check(ufw.NewUfwInstall())
 if results.Results[host].Changed {
     fmt.Println("Changes would be made")
 }
 
 // Actually apply
-results = node.Run(skills.NewUfwInstall())</code></pre>
+results = node.Run(ufw.NewUfwInstall())</code></pre>
 <h2>Change Sets</h2>
 <h3>CloudFormation Change Sets</h3>
 <pre><code># Create change set to preview
@@ -434,13 +434,13 @@ aws cloudformation execute-change-set \
   --change-set-name my-changes</code></pre>
 <h3>Ork Check Mode</h3>
 <pre><code>// Preview changes without applying
-results := node.Check(skills.NewNginxInstall())
+results := node.Check(apt.NewAptInstall().SetArg("packages", "nginx"))
 if results.Results[host].Changed {
     fmt.Printf("Would change: %s\n", results.Results[host].Message)
 }
 
 // Apply if desired
-results = node.Run(skills.NewNginxInstall())</code></pre>
+results = node.Run(apt.NewAptInstall().SetArg("packages", "nginx"))</code></pre>
 <h2>Cross-Stack References</h2>
 <h3>CloudFormation Cross-Stack References</h3>
 <pre><code># Stack 1: VPC
@@ -630,7 +630,7 @@ node.SetArg("vpc_id", vpcID)</code></pre>
 <tr>
 <td><strong>Secrets Management</strong></td>
 <td>✅ AWS Secrets Manager/Parameter Store</td>
-<td>✅ envenc vault</td>
+<td>✅ Ork vault</td>
 <td>Both handle secrets</td>
 </tr>
 <tr>

@@ -2,12 +2,95 @@
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
+
+// kernelHardenContent is the sysctl configuration appended to the drop-in
+// file. Kept as a constant so the content is shell-escaped at runtime
+// instead of embedded in a fragile heredoc.
+const kernelHardenContent = `# IP Spoofing protection
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+
+# Ignore ICMP redirects
+net.ipv4.conf.all.accept_redirects = 0
+net.ipv6.conf.all.accept_redirects = 0
+net.ipv4.conf.default.accept_redirects = 0
+net.ipv6.conf.default.accept_redirects = 0
+
+# Ignore send redirects
+net.ipv4.conf.all.send_redirects = 0
+net.ipv4.conf.default.send_redirects = 0
+
+# Disable source packet routing
+net.ipv4.conf.all.accept_source_route = 0
+net.ipv6.conf.all.accept_source_route = 0
+net.ipv4.conf.default.accept_source_route = 0
+net.ipv6.conf.default.accept_source_route = 0
+
+# Log Martians
+net.ipv4.conf.all.log_martians = 1
+net.ipv4.conf.default.log_martians = 1
+
+# Ignore ICMP ping requests
+net.ipv4.icmp_echo_ignore_all = 0
+
+# Ignore Directed pings
+net.ipv4.icmp_echo_ignore_broadcasts = 1
+
+# Enable TCP SYN Cookies
+net.ipv4.tcp_syncookies = 1
+net.ipv4.tcp_max_syn_backlog = 2048
+net.ipv4.tcp_synack_retries = 2
+net.ipv4.tcp_syn_retries = 5
+
+# Disable IPv6 if not needed
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+
+# Enable IP forwarding protection
+net.ipv4.conf.all.forwarding = 0
+net.ipv6.conf.all.forwarding = 0
+
+# Enable bad error message protection
+net.ipv4.icmp_ignore_bogus_error_responses = 1
+
+# Enable reverse path filtering
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.conf.default.rp_filter = 1
+
+# Increase system file descriptor limit
+fs.file-max = 65535
+
+# Discourage address space layout randomization (ASLR) bypass
+kernel.randomize_va_space = 2
+
+# Restrict core dumps
+fs.suid_dumpable = 0
+
+# Hide kernel pointers
+kernel.kptr_restrict = 2
+
+# Restrict dmesg access
+kernel.dmesg_restrict = 1
+
+# Restrict access to kernel logs
+kernel.printk = 3 3 3 3
+`
+
+// shellEscapeContent escapes file content for safe use in a printf '%s'
+// argument. It wraps the content in single quotes and escapes embedded
+// single quotes using the POSIX sequence '\”.
+// This mirrors the approach used by fs.FileCreate.
+func shellEscapeContent(content string) string {
+	return "'" + strings.ReplaceAll(content, "'", "'\\''") + "'"
+}
 
 // KernelHarden applies security-focused kernel parameters via sysctl.
 // This skill creates a dedicated configuration file that hardens the network stack
@@ -78,77 +161,10 @@ func (k *KernelHarden) Run() types.Result {
 
 	// Define commands
 	cmdBackup := types.Command{Command: fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d)'`, sysctlConfigPath, sysctlConfigPath), Description: "Backup sysctl config"}
-	cmdCreateConfig := types.Command{Command: fmt.Sprintf(`cat >> %s << 'EOF'
-# IP Spoofing protection
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.conf.default.rp_filter = 1
-
-# Ignore ICMP redirects
-net.ipv4.conf.all.accept_redirects = 0
-net.ipv6.conf.all.accept_redirects = 0
-net.ipv4.conf.default.accept_redirects = 0
-net.ipv6.conf.default.accept_redirects = 0
-
-# Ignore send redirects
-net.ipv4.conf.all.send_redirects = 0
-net.ipv4.conf.default.send_redirects = 0
-
-# Disable source packet routing
-net.ipv4.conf.all.accept_source_route = 0
-net.ipv6.conf.all.accept_source_route = 0
-net.ipv4.conf.default.accept_source_route = 0
-net.ipv6.conf.default.accept_source_route = 0
-
-# Log Martians
-net.ipv4.conf.all.log_martians = 1
-net.ipv4.conf.default.log_martians = 1
-
-# Ignore ICMP ping requests
-net.ipv4.icmp_echo_ignore_all = 0
-
-# Ignore Directed pings
-net.ipv4.icmp_echo_ignore_broadcasts = 1
-
-# Enable TCP SYN Cookies
-net.ipv4.tcp_syncookies = 1
-net.ipv4.tcp_max_syn_backlog = 2048
-net.ipv4.tcp_synack_retries = 2
-net.ipv4.tcp_syn_retries = 5
-
-# Disable IPv6 if not needed
-net.ipv6.conf.all.disable_ipv6 = 1
-net.ipv6.conf.default.disable_ipv6 = 1
-net.ipv6.conf.lo.disable_ipv6 = 1
-
-# Enable IP forwarding protection
-net.ipv4.conf.all.forwarding = 0
-net.ipv6.conf.all.forwarding = 0
-
-# Enable bad error message protection
-net.ipv4.icmp_ignore_bogus_error_responses = 1
-
-# Enable reverse path filtering
-net.ipv4.conf.all.rp_filter = 1
-net.ipv4.conf.default.rp_filter = 1
-
-# Increase system file descriptor limit
-fs.file-max = 65535
-
-# Discourage address space layout randomization (ASLR) bypass
-kernel.randomize_va_space = 2
-
-# Restrict core dumps
-fs.suid_dumpable = 0
-
-# Hide kernel pointers
-kernel.kptr_restrict = 2
-
-# Restrict dmesg access
-kernel.dmesg_restrict = 1
-
-# Restrict access to kernel logs
-kernel.printk = 3 3 3 3
-EOF`, sysctlDropInPath), Description: "Create kernel hardening config"}
+	cmdCreateConfig := types.Command{
+		Command:     fmt.Sprintf("printf '%%s' %s >> %s", shellEscapeContent(kernelHardenContent), skills.ShellEscapeArg(sysctlDropInPath)),
+		Description: "Create kernel hardening config",
+	}
 	cmdApply := types.Command{Command: fmt.Sprintf(`sysctl -p %s`, sysctlDropInPath), Description: "Apply sysctl settings"}
 
 	// Check for dry-run mode - display actual commands

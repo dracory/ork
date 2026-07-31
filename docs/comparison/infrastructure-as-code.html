@@ -127,7 +127,7 @@ webGroup.AddNode(ork.NewNodeForHost(server.PublicIp).
 inv.AddGroup(webGroup)
 
 // Configure the server with skills
-results := inv.Run(skills.NewUfwInstall())
+results := inv.Run(ufw.NewUfwInstall())
 summary := results.Summary()</code></pre>
 
     <h3>Pulumi vs Ork</h3>
@@ -427,10 +427,13 @@ Outputs:
 ips := getCloudFormationOutput("ServerIPs")
 
 // Load secrets from vault (if needed)
-vaultKeys, err := ork.VaultFileToKeysWithPrompt("vault.envenc")
+// import "github.com/dracory/ork/vault"
+
+v, err := vault.Open("secrets.vault", "password")
 if err != nil {
     log.Fatal(err)
 }
+defer v.Close()
 
 // Configure with Ork via Inventory
 inv := ork.NewInventory()
@@ -440,7 +443,8 @@ for _, ip := range ips {
         SetUser("ubuntu").
         SetKey("deploy.pem")
     // Set vault secrets as node args
-    for key, value := range vaultKeys {
+    for _, key := range v.KeyList() {
+        value, _ := v.KeyGet(key)
         node.SetArg(key, value)
     }
     webGroup.AddNode(node)
@@ -448,11 +452,11 @@ for _, ip := range ips {
 inv.AddGroup(webGroup)
 
 // Security hardening across all servers
-results := inv.Run(skills.NewUfwInstall())
-results = inv.Run(skills.NewFail2banInstall())
+results := inv.Run(ufw.NewUfwInstall())
+results = inv.Run(fail2ban.NewFail2banInstall())
 
 // Install stack
-results = inv.Run(skills.NewAptUpdate())
+results = inv.Run(apt.NewAptUpdate())
 
 // Deploy application with per-node results
 deploy := myapp.NewDeploy()

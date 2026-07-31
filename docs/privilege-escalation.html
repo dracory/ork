@@ -131,7 +131,7 @@ dbGroup.AddNode(ork.NewNodeForHost("db2.example.com"))</code></pre>
 results := node.RunCommand("apt-get update")</code></pre>
 
     <h3>Skill Level</h3>
-<pre><code>skill := skills.NewAptUpdate()
+<pre><code>skill := apt.NewAptUpdate()
 skill.SetBecomeUser("root")
 
 // The skill will run as root regardless of node/group/inventory settings
@@ -140,11 +140,11 @@ results := node.Run(skill)</code></pre>
     <h2>With Skills and Playbooks</h2>
 
     <h3>Setting Become User on Skills</h3>
-<pre><code>skill := skills.NewAptUpdate()
+<pre><code>skill := apt.NewAptUpdate()
 skill.SetBecomeUser("root")
 
 results := node.Run(skill)</code></pre>
-<pre><code>skill := skills.NewUserCreate()
+<pre><code>skill := user.NewUserCreate()
 skill.SetBecomeUser("root")
 
 results := node.Run(skill)</code></pre>

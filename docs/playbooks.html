@@ -63,14 +63,14 @@ func (d *DeployWebserverPlaybook) Run() types.Result {
     cfg := d.GetNodeConfig()
 
     // 1. Run initial skill
-    result1 := skills.NewAptStatus()
+    result1 := apt.NewAptStatus()
     result1.SetNodeConfig(cfg)
     statusResult := result1.Run()
 
     // 2. Parse result and decide what to do
     if statusResult.Changed {
         // Updates available - upgrade them
-        upgradeSkill := skills.NewAptUpgrade()
+        upgradeSkill := apt.NewAptUpgrade()
         upgradeSkill.SetNodeConfig(cfg)
         upgradeSkill.Run()
     }
@@ -78,7 +78,7 @@ func (d *DeployWebserverPlaybook) Run() types.Result {
     // 3. Loop over data and create skills dynamically
     users := []string{"alice", "bob", "charlie"}
     for _, username := range users {
-        userSkill := skills.NewUserCreate().
+        userSkill := user.NewUserCreate().
             SetArg("username", username)
         userSkill.SetNodeConfig(cfg)
         userSkill.Run()
@@ -101,26 +101,26 @@ func (s *SmartUpdatePlaybook) Run() types.Result {
     cfg := s.GetNodeConfig()
 
     // Check if updates available
-    statusSkill := skills.NewAptStatus()
+    statusSkill := apt.NewAptStatus()
     statusSkill.SetNodeConfig(cfg)
     statusResult := statusSkill.Run()
 
     // Parse result and decide
     if statusResult.Changed {
         // Updates available - upgrade them
-        upgradeSkill := skills.NewAptUpgrade()
+        upgradeSkill := apt.NewAptUpgrade()
         upgradeSkill.SetNodeConfig(cfg)
         upgradeSkill.Run()
 
         // Only reboot if critical security update
         if strings.Contains(statusResult.Message, "security") {
-            rebootSkill := skills.NewReboot()
+            rebootSkill := reboot.NewReboot()
             rebootSkill.SetNodeConfig(cfg)
             rebootSkill.Run()
         }
     } else {
         // No updates - just verify connectivity
-        pingSkill := skills.NewPing()
+        pingSkill := ping.NewPing()
         pingSkill.SetNodeConfig(cfg)
         return pingSkill.Run()
     }
@@ -141,7 +141,7 @@ func (s *SetupUsersPlaybook) Run() types.Result {
 
     for _, username := range users {
         // Create skill dynamically
-        userSkill := skills.NewUserCreate().
+        userSkill := user.NewUserCreate().
             SetArg("username", username).
             SetArg("shell", "/bin/bash")
         userSkill.SetNodeConfig(cfg)
@@ -164,7 +164,7 @@ func (b *BackupAllDatabasesPlaybook) Run() types.Result {
     cfg := b.GetNodeConfig()
 
     // List all databases
-    listSkill := skills.NewMariadbListDBs()
+    listSkill := mariadb.NewListDBs()
     listSkill.SetNodeConfig(cfg)
     listResult := listSkill.Run()
 
@@ -176,7 +176,7 @@ func (b *BackupAllDatabasesPlaybook) Run() types.Result {
 
     // Dynamically create backup skills for each database
     for _, db := range dbs {
-        backupSkill := skills.NewMariadbBackup().
+        backupSkill := mariadb.NewBackup().
             SetArg("database", db)
         backupSkill.SetNodeConfig(cfg)
 
@@ -200,9 +200,12 @@ func (r *ResilientDownloadPlaybook) Run() types.Result {
     // Custom retry logic with exponential backoff
     var lastError error
     for attempt := 0; attempt &lt; 5; attempt++ {
-        downloadSkill := skills.NewDownload()
-        downloadSkill.SetNodeConfig(cfg)
-        result := downloadSkill.Run()
+        // Use a Command runnable for the download operation
+        downloadCmd := ork.NewCommand().
+            WithCommand("curl -fSsL https://example.com/file.tar.gz -o /tmp/file.tar.gz").
+            WithRequired(true).
+            WithNodeConfig(cfg)
+        result := downloadCmd.Run()
 
         if result.Error == nil {
             return result

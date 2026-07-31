@@ -36,7 +36,7 @@
     <h3>Node Level</h3>
 <pre><code>node := ork.NewNodeForHost("server.example.com").
     SetDryRunMode(true)
-results := node.Run(skills.NewAptUpgrade())
+results := node.Run(apt.NewAptUpgrade())
 // Commands are logged but not executed</code></pre>
 
     <h3>Group Level</h3>
@@ -85,7 +85,7 @@ results := inv.RunCommand("uptime")
 
     <h2>Example Workflow</h2>
 <pre><code>// Step 1: Check if changes needed
-checkResults := node.Check(skills.NewAptUpgrade())
+checkResults := node.Check(apt.NewAptUpgrade())
 if !checkResults.Results["server.example.com"].Changed {
     log.Println("No updates needed")
     return
@@ -93,12 +93,12 @@ if !checkResults.Results["server.example.com"].Changed {
 
 // Step 2: Dry-run to preview
 node.SetDryRunMode(true)
-dryRunResults := node.Run(skills.NewAptUpgrade())
+dryRunResults := node.Run(apt.NewAptUpgrade())
 log.Printf("Dry-run output: %s", dryRunResults.Results["server.example.com"].Message)
 
 // Step 3: Disable dry-run and execute
 node.SetDryRunMode(false)
-results := node.Run(skills.NewAptUpgrade())
+results := node.Run(apt.NewAptUpgrade())
 log.Printf("Execution result: %s", results.Results["server.example.com"].Message)</code></pre>
 
     <h2>See Also</h2>

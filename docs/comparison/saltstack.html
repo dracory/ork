@@ -218,12 +218,12 @@ create_user:
 node := ork.NewNodeForHost("server.example.com")
 
 // Run skills
-results := node.Run(skills.NewAptUpdate())
-results = node.Run(skills.NewAptUpgrade())
+results := node.Run(apt.NewAptUpdate())
+results = node.Run(apt.NewAptUpgrade())
 
 // Custom logic in Go
 if node.GetHost() == "production" {
-    results = node.Run(skills.NewFail2banInstall())
+    results = node.Run(fail2ban.NewFail2banInstall())
 }</code></pre>
 
     <h2>Execution Patterns</h2>
@@ -256,7 +256,7 @@ update_db:
     <h3>Ork (Procedural)</h3>
     <pre><code>// One node at a time
 node := ork.NewNodeForHost("server.example.com")
-results := node.Run(skills.NewPing())
+results := node.Run(ping.NewPing())
 result := results.Results["server.example.com"]
 
 // Inventory executes across all nodes
@@ -264,7 +264,7 @@ inv := ork.NewInventory()
 webGroup := ork.NewGroup("webservers")
 webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 inv.AddGroup(webGroup)
-results = inv.Run(skills.NewPing())  // Runs on all nodes</code></pre>
+results = inv.Run(ping.NewPing())  // Runs on all nodes</code></pre>
 
     <h2>Targeting / Inventory</h2>
 
@@ -287,14 +287,14 @@ salt -C 'G@os:Ubuntu and web* or db*' state.apply</code></pre>
     <h3>Ork (Implemented)</h3>
     <pre><code>// By host (single node)
 node := ork.NewNodeForHost("server.example.com")
-results := node.Run(skills.NewPing())
+results := node.Run(ping.NewPing())
 
 // By group
 inv := ork.NewInventory()
 webGroup := ork.NewGroup("webservers")
 webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 inv.AddGroup(webGroup)
-results = inv.GetGroupByName("webservers").Run(skills.NewPing())
+results = inv.GetGroupByName("webservers").Run(ping.NewPing())
 
 // Access per-node results
 for host, result := range results.Results {
@@ -400,14 +400,14 @@ salt-ssh 'web*' state.apply</code></pre>
             <tr>
                 <td><strong>Idempotency</strong></td>
                 <td>✅ Built-in (states)</td>
-                <td>✅ Playbook-level</td>
+                <td>✅ Skill-level</td>
                 <td>Both support idempotent operations</td>
             </tr>
             <tr>
                 <td><strong>Secrets Management</strong></td>
                 <td>✅ Pillars (encrypted)</td>
-                <td>✅ envenc vault</td>
-                <td>SaltStack has Pillars; Ork uses envenc</td>
+                <td>✅ Ork vault</td>
+                <td>SaltStack has Pillars; Ork has built-in vault</td>
             </tr>
             <tr>
                 <td><strong>Targeting</strong></td>

@@ -279,16 +279,16 @@ sftp.close()
 transport.close()</code></pre>
 
     <h3>Ork Equivalent</h3>
-    <pre><code>// Ork doesn't expose low-level SFTP
+    <pre><code>// Ork doesn't expose low-level SFTP directly
 // Focus on higher-level operations
 node := ork.NewNodeForHost("server.example.com")
 results := node.RunCommand("cat /remote/file.txt")
 result := results.Results["server.example.com"]
 
-// Or use skills for file operations
-filePb := skills.NewFileDeploy()
-filePb.SetArg("source", "/local/file.txt")
-filePb.SetArg("destination", "/remote/file.txt")
+// Or use skills for file operations (creates a file with content on the remote)
+filePb := fs.NewFileCreate()
+filePb.SetArg("path", "/remote/file.txt")
+filePb.SetArg("content", "file contents here")
 results = node.Run(filePb)</code></pre>
 
     <hr>
@@ -377,7 +377,7 @@ cap production deploy:check_disk</code></pre>
             <tr>
                 <td><strong>Roles</strong></td>
                 <td>✅ Built-in</td>
-                <td>⚠️ Planned (Inventory groups)</td>
+                <td>✅ Via groups</td>
             </tr>
             <tr>
                 <td><strong>Workflow</strong></td>
@@ -432,19 +432,26 @@ func deploy(node ork.NodeInterface, version string) {
 
     <h3>Vault Support</h3>
 
-    <p>Ork includes built-in vault integration for secure secrets management using envenc, which is not available in Fabric, Paramiko, or Capistrano.</p>
+    <p>Ork includes a built-in vault package for secure secrets management, which is not available in Fabric, Paramiko, or Capistrano.</p>
 
-    <pre><code>// Load secrets from encrypted vault file
-keys, err := ork.VaultFileToKeys("vault.envenc", "password")
+    <pre><code>import "github.com/dracory/ork/vault"
+
+// Open an existing encrypted vault file
+v, err := vault.Open("secrets.vault", "password")
 if err != nil {
     log.Fatal(err)
 }
+defer v.Close()
 
-// Hydrate environment variables from vault
-err = ork.VaultFileToEnv("vault.envenc", "password")
+// Read a secret
+dbPassword, err := v.KeyGet("DB_PASSWORD")
 
-// Interactive password prompt
-keys, err = ork.VaultFileToKeysWithPrompt("vault.envenc")</code></pre>
+// List all keys
+keys := v.KeyList()
+
+// Set and save a new secret
+v.KeySet("API_KEY", "secret-value")
+v.Save()</code></pre>
 
     <h3>Interactive Prompts</h3>
 

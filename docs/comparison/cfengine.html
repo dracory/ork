@@ -162,7 +162,7 @@ bundle agent main {
 node := ork.NewNodeForHost("server.example.com")
 
 // Check via RunnerInterface, then act
-nginxInstall := skills.NewAptInstall()
+nginxInstall := apt.NewAptInstall()
 results := node.Check(nginxInstall)
 result := results.Results["server.example.com"]
 
@@ -199,7 +199,7 @@ bundle agent manage_user {
 node := ork.NewNodeForHost("server.example.com")
 
 if shouldCreateUser {
-    userPb := skills.NewUserCreate()
+    userPb := user.NewUserCreate()
     userPb.SetArg("username", "deploy")
     results := node.Run(userPb)
     result := results.Results["server.example.com"]
@@ -259,7 +259,7 @@ if shouldCreateUser {
 node := ork.NewNodeForHost("server.example.com")
 
 // SSH handshake + authentication
-result := node.Run(skills.NewPing())
+result := node.Run(ping.NewPing())
 
 // New command = reuse connection or new handshake
 output, _ := node.RunCommand("uptime")</code></pre>
@@ -292,8 +292,8 @@ body common control {
 <h3>Ork (Embedded or External)</h3>
 <pre><code>// Policies embedded in Go code
 func configureServer(node ork.NodeInterface) {
-    node.Run(skills.NewAptUpdate())
-    node.Run(skills.NewFail2banInstall())
+    node.Run(apt.NewAptUpdate())
+    node.Run(fail2ban.NewFail2banInstall())
 }
 
 // Or load from external source
@@ -403,7 +403,7 @@ bundle agent inventory {
 <tr>
 <td><strong>Secrets Management</strong></td>
 <td>❌ Manual</td>
-<td>✅ envenc vault</td>
+<td>✅ Ork vault</td>
 <td>Ork has built-in vault support</td>
 </tr>
 <tr>

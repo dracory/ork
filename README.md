@@ -30,50 +30,53 @@ go build -o ork ./cmd/ork
 
 ## Documentation
 
-Full documentation is available as a static HTML site in the [docs](docs/) directory. Start at [docs/index.html](docs/index.html) for a card-grid overview, or browse it online via [html-preview](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/index.html).
+> **📖 Read the full documentation online:**
+> **[Ork Docs — Live Preview](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/index.html)**
+
+The documentation is a static HTML site in the [docs](docs/) directory. The links below open the rendered pages in your browser via html-preview (raw `.html` files do not render on GitHub).
 
 ### Getting Started
 
-- [Overview](docs/overview.html) - High-level introduction to Ork and core concepts
-- [Getting Started](docs/getting-started.html) - Step-by-step installation and first node guide
-- [Quick Start](docs/quick-start.html) - Fastest path to running commands and skills
+- [Overview](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/overview.html) - High-level introduction to Ork and core concepts
+- [Getting Started](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/getting-started.html) - Step-by-step installation and first node guide
+- [Quick Start](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/quick-start.html) - Fastest path to running commands and skills
 
 ### Core Reference
 
-- [Architecture](docs/architecture.html) - Layered architecture, design patterns, and concurrency model
-- [API Reference](docs/api-reference.html) - Complete reference for all public interfaces and types
-- [Configuration](docs/configuration.html) - NodeConfig structure, SSH settings, and dry-run mode
-- [Commands](docs/commands.html) - Fluent API for one-off shell command execution
-- [Skills](docs/skills.html) - Reusable, idempotent automation tasks and the full skill catalog
-- [Playbooks](docs/playbooks.html) - Complex orchestration with full Go power
+- [Architecture](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/architecture.html) - Layered architecture, design patterns, and concurrency model
+- [API Reference](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/api-reference.html) - Complete reference for all public interfaces and types
+- [Configuration](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/configuration.html) - NodeConfig structure, SSH settings, and dry-run mode
+- [Commands](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/commands.html) - Fluent API for one-off shell command execution
+- [Skills](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/skills.html) - Reusable, idempotent automation tasks and the full skill catalog
+- [Playbooks](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/playbooks.html) - Complex orchestration with full Go power
 
 ### Features
 
-- [Idempotency](docs/idempotency.html) - Check-Run pattern for safe, repeatable operations
-- [Dry-Run Mode](docs/dry-run.html) - Preview changes without execution
-- [Privilege Escalation](docs/privilege-escalation.html) - Run commands as different users via sudo
-- [Vault](docs/vault.html) - Secure secrets management (AES-256-GCM + Argon2id)
-- [Advanced Usage](docs/advanced-usage.html) - Custom skills, internal packages, and advanced patterns
+- [Idempotency](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/idempotency.html) - Check-Run pattern for safe, repeatable operations
+- [Dry-Run Mode](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/dry-run.html) - Preview changes without execution
+- [Privilege Escalation](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/privilege-escalation.html) - Run commands as different users via sudo
+- [Vault](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/vault.html) - Secure secrets management (AES-256-GCM + Argon2id)
+- [Advanced Usage](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/advanced-usage.html) - Custom skills, internal packages, and advanced patterns
 
 ### Operations & Guides
 
-- [Troubleshooting](docs/troubleshooting.html) - Common issues and solutions
-- [Cheatsheet](docs/cheatsheet.html) - Quick reference for common operations
-- [Conventions](docs/conventions.html) - Coding and documentation standards for contributors
+- [Troubleshooting](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/troubleshooting.html) - Common issues and solutions
+- [Cheatsheet](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/cheatsheet.html) - Quick reference for common operations
+- [Conventions](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/conventions.html) - Coding and documentation standards for contributors
 
 ### Comparison
 
-- [Comparison Index](docs/comparison/index.html) - Overview of all comparisons
-- [vs Ansible](docs/comparison/ansible.html) - Agentless SSH automation: YAML+Jinja2 vs Go
-- [vs Chef](docs/comparison/chef.html) - Agent-based pull: Ruby DSL vs Go
-- [vs Puppet](docs/comparison/puppet.html) - Agent-based with Puppet DSL vs Go
-- [vs SaltStack](docs/comparison/saltstack.html) - Event-driven with Salt master vs Go
-- [vs CFEngine](docs/comparison/cfengine.html) - C-based Promise Theory vs Go
-- [vs Terraform](docs/comparison/terraform.html) - Declarative cloud provisioning vs SSH automation
-- [vs Pulumi](docs/comparison/pulumi.html) - Multi-language IaC vs server configuration
-- [vs CloudFormation](docs/comparison/cloudformation.html) - AWS-native templates vs Go
-- [Infrastructure as Code](docs/comparison/infrastructure-as-code.html) - General IaC comparison
-- [vs SSH Libraries](docs/comparison/ssh-libraries.html) - Raw Go SSH libraries vs Ork
+- [Comparison Index](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/index.html) - Overview of all comparisons
+- [vs Ansible](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/ansible.html) - Agentless SSH automation: YAML+Jinja2 vs Go
+- [vs Chef](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/chef.html) - Agent-based pull: Ruby DSL vs Go
+- [vs Puppet](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/puppet.html) - Agent-based with Puppet DSL vs Go
+- [vs SaltStack](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/saltstack.html) - Event-driven with Salt master vs Go
+- [vs CFEngine](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/cfengine.html) - C-based Promise Theory vs Go
+- [vs Terraform](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/terraform.html) - Declarative cloud provisioning vs SSH automation
+- [vs Pulumi](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/pulumi.html) - Multi-language IaC vs server configuration
+- [vs CloudFormation](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/cloudformation.html) - AWS-native templates vs Go
+- [Infrastructure as Code](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/infrastructure-as-code.html) - General IaC comparison
+- [vs SSH Libraries](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/comparison/ssh-libraries.html) - Raw Go SSH libraries vs Ork
 
 ## License
 

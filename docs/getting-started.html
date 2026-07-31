@@ -34,7 +34,7 @@
     <h2>Prerequisites</h2>
     <p>Before you begin, ensure you have:</p>
     <ul>
-        <li><strong>Go 1.25+</strong> installed on your machine</li>
+        <li><strong>Go 1.26+</strong> installed on your machine</li>
         <li><strong>SSH key pair</strong> for authentication to remote servers</li>
         <li><strong>Root access</strong> to the target servers (or a user with sudo privileges)</li>
     </ul>
@@ -87,14 +87,14 @@ func main() {
 import (
     "log"
     "github.com/dracory/ork"
-    "github.com/dracory/ork/skills"
+    "github.com/dracory/ork/skills/ping"
 )
 
 func main() {
     node := ork.NewNodeForHost("server.example.com")
 
     // Check SSH connectivity
-    results := node.Run(skills.NewPing())
+    results := node.Run(ping.NewPing())
     result := results.Results["server.example.com"]
 
     if result.Error != nil {
@@ -105,22 +105,22 @@ func main() {
 }</code></pre>
 
     <h3>Update Packages</h3>
-<pre><code>// Update the package database
-results := node.Run(skills.NewAptUpdate())
+<pre><code>// Update the package database (requires "github.com/dracory/ork/skills/apt")
+results := node.Run(apt.NewAptUpdate())
 if result.Error != nil {
     log.Fatal(result.Error)
 }
 
 // Upgrade installed packages
-results = node.Run(skills.NewAptUpgrade())</code></pre>
+results = node.Run(apt.NewAptUpgrade())</code></pre>
 
     <h3>Create a User</h3>
 <pre><code>// Set arguments for the skill
 node.WithArg("username", "alice").
     WithArg("shell", "/bin/bash")
 
-// Run the user creation skill
-results := node.Run(skills.NewUserCreate())
+// Run the user creation skill (requires "github.com/dracory/ork/skills/user")
+results := node.Run(user.NewUserCreate())
 result := results.Results["server.example.com"]
 
 if result.Error != nil {
@@ -144,7 +144,7 @@ webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
 
 // Run skill on all nodes in the group
-results := webGroup.Run(skills.NewAptUpdate())
+results := webGroup.Run(apt.NewAptUpdate())
 
 // Check results for all nodes
 for host, result := range results.Results {
@@ -174,7 +174,7 @@ inv.AddGroup(webGroup)
 inv.AddGroup(dbGroup)
 
 // Run skill across all nodes
-results := inv.Run(skills.NewPing())
+results := inv.Run(ping.NewPing())
 
 // Get summary
 summary := results.Summary()
@@ -188,7 +188,7 @@ node := ork.NewNodeForHost("server.example.com").
     SetDryRunMode(true)
 
 // This will log what would happen without making changes
-results := node.Run(skills.NewAptUpgrade())</code></pre>
+results := node.Run(apt.NewAptUpgrade())</code></pre>
     <p>Dry-run mode works at all levels:</p>
     <ul>
         <li><strong>Node level</strong>: <code>node.SetDryRunMode(true)</code></li>
@@ -251,13 +251,13 @@ results3 := node.RunCommand("free -m")</code></pre>
     <h2>Checking Before Running</h2>
     <p>Use <code>Check</code> to preview if changes would be made:</p>
 <pre><code>// Check if changes would be made
-results := node.Check(skills.NewAptUpgrade())
+results := node.Check(apt.NewAptUpgrade())
 result := results.Results["server.example.com"]
 
 if result.Changed {
     log.Println("Would upgrade packages")
     // Now actually run it
-    results = node.Run(skills.NewAptUpgrade())
+    results = node.Run(apt.NewAptUpgrade())
 } else {
     log.Println("No upgrades needed")
 }</code></pre>

@@ -78,7 +78,7 @@
             <tr>
                 <td><strong>Idempotency</strong></td>
                 <td>Built into resources</td>
-                <td>Playbook-level</td>
+                <td>Skill-level</td>
             </tr>
             <tr>
                 <td><strong>Learning Curve</strong></td>
@@ -165,10 +165,10 @@ node 'webserver01.example.com' {
 node := ork.NewNodeForHost("webserver01.example.com")
 
 // Install nginx
-results := node.Run(skills.NewAptInstall())
+results := node.Run(apt.NewAptInstall())
 
 // Configure user
-userPb := skills.NewUserCreate()
+userPb := user.NewUserCreate()
 userPb.SetArg("username", "deploy")
 userPb.SetArg("shell", "/bin/bash")
 results = node.Run(userPb)
@@ -217,7 +217,7 @@ file { '/etc/config':
 
     <h3>Ork (Skill-level)</h3>
     <pre><code>// Check pattern via RunnerInterface
-ping := skills.NewPing()
+ping := ping.NewPing()
 results := node.Check(ping)
 result := results.Results["server.example.com"]
 
@@ -311,14 +311,14 @@ if result.Changed {
             <tr>
                 <td><strong>Idempotency</strong></td>
                 <td>✅ Built-in (resources)</td>
-                <td>✅ Playbook-level</td>
+                <td>✅ Skill-level</td>
                 <td>Both support idempotent operations</td>
             </tr>
             <tr>
                 <td><strong>Secrets Management</strong></td>
                 <td>✅ Hiera (encrypted)</td>
-                <td>✅ envenc vault</td>
-                <td>Puppet has Hiera for data; Ork uses envenc</td>
+                <td>✅ Ork vault</td>
+                <td>Puppet has Hiera for data; Ork has built-in vault</td>
             </tr>
             <tr>
                 <td><strong>Inventory</strong></td>

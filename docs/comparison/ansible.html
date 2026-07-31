@@ -162,7 +162,7 @@ webGroup.SetArg("env", "production")
 inv.AddGroup(webGroup)
 
 // Run skill on entire inventory
-results := inv.Run(skills.NewPing())
+results := inv.Run(ping.NewPing())
 summary := results.Summary()
 fmt.Printf("Changed: %d, Failed: %d\n", summary.Changed, summary.Failed)</code></pre>
 <h2>Automation Units</h2>
@@ -199,7 +199,7 @@ fmt.Printf("Changed: %d, Failed: %d\n", summary.Changed, summary.Failed)</code><
 <p><strong>Ork Skill (built-in, atomic operation):</strong></p>
 <pre><code>// Use built-in skill from skills/ package
 node := ork.NewNodeForHost("server.example.com")
-results := node.Run(skills.NewAptInstall())</code></pre>
+results := node.Run(apt.NewAptInstall())</code></pre>
 <p><strong>Ork Custom Playbook (user-defined implementation):</strong></p>
 <pre><code>// Create custom playbook using BasePlaybook
 type MyWebServerPlaybook struct {
@@ -214,7 +214,7 @@ func (p *MyWebServerPlaybook) Run() types.Result {
     results := make(map[string]types.Result)
 
     // Install nginx
-    nginxResult := skills.NewAptInstall().
+    nginxResult := apt.NewAptInstall().
         SetNodeConfig(node).
         Run()
     results[host] = nginxResult
@@ -223,10 +223,10 @@ func (p *MyWebServerPlaybook) Run() types.Result {
         return types.Result{Error: nginxResult.Error}
     }
 
-    // Start nginx
-    startResult := skills.NewServiceStart().
-        SetNodeConfig(node).
-        SetArg("service", "nginx").
+    // Start nginx (via Command runnable - no built-in service skill)
+    startResult := ork.NewCommand().
+        SetCommand("sudo systemctl start nginx").
+        WithNodeConfig(node).
         Run()
     results[host] = startResult
 
@@ -261,7 +261,7 @@ results := node.Run(myPlaybook)</code></pre>
 <li>Works on Node, Group, and Inventory uniformly</li>
 </ul>
 <pre><code>// Check if changes needed before running
-ping := skills.NewPing()
+ping := ping.NewPing()
 results := node.Check(ping)
 
 result := results.Results["server.example.com"]
@@ -316,7 +316,7 @@ results = webServers.Check(ping)</code></pre>
 <tr>
 <td><strong>Secrets</strong></td>
 <td>Ansible Vault</td>
-<td>envenc vault integration</td>
+<td>Ork vault integration</td>
 </tr>
 <tr>
 <td><strong>Callbacks</strong></td>
@@ -385,8 +385,8 @@ results = webServers.Check(ping)</code></pre>
 <tr>
 <td><strong>Secrets Management</strong></td>
 <td>✅ Ansible Vault</td>
-<td>✅ envenc vault</td>
-<td>Ansible has built-in encryption; Ork uses envenc for encrypted vault files</td>
+<td>✅ Ork vault</td>
+<td>Ansible has built-in encryption; Ork has built-in vault for encrypted secrets</td>
 </tr>
 <tr>
 <td><strong>Error Handling</strong></td>
@@ -457,8 +457,8 @@ results = webServers.Check(ping)</code></pre>
 <tr>
 <td><strong>Vault Encryption</strong></td>
 <td>✅ Yes</td>
-<td>✅ Yes (envenc)</td>
-<td>Ansible encrypts variables at rest; Ork uses envenc for vault encryption</td>
+<td>✅ Yes (Ork vault)</td>
+<td>Ansible encrypts variables at rest; Ork has built-in vault encryption</td>
 </tr>
 <tr>
 <td><strong>Galaxy Ecosystem</strong></td>
@@ -469,8 +469,8 @@ results = webServers.Check(ping)</code></pre>
 <tr>
 <td><strong>CLI Tool</strong></td>
 <td>✅ Yes</td>
-<td>⚠️ Planned</td>
-<td>Ansible has ansible/ansible-playbook CLI; Ork is library-first</td>
+<td>✅ Vault CLI</td>
+<td>Ansible has ansible/ansible-playbook CLI; Ork has vault CLI, library-first for automation</td>
 </tr>
 <tr>
 <td><strong>API/Library</strong></td>
@@ -517,8 +517,8 @@ results = webServers.Check(ping)</code></pre>
 <tr>
 <td><strong>Become/Sudo</strong></td>
 <td>✅ Yes</td>
-<td>⚠️ Manual</td>
-<td>Ansible has become privilege escalation; Ork uses sudo in commands</td>
+<td>✅ Yes (BecomeInterface)</td>
+<td>Ansible has become privilege escalation; Ork has BecomeInterface with hierarchical become user support</td>
 </tr>
 <tr>
 <td><strong>Tags</strong></td>

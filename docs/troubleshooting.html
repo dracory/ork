@@ -73,14 +73,14 @@ node := ork.NewNode()</code></pre>
 results := node.RunByID(skills.IDAptUpdate)
 
 // Direct instance (preferred)
-results := node.Run(skills.NewAptUpdate())</code></pre>
+results := node.Run(apt.NewAptUpdate())</code></pre>
     <p>Check available IDs in <code>skills/constants.go</code>.</p>
 
     <h3>"username is required"</h3>
     <p class="problem"><strong>Problem</strong>: Running a user skill without required arguments.</p>
     <p class="solution"><strong>Solution</strong>: Set the required argument:</p>
 <pre><code>node.SetArg("username", "alice")
-results := node.Run(skills.NewUserCreate())</code></pre>
+results := node.Run(user.NewUserCreate())</code></pre>
 
     <h3>Skill reports "Changed: false" but should have changed</h3>
     <p class="problem"><strong>Problem</strong>: Idempotency check incorrectly reports no changes needed.</p>

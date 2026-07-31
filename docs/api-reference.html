@@ -41,8 +41,9 @@
         <tr><th>Package</th><th>Path</th><th>Purpose</th></tr>
         <tr><td><code>ork</code></td><td><code>github.com/dracory/ork</code></td><td>Main API with Node, Group, Inventory</td></tr>
         <tr><td><code>ssh</code></td><td><code>github.com/dracory/ork/ssh</code></td><td>SSH client utilities</td></tr>
-        <tr><td><code>skills</code></td><td><code>github.com/dracory/ork/skills</code></td><td>Built-in skill implementations</td></tr>
+        <tr><td><code>skills</code></td><td><code>github.com/dracory/ork/skills</code></td><td>Built-in skill implementations (subpackages: apt, ping, user, swap, ufw, ...)</td></tr>
         <tr><td><code>types</code></td><td><code>github.com/dracory/ork/types</code></td><td>RunnableInterface, BasePlaybook, BaseSkill, Registry, Command, Result, NodeConfig types</td></tr>
+        <tr><td><code>vault</code></td><td><code>github.com/dracory/ork/vault</code></td><td>Secure secrets management (AES-256-GCM + Argon2id)</td></tr>
     </table>
 
     <h2>ork Package</h2>
@@ -161,31 +162,26 @@ func NewDefaultRegistry() (*types.Registry, error)</code></pre>
 }</code></pre>
 <pre><code>func NewCommand() CommandInterface</code></pre>
 
-    <h3>Vault Functions</h3>
-    <p>Secure vault integration for secrets management using envenc.</p>
-<pre><code>// Load keys from vault content string
-func VaultContentToKeys(vaultContent, vaultPassword string) (map[string]string, error)
+    <h3>Vault</h3>
+    <p>Secure secrets management is provided by the separate <code>vault</code> package. See <a href="vault.html">Vault documentation</a> for full reference.</p>
+<pre><code>import "github.com/dracory/ork/vault"
 
-// Load keys from vault file
-func VaultFileToKeys(vaultFilePath, vaultPassword string) (map[string]string, error)
+// Open or create a vault file
+func vault.Open(path string, password string) (*vault.Vault, error)
 
-// Hydrate environment variables from vault content string
-func VaultContentToEnv(vaultContent, vaultPassword string) error
+// Open with auth-failure distinction (returns (vault, true, nil) on success,
+// (nil, false, nil) on wrong password)
+func vault.TryOpen(path string, password string) (*vault.Vault, bool, error)
 
-// Decrypt vault file and hydrate environment variables
-func VaultFileToEnv(vaultFilePath, vaultPassword string) error
-
-// Prompt for password and load keys from vault file
-func VaultFileToKeysWithPrompt(vaultFilePath string) (map[string]string, error)
-
-// Prompt for password and hydrate environment variables from vault file
-func VaultFileToEnvWithPrompt(vaultFilePath string) error
-
-// Prompt for password and load keys from vault content string
-func VaultContentToKeysWithPrompt(vaultContent string) (map[string]string, error)
-
-// Prompt for password and hydrate environment variables from vault content string
-func VaultContentToEnvWithPrompt(vaultContent string) error</code></pre>
+// Vault methods
+func (v *Vault) KeySet(key, value string) error
+func (v *Vault) KeyGet(key string) (string, error)
+func (v *Vault) KeyDelete(key string) error
+func (v *Vault) KeyList() []string
+func (v *Vault) KeyExists(key string) bool
+func (v *Vault) Save() error
+func (v *Vault) Close() error
+func (v *Vault) ChangePassword(newPassword string) error</code></pre>
 
     <h3>Prompt Functions</h3>
     <p>Interactive user input functions for configuration and secrets.</p>
@@ -318,10 +314,13 @@ func (c *NodeConfig) SetChdir(dir string)</code></pre>
 func NewBaseSkill() *BaseSkill</code></pre>
 
     <h3>Command</h3>
-    <p>Represents a shell command with its description. Used to display and execute shell commands in a structured way, especially useful in dry-run mode.</p>
+    <p>Represents a shell command with its description and optional execution settings. Used to display and execute shell commands in a structured way, especially useful in dry-run mode.</p>
 <pre><code>type Command struct {
-    Command     string
-    Description string
+    Command     string // The shell command to execute
+    Description string // Human-readable description
+    Chdir       string // Working directory for command execution
+    BecomeUser  string // User to become when executing command (e.g. "postgres", "www-data")
+    Required    bool   // Whether the command must succeed for execution to continue
 }</code></pre>
 
     <h3>BecomeInterface</h3>
@@ -344,6 +343,7 @@ type Results struct {
     Results map[string]Result
 }
 func (r Results) Summary() Summary
+func (r Results) FirstResult() Result  // Returns first result (useful for single-node runs)
 
 type Summary struct {
     Total     int
@@ -357,19 +357,22 @@ type Summary struct {
     <h3>Client</h3>
     <p>SSH connection wrapper.</p>
 <pre><code>func NewClient(host, port, user, key string) *Client
+func (c *Client) WithKexAlgorithms(algorithms []string) *Client
+func (c *Client) WithHostKeyAlgorithms(algorithms []string) *Client
 func (c *Client) Connect() error
 func (c *Client) Run(cmd string) (string, error)
 func (c *Client) Close() error</code></pre>
 
     <h3>Utility Functions</h3>
-<pre><code>// RunOnce connects, runs command, and closes
-func RunOnce(host, port, user, key, cmd string) (string, error)
+<pre><code>// Run executes a command on the server with dry-run safety.
+// Returns "[dry-run]" without executing if cfg.IsDryRunMode is true.
+func Run(cfg types.NodeConfig, cmd types.Command) (string, error)
 
-// PrivateKeyPath returns full path to SSH key
+// PrivateKeyPath returns full path to SSH key (resolved to ~/.ssh/&lt;key&gt;)
 func PrivateKeyPath(sshKey string) string
 
-// Run with dry-run safety
-func Run(cfg types.NodeConfig, cmd string) (string, error)</code></pre>
+// ShellEscapeArg escapes a string for safe use as an unquoted shell argument
+func ShellEscapeArg(s string) string</code></pre>
 
     <h2>skills Package</h2>
 
@@ -432,6 +435,27 @@ func mariadb.NewEnableSSL() types.RunnableInterface
 func mariadb.NewEnableEncryption() types.RunnableInterface
 func mariadb.NewPurge() types.RunnableInterface</code></pre>
 
+    <h3>Filesystem</h3>
+<pre><code>func fs.NewDirCreate() types.RunnableInterface
+func fs.NewDirExists() types.RunnableInterface
+func fs.NewDirDelete() types.RunnableInterface
+func fs.NewFileCreate() types.RunnableInterface
+func fs.NewFileExists() types.RunnableInterface
+func fs.NewFileDelete() types.RunnableInterface
+func fs.NewFileCopy() types.RunnableInterface
+func fs.NewChangeOwner() types.RunnableInterface
+func fs.NewChangeMode() types.RunnableInterface
+func fs.NewSymlinkCreate() types.RunnableInterface
+func fs.NewRename() types.RunnableInterface
+func fs.NewRemove() types.RunnableInterface</code></pre>
+
+    <h3>PHP</h3>
+<pre><code>func php.NewInstall() types.RunnableInterface
+func php.NewUninstall() types.RunnableInterface
+func php.NewInstallComposer() types.RunnableInterface
+func php.NewUninstallComposer() types.RunnableInterface
+func php.NewUpdateComposer() types.RunnableInterface</code></pre>
+
     <h2>Usage Examples</h2>
 
     <h3>Basic Node Operations</h3>
@@ -454,7 +478,7 @@ results := node.RunCommand("uptime")
 result := results.Results["server.example.com"]</code></pre>
 
     <h3>Working with Results</h3>
-<pre><code>results := inv.Run(skills.NewAptUpdate())
+<pre><code>results := inv.Run(apt.NewAptUpdate())
 
 // Get summary
 summary := results.Summary()

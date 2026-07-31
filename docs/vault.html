@@ -45,24 +45,24 @@ if err != nil {
 defer vault.Close()
 
 // Set secrets
-vault.Set("DB_HOST", "db.example.com")
-vault.Set("DB_PASSWORD", "secret123")
-vault.Set("API_KEY", "abc123xyz")
+vault.KeySet("DB_HOST", "db.example.com")
+vault.KeySet("DB_PASSWORD", "secret123")
+vault.KeySet("API_KEY", "abc123xyz")
 
 // Get secrets
-dbHost, err := vault.Get("DB_HOST")
-dbPassword, err := vault.Get("DB_PASSWORD")
+dbHost, err := vault.KeyGet("DB_HOST")
+dbPassword, err := vault.KeyGet("DB_PASSWORD")
 
 // Check if key exists
-if vault.Exists("API_KEY") {
-    apiKey, _ := vault.Get("API_KEY")
+if vault.KeyExists("API_KEY") {
+    apiKey, _ := vault.KeyGet("API_KEY")
 }
 
 // List all keys
-keys := vault.List()
+keys := vault.KeyList()
 
 // Delete a key
-vault.Delete("OLD_SECRET")
+vault.KeyDelete("OLD_SECRET")
 
 // Change password (re-encrypts vault)
 if err := vault.ChangePassword("new-secure-password"); err != nil {
@@ -146,24 +146,24 @@ echo "password" | ork vault get secrets.vault DB_HOST</code></pre>
 <pre><code>func (v *Vault) Close() error</code></pre>
     <p>Saves and closes the vault. Only writes to disk if modifications were made.</p>
 
-    <h4>Get</h4>
-<pre><code>func (v *Vault) Get(key string) (string, error)</code></pre>
+    <h4>KeyGet</h4>
+<pre><code>func (v *Vault) KeyGet(key string) (string, error)</code></pre>
     <p>Retrieves a value from the vault. Returns <code>ErrKeyNotFound</code> if the key doesn't exist.</p>
 
-    <h4>Set</h4>
-<pre><code>func (v *Vault) Set(key, value string) error</code></pre>
+    <h4>KeySet</h4>
+<pre><code>func (v *Vault) KeySet(key, value string) error</code></pre>
     <p>Stores a value in the vault. Marks the vault as modified.</p>
 
-    <h4>Delete</h4>
-<pre><code>func (v *Vault) Delete(key string) error</code></pre>
+    <h4>KeyDelete</h4>
+<pre><code>func (v *Vault) KeyDelete(key string) error</code></pre>
     <p>Removes a key from the vault. Returns <code>ErrKeyNotFound</code> if the key doesn't exist.</p>
 
-    <h4>List</h4>
-<pre><code>func (v *Vault) List() []string</code></pre>
+    <h4>KeyList</h4>
+<pre><code>func (v *Vault) KeyList() []string</code></pre>
     <p>Returns all keys in the vault.</p>
 
-    <h4>Exists</h4>
-<pre><code>func (v *Vault) Exists(key string) bool</code></pre>
+    <h4>KeyExists</h4>
+<pre><code>func (v *Vault) KeyExists(key string) bool</code></pre>
     <p>Checks if a key exists in the vault.</p>
 
     <h4>Save</h4>

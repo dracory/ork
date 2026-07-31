@@ -75,7 +75,7 @@
 <tr>
 <td><strong>Idempotency</strong></td>
 <td>Built into resources</td>
-<td>Playbook-level</td>
+<td>Skill-level</td>
 </tr>
 <tr>
 <td><strong>Server Required</strong></td>
@@ -156,7 +156,7 @@ webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 inv.AddGroup(webGroup)
 
 // Target specific group
-results := inv.GetGroupByName("webservers").Run(skills.NewPing())
+results := inv.GetGroupByName("webservers").Run(ping.NewPing())
 summary := results.Summary()</code></pre>
 <h2>Automation Units</h2>
 <h3>Chef Cookbook Structure</h3>
@@ -197,7 +197,7 @@ end
 # Different on Ubuntu vs CentOS vs Windows</code></pre>
 <h3>Ork Skill (Procedural)</h3>
 <pre><code>// Explicit steps executed in order
-ping := skills.NewPing()
+ping := ping.NewPing()
 results := node.Run(ping)
 
 // Access result for specific node
@@ -207,8 +207,8 @@ if result.Error != nil {
 }
 
 // Chain multiple skills
-results = node.Run(skills.NewAptUpdate())
-results = node.Run(skills.NewAptUpgrade())</code></pre>
+results = node.Run(apt.NewAptUpdate())
+results = node.Run(apt.NewAptUpgrade())</code></pre>
 <h2>State Model</h2>
 <h3>Chef (Declarative / Convergent)</h3>
 <ul>
@@ -227,7 +227,7 @@ package 'nginx'  # Chef picks apt, yum, or msi</code></pre>
 <li><strong>On-demand</strong> - No background processes</li>
 </ul>
 <pre><code>// You control exactly what runs and when
-results := node.Run(skills.NewAptUpgrade())
+results := node.Run(apt.NewAptUpgrade())
 result := results.Results["server.example.com"]</code></pre>
 <h2>Idempotency</h2>
 <h3>Chef (Resource-level)</h3>
@@ -245,7 +245,7 @@ template '/etc/config' do
 end</code></pre>
 <h3>Ork (Skill-level)</h3>
 <pre><code>// Check pattern via RunnerInterface
-aptUpgrade := skills.NewAptUpgrade()
+aptUpgrade := apt.NewAptUpgrade()
 
 // Check if upgrade needed - works on Node, Group, or Inventory
 results := node.Check(aptUpgrade)
@@ -295,7 +295,7 @@ if result.Changed {
 </tr>
 <tr>
 <td>Knife CLI</td>
-<td>Go API / future CLI</td>
+<td>Go API / vault CLI</td>
 </tr>
 </tbody>
 </table>
@@ -341,14 +341,14 @@ if result.Changed {
 <tr>
 <td><strong>Idempotency</strong></td>
 <td>✅ Built-in (resources)</td>
-<td>✅ Playbook-level</td>
+<td>✅ Skill-level</td>
 <td>Both support idempotent operations</td>
 </tr>
 <tr>
 <td><strong>Secrets Management</strong></td>
 <td>✅ Chef Vault / Data Bags</td>
-<td>✅ envenc vault</td>
-<td>Chef has encrypted data bags; Ork uses envenc</td>
+<td>✅ Ork vault</td>
+<td>Chef has encrypted data bags; Ork has built-in vault</td>
 </tr>
 <tr>
 <td><strong>Inventory</strong></td>

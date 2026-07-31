@@ -130,7 +130,7 @@ cfg := types.NodeConfig{
 
     <h3>DBRootPassword</h3>
 <pre><code>node.SetArg("root-password", "secure-password")
-results := node.Run(skills.NewSecure())</code></pre>
+results := node.Run(mariadb.NewSecure())</code></pre>
 
     <h2>Arguments</h2>
     <p>Arguments are key-value pairs passed to skills for configuration.</p>
@@ -249,7 +249,7 @@ Node (inherits)
 Skill (inherits)</div>
 <pre><code>// Set on inventory, affects all
 inv.SetDryRunMode(true)
-results := inv.Run(skills.NewAptUpgrade())
+results := inv.Run(apt.NewAptUpgrade())
 // All nodes in all groups will be in dry-run mode</code></pre>
 
     <h3>Detecting Dry-Run in Skills</h3>
@@ -360,7 +360,7 @@ func main() {
     )
 
     // Run skills
-    results := node.Run(skills.NewPing())
+    results := node.Run(ping.NewPing())
     if results.Results["db.production.example.com"].Error != nil {
         logger.Error("connection failed")
         return
@@ -368,7 +368,7 @@ func main() {
 
     // Enable dry-run for testing
     node.SetDryRunMode(true)
-    results = node.Run(skills.NewUserCreate())
+    results = node.Run(user.NewUserCreate())
     logger.Info("dry-run result",
         "changed", results.Results["db.production.example.com"].Changed,
         "message", results.Results["db.production.example.com"].Message,

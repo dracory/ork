@@ -43,7 +43,7 @@
     SetArg("username", "alice").
     SetArg("shell", "/bin/bash")
 
-results := node.Run(skills.NewUserCreate())
+results := node.Run(user.NewUserCreate())
 result := results.Results["server.example.com"]
 if result.Error != nil {
     log.Fatalf("Skill failed: %v", result.Error)
@@ -59,7 +59,7 @@ if result.Changed {
 webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
 
-results := webGroup.Run(skills.NewAptUpdate())
+results := webGroup.Run(apt.NewAptUpdate())
 
 // Check results for all nodes
 for host, result := range results.Results {
@@ -74,7 +74,7 @@ for host, result := range results.Results {
 <pre><code>inv := ork.NewInventory()
 inv.AddGroup(webGroup)
 
-results := inv.Run(skills.NewPing())
+results := inv.Run(ping.NewPing())
 
 // Get summary
 summary := results.Summary()
@@ -203,26 +203,26 @@ node.SetArg("username", "alice").
     SetArg("environment", "production")
 
 // Run skill with arguments
-results := node.Run(skills.NewUserCreate())</code></pre>
+results := node.Run(user.NewUserCreate())</code></pre>
 
     <h2>Running by ID</h2>
     <p>You can also run skills by their string ID:</p>
 <pre><code>// Run by ID (registry lookup) - deprecated, prefer Run() with a direct instance
 results := node.RunByID("ping")</code></pre>
     <blockquote>
-        <p><strong>Deprecated:</strong> <code>RunByID</code> is retained for backward compatibility but is marked deprecated. Prefer <code>node.Run(skills.NewPing())</code> with a direct skill instance when you have one in scope. <code>RunByID</code> still works via the global skill registry (<code>ork.GetGlobalSkillRegistry()</code>).</p>
+        <p><strong>Deprecated:</strong> <code>RunByID</code> is retained for backward compatibility but is marked deprecated. Prefer <code>node.Run(ping.NewPing())</code> with a direct skill instance when you have one in scope. <code>RunByID</code> still works via the global skill registry (<code>ork.GetGlobalSkillRegistry()</code>).</p>
     </blockquote>
 
     <h2>Checking Before Running</h2>
     <p>Use <code>Check()</code> to preview if changes would be made (idempotency):</p>
 <pre><code>// Check if changes would be made
-results := node.Check(skills.NewAptUpgrade())
+results := node.Check(apt.NewAptUpgrade())
 result := results.Results["server.example.com"]
 
 if result.Changed {
     log.Println("Would upgrade packages")
     // Now actually run it
-    results = node.Run(skills.NewAptUpgrade())
+    results = node.Run(apt.NewAptUpgrade())
 } else {
     log.Println("No upgrades needed")
 }</code></pre>

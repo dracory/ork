@@ -73,12 +73,12 @@ webGroup.SetArg("env", "production")</code></pre>
 <pre><code>inv := ork.NewInventory()
 inv.AddGroup(webGroup)
 inv.AddGroup(dbGroup)
-results := inv.Run(skills.NewAptUpdate())</code></pre>
+results := inv.Run(apt.NewAptUpdate())</code></pre>
 
     <h3>4. Skills</h3>
     <p>Skills are reusable automation tasks:</p>
 <pre><code>// Run a built-in skill
-results := node.Run(skills.NewPing())
+results := node.Run(ping.NewPing())
 
 // Run by ID (registry lookup)
 results := node.RunByID(skills.IDPing)</code></pre>
@@ -113,17 +113,17 @@ func main() {
         SetUser("deploy")
 
     // Check connectivity
-    results := node.Run(skills.NewPing())
+    results := node.Run(ping.NewPing())
     if results.Results["server.example.com"].Error != nil {
         log.Fatal("Connection failed")
     }
 
     // Update packages
-    results = node.Run(skills.NewAptUpdate())
+    results = node.Run(apt.NewAptUpdate())
 
     // Create a user
     node.SetArg("username", "alice")
-    results = node.Run(skills.NewUserCreate())
+    results = node.Run(user.NewUserCreate())
 
     log.Println(results.Results["server.example.com"].Message)
 }</code></pre>
