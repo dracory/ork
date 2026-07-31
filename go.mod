@@ -7,7 +7,11 @@ require (
 	golang.org/x/term v0.45.0
 )
 
-require golang.org/x/text v0.40.0 // indirect
+require (
+	github.com/dracory/omni v0.6.0 // indirect
+	github.com/dracory/uid v1.8.0 // indirect
+	golang.org/x/text v0.40.0 // indirect
+)
 
 require (
 	dario.cat/mergo v1.0.2 // indirect

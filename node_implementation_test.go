@@ -1016,6 +1016,32 @@ func (m *mockPlaybook) Run() types.Result {
 	}
 }
 
+func (m *mockPlaybook) ToMap() map[string]any {
+	return map[string]any{
+		"id":          m.name,
+		"type":        "mockPlaybook",
+		"nodeConfig":  m.cfg,
+		"description": "Mock playbook for testing",
+		"dryRun":      m.dryRun,
+		"timeout":     m.timeout,
+	}
+}
+
+func (m *mockPlaybook) FromMap(mp map[string]any) {
+	if v, ok := mp["id"].(string); ok {
+		m.name = v
+	}
+	if v, ok := mp["nodeConfig"].(types.NodeConfig); ok {
+		m.cfg = v
+	}
+	if v, ok := mp["dryRun"].(bool); ok {
+		m.dryRun = v
+	}
+	if v, ok := mp["timeout"].(time.Duration); ok {
+		m.timeout = v
+	}
+}
+
 // contains checks if a string contains a substring.
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsHelper(s, substr))

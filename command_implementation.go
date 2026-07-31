@@ -2,6 +2,7 @@ package ork
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/dracory/ork/ssh"
@@ -224,6 +225,31 @@ func (c *commandImplementation) WithTimeout(timeout time.Duration) CommandInterf
 func (c *commandImplementation) WithBecomeUser(user string) CommandInterface {
 	c.BaseSkill.SetBecomeUser(user)
 	return c
+}
+
+// ToMap returns the command's state as a map, including command-specific fields.
+// Overrides BaseSkill.ToMap to include command, required, and chdir.
+func (c *commandImplementation) ToMap() map[string]any {
+	m := c.BaseSkill.ToMap()
+	m[types.MapKeyCommand] = c.command
+	m[types.MapKeyRequired] = strconv.FormatBool(c.required)
+	m[types.MapKeyChdir] = c.chdir
+	return m
+}
+
+// FromMap populates the command's state from a map (inverse of ToMap).
+// Overrides BaseSkill.FromMap to extract command-specific fields.
+func (c *commandImplementation) FromMap(m map[string]any) {
+	c.BaseSkill.FromMap(m)
+	if cmd, ok := m[types.MapKeyCommand].(string); ok {
+		c.command = cmd
+	}
+	if req, ok := m[types.MapKeyRequired].(string); ok {
+		c.required, _ = strconv.ParseBool(req)
+	}
+	if dir, ok := m[types.MapKeyChdir].(string); ok {
+		c.chdir = dir
+	}
 }
 
 // Check always returns false since commands are not idempotent.
