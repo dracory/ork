@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skills - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        blockquote { border-left: 4px solid #42b983; background: #f4f6f8; margin: 1rem 0; padding: 0.5rem 1rem; color: #555; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Skills</h1>
+
+    <p>Skills are reusable automation tasks that can be run against nodes, groups, or inventory. They implement the <code>RunnableInterface</code> and provide idempotent operations for common server management tasks.</p>
+
+    <h2>Running Skills</h2>
+
+    <h3>On a Single Node</h3>
+<pre><code>node := ork.NewNodeForHost("server.example.com").
+    SetArg("username", "alice").
+    SetArg("shell", "/bin/bash")
+
+results := node.Run(skills.NewUserCreate())
+result := results.Results["server.example.com"]
+if result.Error != nil {
+    log.Fatalf("Skill failed: %v", result.Error)
+}
+if result.Changed {
+    log.Printf("User created: %s", result.Message)
+} else {
+    log.Println("User already exists - no changes made")
+}</code></pre>
+
+    <h3>On a Group</h3>
+<pre><code>webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
+
+results := webGroup.Run(skills.NewAptUpdate())
+
+// Check results for all nodes
+for host, result := range results.Results {
+    if result.Error != nil {
+        log.Printf("%s failed: %v", host, result.Error)
+    } else {
+        log.Printf("%s: %s (changed: %v)", host, result.Message, result.Changed)
+    }
+}</code></pre>
+
+    <h3>On Inventory</h3>
+<pre><code>inv := ork.NewInventory()
+inv.AddGroup(webGroup)
+
+results := inv.Run(skills.NewPing())
+
+// Get summary
+summary := results.Summary()
+log.Printf("Total: %d, Changed: %d, Failed: %d",
+    summary.Total, summary.Changed, summary.Failed)</code></pre>
+
+    <h2>Available Skills</h2>
+
+    <h3>System Skills</h3>
+    <table>
+        <tr><th>Skill</th><th>ID</th><th>Args</th><th>Description</th></tr>
+        <tr><td>Ping</td><td><code>ping</code></td><td>-</td><td>Check SSH connectivity</td></tr>
+        <tr><td>Reboot</td><td><code>reboot</code></td><td>-</td><td>Reboot server</td></tr>
+        <tr><td>Apt Install</td><td><code>apt-install</code></td><td>-</td><td>Install packages via apt-get</td></tr>
+        <tr><td>Apt Update</td><td><code>apt-update</code></td><td>-</td><td>Refresh package database</td></tr>
+        <tr><td>Apt Upgrade</td><td><code>apt-upgrade</code></td><td>-</td><td>Install available updates</td></tr>
+        <tr><td>Apt Status</td><td><code>apt-status</code></td><td>-</td><td>Show available updates</td></tr>
+    </table>
+
+    <h3>User Management</h3>
+    <table>
+        <tr><th>Skill</th><th>ID</th><th>Args</th><th>Description</th></tr>
+        <tr><td>User Create</td><td><code>user-create</code></td><td><code>username</code></td><td>Create user with sudo</td></tr>
+        <tr><td>User Delete</td><td><code>user-delete</code></td><td><code>username</code></td><td>Delete user</td></tr>
+        <tr><td>User List</td><td><code>user-list</code></td><td>-</td><td>List all non-system users</td></tr>
+        <tr><td>User Status</td><td><code>user-status</code></td><td><code>username</code> (optional)</td><td>Show user info</td></tr>
+        <tr><td>User Add To Group</td><td><code>user-add-to-group</code></td><td><code>username</code>, <code>group</code></td><td>Add user to a group</td></tr>
+    </table>
+
+    <h3>Swap Management</h3>
+    <table>
+        <tr><th>Skill</th><th>ID</th><th>Args</th><th>Description</th></tr>
+        <tr><td>Swap Create</td><td><code>swap-create</code></td><td><code>size</code> (GB)</td><td>Create swap file</td></tr>
+        <tr><td>Swap Delete</td><td><code>swap-delete</code></td><td>-</td><td>Remove swap file</td></tr>
+        <tr><td>Swap Status</td><td><code>swap-status</code></td><td>-</td><td>Show swap status</td></tr>
+    </table>
+
+    <h3>Security</h3>
+    <table>
+        <tr><th>Skill</th><th>ID</th><th>Args</th><th>Description</th></tr>
+        <tr><td>AIDE Install</td><td><code>aide-install</code></td><td>-</td><td>Install AIDE IDS</td></tr>
+        <tr><td>Auditd Install</td><td><code>auditd-install</code></td><td>-</td><td>Install audit daemon</td></tr>
+        <tr><td>Kernel Harden</td><td><code>kernel-harden</code></td><td>-</td><td>Apply kernel hardening</td></tr>
+        <tr><td>SSH Change Port</td><td><code>ssh-change-port</code></td><td><code>port</code></td><td>Change SSH port</td></tr>
+        <tr><td>SSH Harden</td><td><code>ssh-harden</code></td><td>-</td><td>Harden SSH config</td></tr>
+    </table>
+
+    <h3>Firewall (UFW)</h3>
+    <table>
+        <tr><th>Skill</th><th>ID</th><th>Args</th><th>Description</th></tr>
+        <tr><td>UFW Install</td><td><code>ufw-install</code></td><td>-</td><td>Install UFW firewall</td></tr>
+        <tr><td>UFW Status</td><td><code>ufw-status</code></td><td>-</td><td>Show UFW status</td></tr>
+        <tr><td>UFW Allow</td><td><code>ufw-allow</code></td><td><code>port</code>, <code>protocol</code> (optional)</td><td>Allow traffic through UFW</td></tr>
+        <tr><td>UFW Deny</td><td><code>ufw-deny</code></td><td><code>port</code>, <code>protocol</code> (optional)</td><td>Deny traffic through UFW</td></tr>
+        <tr><td>UFW Delete</td><td><code>ufw-delete</code></td><td><code>port</code>, <code>protocol</code> (optional)</td><td>Delete a UFW rule</td></tr>
+        <tr><td>UFW Enable</td><td><code>ufw-enable</code></td><td>-</td><td>Enable UFW firewall</td></tr>
+        <tr><td>UFW Default</td><td><code>ufw-default</code></td><td><code>policy</code> (optional)</td><td>Set UFW default policy</td></tr>
+        <tr><td>UFW Disable</td><td><code>ufw-disable</code></td><td>-</td><td>Disable UFW firewall</td></tr>
+        <tr><td>UFW Reset</td><td><code>ufw-reset</code></td><td>-</td><td>Reset UFW to defaults</td></tr>
+        <tr><td>UFW Allow MariaDB</td><td><code>ufw-allow-mariadb</code></td><td>-</td><td>Allow MariaDB through UFW</td></tr>
+    </table>
+
+    <h3>Fail2Ban</h3>
+    <table>
+        <tr><th>Skill</th><th>ID</th><th>Args</th><th>Description</th></tr>
+        <tr><td>Fail2ban Install</td><td><code>fail2ban-install</code></td><td>-</td><td>Install and configure fail2ban</td></tr>
+        <tr><td>Fail2ban Status</td><td><code>fail2ban-status</code></td><td>-</td><td>Show fail2ban status</td></tr>
+    </table>
+
+    <h3>MariaDB</h3>
+    <table>
+        <tr><th>Skill</th><th>ID</th><th>Args</th><th>Description</th></tr>
+        <tr><td>MariaDB Install</td><td><code>mariadb-install</code></td><td>-</td><td>Install MariaDB server</td></tr>
+        <tr><td>MariaDB Status</td><td><code>mariadb-status</code></td><td>-</td><td>Show MariaDB status</td></tr>
+        <tr><td>MariaDB Secure</td><td><code>mariadb-secure</code></td><td>-</td><td>Secure MariaDB installation</td></tr>
+        <tr><td>MariaDB Create DB</td><td><code>mariadb-create-db</code></td><td><code>database</code></td><td>Create database</td></tr>
+        <tr><td>MariaDB Create User</td><td><code>mariadb-create-user</code></td><td><code>username</code>, <code>password</code></td><td>Create DB user</td></tr>
+        <tr><td>MariaDB List DBs</td><td><code>mariadb-list-dbs</code></td><td>-</td><td>List databases</td></tr>
+        <tr><td>MariaDB List Users</td><td><code>mariadb-list-users</code></td><td>-</td><td>List DB users</td></tr>
+        <tr><td>MariaDB Backup</td><td><code>mariadb-backup</code></td><td><code>database</code> (optional)</td><td>Backup database</td></tr>
+        <tr><td>MariaDB Backup Encrypt</td><td><code>mariadb-backup-encrypt</code></td><td>-</td><td>Encrypted backup</td></tr>
+        <tr><td>MariaDB Security Audit</td><td><code>mariadb-security-audit</code></td><td>-</td><td>Run security audit</td></tr>
+        <tr><td>MariaDB Change Port</td><td><code>mariadb-change-port</code></td><td><code>port</code></td><td>Change MariaDB port</td></tr>
+        <tr><td>MariaDB Enable SSL</td><td><code>mariadb-enable-ssl</code></td><td>-</td><td>Enable SSL connections</td></tr>
+        <tr><td>MariaDB Enable Encryption</td><td><code>mariadb-enable-encryption</code></td><td>-</td><td>Enable encryption at rest</td></tr>
+        <tr><td>MariaDB Purge</td><td><code>mariadb-purge</code></td><td>-</td><td>Remove MariaDB and its data</td></tr>
+    </table>
+
+    <h2>Setting Arguments</h2>
+    <p>Many skills accept arguments to customize their behavior:</p>
+<pre><code>node := ork.NewNodeForHost("server.example.com")
+
+// Set single argument
+node.SetArg("username", "alice")
+
+// Set multiple arguments
+node.SetArg("username", "alice").
+    SetArg("shell", "/bin/bash").
+    SetArg("environment", "production")
+
+// Run skill with arguments
+results := node.Run(skills.NewUserCreate())</code></pre>
+
+    <h2>Running by ID</h2>
+    <p>You can also run skills by their string ID:</p>
+<pre><code>// Run by ID (registry lookup) - deprecated, prefer Run() with a direct instance
+results := node.RunByID("ping")</code></pre>
+    <blockquote>
+        <p><strong>Deprecated:</strong> <code>RunByID</code> is retained for backward compatibility but is marked deprecated. Prefer <code>node.Run(skills.NewPing())</code> with a direct skill instance when you have one in scope. <code>RunByID</code> still works via the global skill registry (<code>ork.GetGlobalSkillRegistry()</code>).</p>
+    </blockquote>
+
+    <h2>Checking Before Running</h2>
+    <p>Use <code>Check()</code> to preview if changes would be made (idempotency):</p>
+<pre><code>// Check if changes would be made
+results := node.Check(skills.NewAptUpgrade())
+result := results.Results["server.example.com"]
+
+if result.Changed {
+    log.Println("Would upgrade packages")
+    // Now actually run it
+    results = node.Run(skills.NewAptUpgrade())
+} else {
+    log.Println("No upgrades needed")
+}</code></pre>
+
+    <h2>Result Structure</h2>
+    <p>Results are returned as <code>types.Results</code> with per-node access:</p>
+<pre><code>type Results struct {
+    Results map[string]Result  // Key is node hostname
+}
+
+func (r Results) Summary() Summary
+
+type Result struct {
+    Changed bool              // Whether changes were made
+    Message string            // Human-readable description
+    Details map[string]string // Additional information
+    Error   error             // Non-nil if execution failed
+}
+
+type Summary struct {
+    Total     int
+    Changed   int
+    Unchanged int
+    Failed    int
+}</code></pre>
+
+    <h2>Custom Skills</h2>
+    <p>For creating custom skills, see the <a href="conventions.html">Conventions</a> guide which includes the standard skill template, or the <a href="api-reference.html">API Reference</a> for the full <code>RunnableInterface</code> contract.</p>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="commands.html">Commands</a> - One-off shell command execution</li>
+        <li><a href="api-reference.html">API Reference</a> - Complete API documentation</li>
+        <li><a href="cheatsheet.html">Cheatsheet</a> - Quick reference</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Playbooks - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Playbooks</h1>
+
+    <p>Playbooks are complex orchestration logic that run multiple skills with full Go programming capabilities. They implement <code>RunnableInterface</code> and can use all existing execution APIs.</p>
+
+    <h2>Overview</h2>
+    <p>Playbooks are not simple atomic operations like regular skills - they are elaborate orchestration logic that may include:</p>
+    <ul>
+        <li>Complex decision making based on runtime conditions</li>
+        <li>Dynamic skill creation and execution</li>
+        <li>Custom error handling and retry logic</li>
+        <li>Data parsing and transformation between steps</li>
+        <li>Multi-node orchestration with custom logic</li>
+    </ul>
+    <p>Since playbooks implement <code>RunnableInterface</code>, they can use all existing runnable methods and execution APIs. The distinction is purely in the complexity of the <code>Run()</code> implementation.</p>
+
+    <h2>Creating a Playbook</h2>
+    <p>A playbook implements <code>RunnableInterface</code> and orchestrates other skills in its <code>Run()</code> method. Playbooks can embed <code>types.BasePlaybook</code> which provides a foundation for playbook development:</p>
+<pre><code>type DeployWebserverPlaybook struct {
+    *types.BasePlaybook
+}
+
+func NewDeployWebserverPlaybook() types.RunnableInterface {
+    playbook := types.NewBasePlaybook()
+    playbook.SetID("deploy-webserver")
+    playbook.SetDescription("Deploy web server with custom orchestration")
+    return &amp;DeployWebserverPlaybook{BasePlaybook: playbook}
+}
+
+func (d *DeployWebserverPlaybook) Run() types.Result {
+    cfg := d.GetNodeConfig()
+
+    // 1. Run initial skill
+    result1 := skills.NewAptStatus()
+    result1.SetNodeConfig(cfg)
+    statusResult := result1.Run()
+
+    // 2. Parse result and decide what to do
+    if statusResult.Changed {
+        // Updates available - upgrade them
+        upgradeSkill := skills.NewAptUpgrade()
+        upgradeSkill.SetNodeConfig(cfg)
+        upgradeSkill.Run()
+    }
+
+    // 3. Loop over data and create skills dynamically
+    users := []string{"alice", "bob", "charlie"}
+    for _, username := range users {
+        userSkill := skills.NewUserCreate().
+            SetArg("username", username)
+        userSkill.SetNodeConfig(cfg)
+        userSkill.Run()
+    }
+
+    return types.Result{Changed: true, Message: "Complete"}
+}
+
+// Usage
+node.Run(NewDeployWebserverPlaybook())</code></pre>
+
+    <h2>Usage Patterns</h2>
+
+    <h3>Dynamic Decision Making</h3>
+<pre><code>type SmartUpdatePlaybook struct {
+    *types.BasePlaybook
+}
+
+func (s *SmartUpdatePlaybook) Run() types.Result {
+    cfg := s.GetNodeConfig()
+
+    // Check if updates available
+    statusSkill := skills.NewAptStatus()
+    statusSkill.SetNodeConfig(cfg)
+    statusResult := statusSkill.Run()
+
+    // Parse result and decide
+    if statusResult.Changed {
+        // Updates available - upgrade them
+        upgradeSkill := skills.NewAptUpgrade()
+        upgradeSkill.SetNodeConfig(cfg)
+        upgradeSkill.Run()
+
+        // Only reboot if critical security update
+        if strings.Contains(statusResult.Message, "security") {
+            rebootSkill := skills.NewReboot()
+            rebootSkill.SetNodeConfig(cfg)
+            rebootSkill.Run()
+        }
+    } else {
+        // No updates - just verify connectivity
+        pingSkill := skills.NewPing()
+        pingSkill.SetNodeConfig(cfg)
+        return pingSkill.Run()
+    }
+
+    return statusResult
+}</code></pre>
+
+    <h3>Loop and Dynamic Skill Creation</h3>
+<pre><code>type SetupUsersPlaybook struct {
+    *types.BasePlaybook
+}
+
+func (s *SetupUsersPlaybook) Run() types.Result {
+    cfg := s.GetNodeConfig()
+
+    // User list could come from config file, API, database, etc.
+    users := []string{"alice", "bob", "charlie", "dave"}
+
+    for _, username := range users {
+        // Create skill dynamically
+        userSkill := skills.NewUserCreate().
+            SetArg("username", username).
+            SetArg("shell", "/bin/bash")
+        userSkill.SetNodeConfig(cfg)
+
+        result := userSkill.Run()
+        if result.Error != nil {
+            log.Printf("Failed to create user %s: %v", username, result.Error)
+        }
+    }
+
+    return types.Result{Changed: true, Message: "Users setup complete"}
+}</code></pre>
+
+    <h3>Parse Results and Spin Up Dynamic Skills</h3>
+<pre><code>type BackupAllDatabasesPlaybook struct {
+    *types.BasePlaybook
+}
+
+func (b *BackupAllDatabasesPlaybook) Run() types.Result {
+    cfg := b.GetNodeConfig()
+
+    // List all databases
+    listSkill := skills.NewMariadbListDBs()
+    listSkill.SetNodeConfig(cfg)
+    listResult := listSkill.Run()
+
+    // Parse the result to get database names
+    dbs, err := parseDBList(listResult.Message)
+    if err != nil {
+        return types.Result{Error: err}
+    }
+
+    // Dynamically create backup skills for each database
+    for _, db := range dbs {
+        backupSkill := skills.NewMariadbBackup().
+            SetArg("database", db)
+        backupSkill.SetNodeConfig(cfg)
+
+        result := backupSkill.Run()
+        if result.Error != nil {
+            log.Printf("Failed to backup %s: %v", db, result.Error)
+        }
+    }
+
+    return types.Result{Changed: true, Message: "Backup complete"}
+}</code></pre>
+
+    <h3>Custom Error Handling and Retry</h3>
+<pre><code>type ResilientDownloadPlaybook struct {
+    *types.BasePlaybook
+}
+
+func (r *ResilientDownloadPlaybook) Run() types.Result {
+    cfg := r.GetNodeConfig()
+
+    // Custom retry logic with exponential backoff
+    var lastError error
+    for attempt := 0; attempt &lt; 5; attempt++ {
+        downloadSkill := skills.NewDownload()
+        downloadSkill.SetNodeConfig(cfg)
+        result := downloadSkill.Run()
+
+        if result.Error == nil {
+            return result
+        }
+        lastError = result.Error
+
+        // Exponential backoff
+        backoff := time.Duration(math.Pow(2, float64(attempt))) * time.Second
+        log.Printf("Attempt %d failed, retrying in %v: %v", attempt+1, backoff, result.Error)
+        time.Sleep(backoff)
+    }
+
+    return types.Result{Error: fmt.Errorf("failed after 5 attempts: %w", lastError)}
+}</code></pre>
+
+    <h2>Execution API</h2>
+    <p>Playbooks use the same execution API as skills through <code>RunnerInterface.Run()</code>:</p>
+    <ul>
+        <li><code>node.Run(runnable)</code> - Run a skill or playbook on a single node</li>
+        <li><code>group.Run(runnable)</code> - Run a skill or playbook on all nodes in a group</li>
+        <li><code>inventory.Run(runnable)</code> - Run a skill or playbook on all nodes in inventory</li>
+    </ul>
+    <p>The <code>Run()</code> method accepts any <code>RunnableInterface</code>, which includes both simple skills and complex playbooks.</p>
+
+    <h2>Benefits</h2>
+    <ol>
+        <li><strong>Full Go Power</strong>: Complete language capabilities (loops, conditionals, error handling, etc.)</li>
+        <li><strong>Dynamic Decision Making</strong>: Make choices based on runtime conditions</li>
+        <li><strong>Complex Parsing</strong>: Parse results and transform data between steps</li>
+        <li><strong>Dynamic Skill Creation</strong>: Spin up skills based on previous results</li>
+        <li><strong>Custom Logic</strong>: Implement any orchestration pattern imaginable</li>
+        <li><strong>Type Safety</strong>: Compiler validates all code</li>
+        <li><strong>Testing</strong>: Full Go testing framework support</li>
+        <li><strong>Flexibility</strong>: No constraints on what you can do</li>
+    </ol>
+
+    <h2>When to Use Playbooks</h2>
+    <p><strong>Use Playbooks for:</strong></p>
+    <ul>
+        <li>Complex decision logic</li>
+        <li>Dynamic skill creation based on results</li>
+        <li>Custom error handling and retry logic</li>
+        <li>Parsing and transforming data between steps</li>
+        <li>Multi-node orchestration with custom logic</li>
+        <li>20% of complex use cases</li>
+    </ul>
+    <p><strong>Use Simple Skills for:</strong></p>
+    <ul>
+        <li>Simple atomic operations</li>
+        <li>Common patterns that repeat across projects</li>
+        <li>80% of common use cases</li>
+    </ul>
+
+    <h2>Implementation</h2>
+
+    <h3>BasePlaybook</h3>
+    <p><code>types.BasePlaybook</code> is the foundation for playbook development. State is stored in an <code>omni.AtomInterface</code> (thread-safe) plus a mutex-guarded <code>NodeConfig</code>, and <code>ToMap()</code>/<code>FromMap()</code> are implemented so the framework can clone the playbook before mutating it during parallel execution:</p>
+<pre><code>type BasePlaybook struct {
+    atom    omni.AtomInterface  // thread-safe property store (id, description, args, ...)
+    nodeCfg NodeConfig          // guarded by mu
+    mu      sync.RWMutex        // protects nodeCfg
+}
+
+func NewBasePlaybook() *BasePlaybook {
+    return &amp;BasePlaybook{
+        atom: omni.NewAtom("playbook"),
+    }
+}
+
+// Run must be overridden by playbook implementations
+func (b *BasePlaybook) Run() Result {
+    return Result{Error: fmt.Errorf("Run() must be implemented by playbook")}
+}
+
+// Check returns false (no changes) by default. Can be overridden
+func (b *BasePlaybook) Check() (bool, error) {
+    return false, nil
+}
+
+// ToMap/FromMap serialize state for concurrency-safe cloning
+func (b *BasePlaybook) ToMap() map[string]any { /* ... */ }
+func (b *BasePlaybook) FromMap(m map[string]any) { /* ... */ }</code></pre>
+
+    <h3>Interface Hierarchy</h3>
+    <p>Both simple skills and complex playbooks implement <code>RunnableInterface</code>:</p>
+<pre><code>type RunnableInterface interface {
+    GetID() string
+    SetID(id string) RunnableInterface
+    GetDescription() string
+    SetDescription(description string) RunnableInterface
+    GetNodeConfig() types.NodeConfig
+    SetNodeConfig(cfg types.NodeConfig) RunnableInterface
+    GetArg(key string) string
+    SetArg(key, value string) RunnableInterface
+    GetArgs() map[string]string
+    SetArgs(args map[string]string) RunnableInterface
+    IsDryRun() bool
+    SetDryRun(dryRun bool) RunnableInterface
+    GetTimeout() time.Duration
+    SetTimeout(timeout time.Duration) RunnableInterface
+    Check() (bool, error)
+    Run() Result
+    ToMap() map[string]any    // serialize state for cloning
+    FromMap(m map[string]any) // restore state from a clone
+    BecomeInterface
+}</code></pre>
+    <p>The distinction between skills and playbooks is purely in the complexity of the <code>Run()</code> implementation.</p>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="skills.html">Skills</a> - Built-in automation tasks</li>
+        <li><a href="advanced-usage.html">Advanced Usage</a> - Custom skills and internal packages</li>
+        <li><a href="api-reference.html">API Reference</a> - Complete API documentation</li>
+        <li><a href="architecture.html">Architecture</a> - Concurrency model and skill cloning</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

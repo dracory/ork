@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privilege Escalation - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Privilege Escalation (Become)</h1>
+
+    <p>Ork supports running commands as a different user using <code>sudo</code>. This feature is useful when you need to perform operations that require elevated privileges, such as installing packages, managing services, or accessing system resources.</p>
+
+    <h2>Overview</h2>
+    <p>The privilege escalation feature (called "become") allows you to:</p>
+    <ul>
+        <li>Connect as a non-root user but run commands as root</li>
+        <li>Run commands as specific service users (postgres, www-data, etc.)</li>
+        <li>Configure become user at different hierarchy levels (inventory, group, node, skill)</li>
+        <li>Automatically propagate become user settings through the hierarchy</li>
+    </ul>
+
+    <h2>Basic Usage</h2>
+
+    <h3>Connect as Deploy, Run as Root</h3>
+<pre><code>package main
+
+import (
+    "log"
+    "github.com/dracory/ork"
+)
+
+func main() {
+    // Connect as a non-root user, but run commands as root
+    node := ork.NewNodeForHost("server.example.com").
+        SetUser("deploy").
+        SetBecomeUser("root")
+
+    // This will run: sudo -u root apt-get update
+    results := node.RunCommand("apt-get update")
+    result := results.Results["server.example.com"]
+
+    if result.Error != nil {
+        log.Fatal(result.Error)
+    }
+
+    log.Println(result.Message)
+}</code></pre>
+
+    <h3>Running as Specific Users</h3>
+<pre><code>// Run database commands as the postgres user
+node.SetBecomeUser("postgres")
+results := node.RunCommand("psql -c 'SELECT version()'")
+
+// Run web server commands as www-data
+node.SetBecomeUser("www-data")
+results := node.RunCommand("systemctl restart nginx")</code></pre>
+
+    <h2>Hierarchy and Precedence</h2>
+    <p>The become user setting follows this precedence (highest to lowest):</p>
+    <ol>
+        <li><strong>Skill/Playbook level</strong>: Skill-specific setting</li>
+        <li><strong>Node level</strong>: Node-specific setting</li>
+        <li><strong>Group level</strong>: Group setting (propagated to all nodes)</li>
+        <li><strong>Inventory level</strong>: Inventory setting (propagated to all groups and nodes)</li>
+    </ol>
+
+    <h3>Example: Precedence in Action</h3>
+<pre><code>// Set at inventory level - applies to all
+inv := ork.NewInventory()
+inv.SetBecomeUser("root")
+
+// Create a group that overrides the inventory setting
+dbGroup := ork.NewGroup("databases")
+dbGroup.SetBecomeUser("postgres")  // Uses postgres, not root
+
+// Add a node that overrides the group setting
+node := ork.NewNodeForHost("special.example.com")
+node.SetBecomeUser("admin")  // Uses admin, not postgres or root
+
+dbGroup.AddNode(node)
+inv.AddGroup(dbGroup)</code></pre>
+
+    <h2>Configuration at Different Levels</h2>
+
+    <h3>Inventory Level</h3>
+<pre><code>inv := ork.NewInventory()
+inv.SetBecomeUser("root")
+
+// All nodes in all groups will run as root
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
+
+inv.AddGroup(webGroup)</code></pre>
+
+    <h3>Group Level</h3>
+<pre><code>dbGroup := ork.NewGroup("databases")
+dbGroup.SetBecomeUser("postgres")
+
+// All nodes in this group run as postgres
+dbGroup.AddNode(ork.NewNodeForHost("db1.example.com"))
+dbGroup.AddNode(ork.NewNodeForHost("db2.example.com"))</code></pre>
+
+    <h3>Node Level</h3>
+<pre><code>node := ork.NewNodeForHost("server.example.com").
+    SetUser("deploy").
+    SetBecomeUser("root")
+
+// This specific node runs as root
+results := node.RunCommand("apt-get update")</code></pre>
+
+    <h3>Skill Level</h3>
+<pre><code>skill := skills.NewAptUpdate()
+skill.SetBecomeUser("root")
+
+// The skill will run as root regardless of node/group/inventory settings
+results := node.Run(skill)</code></pre>
+
+    <h2>With Skills and Playbooks</h2>
+
+    <h3>Setting Become User on Skills</h3>
+<pre><code>skill := skills.NewAptUpdate()
+skill.SetBecomeUser("root")
+
+results := node.Run(skill)</code></pre>
+<pre><code>skill := skills.NewUserCreate()
+skill.SetBecomeUser("root")
+
+results := node.Run(skill)</code></pre>
+
+    <h3>Dynamic User Selection in Custom Skills</h3>
+<pre><code>type MyCustomSkill struct {
+    types.BaseSkill
+}
+
+func (s *MyCustomSkill) Run() types.Result {
+    cfg := s.GetNodeConfig()
+
+    // Choose become user based on node configuration
+    becomeUser := "root"
+    if cfg.GetArg("environment") == "production" {
+        becomeUser = "admin"
+    }
+
+    s.SetBecomeUser(becomeUser)
+
+    // Execute commands as the selected user
+    output, err := ssh.Run(cfg, types.Command{
+        Command: "systemctl restart nginx",
+    })
+    // ...
+}</code></pre>
+
+    <h2>Security Considerations</h2>
+
+    <h3>Requirements</h3>
+    <ul>
+        <li>The connecting user must have <code>sudo</code> privileges to the target user</li>
+        <li>Passwordless sudo must be configured for the connecting user</li>
+        <li>The target user must exist on the remote server</li>
+    </ul>
+
+    <h3>Configuration Example</h3>
+    <p>To enable passwordless sudo for a user:</p>
+<pre><code># On the remote server, as root
+visudo
+
+# Add this line (replace deploy with your user)
+deploy ALL=(ALL) NOPASSWD: ALL
+
+# Or restrict to specific users
+deploy ALL=(postgres) NOPASSWD: ALL</code></pre>
+
+    <h3>Best Practices</h3>
+    <ul>
+        <li><strong>Principle of Least Privilege</strong>: Only escalate when necessary</li>
+        <li><strong>Use Specific Users</strong>: Run as the specific service user (postgres, www-data) rather than root</li>
+        <li><strong>Audit Sudo Access</strong>: Regularly review sudo access configurations</li>
+        <li><strong>Limit Sudo Scope</strong>: Configure sudo to only allow specific commands when possible</li>
+    </ul>
+
+    <h3>Current Limitations</h3>
+    <ul>
+        <li>No password support is currently implemented</li>
+        <li>No custom sudo flags or options</li>
+        <li>Only supports <code>sudo -u &lt;user&gt;</code> syntax</li>
+        <li>Does not support <code>su</code>, <code>doas</code>, or other privilege escalation methods</li>
+    </ul>
+
+    <h2>API Reference</h2>
+
+    <h3>BecomeInterface</h3>
+<pre><code>type BecomeInterface interface {
+    SetBecomeUser(user string) BecomeInterface
+    GetBecomeUser() string
+}</code></pre>
+    <p><strong>Methods:</strong></p>
+    <ul>
+        <li><code>SetBecomeUser(user string) BecomeInterface</code> - Sets the user to become when executing commands via sudo. Returns BecomeInterface for fluent method chaining.</li>
+        <li><code>GetBecomeUser() string</code> - Returns the configured become user. Returns empty string if not set.</li>
+    </ul>
+
+    <h3>BaseBecome</h3>
+<pre><code>type BaseBecome struct {
+    becomeUser string
+}</code></pre>
+    <p>Provides a default implementation of BecomeInterface. Embed this in custom skills or playbooks to automatically get privilege escalation support.</p>
+
+    <h3>NodeConfig</h3>
+<pre><code>type NodeConfig struct {
+    // ... other fields ...
+    BecomeUser string
+}</code></pre>
+    <p>The <code>BecomeUser</code> field in NodeConfig stores the user to become when executing commands via sudo.</p>
+
+    <h2>Examples</h2>
+
+    <h3>Database Migration as PostgreSQL User</h3>
+<pre><code>node := ork.NewNodeForHost("db.example.com").
+    SetUser("deploy").
+    SetBecomeUser("postgres")
+
+// Run database migration
+results := node.RunCommand("psql -f /path/to/migration.sql")</code></pre>
+
+    <h3>Web Server Management as www-data</h3>
+<pre><code>webGroup := ork.NewGroup("webservers")
+webGroup.SetBecomeUser("www-data")
+
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
+
+// Restart nginx as www-data on all servers
+results := webGroup.RunCommand("systemctl restart nginx")</code></pre>
+
+    <h3>Mixed Privilege Levels in Inventory</h3>
+<pre><code>inv := ork.NewInventory()
+
+// Web servers run as www-data
+webGroup := ork.NewGroup("webservers")
+webGroup.SetBecomeUser("www-data")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+
+// Database servers run as postgres
+dbGroup := ork.NewGroup("databases")
+dbGroup.SetBecomeUser("postgres")
+dbGroup.AddNode(ork.NewNodeForHost("db1.example.com"))
+
+inv.AddGroup(webGroup)
+inv.AddGroup(dbGroup)</code></pre>
+
+    <h2>Troubleshooting</h2>
+
+    <h3>"sudo: no tty present" Error</h3>
+    <p>If you encounter this error, the remote server's sudo configuration requires a TTY. You can disable this by editing the sudoers file:</p>
+<pre><code># On remote server
+visudo
+
+# Comment out or remove this line:
+# Defaults requiretty</code></pre>
+
+    <h3>Permission Denied</h3>
+    <p>If you get permission denied errors:</p>
+    <ol>
+        <li>Verify the connecting user has sudo privileges</li>
+        <li>Check that passwordless sudo is configured</li>
+        <li>Ensure the target user exists on the remote server</li>
+        <li>Verify the sudoers configuration allows the specific user transition</li>
+    </ol>
+
+    <h3>Command Not Found</h3>
+    <p>If the command is not found when running as a different user:</p>
+    <ol>
+        <li>The target user's PATH may be different</li>
+        <li>Use absolute paths for commands</li>
+        <li>Check the target user's shell configuration</li>
+    </ol>
+
+    <h2>Future Enhancements</h2>
+    <ul>
+        <li>Password support for sudo</li>
+        <li>Custom sudo flags and options</li>
+        <li>Support for <code>su</code>, <code>doas</code>, and other privilege escalation methods</li>
+        <li>Sudo password prompt handling</li>
+        <li>Sudoers configuration validation</li>
+    </ul>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="getting-started.html">Getting Started</a> - Basic Ork usage</li>
+        <li><a href="advanced-usage.html">Advanced Usage</a> - Custom skills and internal packages</li>
+        <li><a href="api-reference.html">API Reference</a> - Complete API documentation</li>
+        <li><a href="commands.html">Commands</a> - Using become with the Command fluent API</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vault - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        h4 { color: #666; margin-top: 1.2rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Vault (Secure Secrets Management)</h1>
+
+    <p>Ork provides secure vault support for managing sensitive data like passwords and API keys. The vault uses AES-256-GCM encryption with Argon2id key derivation.</p>
+
+    <h2>Usage</h2>
+
+    <h3>Programmatic API</h3>
+<pre><code>import "github.com/dracory/ork/vault"
+
+// Open or create vault
+vault, err := vault.Open("secrets.vault", "my-password")
+if err != nil {
+    log.Fatal(err)
+}
+defer vault.Close()
+
+// Set secrets
+vault.Set("DB_HOST", "db.example.com")
+vault.Set("DB_PASSWORD", "secret123")
+vault.Set("API_KEY", "abc123xyz")
+
+// Get secrets
+dbHost, err := vault.Get("DB_HOST")
+dbPassword, err := vault.Get("DB_PASSWORD")
+
+// Check if key exists
+if vault.Exists("API_KEY") {
+    apiKey, _ := vault.Get("API_KEY")
+}
+
+// List all keys
+keys := vault.List()
+
+// Delete a key
+vault.Delete("OLD_SECRET")
+
+// Change password (re-encrypts vault)
+if err := vault.ChangePassword("new-secure-password"); err != nil {
+    log.Fatal(err)
+}
+
+// Save to disk
+if err := vault.Save(); err != nil {
+    log.Fatal(err)
+}
+
+// TryOpen for UI flows (distinguish auth failure from other errors)
+vault, ok, err := vault.TryOpen("secrets.vault", "password")
+if err != nil {
+    // File error, permission error, etc.
+    log.Fatal(err)
+}
+if !ok {
+    // Wrong password
+    fmt.Println("Invalid password")
+    return
+}
+// Vault opened successfully</code></pre>
+
+    <h3>CLI (ork vault subcommand)</h3>
+<pre><code># Create new vault (password read from stdin, never command-line args)
+ork vault init secrets.vault
+# Prompts: Enter password: (no echo)
+# Prompts: Confirm password:
+
+# Set secrets
+ork vault set secrets.vault DB_HOST db.example.com
+# Prompts: Enter vault password:
+
+ork vault set secrets.vault DB_PASSWORD secret123
+# Prompts: Enter vault password:
+
+# Get secrets
+ork vault get secrets.vault DB_HOST
+# Prompts: Enter vault password:
+
+# List all keys
+ork vault list secrets.vault
+# Prompts: Enter vault password:
+
+# Delete a key
+ork vault delete secrets.vault OLD_SECRET
+# Prompts: Enter vault password:
+
+# Change password
+ork vault changepassword secrets.vault
+# Prompts: Enter current password:
+# Prompts: Enter new password:
+# Prompts: Confirm new password:
+
+# For automation, password can be read from file descriptor
+ork vault get secrets.vault DB_HOST &lt; password.txt
+# OR
+echo "password" | ork vault get secrets.vault DB_HOST</code></pre>
+
+    <h2>API Reference</h2>
+
+    <h3>Vault Struct</h3>
+<pre><code>type Vault struct {
+    // Internal fields
+}</code></pre>
+
+    <h3>Functions</h3>
+
+    <h4>Open</h4>
+<pre><code>func Open(path string, password string) (*Vault, error)</code></pre>
+    <p>Opens an existing vault or creates a new one. Returns an error if the file cannot be read or if authentication fails.</p>
+
+    <h4>TryOpen</h4>
+<pre><code>func TryOpen(path string, password string) (*Vault, bool, error)</code></pre>
+    <p>Opens a vault, returning <code>(vault, true, nil)</code> on success or <code>(nil, false, nil)</code> on auth failure. Cleaner API for UI flows where you want to distinguish auth errors from other errors.</p>
+
+    <h3>Methods</h3>
+
+    <h4>Close</h4>
+<pre><code>func (v *Vault) Close() error</code></pre>
+    <p>Saves and closes the vault. Only writes to disk if modifications were made.</p>
+
+    <h4>Get</h4>
+<pre><code>func (v *Vault) Get(key string) (string, error)</code></pre>
+    <p>Retrieves a value from the vault. Returns <code>ErrKeyNotFound</code> if the key doesn't exist.</p>
+
+    <h4>Set</h4>
+<pre><code>func (v *Vault) Set(key, value string) error</code></pre>
+    <p>Stores a value in the vault. Marks the vault as modified.</p>
+
+    <h4>Delete</h4>
+<pre><code>func (v *Vault) Delete(key string) error</code></pre>
+    <p>Removes a key from the vault. Returns <code>ErrKeyNotFound</code> if the key doesn't exist.</p>
+
+    <h4>List</h4>
+<pre><code>func (v *Vault) List() []string</code></pre>
+    <p>Returns all keys in the vault.</p>
+
+    <h4>Exists</h4>
+<pre><code>func (v *Vault) Exists(key string) bool</code></pre>
+    <p>Checks if a key exists in the vault.</p>
+
+    <h4>Save</h4>
+<pre><code>func (v *Vault) Save() error</code></pre>
+    <p>Writes the vault to disk. Called automatically by <code>Close()</code> if modifications were made.</p>
+
+    <h4>ChangePassword</h4>
+<pre><code>func (v *Vault) ChangePassword(newPassword string) error</code></pre>
+    <p>Changes the vault password and re-encrypts with the new password. Generates new salt and nonce.</p>
+
+    <h2>Security</h2>
+    <ul>
+        <li><strong>Encryption</strong>: AES-256-GCM with authenticated encryption</li>
+        <li><strong>Key derivation</strong>: Argon2id (time=3, memory=64MB, parallelism=4)</li>
+        <li><strong>Random salts</strong>: Unique salt per vault prevents rainbow table attacks</li>
+        <li><strong>Random nonces</strong>: Unique nonce per encryption prevents nonce reuse</li>
+        <li><strong>Authentication</strong>: GCM auth tag verifies data integrity</li>
+        <li><strong>Compression</strong>: Gzip compression always enabled for all vault data</li>
+        <li><strong>CLI security</strong>: Passwords never in command-line args (visible in process list, shell history)</li>
+        <li><strong>CLI password input</strong>: Read from stdin or file descriptor only</li>
+    </ul>
+
+    <h2>File Format</h2>
+    <p>The vault uses a single base64-encoded string wrapped to 80 characters (opaque format for security through obscurity):</p>
+<pre><code>aBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890abcdef==</code></pre>
+    <ul>
+        <li><strong>Concatenated data</strong>: Binary magic number + salt + nonce + params + encrypted</li>
+        <li><strong>Magic number</strong>: 4-byte binary marker (embedded, not visible)</li>
+        <li><strong>Salt</strong>: 16-byte random salt</li>
+        <li><strong>Nonce</strong>: 12-byte random nonce</li>
+        <li><strong>Argon2 params</strong>: 12-byte Argon2 parameters (binary encoded)</li>
+        <li><strong>Encrypted data</strong>: GCM encrypted data (JSON)</li>
+        <li><strong>Entire blob</strong>: Base64 encoded to single string</li>
+        <li><strong>Line wrapping</strong>: Wrapped to 80 characters for git diff readability and copy-paste</li>
+        <li><strong>No visible structure</strong>: Attacker sees only wrapped base64 string</li>
+    </ul>
+
+    <h2>Error Handling</h2>
+    <p>The vault package defines these errors:</p>
+    <ul>
+        <li><code>ErrVaultNotFound</code> - Vault file doesn't exist</li>
+        <li><code>ErrKeyNotFound</code> - Key doesn't exist in vault</li>
+        <li><code>ErrInvalidFormat</code> - Invalid vault file format</li>
+        <li><code>ErrInvalidAuth</code> - Authentication failed (wrong password or corrupted data)</li>
+    </ul>
+
+    <h2>Best Practices</h2>
+    <ul>
+        <li>Use strong passwords (at least 16 characters with mixed case, numbers, symbols)</li>
+        <li>Call <code>defer vault.Close()</code> to ensure vault is saved</li>
+        <li>Use <code>TryOpen()</code> for UI flows to distinguish auth failures from other errors</li>
+        <li>Never hardcode passwords in source code</li>
+        <li>Store vault files with restricted permissions (0600)</li>
+        <li>Use <code>ChangePassword()</code> periodically for password rotation</li>
+        <li>Never pass passwords via command-line args to the CLI</li>
+        <li>Single base64 string format provides security through obscurity and git diff convenience</li>
+    </ul>
+
+    <h2>Migration from envenc</h2>
+    <p>This is a breaking change from the previous envenc-based vault. Old vault files are not compatible. To migrate:</p>
+    <ol>
+        <li>Open old vault with envenc and export secrets</li>
+        <li>Create new vault with ork vault API</li>
+        <li>Import secrets into new vault</li>
+        <li>Delete old vault file</li>
+    </ol>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="api-reference.html">API Reference</a> - Vault functions in the ork package</li>
+        <li><a href="configuration.html">Configuration</a> - NodeConfig and settings</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

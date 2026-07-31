@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ork Documentation</title>
+    <meta name="description" content="Ork - SSH-based server automation framework for Go">
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 2rem; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        .subtitle { color: #666; font-size: 1.1rem; margin-bottom: 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .card { border: 1px solid #eee; border-radius: 8px; padding: 1.5rem; transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: #42b983; }
+        .card h2 { margin-top: 0; color: #42b983; font-size: 1.25rem; }
+        .card p { margin-bottom: 0; font-size: 0.9rem; color: #666; }
+        .badge { display: inline-block; background: #27ae60; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-bottom: 0.5rem; }
+        .badge.start { background: #42b983; }
+        .badge.core { background: #3498db; }
+        .badge.ops { background: #e67e22; }
+        .section-title { color: #7f8c8d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin: 2rem 0 1rem 0; font-weight: 600; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; text-decoration: none; }
+        .hero { background: linear-gradient(135deg, #42b983 0%, #2c3e50 100%); color: white; padding: 2rem; border-radius: 8px; margin: 2rem 0; }
+        .hero h2 { color: white; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 0.5rem; }
+        .hero p { margin-bottom: 0; }
+    </style>
+</head>
+<body>
+    <h1>Ork Documentation</h1>
+    <p class="subtitle">A Go package for SSH-based server automation. Think Ansible, but written in Go.</p>
+
+    <div class="hero">
+        <h2>Define Nodes, Groups, and Inventories</h2>
+        <p>Ork provides a simple, type-safe API for managing remote Linux servers over SSH. Combine Go's strong typing and concurrency with Ansible-style declarative automation &mdash; idempotent skills, dry-run mode, and a fluent API.</p>
+    </div>
+
+    <div class="section-title">Getting Started</div>
+    <div class="grid">
+        <a href="overview.html" class="card">
+            <span class="badge start">Start</span>
+            <h2>Overview</h2>
+            <p>High-level introduction to Ork, core concepts, and key features.</p>
+        </a>
+        <a href="getting-started.html" class="card">
+            <span class="badge start">Start</span>
+            <h2>Getting Started</h2>
+            <p>Step-by-step guide: installation, first node, groups, inventory, and dry-run.</p>
+        </a>
+        <a href="quick-start.html" class="card">
+            <span class="badge start">Start</span>
+            <h2>Quick Start</h2>
+            <p>The fastest path to running commands and skills against a remote server.</p>
+        </a>
+    </div>
+
+    <div class="section-title">Core Reference</div>
+    <div class="grid">
+        <a href="architecture.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>Architecture</h2>
+            <p>Layered architecture, design patterns, concurrency model, and data flow.</p>
+        </a>
+        <a href="api-reference.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>API Reference</h2>
+            <p>Complete reference for all public interfaces, functions, and types.</p>
+        </a>
+        <a href="configuration.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>Configuration</h2>
+            <p>NodeConfig structure, SSH settings, arguments, logging, and dry-run mode.</p>
+        </a>
+        <a href="commands.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>Commands</h2>
+            <p>Fluent API for one-off shell command execution with chdir and become support.</p>
+        </a>
+        <a href="skills.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>Skills</h2>
+            <p>Reusable, idempotent automation tasks and the full built-in skill catalog.</p>
+        </a>
+        <a href="playbooks.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>Playbooks</h2>
+            <p>Complex orchestration logic with full Go power: loops, decisions, retries.</p>
+        </a>
+    </div>
+
+    <div class="section-title">Features</div>
+    <div class="grid">
+        <a href="idempotency.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>Idempotency</h2>
+            <p>Check-Run pattern for safe, repeatable operations across many nodes.</p>
+        </a>
+        <a href="dry-run.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>Dry-Run Mode</h2>
+            <p>Preview changes without executing commands. Safety enforced at SSH layer.</p>
+        </a>
+        <a href="privilege-escalation.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>Privilege Escalation</h2>
+            <p>Run commands as different users via sudo, with hierarchy and precedence.</p>
+        </a>
+        <a href="vault.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>Vault</h2>
+            <p>Secure secrets management with AES-256-GCM and Argon2id key derivation.</p>
+        </a>
+        <a href="advanced-usage.html" class="card">
+            <span class="badge core">Core</span>
+            <h2>Advanced Usage</h2>
+            <p>Custom skills, internal packages, retry logic, and rate limiting patterns.</p>
+        </a>
+    </div>
+
+    <div class="section-title">Operations &amp; Guides</div>
+    <div class="grid">
+        <a href="troubleshooting.html" class="card">
+            <span class="badge ops">Ops</span>
+            <h2>Troubleshooting</h2>
+            <p>Common issues and solutions: connection, authentication, dry-run, and performance.</p>
+        </a>
+        <a href="cheatsheet.html" class="card">
+            <span class="badge ops">Ops</span>
+            <h2>Cheatsheet</h2>
+            <p>Quick reference for common operations, patterns, and skill IDs.</p>
+        </a>
+        <a href="conventions.html" class="card">
+            <span class="badge ops">Ops</span>
+            <h2>Conventions</h2>
+            <p>Coding and documentation standards for Ork contributors.</p>
+        </a>
+    </div>
+
+    <div class="footer">
+        <p>Ork &mdash; <a href="https://github.com/dracory/ork">GitHub Repository</a></p>
+        <p>Licensed under GNU Affero General Public License v3.0 (AGPL-3.0)</p>
+    </div>
+</body>
+</html>

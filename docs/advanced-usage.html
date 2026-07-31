@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Usage - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        blockquote { border-left: 4px solid #42b983; background: #f4f6f8; margin: 1rem 0; padding: 0.5rem 1rem; color: #555; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Advanced Usage</h1>
+
+    <h2>Inspecting Configuration</h2>
+<pre><code>node := ork.NewNodeForHost("server.example.com").
+    SetPort("2222").
+    SetUser("deploy")
+
+fmt.Printf("Host: %s\n", node.GetHost())
+fmt.Printf("Port: %s\n", node.GetPort())
+fmt.Printf("User: %s\n", node.GetUser())
+
+// Get full config for integration with internal packages
+cfg := node.GetNodeConfig()</code></pre>
+
+    <h2>Custom Skills</h2>
+    <p>Extend Ork with custom automation tasks by implementing the <code>RunnableInterface</code>.</p>
+
+    <h3>Registering Custom Skills</h3>
+    <p>Register your custom skills to use them via <code>node.RunByID("custom-id")</code>:</p>
+<pre><code>import (
+    "github.com/dracory/ork"
+    "github.com/dracory/ork/types"
+)
+
+// Create a custom skill
+customSkill := types.NewBaseSkill().
+    WithID("install-docker").
+    WithDescription("Install Docker on the server")
+
+// Register it globally
+registry, err := ork.GetGlobalSkillRegistry()
+if err != nil {
+    log.Fatalf("Failed to get registry: %v", err)
+}
+if err := registry.Set(customSkill); err != nil {
+    log.Fatalf("Failed to register skill: %v", err)
+}
+
+// Now use it like any built-in skill
+node := ork.NewNodeForHost("server.example.com")
+results := node.RunByID("install-docker")</code></pre>
+    <blockquote>
+        <p><strong>Note:</strong> For complex orchestration logic with decision making, loops, and custom error handling, see <a href="playbooks.html">Playbooks</a>.</p>
+        <p><strong>Note:</strong> <code>RunByID</code> is deprecated. Prefer <code>node.Run(customSkill)</code> with a direct skill instance when you already have one in scope.</p>
+    </blockquote>
+
+    <h2>Privilege Escalation in Custom Skills</h2>
+    <p>When creating custom skills that require elevated privileges, you can configure the become user at multiple levels:</p>
+
+    <h3>Skill-Level Configuration</h3>
+<pre><code>type MyCustomSkill struct {
+    types.BaseSkill
+}
+
+func (s *MyCustomSkill) Run() types.Result {
+    // The skill inherits SetBecomeUser and GetBecomeUser from BaseBecome
+    // Set it before running:
+    s.SetBecomeUser("root")
+
+    // Commands will run as root
+    output, err := ssh.Run(s.GetNodeConfig(), types.Command{
+        Command: "apt-get update",
+    })
+    // ...
+}</code></pre>
+
+    <h3>Dynamic User Selection</h3>
+<pre><code>func (s *MyCustomSkill) Run() types.Result {
+    cfg := s.GetNodeConfig()
+
+    // Choose become user based on node configuration
+    becomeUser := "root"
+    if cfg.GetArg("environment") == "production" {
+        becomeUser = "admin"
+    }
+
+    s.SetBecomeUser(becomeUser)
+    // ...
+}</code></pre>
+
+    <h3>Combining with Check/Run Pattern</h3>
+<pre><code>func (s *MyCustomSkill) Check() (bool, error) {
+    // Run check as the become user
+    s.SetBecomeUser("postgres")
+    output, err := ssh.Run(s.GetNodeConfig(), types.Command{
+        Command: "psql -c 'SELECT 1'",
+    })
+    return err == nil, nil
+}
+
+func (s *MyCustomSkill) Run() types.Result {
+    s.SetBecomeUser("postgres")
+    // Execute as postgres user
+    output, err := ssh.Run(s.GetNodeConfig(), types.Command{
+        Command: "psql -f /path/to/migration.sql",
+    })
+    // ...
+}</code></pre>
+
+    <h3>Custom Playbooks with Privilege Escalation</h3>
+<pre><code>type MyCustomPlaybook struct {
+    types.BasePlaybook
+}
+
+func (p *MyCustomPlaybook) Run() types.Result {
+    // Set become user for this playbook
+    p.SetBecomeUser("root")
+
+    cfg := p.GetNodeConfig()
+    // All commands in this playbook will run as root
+    _, err := ssh.Run(cfg, types.Command{
+        Command: "systemctl restart nginx",
+    })
+    // ...
+}</code></pre>
+
+    <h3>Custom Playbooks with Full Idempotency</h3>
+    <p>For comprehensive documentation on creating playbooks with complex orchestration logic, see <a href="playbooks.html">Playbooks Documentation</a>.</p>
+    <p>For simple playbook implementation with full idempotency support:</p>
+<pre><code>type MyCustomPlaybook struct {
+    *types.BasePlaybook
+}
+
+func (p *MyCustomPlaybook) Check() (bool, error) {
+    cfg := p.GetNodeConfig()
+    // Check if already configured
+    output, _ := ssh.Run(cfg, types.Command{Command: "cat /etc/my-config"})
+    return !strings.Contains(output, "configured"), nil
+}
+
+func (p *MyCustomPlaybook) Run() types.Result {
+    needsChange, _ := p.Check()
+    if !needsChange {
+        return types.Result{
+            Changed: false,
+            Message: "Already configured",
+        }
+    }
+
+    // Apply changes...
+    cfg := p.GetNodeConfig()
+    _, err := ssh.Run(cfg, types.Command{Command: "setup-command"})
+    if err != nil {
+        return types.Result{Changed: false, Error: err}
+    }
+
+    return types.Result{
+        Changed: true,
+        Message: "Configuration applied",
+    }
+}
+
+func NewMyCustomPlaybook() types.RunnableInterface {
+    return &amp;MyCustomPlaybook{
+        BasePlaybook: types.NewBasePlaybook().
+            WithID("my-task").
+            WithDescription("Does something"),
+    }
+}</code></pre>
+
+    <h2>Internal Packages</h2>
+    <p>For advanced use cases or when you need fine-grained control, you can use the internal packages directly.</p>
+
+    <h3>Package Overview</h3>
+    <ul>
+        <li><code>ork</code> - Main API: <code>NodeInterface</code>, <code>InventoryInterface</code>, <code>GroupInterface</code>, <code>RunnerInterface</code></li>
+        <li><code>types</code> - Shared types: <code>RunnableInterface</code>, <code>BaseSkill</code>, <code>BasePlaybook</code>, <code>Result</code>, <code>Results</code>, <code>Summary</code>, <code>NodeConfig</code>, <code>Registry</code></li>
+        <li><code>ssh</code> - SSH client with connection management</li>
+        <li><code>skills</code> - Built-in skill implementations (one subpackage per domain: <code>apt</code>, <code>ping</code>, <code>user</code>, ...)</li>
+    </ul>
+
+    <h3>Using Internal Packages Directly</h3>
+<pre><code>package main
+
+import (
+    "log"
+
+    "github.com/dracory/ork/skills"
+    "github.com/dracory/ork/types"
+)
+
+func main() {
+    cfg := types.NodeConfig{
+        SSHHost:  "db3.sinevia.com",
+        SSHPort:  "40022",
+        SSHKey:   "2024_sinevia.prv",
+        RootUser: "root",
+    }
+
+    // Ping server to check connectivity
+    ping := skills.NewPing()
+    ping.SetNodeConfig(cfg)
+    result := ping.Run()
+    if result.Error != nil {
+        log.Fatal(result.Error)
+    }
+
+    // Update packages
+    aptUpdate := skills.NewAptUpdate()
+    aptUpdate.SetNodeConfig(cfg)
+    result = aptUpdate.Run()
+    if result.Error != nil {
+        log.Fatal(result.Error)
+    }
+
+    // Create a 2GB swap file
+    cfg.Args = map[string]string{"size": "2"}
+    swapCreate := skills.NewSwapCreate()
+    swapCreate.SetNodeConfig(cfg)
+    result = swapCreate.Run()
+    if result.Error != nil {
+        log.Fatal(result.Error)
+    }
+}</code></pre>
+
+    <h2>Advanced Configuration Patterns</h2>
+
+    <h3>Conditional Execution Based on Node Properties</h3>
+<pre><code>node := ork.NewNodeForHost("server.example.com")
+node.SetArg("environment", "production")
+
+// In your skill, check the environment
+if node.GetArg("environment") == "production" {
+    // Apply production-specific configuration
+}</code></pre>
+
+    <h3>Error Handling and Retry Logic</h3>
+<pre><code>maxRetries := 3
+for attempt := 0; attempt &lt; maxRetries; attempt++ {
+    results := node.Run(skills.NewAptUpdate())
+    result := results.Results["server.example.com"]
+
+    if result.Error == nil {
+        break
+    }
+
+    if attempt == maxRetries-1 {
+        log.Fatalf("Failed after %d retries: %v", maxRetries, result.Error)
+    }
+
+    log.Printf("Attempt %d failed, retrying...", attempt+1)
+    time.Sleep(time.Second * 5)
+}</code></pre>
+
+    <h3>Concurrent Operations with Rate Limiting</h3>
+<pre><code>// Create a semaphore to limit concurrent operations
+sem := make(chan struct{}, 5) // Max 5 concurrent operations
+
+var wg sync.WaitGroup
+for _, host := range hosts {
+    wg.Add(1)
+    go func(h string) {
+        defer wg.Done()
+        sem &lt;- struct{}{}        // Acquire
+        defer func() { &lt;-sem }() // Release
+
+        node := ork.NewNodeForHost(h)
+        results := node.Run(skills.NewPing())
+        // Process results...
+    }(host)
+}
+wg.Wait()</code></pre>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="playbooks.html">Playbooks</a> - Complex orchestration with full Go power</li>
+        <li><a href="privilege-escalation.html">Privilege Escalation</a> - Run commands as different users via sudo</li>
+        <li><a href="idempotency.html">Idempotency</a> - Check-Run pattern for safe operations</li>
+        <li><a href="api-reference.html">API Reference</a> - Complete API documentation</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

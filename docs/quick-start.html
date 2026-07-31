@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Start - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Quick Start</h1>
+
+    <p>The core concept is the <strong>Node</strong> - a representation of a remote server:</p>
+
+<pre><code>package main
+
+import (
+    "log"
+    "github.com/dracory/ork"
+    "github.com/dracory/ork/types"
+)
+
+func main() {
+    // Create a node (remote server) - multiple ways:
+
+    // Option 1: From host (most common)
+    node := ork.NewNodeForHost("server.example.com")
+
+    // Option 2: From config (useful for complex setups)
+    cfg := types.NodeConfig{
+        SSHHost: "server.example.com",
+        SSHPort: "22",
+    }
+    node := ork.NewNodeFromConfig(cfg)
+
+    // Run a command
+    results := node.RunCommand("uptime")
+    result := results.Results["server.example.com"]
+    if result.Error != nil {
+        log.Fatal(result.Error)
+    }
+    log.Println(result.Message)
+}</code></pre>
+
+    <h2>Configuration</h2>
+    <p>Use the fluent API to configure connection settings:</p>
+<pre><code>// From host
+node := ork.NewNodeForHost("server.example.com").
+    SetPort("2222").
+    SetUser("deploy").
+    SetKey("production.prv")
+
+results := node.RunCommand("uptime")
+result := results.Results["server.example.com"]
+if result.Error != nil {
+    log.Fatal(result.Error)
+}
+output := result.Message</code></pre>
+
+    <h2>Persistent Connections</h2>
+    <p>For multiple operations, establish a persistent connection:</p>
+<pre><code>node := ork.NewNodeForHost("server.example.com").
+    SetPort("2222").
+    SetUser("deploy")
+
+if err := node.Connect(); err != nil {
+    log.Fatal(err)
+}
+defer node.Close()
+
+// These commands reuse the same SSH connection
+results1 := node.RunCommand("uptime")
+results2 := node.RunCommand("df -h")
+output1 := results1.Results["server.example.com"].Message
+output2 := results2.Results["server.example.com"].Message</code></pre>
+
+    <h2>Skills</h2>
+    <p>Run pre-built automation tasks (skills) against a node. For a complete list of available skills, see <a href="skills.html">Skills Documentation</a>.</p>
+<pre><code>node := ork.NewNodeForHost("server.example.com").
+    SetArg("username", "alice").
+    SetArg("shell", "/bin/bash")
+
+results := node.Run(skills.NewUserCreate())
+result := results.Results["server.example.com"]
+if result.Error != nil {
+    log.Fatalf("Skill failed: %v", result.Error)
+}
+if result.Changed {
+    log.Printf("User created: %s", result.Message)
+} else {
+    log.Println("User already exists - no changes made")
+}</code></pre>
+
+    <h2>Inventory (Multi-Node Operations)</h2>
+    <p>Manage multiple servers with the same API:</p>
+<pre><code>// Create inventory
+inv := ork.NewInventory()
+
+// Add nodes to groups
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
+webGroup.WithArg("env", "production")
+inv.AddGroup(webGroup)
+
+// Run skill on entire inventory
+results := inv.Run(skills.NewPing())
+
+// Check summary
+summary := results.Summary()
+fmt.Printf("Total: %d, Changed: %d, Failed: %d\n",
+    summary.Total, summary.Changed, summary.Failed)
+
+// Check individual results
+for host, result := range results.Results {
+    if result.Error != nil {
+        log.Printf("%s failed: %v", host, result.Error)
+    }
+}</code></pre>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

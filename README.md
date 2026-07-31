@@ -30,26 +30,36 @@ go build -o ork ./cmd/ork
 
 ## Documentation
 
-Full documentation is available in the [docs](docs/) directory.
+Full documentation is available as a static HTML site in the [docs](docs/) directory. Start at [docs/index.html](docs/index.html) for a card-grid overview, or browse it online via [html-preview](https://html-preview.github.io/?url=https://github.com/dracory/ork/blob/main/docs/index.html).
 
 ### Getting Started
 
-- [Quick Start](docs/quick_start.md) - Quick start guide with examples
-- [Configuration](docs/quick_start.md) - Configuration options and settings
+- [Overview](docs/overview.html) - High-level introduction to Ork and core concepts
+- [Getting Started](docs/getting-started.html) - Step-by-step installation and first node guide
+- [Quick Start](docs/quick-start.html) - Fastest path to running commands and skills
 
-### Automation
+### Core Reference
 
-- [Commands](docs/commands.md) - Execute shell commands with fluent API
-- [Built-in Skills](docs/skills.md) - All available automation tasks
-- [Playbooks](docs/playbooks.md) - Complex orchestration with full Go power
+- [Architecture](docs/architecture.html) - Layered architecture, design patterns, and concurrency model
+- [API Reference](docs/api-reference.html) - Complete reference for all public interfaces and types
+- [Configuration](docs/configuration.html) - NodeConfig structure, SSH settings, and dry-run mode
+- [Commands](docs/commands.html) - Fluent API for one-off shell command execution
+- [Skills](docs/skills.html) - Reusable, idempotent automation tasks and the full skill catalog
+- [Playbooks](docs/playbooks.html) - Complex orchestration with full Go power
 
 ### Features
 
-- [Vault](docs/vault.md) - Secure secrets management
-- [Idempotency](docs/idempotency.md) - Understanding idempotent operations
-- [Dry-Run Mode](docs/dry_run.md) - Preview changes without execution
-- [Privilege Escalation](docs/privilege_escalation.md) - Run commands as different users via sudo
-- [Advanced Usage](docs/advanced_usage.md) - Custom skills and internal packages
+- [Idempotency](docs/idempotency.html) - Check-Run pattern for safe, repeatable operations
+- [Dry-Run Mode](docs/dry-run.html) - Preview changes without execution
+- [Privilege Escalation](docs/privilege-escalation.html) - Run commands as different users via sudo
+- [Vault](docs/vault.html) - Secure secrets management (AES-256-GCM + Argon2id)
+- [Advanced Usage](docs/advanced-usage.html) - Custom skills, internal packages, and advanced patterns
+
+### Operations & Guides
+
+- [Troubleshooting](docs/troubleshooting.html) - Common issues and solutions
+- [Cheatsheet](docs/cheatsheet.html) - Quick reference for common operations
+- [Conventions](docs/conventions.html) - Coding and documentation standards for contributors
 
 ### Reference
 

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commands - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Commands</h1>
+
+    <p>Commands provide a fluent API for executing shell commands on remote servers. Unlike skills (which are idempotent and reusable), commands are for simple one-off shell command execution with optional configuration.</p>
+
+    <h2>Overview</h2>
+    <p>Commands implement <code>CommandInterface</code> which extends <code>RunnableInterface</code>, allowing them to be executed on nodes, groups, and inventories using the standard <code>Run()</code> methods. Commands support:</p>
+    <ul>
+        <li><strong>Fluent API</strong>: Chain methods for readable configuration</li>
+        <li><strong>Required flag</strong>: Control whether command failures should halt execution</li>
+        <li><strong>Working directory</strong>: Execute commands in specific directories</li>
+        <li><strong>Privilege escalation</strong>: Run commands as different users via sudo</li>
+        <li><strong>Dry-run mode</strong>: Preview commands without execution</li>
+    </ul>
+
+    <h2>Basic Usage</h2>
+
+    <h3>Creating and Running a Command</h3>
+<pre><code>package main
+
+import (
+    "log"
+    "github.com/dracory/ork"
+)
+
+func main() {
+    // Create a command
+    command := ork.NewCommand().
+        WithDescription("Check server uptime").
+        WithCommand("uptime").
+        WithRequired(true)
+
+    // Run on a single node
+    node := ork.NewNodeForHost("server.example.com")
+    result := node.Run(command).FirstResult()
+
+    if result.Error != nil {
+        log.Printf("Command failed: %v\n", result.Error)
+        return
+    }
+
+    log.Printf("Command succeeded: %s\n", result.Message)
+    log.Printf("Output: %s\n", result.Details["output"])
+}</code></pre>
+
+    <h3>Running on Multiple Nodes</h3>
+<pre><code>// Create an inventory with multiple nodes
+inventory := ork.NewInventory()
+prodGroup := ork.NewGroup("production")
+
+prodGroup.AddNode(ork.NewNodeForHost("server1.example.com"))
+prodGroup.AddNode(ork.NewNodeForHost("server2.example.com"))
+prodGroup.AddNode(ork.NewNodeForHost("server3.example.com"))
+
+inventory.AddGroup(prodGroup)
+
+// Create command to run on all nodes
+command := ork.NewCommand().
+    WithDescription("Restart application").
+    WithCommand("pm2 restart app").
+    WithRequired(true)
+
+// Run on all nodes in inventory
+results := inventory.Run(command)
+
+// Check results
+summary := results.Summary()
+log.Printf("Total: %d, Changed: %d, Unchanged: %d, Failed: %d\n",
+    summary.Total, summary.Changed, summary.Unchanged, summary.Failed)
+
+for host, result := range results.Results {
+    if result.Error != nil {
+        log.Printf("Failed on %s: %v\n", host, result.Error)
+    } else {
+        log.Printf("Success on %s: %s\n", host, result.Message)
+    }
+}</code></pre>
+
+    <h2>Command Configuration</h2>
+
+    <h3>Required Flag</h3>
+    <p>The <code>required</code> flag controls whether command failures should halt execution:</p>
+<pre><code>// Command must succeed (default behavior for required)
+command := ork.NewCommand().
+    WithDescription("Critical operation").
+    WithCommand("systemctl restart nginx").
+    WithRequired(true)
+
+result := node.Run(command).FirstResult()
+if result.Error != nil {
+    // Execution stops here - error is returned
+    log.Fatal(result.Error)
+}</code></pre>
+<pre><code>// Command can fail without stopping execution
+command := ork.NewCommand().
+    WithDescription("Non-critical operation").
+    WithCommand("some-non-critical-command").
+    WithRequired(false)
+
+result := node.Run(command).FirstResult()
+if result.Error != nil {
+    // Error is logged but doesn't fail the operation
+    log.Printf("Non-required command failed (continuing): %v\n", result.Error)
+}
+log.Printf("Command completed: %s\n", result.Message)</code></pre>
+
+    <h3>Working Directory</h3>
+    <p>Execute commands in a specific directory using <code>SetChdir</code> or <code>WithChdir</code>:</p>
+<pre><code>// Run command in specific directory
+command := ork.NewCommand().
+    WithDescription("List files in web directory").
+    WithCommand("ls -la").
+    WithChdir("/var/www")
+
+result := node.Run(command).FirstResult()
+
+if result.Error != nil {
+    log.Printf("Failed: %v", result.Error)
+} else {
+    log.Printf("Success: %s\n", result.Message)
+    log.Printf("Output: %s\n", result.Details["output"])
+}</code></pre>
+    <p>When combined with privilege escalation, the order is: <code>cd &lt;dir&gt; &amp;&amp; sudo -u &lt;user&gt; &lt;command&gt;</code></p>
+
+    <h3>Privilege Escalation</h3>
+    <p>Run commands as a different user using <code>WithBecomeUser</code>:</p>
+<pre><code>// Run database command as postgres user
+command := ork.NewCommand().
+    WithDescription("Backup database as postgres user").
+    WithCommand("pg_dump mydb").
+    WithRequired(true).
+    WithBecomeUser("postgres")
+
+result := node.Run(command).FirstResult()</code></pre>
+<pre><code>// Run web server command as www-data
+command := ork.NewCommand().
+    WithDescription("Restart nginx as www-data").
+    WithCommand("systemctl restart nginx").
+    WithRequired(true).
+    WithBecomeUser("www-data")</code></pre>
+
+    <h3>Dry-Run Mode</h3>
+    <p>Preview commands without executing them:</p>
+<pre><code>// Enable dry-run mode on the node
+node := ork.NewNodeForHost("server.example.com")
+node.SetDryRunMode(true)
+
+// Create command
+command := ork.NewCommand().
+    WithDescription("Restart application").
+    WithCommand("pm2 restart app").
+    WithRequired(true)
+
+// Run in dry-run mode - command is logged but not executed
+result := node.Run(command).FirstResult()
+log.Printf("Dry-run result: %s\n", result.Message)
+// Output: "Would execute: pm2 restart app"</code></pre>
+
+    <h2>Fluent API</h2>
+    <p>Commands support a fluent API for method chaining. Use <code>With*</code> methods for consistent chaining:</p>
+<pre><code>command := ork.NewCommand().
+    WithID("check-uptime").
+    WithDescription("Check server uptime").
+    WithCommand("uptime").
+    WithRequired(true).
+    WithChdir("/home/user").
+    WithBecomeUser("deploy").
+    WithDryRun(false)</code></pre>
+    <p><strong>Note</strong>: Command-specific methods (<code>SetCommand</code>, <code>SetRequired</code>, <code>SetChdir</code>) return <code>CommandInterface</code>, while other methods return <code>RunnableInterface</code>. For consistent fluent chaining, use the <code>With*</code> variants.</p>
+
+    <h2>Arguments</h2>
+    <p>Commands can use arguments like other runnables:</p>
+<pre><code>node := ork.NewNodeForHost("server.example.com")
+node.SetArg("app-name", "myapp")
+node.SetArg("port", "3000")
+
+command := ork.NewCommand().
+    WithDescription("Restart application with args").
+    WithCommand("pm2 restart ${app-name} --port ${port}").
+    WithRequired(true)
+
+result := node.Run(command).FirstResult()</code></pre>
+    <p>Note: Command argument interpolation would need to be implemented in your command logic.</p>
+
+    <h2>API Reference</h2>
+
+    <h3>CommandInterface</h3>
+<pre><code>type CommandInterface interface {
+    types.RunnableInterface
+
+    // Command-specific methods
+    SetCommand(cmd string) CommandInterface
+    SetRequired(required bool) CommandInterface
+    WithCommand(cmd string) CommandInterface
+    WithRequired(required bool) CommandInterface
+    SetChdir(dir string) CommandInterface
+    WithChdir(dir string) CommandInterface
+
+    // Fluent chaining methods
+    WithDescription(description string) CommandInterface
+    WithID(id string) CommandInterface
+    WithArg(key, value string) CommandInterface
+    WithArgs(args map[string]string) CommandInterface
+    WithNodeConfig(cfg types.NodeConfig) CommandInterface
+    WithDryRun(dryRun bool) CommandInterface
+    WithTimeout(timeout interface{}) CommandInterface
+    WithBecomeUser(user string) CommandInterface
+}</code></pre>
+
+    <h3>Constructor</h3>
+<pre><code>func NewCommand() CommandInterface</code></pre>
+    <p>Creates a new Command with default values:</p>
+    <ul>
+        <li>ID: <code>"command"</code></li>
+        <li>Description: <code>"Execute shell command"</code></li>
+        <li>Required: <code>false</code></li>
+    </ul>
+
+    <h2>Difference from Skills</h2>
+    <table>
+        <tr><th>Feature</th><th>Commands</th><th>Skills</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>One-off shell commands</td><td>Reusable automation tasks</td></tr>
+        <tr><td><strong>Idempotency</strong></td><td>Not idempotent</td><td>Idempotent by design</td></tr>
+        <tr><td><strong>Check Method</strong></td><td>Always returns false</td><td>Implements actual checks</td></tr>
+        <tr><td><strong>Required Flag</strong></td><td>Supported</td><td>Not applicable</td></tr>
+        <tr><td><strong>Use Case</strong></td><td>Ad-hoc operations</td><td>Common patterns</td></tr>
+    </table>
+
+    <h2>Use Cases</h2>
+    <p><strong>Use Commands for:</strong></p>
+    <ul>
+        <li>Ad-hoc shell commands</li>
+        <li>One-off operations</li>
+        <li>Quick checks and diagnostics</li>
+        <li>Custom scripts that don't need to be reusable</li>
+    </ul>
+    <p><strong>Use Skills for:</strong></p>
+    <ul>
+        <li>Common automation patterns</li>
+        <li>Idempotent operations</li>
+        <li>Reusable tasks across projects</li>
+        <li>Operations that need check/run pattern</li>
+    </ul>
+
+    <h2>Examples</h2>
+
+    <h3>System Diagnostics</h3>
+<pre><code>// Check disk space
+command := ork.NewCommand().
+    WithDescription("Check disk space").
+    WithCommand("df -h").
+    WithRequired(true)
+
+result := node.Run(command).FirstResult()</code></pre>
+
+    <h3>Application Management</h3>
+<pre><code>// Restart application in specific directory
+command := ork.NewCommand().
+    WithDescription("Restart Node.js app").
+    WithCommand("pm2 restart app").
+    WithChdir("/var/www/myapp").
+    WithRequired(true)
+
+result := node.Run(command).FirstResult()</code></pre>
+
+    <h3>Database Operations</h3>
+<pre><code>// Run database migration as postgres user
+command := ork.NewCommand().
+    WithDescription("Run database migration").
+    WithCommand("psql -f /path/to/migration.sql").
+    WithBecomeUser("postgres").
+    WithRequired(true)
+
+result := node.Run(command).FirstResult()</code></pre>
+
+    <h3>Log Analysis</h3>
+<pre><code>// Check error logs (non-critical)
+command := ork.NewCommand().
+    WithDescription("Check for errors in logs").
+    WithCommand("tail -100 /var/log/app.log | grep ERROR").
+    WithRequired(false)
+
+result := node.Run(command).FirstResult()
+if result.Error != nil {
+    log.Printf("Log check failed but continuing: %v\n", result.Error)
+}</code></pre>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="skills.html">Skills</a> - Built-in automation tasks</li>
+        <li><a href="api-reference.html">API Reference</a> - Complete API documentation</li>
+        <li><a href="configuration.html">Configuration</a> - Configuration options</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

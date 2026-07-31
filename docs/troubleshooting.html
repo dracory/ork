@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshooting - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .problem { background: #fff5f5; border-left: 3px solid #e74c3c; padding: 0.5rem 1rem; margin: 0.5rem 0; }
+        .solution { background: #f0faf3; border-left: 3px solid #27ae60; padding: 0.5rem 1rem; margin: 0.5rem 0; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Troubleshooting</h1>
+
+    <p>This document covers common issues and their solutions when using Ork.</p>
+
+    <h2>Connection Issues</h2>
+
+    <h3>"failed to connect to server.example.com:22"</h3>
+    <p class="problem"><strong>Problem</strong>: SSH connection cannot be established.</p>
+    <p><strong>Possible Causes &amp; Solutions</strong>:</p>
+    <ol>
+        <li><strong>Wrong hostname or IP</strong> &mdash; verify the host is correct. Test with: <code>ping server.example.com</code></li>
+        <li><strong>Wrong port</strong> &mdash; default is 22, but your server might use a different port:
+<pre><code>node.SetPort("2222")  // or your custom port</code></pre></li>
+        <li><strong>SSH key not found</strong> &mdash; default key is <code>id_rsa</code> in <code>~/.ssh/</code>. Verify: <code>ls -la ~/.ssh/</code>
+<pre><code>node.SetKey("your_key_file")</code></pre></li>
+        <li><strong>Key permissions too open</strong>:
+<pre><code>chmod 600 ~/.ssh/your_key_file
+chmod 700 ~/.ssh/</code></pre></li>
+        <li><strong>User doesn't exist</strong> &mdash; default user is <code>root</code>:
+<pre><code>node.SetUser("your_username")</code></pre></li>
+    </ol>
+
+    <h3>"host cannot be empty"</h3>
+    <p class="problem"><strong>Problem</strong>: Trying to connect without setting a host.</p>
+    <p class="solution"><strong>Solution</strong>: Use <code>NewNodeForHost()</code> or set SSHHost explicitly:</p>
+<pre><code>// Correct
+node := ork.NewNodeForHost("server.example.com")
+
+// Incorrect - this creates empty host
+node := ork.NewNode()</code></pre>
+
+    <h2>Skill Issues</h2>
+
+    <h3>"playbook 'xyz' not found in registry"</h3>
+    <p class="problem"><strong>Problem</strong>: Trying to run a skill by ID that isn't registered.</p>
+    <p class="solution"><strong>Solution</strong>: Use the correct ID or run the skill directly:</p>
+<pre><code>// By ID (must be registered) - deprecated, prefer Run() with a direct instance
+results := node.RunByID(skills.IDAptUpdate)
+
+// Direct instance (preferred)
+results := node.Run(skills.NewAptUpdate())</code></pre>
+    <p>Check available IDs in <code>skills/constants.go</code>.</p>
+
+    <h3>"username is required"</h3>
+    <p class="problem"><strong>Problem</strong>: Running a user skill without required arguments.</p>
+    <p class="solution"><strong>Solution</strong>: Set the required argument:</p>
+<pre><code>node.SetArg("username", "alice")
+results := node.Run(skills.NewUserCreate())</code></pre>
+
+    <h3>Skill reports "Changed: false" but should have changed</h3>
+    <p class="problem"><strong>Problem</strong>: Idempotency check incorrectly reports no changes needed.</p>
+    <p><strong>Debug</strong>:</p>
+<pre><code>// Manually run the check command
+results := node.RunCommand("your-check-command")
+log.Println(results.Results["host"].Message)</code></pre>
+
+    <h2>SSH Authentication Issues</h2>
+
+    <h3>"host key verification failed: knownhosts: key is unknown"</h3>
+    <p class="problem"><strong>Problem</strong>: The host's SSH key is not in your known_hosts file.</p>
+    <p class="solution"><strong>Solution</strong>: Add the host key to your known_hosts file:</p>
+<pre><code>ssh-keyscan HOST &gt;&gt; ~/.ssh/known_hosts
+# Replace HOST with your server's hostname or IP</code></pre>
+
+    <h3>"host key verification failed: knownhosts: key mismatch"</h3>
+    <p class="problem"><strong>Problem</strong>: The host's SSH key has changed. This could indicate a man-in-the-middle attack.</p>
+    <p class="solution"><strong>Solution</strong>: Remove the old key and add the new one:</p>
+<pre><code># Remove the old key
+ssh-keygen -R HOST
+# Add the new key
+ssh-keyscan HOST &gt;&gt; ~/.ssh/known_hosts</code></pre>
+    <p><strong>Important</strong>: Only do this if you're certain the server is legitimate and the key change is expected (e.g., server reinstallation).</p>
+
+    <h3>"host key verification failed: knownhosts: key is revoked"</h3>
+    <p class="problem"><strong>Problem</strong>: The host's SSH key has been revoked. This is a security concern.</p>
+    <p class="solution"><strong>Solution</strong>: Do not connect to this host. The key revocation indicates a security issue. Contact your system administrator.</p>
+
+    <h3>"authentication failed: unable to authenticate"</h3>
+    <p class="problem"><strong>Problem</strong>: SSH key authentication failed.</p>
+    <p><strong>Solutions</strong>:</p>
+    <ol>
+        <li><strong>Key not authorized on server</strong>:
+<pre><code># On server, add your public key
+cat ~/.ssh/id_rsa.pub &gt;&gt; ~/.ssh/authorized_keys</code></pre></li>
+        <li><strong>Wrong key file</strong> &mdash; verify you're using the private key:
+<pre><code>node.SetKey("id_rsa")  // not id_rsa.pub</code></pre></li>
+        <li><strong>SSH agent not running</strong>:
+<pre><code>eval $(ssh-agent -s)
+ssh-add ~/.ssh/your_key</code></pre></li>
+        <li><strong>Wrong user</strong> &mdash; verify the user exists on the server:
+<pre><code>node.SetUser("your_username")  // Default is "root"</code></pre></li>
+    </ol>
+
+    <h3>"SSH key exchange algorithm mismatch"</h3>
+    <p class="problem"><strong>Problem</strong>: The SSH client and server do not share a supported key exchange algorithm. This can happen with modern or hardened OpenSSH servers that prefer or require algorithms not supported by <code>golang.org/x/crypto/ssh</code>, such as <code>sntrup761x25519-sha512@openssh.com</code>.</p>
+    <p><strong>Solutions</strong>:</p>
+    <ol>
+        <li><strong>Check the server algorithms</strong>:
+<pre><code>ssh -vvv user@HOST
+ssh -Q kex</code></pre></li>
+        <li><strong>Configure compatible algorithms in Ork</strong>:
+<pre><code>cfg := ork.NewNodeConfig().
+    WithHost("server.example.com").
+    WithLogin("ubuntu").
+    WithKey("id_rsa").
+    WithKexAlgorithms([]string{
+        "curve25519-sha256",
+        "curve25519-sha256@libssh.org",
+        "ecdh-sha2-nistp256",
+        "diffie-hellman-group14-sha256",
+    })</code></pre></li>
+        <li><strong>Adjust server configuration if it is too restrictive</strong>:
+<pre><code># In /etc/ssh/sshd_config
+KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,diffie-hellman-group14-sha256
+systemctl restart sshd</code></pre></li>
+    </ol>
+    <p><strong>Limitation</strong>: Ork can only configure algorithms supported by <code>golang.org/x/crypto/ssh</code>. It cannot enable unsupported algorithms such as <code>sntrup761x25519-sha512@openssh.com</code> until the underlying library supports them.</p>
+
+    <h3>"SSH host key algorithm mismatch"</h3>
+    <p class="problem"><strong>Problem</strong>: The SSH client and server do not share a supported host key algorithm.</p>
+    <p class="solution"><strong>Solution</strong>: Configure compatible host key algorithms:</p>
+<pre><code>cfg := ork.NewNodeConfig().
+    WithHost("server.example.com").
+    WithLogin("ubuntu").
+    WithKey("id_rsa").
+    WithHostKeyAlgorithms([]string{
+        "ssh-ed25519",
+        "rsa-sha2-512",
+        "rsa-sha2-256",
+    })</code></pre>
+
+    <h3>Permission Denied (publickey)</h3>
+    <p class="problem"><strong>Problem</strong>: Server rejects key authentication.</p>
+    <p><strong>Solutions</strong>:</p>
+    <ol>
+        <li><strong>Enable key authentication on server</strong>:
+<pre><code># In /etc/ssh/sshd_config
+PubkeyAuthentication yes
+systemctl restart sshd</code></pre></li>
+        <li><strong>Check authorized_keys permissions</strong>:
+<pre><code>chmod 700 ~/.ssh
+chmod 600 ~/.ssh/authorized_keys</code></pre></li>
+    </ol>
+
+    <h2>Dry-Run Mode Issues</h2>
+
+    <h3>Changes happening in dry-run mode</h3>
+    <p class="problem"><strong>Problem</strong>: Commands are executing even with dry-run enabled.</p>
+    <p class="solution"><strong>Solution</strong>: This should not happen. Ensure you're using Ork's SSH functions:</p>
+<pre><code>// Use ssh.Run which checks IsDryRunMode
+output, err := ssh.Run(cfg, "command")
+
+// NOT os/exec or other methods</code></pre>
+
+    <h3>Dry-run mode not propagating</h3>
+    <p class="problem"><strong>Problem</strong>: Dry-run set on inventory but nodes still executing.</p>
+    <p class="solution"><strong>Solution</strong>: Verify propagation is working:</p>
+<pre><code>inv := ork.NewInventory()
+inv.SetDryRunMode(true)
+
+// Check individual nodes
+for _, node := range inv.GetNodes() {
+    if !node.GetDryRunMode() {
+        log.Println("WARNING: Node doesn't have dry-run mode!")
+    }
+}</code></pre>
+
+    <h2>Results and Error Handling</h2>
+
+    <h3>Results map is empty</h3>
+    <p class="problem"><strong>Problem</strong>: Running operations but <code>results.Results</code> is empty.</p>
+    <p><strong>Possible Causes</strong>:</p>
+    <ol>
+        <li><strong>Wrong host key in results</strong> &mdash; results are keyed by host, not by IP:
+<pre><code>result := results.Results["server.example.com"]</code></pre></li>
+        <li><strong>Node not added to group/inventory</strong>:
+<pre><code>group := ork.NewGroup("webservers")
+group.AddNode(node)  // Don't forget this!</code></pre></li>
+    </ol>
+
+    <h3>Cannot access Result fields</h3>
+    <p class="problem"><strong>Problem</strong>: Trying to access result but getting nil pointer.</p>
+    <p class="solution"><strong>Solution</strong>: Check if host exists in results:</p>
+<pre><code>result, ok := results.Results["server.example.com"]
+if !ok {
+    log.Fatal("No result for host")
+}</code></pre>
+
+    <h2>Group and Inventory Issues</h2>
+
+    <h3>Group operations not running on all nodes</h3>
+    <p class="problem"><strong>Problem</strong>: Running skill on group but only some nodes execute.</p>
+    <p><strong>Debug</strong>:</p>
+<pre><code>// Check nodes in group
+nodes := group.GetNodes()
+log.Printf("Group has %d nodes", len(nodes))
+
+// Verify node configuration
+for _, node := range nodes {
+    log.Printf("Node: %s, Port: %s", node.GetHost(), node.GetPort())
+}</code></pre>
+
+    <h3>Inventory results missing some hosts</h3>
+    <p class="problem"><strong>Problem</strong>: Inventory Run missing results for some nodes.</p>
+    <p><strong>Possible Causes</strong>:</p>
+    <ol>
+        <li><strong>Max concurrency limiting</strong>:
+<pre><code>// Increase if needed (default is 10)
+inv.SetMaxConcurrency(20)</code></pre></li>
+        <li><strong>Duplicate hosts in different groups</strong> &mdash; results from the last processed group will overwrite earlier ones.</li>
+    </ol>
+
+    <h2>Performance Issues</h2>
+
+    <h3>Operations are slow</h3>
+    <p class="problem"><strong>Problem</strong>: Each command takes a long time to execute.</p>
+    <p><strong>Solutions</strong>:</p>
+    <ol>
+        <li><strong>Use persistent connections</strong>:
+<pre><code>node.Connect()
+defer node.Close()
+// All subsequent commands reuse the connection</code></pre></li>
+        <li><strong>Check network latency</strong>:
+<pre><code>ping -c 10 your-server.com</code></pre></li>
+        <li><strong>Use inventory concurrency for multiple nodes</strong>:
+<pre><code>inv.SetMaxConcurrency(50)  // Run up to 50 in parallel</code></pre></li>
+    </ol>
+
+    <h3>Memory usage high with many nodes</h3>
+    <p class="problem"><strong>Problem</strong>: High memory usage when managing many servers.</p>
+    <p class="solution"><strong>Solution</strong>: Limit concurrent connections:</p>
+<pre><code>inv.SetMaxConcurrency(10)  // Don't overwhelm your system</code></pre>
+
+    <h2>Testing Issues</h2>
+
+    <h3>Tests fail with "connection refused"</h3>
+    <p class="problem"><strong>Problem</strong>: Integration tests can't connect to test containers.</p>
+    <p class="solution"><strong>Solution</strong>: Ensure Docker is running:</p>
+<pre><code>docker ps
+# If not running, start Docker Desktop or docker service</code></pre>
+
+    <h3>Mock not working in tests</h3>
+    <p class="problem"><strong>Problem</strong>: SSH calls still hitting real servers in tests.</p>
+    <p class="solution"><strong>Solution</strong>: Ensure you're using <code>SetRunFunc</code>:</p>
+<pre><code>// In test
+ssh.SetRunFunc(mockFn)
+defer ssh.SetRunFunc(nil)</code></pre>
+
+    <h2>Debugging Tips</h2>
+
+    <h3>Enable Verbose Logging</h3>
+<pre><code>import (
+    "log/slog"
+    "os"
+)
+
+// Create verbose logger
+logger := slog.New(slog.NewTextHandler(os.Stdout, &amp;slog.HandlerOptions{
+    Level: slog.LevelDebug,
+}))
+
+node.SetLogger(logger)</code></pre>
+
+    <h3>Inspect Configuration</h3>
+<pre><code>// Print full configuration
+log.Printf("Node config: %+v", node.GetNodeConfig())
+
+// Print args
+log.Printf("Args: %v", node.GetArgs())</code></pre>
+
+    <h2>Common Error Messages</h2>
+    <table>
+        <tr><th>Error</th><th>Meaning</th><th>Solution</th></tr>
+        <tr><td>"failed to connect"</td><td>SSH connection failed</td><td>Check host, port, credentials</td></tr>
+        <tr><td>"playbook not found"</td><td>Unknown skill ID</td><td>Use correct ID from constants</td></tr>
+        <tr><td>"username is required"</td><td>Missing required arg</td><td>Set arg with SetArg()</td></tr>
+        <tr><td>"host cannot be empty"</td><td>Node created without host</td><td>Use NewNodeForHost()</td></tr>
+        <tr><td>"[dry-run]" marker</td><td>Expected in dry-run mode</td><td>Normal behavior</td></tr>
+    </table>
+
+    <h2>Getting Help</h2>
+    <p>If issues persist:</p>
+    <ol>
+        <li><strong>Check documentation</strong> &mdash; <a href="getting-started.html">Getting Started</a>, <a href="api-reference.html">API Reference</a>, <a href="architecture.html">Architecture</a></li>
+        <li><strong>Review examples</strong> &mdash; see <code>*_test.go</code> files for usage examples</li>
+        <li><strong>Enable debug logging</strong> &mdash; use <code>slog.LevelDebug</code> for verbose output</li>
+        <li><strong>Test in dry-run mode</strong> &mdash; verify operations before running for real</li>
+    </ol>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

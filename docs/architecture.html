@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        h4 { color: #666; margin-top: 1.2rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        .diagram { background: #f4f6f8; border-left: 3px solid #42b983; padding: 1rem 1.5rem; margin: 1rem 0; font-family: "SF Mono", Monaco, Inconsolata, monospace; font-size: 0.85rem; white-space: pre; overflow-x: auto; border-radius: 0 4px 4px 0; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Ork Architecture</h1>
+
+    <p>This document describes the architecture of Ork, including design patterns, component relationships, and key architectural decisions.</p>
+
+    <h2>System Overview</h2>
+    <p>Ork is organized into a layered set of packages. User code interacts with the <code>ork</code> package, which exposes <code>NodeInterface</code>, <code>GroupInterface</code>, and <code>InventoryInterface</code>. These rely on the <code>ssh</code> package for connectivity and the <code>types</code> package for shared types and the skill system. Skill implementations live under <code>skills/</code> (apt, user, swap, mariadb, security, ufw, fail2ban, ping, reboot).</p>
+<div class="diagram">User Code
+  └── ork Package
+        ├── NodeInterface ──┬── ssh Package ── SSH Server ── Remote Server
+        ├── GroupInterface  │
+        └── InventoryInterface
+              └── types Package ── skills/{apt,user,swap,mariadb,...}</div>
+
+    <h2>Layered Architecture</h2>
+
+    <h3>1. API Layer (ork Package)</h3>
+    <p>The public API that users interact with:</p>
+<pre><code>// NodeInterface - Single server management
+type NodeInterface interface {
+    RunnerInterface
+    GetHost() string
+    SetPort(port string) NodeInterface
+    Connect() error
+    Close() error
+    // ...
+}
+
+// GroupInterface - Server group management
+type GroupInterface interface {
+    RunnerInterface
+    GetName() string
+    AddNode(node NodeInterface) GroupInterface
+    // ...
+}
+
+// InventoryInterface - Multi-group management
+type InventoryInterface interface {
+    RunnerInterface
+    AddGroup(group GroupInterface) InventoryInterface
+    SetMaxConcurrency(max int) InventoryInterface
+    // ...
+}</code></pre>
+
+    <h3>2. Core Services Layer</h3>
+
+    <h4>SSH Package</h4>
+    <p>Handles all SSH connectivity. Key features:</p>
+    <ul>
+        <li>Connection pooling via persistent connections</li>
+        <li>Dry-run mode support</li>
+        <li>Key-based authentication</li>
+    </ul>
+
+    <h4>Types Package</h4>
+    <p>Central configuration and type definitions:</p>
+<pre><code>type NodeConfig struct {
+    SSHHost      string
+    SSHPort      string
+    SSHLogin     string
+    SSHKey       string
+    RootUser     string
+    NonRootUser  string
+    DBPort       string
+    DBRootPassword string
+    Args         map[string]string
+    Logger       *slog.Logger
+    IsDryRunMode bool
+}</code></pre>
+
+    <h3>3. Skill System Layer</h3>
+
+    <h4>RunnableInterface (types package)</h4>
+    <p>All automation tasks implement this interface:</p>
+<pre><code>type RunnableInterface interface {
+    GetID() string
+    GetDescription() string
+    SetNodeConfig(cfg NodeConfig) RunnableInterface
+    GetArg(key string) string
+    SetArg(key, value string) RunnableInterface
+    Check() (bool, error)
+    Run() Result
+    ToMap() map[string]any   // serialize state for cloning
+    FromMap(m map[string]any) // restore state from a clone
+    BecomeInterface
+}</code></pre>
+    <p>The <code>ToMap()</code>/<code>FromMap()</code> pair is the contract the framework uses to clone a runnable before mutating it during parallel execution (see <a href="#concurrency-model">Concurrency Model</a>).</p>
+
+    <h4>BasePlaybook &amp; BaseSkill (types package)</h4>
+    <p>Provide default implementation with fluent API. State is stored in an <code>omni.AtomInterface</code> (thread-safe) plus a mutex-guarded <code>NodeConfig</code>. Both implement <code>ToMap()</code>/<code>FromMap()</code> for the standard properties (<code>id</code>, <code>description</code>, <code>args</code>, <code>dryRun</code>, <code>timeout</code>, <code>becomeUser</code>, <code>nodeConfig</code>).</p>
+
+    <h2>Design Patterns</h2>
+
+    <h3>1. Fluent Interface (Method Chaining)</h3>
+    <p>Configuration uses fluent API for readability:</p>
+<pre><code>node := ork.NewNodeForHost("server.example.com").
+    SetPort("2222").
+    SetUser("deploy").
+    SetKey("production.prv").
+    SetArg("env", "production")</code></pre>
+
+    <h3>2. Repository Pattern (Registry)</h3>
+    <p>Skill registry (<code>types.Registry</code>) for ID-based lookup. The global registry is a lazily-initialized singleton (<code>ork.GetGlobalSkillRegistry()</code>).</p>
+
+    <h3>3. Strategy Pattern</h3>
+    <p>Different skills implement the same <code>RunnableInterface</code>: <code>AptUpdate</code>, <code>UserCreate</code>, <code>SwapCreate</code>, <code>MariaDBInstall</code>, <code>SecurityHarden</code>, etc.</p>
+
+    <h3>4. Composite Pattern</h3>
+    <p>Inventory / Group / Node hierarchy. All implement <code>RunnerInterface</code> with unified execution.</p>
+<div class="diagram">Inventory
+  ├── Web Group
+  │     ├── Node 1
+  │     └── Node 2
+  └── DB Group
+        ├── Node 3
+        └── Node 4</div>
+
+    <h3>5. Factory Pattern</h3>
+    <p>Node creation methods:</p>
+<pre><code>func NewNodeForHost(host string) NodeInterface
+func NewNode() NodeInterface
+func NewNodeFromConfig(cfg types.NodeConfig) NodeInterface
+func NewGroup(name string) GroupInterface
+func NewInventory() InventoryInterface</code></pre>
+
+    <h2 id="concurrency-model">Concurrency Model</h2>
+
+    <h3>Inventory-Level Concurrency</h3>
+    <p>When <code>Inventory.Run(skill)</code> is called, all nodes are collected and the skill runs concurrently across them. Configurable via <code>SetMaxConcurrency()</code> (default: 10).</p>
+<div class="diagram">User ── Run(skill) ──&gt; Inventory
+Inventory collects all nodes
+  par concurrent execution:
+    Node1.Run(skill)
+    Node2.Run(skill)
+    Node3.Run(skill)
+Inventory ──&gt; User: aggregate Results</div>
+
+    <h3>Skill Cloning (per-goroutine isolation)</h3>
+    <p>When <code>Inventory</code> (or <code>Group</code>) runs a single shared skill instance across many nodes concurrently, the framework must not let goroutines mutate the same skill fields. To guarantee this, <code>nodeImplementation</code> clones the skill <strong>before</strong> setting any per-execution state on it:</p>
+<div class="diagram">User ──&gt; Node: Run(skill)
+Node ──&gt; Skill: skill.ToMap()
+Node:      cloneFromMap(skill, map)
+           reflect.New(typ) then clone.FromMap(map)
+           function-typed fields (runFunc, checkFunc)
+           are copied directly from the template
+Node ──&gt; Clone: SetNodeConfig(node.cfg)
+Node ──&gt; Clone: SetDryRun(node.IsDryRunMode)
+Node ──&gt; Clone: SetBecomeUser (if empty)
+Clone ──&gt; Clone: Run()
+Clone ──&gt; Node: Result
+Node ──&gt; User: Results</div>
+    <p>The clone is created via <code>cloneFromMap(template, m)</code> in <code>node_implementation.go</code>, which uses <code>reflect.New</code> to allocate a fresh value of the same concrete type as the template, calls <code>FromMap(m)</code> to restore serializable state, and then copies function-typed fields (<code>runFunc</code>, <code>checkFunc</code>, ...) directly from the template because they cannot survive a <code>ToMap</code>/<code>FromMap</code> round-trip.</p>
+
+    <p><strong>Requirements for custom skill types:</strong></p>
+    <ul>
+        <li>Implement <code>ToMap()</code>/<code>FromMap()</code> to serialize any custom non-function fields. Fields that are neither serialized via <code>ToMap</code>/<code>FromMap</code> nor function-typed will be lost on clone. For example, <code>commandImplementation</code> overrides <code>ToMap</code>/<code>FromMap</code> to preserve <code>command</code>/<code>required</code>/<code>chdir</code>.</li>
+        <li>The embedded <code>*BaseSkill</code> / <code>*BasePlaybook</code> already implements <code>ToMap()</code>/<code>FromMap()</code> for the standard properties.</li>
+    </ul>
+    <p>A race-detector test (<code>race_detector_test.go</code>) verifies that concurrent <code>node.Run()</code> calls sharing a single skill instance do not race.</p>
+
+    <h3>Thread Safety</h3>
+    <p>Key thread-safe mechanisms: <code>Group</code> uses a mutex for dry-run mode; <code>BaseSkill</code> and <code>BasePlaybook</code> store simple properties in an <code>omni.AtomInterface</code> (thread-safe via its own <code>sync.RWMutex</code>) and guard <code>NodeConfig</code> with a per-struct <code>sync.RWMutex</code>. Combined with per-call cloning, the original shared skill instance is never mutated during parallel execution.</p>
+
+    <h2>Data Flow</h2>
+
+    <h3>Command Execution Flow</h3>
+<div class="diagram">User ──&gt; Node: RunCommand("uptime")
+Node checks IsDryRunMode
+  if Dry Run:
+    Node logs "would run command"
+    Node returns [dry-run] marker
+  else Normal Execution:
+    if persistent connection: Node ──&gt; SSH Client: Run(cmd)
+    else: Node ──&gt; SSH: RunOnce(host, port, user, key, cmd)
+    SSH ──&gt; Remote: Execute command
+    Remote ──&gt; SSH: Return output
+    SSH ──&gt; Node: Return output
+Node ──&gt; User: Return Results</div>
+
+    <h3>Skill Execution Flow</h3>
+<div class="diagram">User ──&gt; Node: Run(skill)
+Node ──&gt; Skill: skill.ToMap()
+Node:      cloneFromMap(skill, map)
+Node ──&gt; Clone: SetNodeConfig / SetDryRun / SetBecomeUser
+  if Dry Run:
+    Clone logs planned actions, returns [dry-run] Result
+  else:
+    Clone ──&gt; SSH: Run(command)
+    SSH ──&gt; Remote: Execute
+    Clone builds Result
+Clone ──&gt; Node: Return Result
+Node wraps in Results ──&gt; User</div>
+
+    <h2>Idempotency Design</h2>
+    <p>All skills follow the Check-Run pattern:</p>
+<div class="diagram">Skill Run
+  └── Check?
+        ├── Changes Needed ──&gt; Execute Changes ──&gt; Return Changed
+        └── No Changes      ──&gt; Return Unchanged</div>
+
+    <p>Example implementation:</p>
+<pre><code>func (p *MySkill) Check() (bool, error) {
+    // Check current state
+    output, _ := ssh.Run(cfg, "check command")
+    return !isAlreadyConfigured(output), nil
+}
+
+func (p *MySkill) Run() Result {
+    needsChange, _ := p.Check()
+    if !needsChange {
+        return Result{Changed: false, Message: "Already configured"}
+    }
+
+    // Apply changes
+    _, err := ssh.Run(cfg, "apply command")
+    if err != nil {
+        return Result{Changed: false, Error: err}
+    }
+
+    return Result{Changed: true, Message: "Changes applied"}
+}</code></pre>
+
+    <h2>Error Handling Strategy</h2>
+    <p>Result-based error handling. Errors bubble up with context:</p>
+<pre><code>type Result struct {
+    Changed bool
+    Message string
+    Details map[string]string
+    Error   error  // Non-nil if execution failed
+}</code></pre>
+<pre><code>output, err := ssh.Run(cfg, cmd)
+if err != nil {
+    return types.Result{
+        Changed: false,
+        Message: "Operation failed",
+        Error:   fmt.Errorf("failed to execute '%s': %w", cmd, err),
+    }
+}</code></pre>
+
+    <h2>Security Architecture</h2>
+    <h3>SSH Security</h3>
+    <ul>
+        <li>Key-based authentication only</li>
+        <li>Private keys stored in <code>~/.ssh/</code></li>
+        <li>No password authentication in framework</li>
+    </ul>
+    <h3>Dry-Run Safety</h3>
+    <p>Safety enforced at the execution layer - no way to bypass. <code>SetDryRunMode</code> propagates from Inventory &rarr; Group &rarr; Node &rarr; Skill.</p>
+
+    <h2>Extension Points</h2>
+    <h3>Custom Skills</h3>
+<pre><code>type MySkill struct {
+    *types.BaseSkill
+}
+
+func (p *MySkill) Check() (bool, error) { ... }
+func (p *MySkill) Run() types.Result { ... }
+
+// Register globally
+registry, err := ork.GetGlobalSkillRegistry()
+if err != nil {
+    log.Fatal(err)
+}
+registry.Set(mySkill)</code></pre>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="api-reference.html">API Reference</a> - Complete API documentation</li>
+        <li><a href="configuration.html">Configuration</a> - Configuration options</li>
+        <li><a href="conventions.html">Conventions</a> - Coding standards</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

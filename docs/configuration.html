@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .diagram { background: #f4f6f8; border-left: 3px solid #42b983; padding: 1rem 1.5rem; margin: 1rem 0; font-family: "SF Mono", Monaco, Inconsolata, monospace; font-size: 0.85rem; white-space: pre; overflow-x: auto; border-radius: 0 4px 4px 0; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Configuration</h1>
+
+    <p>This document describes all configuration options available in Ork.</p>
+
+    <h2>Configuration Hierarchy</h2>
+    <p>Configuration can be set at multiple levels, with more specific levels overriding broader ones. <code>NodeConfig</code> covers SSH connection, user settings, database settings, arguments, logging, dry-run mode, privilege escalation, and working directory.</p>
+
+    <h2>NodeConfig Structure</h2>
+<pre><code>type NodeConfig struct {
+    // SSH connection settings
+    SSHHost  string  // Hostname or IP address
+    SSHPort  string  // SSH port (default: "22")
+    SSHLogin string  // SSH login user
+    SSHKey   string  // Private key filename
+
+    // User settings
+    RootUser    string  // Root/admin user for privileged operations
+    NonRootUser string  // Non-root user for non-privileged operations
+
+    // Database settings
+    DBPort         string  // Database port (e.g., "3306")
+    DBRootPassword string  // Database root password
+
+    // Arguments for skills
+    Args map[string]string
+
+    // Logger for structured logging
+    Logger *slog.Logger
+
+    // Dry-run mode flag
+    IsDryRunMode bool
+
+    // BecomeUser is the user to become when executing commands via sudo.
+    // If empty, no privilege escalation is performed.
+    BecomeUser string
+
+    // Chdir is the working directory for command execution.
+    // If set, commands will be executed in this directory.
+    Chdir string
+
+    // KexAlgorithms specifies the SSH key exchange algorithms.
+    // If empty, defaults to DefaultKexAlgorithms.
+    KexAlgorithms []string
+
+    // HostKeyAlgorithms specifies the SSH host key algorithms.
+    // If empty, defaults to DefaultHostKeyAlgorithms.
+    HostKeyAlgorithms []string
+}</code></pre>
+
+    <h2>SSH Connection Settings</h2>
+
+    <h3>SSHHost</h3>
+    <p>The hostname or IP address of the remote server.</p>
+<pre><code>// Via constructor
+node := ork.NewNodeForHost("server.example.com")
+
+// Via config
+node := ork.NewNodeFromConfig(types.NodeConfig{
+    SSHHost: "192.168.1.100",
+})</code></pre>
+
+    <h3>SSHPort</h3>
+    <p>The SSH port for the connection. Default is <code>"22"</code>.</p>
+<pre><code>node := ork.NewNodeForHost("server.example.com")
+node.SetPort("2222")
+
+cfg := types.NodeConfig{
+    SSHHost: "server.example.com",
+    SSHPort: "40022",
+}</code></pre>
+
+    <h3>SSHLogin</h3>
+    <p>The SSH login user. Usually set from RootUser or NonRootUser.</p>
+
+    <h3>SSHKey</h3>
+    <p>The SSH private key filename (not full path). Keys are resolved to <code>~/.ssh/&lt;key&gt;</code>. Default is <code>"id_rsa"</code>.</p>
+<pre><code>node.SetKey("production.prv")
+
+cfg := types.NodeConfig{
+    SSHKey: "deploy_key",
+}</code></pre>
+
+    <h2>User Settings</h2>
+
+    <h3>RootUser</h3>
+    <p>The root/admin user for privileged operations. Default is <code>"root"</code>.</p>
+<pre><code>node.SetUser("admin")</code></pre>
+
+    <h3>NonRootUser</h3>
+    <p>A non-root user for operations that don't require root access.</p>
+
+    <h2>Database Settings</h2>
+
+    <h3>DBPort</h3>
+<pre><code>node.SetArg("db-port", "3307")  // Non-standard MariaDB port</code></pre>
+
+    <h3>DBRootPassword</h3>
+<pre><code>node.SetArg("root-password", "secure-password")
+results := node.Run(skills.NewSecure())</code></pre>
+
+    <h2>Arguments</h2>
+    <p>Arguments are key-value pairs passed to skills for configuration.</p>
+
+    <h3>Setting Arguments</h3>
+<pre><code>// Single argument
+node.SetArg("username", "alice")
+
+// Multiple arguments
+node.SetArg("username", "alice").
+    SetArg("shell", "/bin/bash").
+    SetArg("password", "secret123")
+
+// Replace all arguments
+node.SetArgs(map[string]string{
+    "username": "alice",
+    "shell":    "/bin/bash",
+})</code></pre>
+
+    <h3>Common Arguments by Skill</h3>
+
+    <h4>User Management</h4>
+    <table>
+        <tr><th>Argument</th><th>Description</th><th>Required</th></tr>
+        <tr><td><code>username</code></td><td>Username to create/delete</td><td>Yes</td></tr>
+        <tr><td><code>shell</code></td><td>Login shell (default: /bin/bash)</td><td>No</td></tr>
+        <tr><td><code>password</code></td><td>Initial password</td><td>No</td></tr>
+        <tr><td><code>ssh-key</code></td><td>SSH public key</td><td>No</td></tr>
+    </table>
+
+    <h4>Swap Management</h4>
+    <table>
+        <tr><th>Argument</th><th>Description</th><th>Default</th></tr>
+        <tr><td><code>size</code></td><td>Swap file size in GB</td><td>"1"</td></tr>
+        <tr><td><code>unit</code></td><td>Size unit (gb or mb)</td><td>"gb"</td></tr>
+        <tr><td><code>swappiness</code></td><td>Kernel swappiness (0-100)</td><td>"10"</td></tr>
+    </table>
+
+    <h4>MariaDB</h4>
+    <table>
+        <tr><th>Argument</th><th>Description</th><th>Required</th></tr>
+        <tr><td><code>database</code></td><td>Database name</td><td>Varies</td></tr>
+        <tr><td><code>username</code></td><td>Database username</td><td>Varies</td></tr>
+        <tr><td><code>password</code></td><td>Database password</td><td>Varies</td></tr>
+        <tr><td><code>port</code></td><td>MariaDB port</td><td>No</td></tr>
+        <tr><td><code>root-password</code></td><td>Root password</td><td>Varies</td></tr>
+    </table>
+
+    <h4>Security</h4>
+    <table>
+        <tr><th>Argument</th><th>Description</th><th>Default</th></tr>
+        <tr><td><code>non-root-user</code></td><td>User to verify before hardening</td><td>"deploy"</td></tr>
+        <tr><td><code>ssh-config-path</code></td><td>SSH config file path</td><td>"/etc/ssh/sshd_config"</td></tr>
+        <tr><td><code>max-auth-tries</code></td><td>Max auth attempts</td><td>"3"</td></tr>
+    </table>
+
+    <h3>Retrieving Arguments</h3>
+<pre><code>// Single argument
+username := node.GetArg("username")
+
+// All arguments
+args := node.GetArgs()
+for key, value := range args {
+    log.Printf("%s: %s", key, value)
+}</code></pre>
+
+    <h2>Logging</h2>
+
+    <h3>Setting a Custom Logger</h3>
+<pre><code>import "log/slog"
+
+// Create custom logger
+logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+// Set on node
+node.SetLogger(logger)
+
+// Set on group
+group.SetLogger(logger)
+
+// Set on inventory
+inv.SetLogger(logger)</code></pre>
+
+    <h3>Logger in Config</h3>
+<pre><code>cfg := types.NodeConfig{
+    Logger: slog.Default(),
+}
+
+// Or use default
+logger := cfg.GetLoggerOrDefault()</code></pre>
+
+    <h2>Dry-Run Mode</h2>
+    <p>Dry-run mode allows you to preview changes without executing commands on the server.</p>
+
+    <h3>Enabling Dry-Run</h3>
+<pre><code>// At node level
+node := ork.NewNodeForHost("server.example.com").
+    SetDryRunMode(true)
+
+// At group level
+group := ork.NewGroup("webservers")
+group.SetDryRunMode(true)
+
+// At inventory level
+inv := ork.NewInventory()
+inv.SetDryRunMode(true)</code></pre>
+
+    <h3>Propagation</h3>
+    <p>Dry-run mode propagates from parent to child:</p>
+<div class="diagram">Inventory (SetDryRunMode)
+  &darr;
+Group (inherits)
+  &darr;
+Node (inherits)
+  &darr;
+Skill (inherits)</div>
+<pre><code>// Set on inventory, affects all
+inv.SetDryRunMode(true)
+results := inv.Run(skills.NewAptUpgrade())
+// All nodes in all groups will be in dry-run mode</code></pre>
+
+    <h3>Detecting Dry-Run in Skills</h3>
+<pre><code>func (s *MySkill) Run() types.Result {
+    cfg := s.GetNodeConfig()
+
+    if cfg.IsDryRunMode {
+        return types.Result{
+            Changed: true,
+            Message: "Would execute: some-command",
+        }
+    }
+
+    // Normal execution
+    output, err := ssh.Run(cfg, "some-command")
+    // ...
+}</code></pre>
+
+    <h2>SSH Configuration Methods</h2>
+
+    <h3>Method 1: Fluent API</h3>
+<pre><code>node := ork.NewNodeForHost("server.example.com").
+    SetPort("2222").
+    SetUser("deploy").
+    SetKey("production.prv")</code></pre>
+
+    <h3>Method 2: From Config</h3>
+<pre><code>cfg := types.NodeConfig{
+    SSHHost:  "server.example.com",
+    SSHPort:  "2222",
+    RootUser: "deploy",
+    SSHKey:   "production.prv",
+    Args: map[string]string{
+        "username": "alice",
+    },
+}
+
+node := ork.NewNodeFromConfig(cfg)</code></pre>
+
+    <h3>Method 3: Build Node, Then Configure</h3>
+<pre><code>node := ork.NewNode()  // Empty node
+node.SetArg("host", "server.example.com")  // Note: this goes to Args, not SSHHost!
+// This won't work for SSH connection!</code></pre>
+    <p><strong>Note</strong>: Use <code>NewNodeForHost()</code> for SSH connections, not <code>NewNode()</code>.</p>
+
+    <h2>Inspecting Configuration</h2>
+<pre><code>node := ork.NewNodeForHost("server.example.com").
+    SetPort("2222").
+    SetUser("deploy")
+
+// Get individual values
+host := node.GetHost()    // "server.example.com"
+port := node.GetPort()    // "2222"
+user := node.GetUser()    // "deploy"
+key := node.GetKey()      // "id_rsa" (default)
+
+// Get full config
+cfg := node.GetNodeConfig()
+addr := cfg.SSHAddr()     // "server.example.com:2222"</code></pre>
+
+    <h2>SSHAddr Helper</h2>
+<pre><code>cfg := types.NodeConfig{
+    SSHHost: "server.example.com",
+    SSHPort: "2222",
+}
+
+addr := cfg.SSHAddr()  // "server.example.com:2222"
+
+// Empty port defaults to "22"
+cfg2 := types.NodeConfig{
+    SSHHost: "server.example.com",
+}
+addr2 := cfg2.SSHAddr()  // "server.example.com:22"</code></pre>
+
+    <h2>Complete Configuration Example</h2>
+<pre><code>package main
+
+import (
+    "log/slog"
+    "os"
+    "github.com/dracory/ork"
+    "github.com/dracory/ork/skills"
+    "github.com/dracory/ork/types"
+)
+
+func main() {
+    // Create structured logger
+    logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+    // Create node with full configuration
+    node := ork.NewNodeForHost("db.production.example.com").
+        SetPort("40022").
+        SetUser("admin").
+        SetKey("production_deploy.prv").
+        SetLogger(logger)
+
+    // Set skill-specific arguments
+    node.SetArg("username", "appuser").
+        SetArg("shell", "/bin/bash").
+        SetArg("ssh-key", "ssh-rsa AAAAB3...")
+
+    // Get the config for inspection
+    cfg := node.GetNodeConfig()
+    logger.Info("configuration",
+        "host", cfg.SSHHost,
+        "port", cfg.SSHPort,
+        "addr", cfg.SSHAddr(),
+    )
+
+    // Run skills
+    results := node.Run(skills.NewPing())
+    if results.Results["db.production.example.com"].Error != nil {
+        logger.Error("connection failed")
+        return
+    }
+
+    // Enable dry-run for testing
+    node.SetDryRunMode(true)
+    results = node.Run(skills.NewUserCreate())
+    logger.Info("dry-run result",
+        "changed", results.Results["db.production.example.com"].Changed,
+        "message", results.Results["db.production.example.com"].Message,
+    )
+}</code></pre>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="getting-started.html">Getting Started</a> - Basic usage</li>
+        <li><a href="api-reference.html">API Reference</a> - Complete API documentation</li>
+        <li><a href="architecture.html">Architecture</a> - System architecture</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

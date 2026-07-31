@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        h4 { color: #666; margin-top: 1.2rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>API Reference</h1>
+
+    <p>Complete reference for all public APIs in Ork.</p>
+
+    <h2>Package Overview</h2>
+    <table>
+        <tr><th>Package</th><th>Path</th><th>Purpose</th></tr>
+        <tr><td><code>ork</code></td><td><code>github.com/dracory/ork</code></td><td>Main API with Node, Group, Inventory</td></tr>
+        <tr><td><code>ssh</code></td><td><code>github.com/dracory/ork/ssh</code></td><td>SSH client utilities</td></tr>
+        <tr><td><code>skills</code></td><td><code>github.com/dracory/ork/skills</code></td><td>Built-in skill implementations</td></tr>
+        <tr><td><code>types</code></td><td><code>github.com/dracory/ork/types</code></td><td>RunnableInterface, BasePlaybook, BaseSkill, Registry, Command, Result, NodeConfig types</td></tr>
+    </table>
+
+    <h2>ork Package</h2>
+
+    <h3>NodeInterface</h3>
+    <p>The primary interface for managing a single remote server.</p>
+<pre><code>type NodeInterface interface {
+    RunnerInterface
+
+    // Configuration getters
+    GetArg(key string) string
+    GetArgs() map[string]string
+    GetNodeConfig() types.NodeConfig
+    GetHost() string
+    GetUser() string
+    GetKey() string
+    GetPort() string
+
+    // Configuration setters (fluent)
+    SetPort(port string) NodeInterface
+    SetUser(user string) NodeInterface
+    SetKey(key string) NodeInterface
+    SetArg(key, value string) NodeInterface
+    SetArgs(args map[string]string) NodeInterface
+
+    // Connection management
+    Connect() error
+    Close() error
+    IsConnected() bool
+}</code></pre>
+
+    <h4>Constructor Functions</h4>
+<pre><code>// Create node from hostname with defaults
+func NewNodeForHost(host string) NodeInterface
+
+// Create empty node for manual configuration
+func NewNode() NodeInterface
+
+// Create node from existing config
+func NewNodeFromConfig(cfg types.NodeConfig) NodeInterface</code></pre>
+
+    <h3>GroupInterface</h3>
+    <p>Manages a collection of nodes.</p>
+<pre><code>type GroupInterface interface {
+    RunnerInterface
+
+    GetName() string
+    AddNode(node NodeInterface) GroupInterface
+    GetNodes() []NodeInterface
+    WithArg(key, value string) GroupInterface
+    SetArg(key, value string) GroupInterface
+    GetArg(key string) string
+    GetArgs() map[string]string
+}</code></pre>
+<pre><code>func NewGroup(name string) GroupInterface</code></pre>
+
+    <h3>InventoryInterface</h3>
+    <p>Manages multiple groups for large-scale operations.</p>
+<pre><code>type InventoryInterface interface {
+    RunnerInterface
+
+    AddGroup(group GroupInterface) InventoryInterface
+    GetGroupByName(name string) GroupInterface
+    AddNode(node NodeInterface) InventoryInterface
+    GetNodes() []NodeInterface
+    SetMaxConcurrency(max int) InventoryInterface
+}</code></pre>
+<pre><code>func NewInventory() InventoryInterface</code></pre>
+
+    <h3>RunnerInterface</h3>
+    <p>Base interface for all executable entities.</p>
+<pre><code>type RunnerInterface interface {
+    RunCommand(cmd string) types.Results
+    Run(runnable types.RunnableInterface) types.Results
+    // Deprecated: Use Run instead.
+    RunByID(id string, opts ...types.RunnableOptions) types.Results
+    Check(runnable types.RunnableInterface) types.Results
+    GetLogger() *slog.Logger
+    SetLogger(logger *slog.Logger) RunnerInterface
+    SetDryRunMode(dryRun bool) RunnerInterface
+    GetDryRunMode() bool
+}</code></pre>
+
+    <h3>Registry Functions</h3>
+<pre><code>// Get the global skill registry singleton (lazily initialized)
+func GetGlobalSkillRegistry() (*types.Registry, error)
+
+// Create a new empty registry
+func NewSkillRegistry() *types.Registry
+
+// Create a new isolated registry with all built-in skills registered
+func NewDefaultRegistry() (*types.Registry, error)</code></pre>
+
+    <h3>CommandInterface</h3>
+    <p>Fluent interface for executing shell commands on nodes and inventories.</p>
+<pre><code>type CommandInterface interface {
+    types.RunnableInterface
+
+    // Command-specific methods
+    SetCommand(cmd string) CommandInterface
+    SetRequired(required bool) CommandInterface
+    WithCommand(cmd string) CommandInterface
+    WithRequired(required bool) CommandInterface
+    SetChdir(dir string) CommandInterface
+    WithChdir(dir string) CommandInterface
+
+    // Fluent chaining methods for RunnableInterface
+    WithDescription(description string) CommandInterface
+    WithID(id string) CommandInterface
+    WithArg(key, value string) CommandInterface
+    WithArgs(args map[string]string) CommandInterface
+    WithNodeConfig(cfg types.NodeConfig) CommandInterface
+    WithDryRun(dryRun bool) CommandInterface
+    WithTimeout(timeout interface{}) CommandInterface
+    WithBecomeUser(user string) CommandInterface
+}</code></pre>
+<pre><code>func NewCommand() CommandInterface</code></pre>
+
+    <h3>Vault Functions</h3>
+    <p>Secure vault integration for secrets management using envenc.</p>
+<pre><code>// Load keys from vault content string
+func VaultContentToKeys(vaultContent, vaultPassword string) (map[string]string, error)
+
+// Load keys from vault file
+func VaultFileToKeys(vaultFilePath, vaultPassword string) (map[string]string, error)
+
+// Hydrate environment variables from vault content string
+func VaultContentToEnv(vaultContent, vaultPassword string) error
+
+// Decrypt vault file and hydrate environment variables
+func VaultFileToEnv(vaultFilePath, vaultPassword string) error
+
+// Prompt for password and load keys from vault file
+func VaultFileToKeysWithPrompt(vaultFilePath string) (map[string]string, error)
+
+// Prompt for password and hydrate environment variables from vault file
+func VaultFileToEnvWithPrompt(vaultFilePath string) error
+
+// Prompt for password and load keys from vault content string
+func VaultContentToKeysWithPrompt(vaultContent string) (map[string]string, error)
+
+// Prompt for password and hydrate environment variables from vault content string
+func VaultContentToEnvWithPrompt(vaultContent string) error</code></pre>
+
+    <h3>Prompt Functions</h3>
+    <p>Interactive user input functions for configuration and secrets.</p>
+<pre><code>func PromptPassword(prompt string) (string, error)
+func PromptForString(prompt string) (string, error)
+func PromptForStringWithDefault(prompt, defaultValue string) (string, error)
+func PromptForPassword(prompt string) (string, error)
+func PromptForPasswordWithConfirmation(prompt string) (string, error)
+func PromptForInt(prompt string) (int, error)
+func PromptForIntWithDefault(prompt string, defaultValue int) (int, error)
+func PromptForBool(prompt string) (bool, error)
+func PromptForBoolWithDefault(prompt string, defaultValue bool) (bool, error)
+func PromptWithOptions(prompt string, options []string) (int, error)
+func PromptMultiple(configs []types.PromptConfig, existingValues ...map[string]string) (types.PromptResult, error)</code></pre>
+
+    <h3>Skill Constants</h3>
+<pre><code>const (
+    IDPing              = "ping"
+    IDAptUpdate         = "apt-update"
+    IDAptUpgrade        = "apt-upgrade"
+    IDAptStatus         = "apt-status"
+    IDReboot            = "reboot"
+    IDSwapCreate        = "swap-create"
+    IDSwapDelete        = "swap-delete"
+    IDSwapStatus        = "swap-status"
+    IDUserCreate        = "user-create"
+    IDUserDelete        = "user-delete"
+    IDUserStatus        = "user-status"
+    // ... see skills/constants.go for full list
+)</code></pre>
+
+    <h2>types Package</h2>
+
+    <h3>NodeConfig</h3>
+    <p>Central configuration structure for all remote operations.</p>
+<pre><code>type NodeConfig struct {
+    // SSH connection settings
+    SSHHost  string
+    SSHPort  string
+    SSHLogin string
+    SSHKey   string
+
+    // User settings
+    RootUser    string
+    NonRootUser string
+
+    // Database settings
+    DBPort         string
+    DBRootPassword string
+
+    // Extra arguments
+    Args map[string]string
+
+    // Logger for structured logging
+    Logger *slog.Logger
+
+    // Dry-run mode flag
+    IsDryRunMode bool
+
+    // BecomeUser is the user to become when executing commands via sudo
+    BecomeUser string
+
+    // Chdir is the working directory for command execution
+    Chdir string
+
+    // KexAlgorithms specifies the SSH key exchange algorithms.
+    // If empty, defaults to DefaultKexAlgorithms.
+    KexAlgorithms []string
+
+    // HostKeyAlgorithms specifies the SSH host key algorithms.
+    // If empty, defaults to DefaultHostKeyAlgorithms.
+    HostKeyAlgorithms []string
+}</code></pre>
+
+    <h4>Methods</h4>
+<pre><code>// SSHAddr returns host:port
+func (c NodeConfig) SSHAddr() string
+
+// GetArg retrieves from Args map
+func (c NodeConfig) GetArg(key string) string
+
+// GetArgOr retrieves with default value
+func (c NodeConfig) GetArgOr(key, defaultValue string) string
+
+// GetLoggerOrDefault returns logger or slog.Default()
+func (c NodeConfig) GetLoggerOrDefault() *slog.Logger
+
+// SetChdir sets the working directory for command execution
+func (c *NodeConfig) SetChdir(dir string)</code></pre>
+
+    <h3>RunnableInterface</h3>
+    <p>All skills must implement this interface (defined in types package).</p>
+<pre><code>type RunnableInterface interface {
+    // Identification
+    GetID() string
+    SetID(id string) RunnableInterface
+    GetDescription() string
+    SetDescription(description string) RunnableInterface
+
+    // Configuration
+    GetNodeConfig() NodeConfig
+    SetNodeConfig(cfg NodeConfig) RunnableInterface
+
+    // Arguments
+    GetArg(key string) string
+    SetArg(key, value string) RunnableInterface
+    GetArgs() map[string]string
+    SetArgs(args map[string]string) RunnableInterface
+
+    // Execution options
+    IsDryRun() bool
+    SetDryRun(dryRun bool) RunnableInterface
+    GetTimeout() time.Duration
+    SetTimeout(timeout time.Duration) RunnableInterface
+
+    // Core operations
+    Check() (bool, error)
+    Run() types.Result
+
+    // Serialization for concurrency-safe cloning
+    ToMap() map[string]any
+    FromMap(m map[string]any)
+
+    BecomeInterface
+}</code></pre>
+
+    <h3>BasePlaybook &amp; BaseSkill</h3>
+    <p>Provide default implementation of <code>RunnableInterface</code> with fluent API.</p>
+<pre><code>func NewBasePlaybook() *BasePlaybook
+func NewBaseSkill() *BaseSkill</code></pre>
+
+    <h3>Command</h3>
+    <p>Represents a shell command with its description. Used to display and execute shell commands in a structured way, especially useful in dry-run mode.</p>
+<pre><code>type Command struct {
+    Command     string
+    Description string
+}</code></pre>
+
+    <h3>BecomeInterface</h3>
+    <p>Defines privilege escalation capabilities for running commands as a different user via sudo.</p>
+<pre><code>type BecomeInterface interface {
+    SetBecomeUser(user string) BecomeInterface
+    GetBecomeUser() string
+}</code></pre>
+    <p><code>BaseBecome</code> provides a default implementation that can be embedded in other structs. <code>BaseSkill</code> already embeds <code>BaseBecome</code>.</p>
+
+    <h3>Result &amp; Results &amp; Summary</h3>
+<pre><code>type Result struct {
+    Changed bool
+    Message string
+    Details map[string]string
+    Error   error
+}
+
+type Results struct {
+    Results map[string]Result
+}
+func (r Results) Summary() Summary
+
+type Summary struct {
+    Total     int
+    Changed   int
+    Unchanged int
+    Failed    int
+}</code></pre>
+
+    <h2>ssh Package</h2>
+
+    <h3>Client</h3>
+    <p>SSH connection wrapper.</p>
+<pre><code>func NewClient(host, port, user, key string) *Client
+func (c *Client) Connect() error
+func (c *Client) Run(cmd string) (string, error)
+func (c *Client) Close() error</code></pre>
+
+    <h3>Utility Functions</h3>
+<pre><code>// RunOnce connects, runs command, and closes
+func RunOnce(host, port, user, key, cmd string) (string, error)
+
+// PrivateKeyPath returns full path to SSH key
+func PrivateKeyPath(sshKey string) string
+
+// Run with dry-run safety
+func Run(cfg types.NodeConfig, cmd string) (string, error)</code></pre>
+
+    <h2>skills Package</h2>
+
+    <h3>System Skills</h3>
+<pre><code>func ping.NewPing() types.RunnableInterface
+func apt.NewAptInstall() types.RunnableInterface
+func apt.NewAptUpdate() types.RunnableInterface
+func apt.NewAptUpgrade() types.RunnableInterface
+func apt.NewAptStatus() types.RunnableInterface
+func reboot.NewReboot() types.RunnableInterface</code></pre>
+
+    <h3>User Management</h3>
+<pre><code>func user.NewUserCreate() types.RunnableInterface
+func user.NewUserDelete() types.RunnableInterface
+func user.NewUserList() types.RunnableInterface
+func user.NewUserStatus() types.RunnableInterface
+func user.NewUserAddToGroup() types.RunnableInterface</code></pre>
+
+    <h3>Swap Management</h3>
+<pre><code>func swap.NewSwapCreate() types.RunnableInterface
+func swap.NewSwapDelete() types.RunnableInterface
+func swap.NewSwapStatus() types.RunnableInterface</code></pre>
+
+    <h3>Security</h3>
+<pre><code>func security.NewSshHarden() types.RunnableInterface
+func security.NewKernelHarden() types.RunnableInterface
+func security.NewAideInstall() types.RunnableInterface
+func security.NewAuditdInstall() types.RunnableInterface
+func security.NewSshChangePort() types.RunnableInterface</code></pre>
+
+    <h3>Firewall</h3>
+<pre><code>func ufw.NewUfwInstall() types.RunnableInterface
+func ufw.NewUfwStatus() types.RunnableInterface
+func ufw.NewAllow() types.RunnableInterface
+func ufw.NewDeny() types.RunnableInterface
+func ufw.NewDelete() types.RunnableInterface
+func ufw.NewEnable() types.RunnableInterface
+func ufw.NewDefault() types.RunnableInterface
+func ufw.NewDisable() types.RunnableInterface
+func ufw.NewReset() types.RunnableInterface
+func ufw.NewAllowMariaDB() types.RunnableInterface</code></pre>
+
+    <h3>Fail2ban</h3>
+<pre><code>func fail2ban.NewFail2banInstall() types.RunnableInterface
+func fail2ban.NewFail2banStatus() types.RunnableInterface</code></pre>
+
+    <h3>MariaDB</h3>
+<pre><code>func mariadb.NewInstall() types.RunnableInterface
+func mariadb.NewSecure() types.RunnableInterface
+func mariadb.NewCreateDB() types.RunnableInterface
+func mariadb.NewCreateUser() types.RunnableInterface
+func mariadb.NewStatus() types.RunnableInterface
+func mariadb.NewListDBs() types.RunnableInterface
+func mariadb.NewListUsers() types.RunnableInterface
+func mariadb.NewBackup() types.RunnableInterface
+func mariadb.NewBackupEncrypt() types.RunnableInterface
+func mariadb.NewSecurityAudit() types.RunnableInterface
+func mariadb.NewChangePort() types.RunnableInterface
+func mariadb.NewEnableSSL() types.RunnableInterface
+func mariadb.NewEnableEncryption() types.RunnableInterface
+func mariadb.NewPurge() types.RunnableInterface</code></pre>
+
+    <h2>Usage Examples</h2>
+
+    <h3>Basic Node Operations</h3>
+<pre><code>// Create and configure node
+node := ork.NewNodeForHost("server.example.com").
+    SetPort("2222").
+    SetUser("deploy").
+    SetKey("production.prv")
+
+// Get configuration
+host := node.GetHost()  // "server.example.com"
+port := node.GetPort()  // "2222"
+
+// Set skill arguments
+node.SetArg("username", "alice").
+    SetArg("shell", "/bin/bash")
+
+// Run command
+results := node.RunCommand("uptime")
+result := results.Results["server.example.com"]</code></pre>
+
+    <h3>Working with Results</h3>
+<pre><code>results := inv.Run(skills.NewAptUpdate())
+
+// Get summary
+summary := results.Summary()
+fmt.Printf("Total: %d, Changed: %d, Failed: %d\n",
+    summary.Total, summary.Changed, summary.Failed)
+
+// Iterate over results
+for host, result := range results.Results {
+    if result.Error != nil {
+        log.Printf("%s failed: %v", host, result.Error)
+    } else if result.Changed {
+        log.Printf("%s changed: %s", host, result.Message)
+    } else {
+        log.Printf("%s unchanged", host)
+    }
+
+    // Access details
+    for key, value := range result.Details {
+        log.Printf("  %s: %s", key, value)
+    }
+}</code></pre>
+
+    <h3>Creating Custom Skills</h3>
+<pre><code>type MySkill struct {
+    *types.BaseSkill
+}
+
+func (p *MySkill) Check() (bool, error) {
+    cfg := p.GetNodeConfig()
+    output, _ := ssh.Run(cfg, "check command")
+    return !strings.Contains(output, "configured"), nil
+}
+
+func (p *MySkill) Run() types.Result {
+    needsChange, _ := p.Check()
+    if !needsChange {
+        return types.Result{
+            Changed: false,
+            Message: "Already configured",
+        }
+    }
+
+    cfg := p.GetNodeConfig()
+    _, err := ssh.Run(cfg, "apply command")
+    if err != nil {
+        return types.Result{
+            Changed: false,
+            Error: err,
+        }
+    }
+
+    return types.Result{
+        Changed: true,
+        Message: "Configuration applied",
+    }
+}
+
+func NewMySkill() types.RunnableInterface {
+    skill := types.NewBaseSkill()
+    skill.SetID("my-skill")
+    skill.SetDescription("Does something useful")
+    return &amp;MySkill{BaseSkill: skill}
+}</code></pre>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="overview.html">Overview</a> - High-level introduction</li>
+        <li><a href="getting-started.html">Getting Started</a> - Step-by-step guide</li>
+        <li><a href="architecture.html">Architecture</a> - System architecture</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

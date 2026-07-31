@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dry-Run Mode - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Dry-Run Mode</h1>
+
+    <p>Preview what changes would be made without actually executing commands on the server. Safety is enforced at the SSH execution layer - <strong>no commands execute on the server in dry-run mode</strong>.</p>
+
+    <h2>Enable Dry-Run</h2>
+
+    <h3>Node Level</h3>
+<pre><code>node := ork.NewNodeForHost("server.example.com").
+    SetDryRunMode(true)
+results := node.Run(skills.NewAptUpgrade())
+// Commands are logged but not executed</code></pre>
+
+    <h3>Group Level</h3>
+<pre><code>webGroup := ork.NewGroup("webservers")
+webGroup.SetDryRunMode(true)
+webGroup.AddNode(node1)
+webGroup.AddNode(node2)
+// All nodes inherit dry-run mode</code></pre>
+
+    <h3>Inventory Level</h3>
+<pre><code>inv := ork.NewInventory()
+inv.SetDryRunMode(true)
+inv.AddGroup(webGroup)
+results := inv.RunCommand("uptime")
+// All groups and nodes inherit dry-run mode</code></pre>
+
+    <h2>How It Works</h2>
+    <ol>
+        <li><strong>Safety at execution layer</strong>: <code>ssh.Run()</code> checks <code>cfg.IsDryRunMode</code> and returns <code>"[dry-run]"</code> without executing commands</li>
+        <li><strong>Automatic propagation</strong>: Dry-run mode propagates from Inventory &rarr; Groups &rarr; Nodes at execution time</li>
+        <li><strong>Thread-safe</strong>: Uses mutex protection for concurrent access to dry-run state</li>
+    </ol>
+
+    <h2>Detecting Dry-Run in Skills</h2>
+<pre><code>func (s *MySkill) Run() types.Result {
+    cfg := s.GetNodeConfig()
+    output, _ := ssh.Run(cfg, "apt-get upgrade -y")
+
+    if output == "[dry-run]" {
+        return types.Result{
+            Changed: true,
+            Message: "Would run: apt-get upgrade -y",
+        }
+    }
+    // Normal execution handling...
+}</code></pre>
+    <p><strong>Note:</strong> Even if a skill doesn't check for the <code>[dry-run]</code> marker, <strong>safety is guaranteed</strong> - no commands execute on the server when dry-run mode is enabled.</p>
+
+    <h2>Best Practices</h2>
+    <ol>
+        <li><strong>Always test with dry-run first</strong>: Before running potentially destructive operations</li>
+        <li><strong>Use with Check</strong>: Combine dry-run with idempotency checks for maximum safety</li>
+        <li><strong>Review output</strong>: Check the dry-run output to ensure it matches expectations</li>
+        <li><strong>Document dry-run behavior</strong>: Custom skills should document their dry-run behavior</li>
+    </ol>
+
+    <h2>Example Workflow</h2>
+<pre><code>// Step 1: Check if changes needed
+checkResults := node.Check(skills.NewAptUpgrade())
+if !checkResults.Results["server.example.com"].Changed {
+    log.Println("No updates needed")
+    return
+}
+
+// Step 2: Dry-run to preview
+node.SetDryRunMode(true)
+dryRunResults := node.Run(skills.NewAptUpgrade())
+log.Printf("Dry-run output: %s", dryRunResults.Results["server.example.com"].Message)
+
+// Step 3: Disable dry-run and execute
+node.SetDryRunMode(false)
+results := node.Run(skills.NewAptUpgrade())
+log.Printf("Execution result: %s", results.Results["server.example.com"].Message)</code></pre>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="idempotency.html">Idempotency</a> - Check-Run pattern for safe operations</li>
+        <li><a href="configuration.html">Configuration</a> - Dry-run mode configuration details</li>
+        <li><a href="skills.html">Skills</a> - Built-in automation tasks</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

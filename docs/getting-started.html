@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Getting Started with Ork</h1>
+
+    <p>This guide will walk you through installing Ork, configuring your first node, and running your first skill.</p>
+
+    <h2>Prerequisites</h2>
+    <p>Before you begin, ensure you have:</p>
+    <ul>
+        <li><strong>Go 1.25+</strong> installed on your machine</li>
+        <li><strong>SSH key pair</strong> for authentication to remote servers</li>
+        <li><strong>Root access</strong> to the target servers (or a user with sudo privileges)</li>
+    </ul>
+
+    <h2>Installation</h2>
+    <p>Install Ork using <code>go get</code>:</p>
+<pre><code>go get github.com/dracory/ork</code></pre>
+    <p>Or add it to your <code>go.mod</code>:</p>
+<pre><code>require github.com/dracory/ork v1.0.0</code></pre>
+
+    <h2>Your First Node</h2>
+    <p>A <code>Node</code> represents a single remote server. Here's how to create and use one:</p>
+
+    <h3>Basic Node Creation</h3>
+<pre><code>package main
+
+import (
+    "log"
+    "github.com/dracory/ork"
+)
+
+func main() {
+    // Create a node with default settings (port 22, user root, key id_rsa)
+    node := ork.NewNodeForHost("server.example.com")
+
+    // Run a simple command
+    results := node.RunCommand("uptime")
+    result := results.Results["server.example.com"]
+
+    if result.Error != nil {
+        log.Fatal(result.Error)
+    }
+
+    log.Println(result.Message)
+}</code></pre>
+
+    <h3>Custom Configuration</h3>
+    <p>Configure your node using the fluent API:</p>
+<pre><code>node := ork.NewNodeForHost("server.example.com").
+    SetPort("2222").
+    SetUser("deploy").
+    SetKey("production.prv")</code></pre>
+
+    <h2>Your First Skill</h2>
+    <p>Skills are reusable automation tasks. Ork includes many built-in skills.</p>
+
+    <h3>Ping (Connectivity Check)</h3>
+<pre><code>package main
+
+import (
+    "log"
+    "github.com/dracory/ork"
+    "github.com/dracory/ork/skills"
+)
+
+func main() {
+    node := ork.NewNodeForHost("server.example.com")
+
+    // Check SSH connectivity
+    results := node.Run(skills.NewPing())
+    result := results.Results["server.example.com"]
+
+    if result.Error != nil {
+        log.Fatalf("Connection failed: %v", result.Error)
+    }
+
+    log.Println(result.Message)
+}</code></pre>
+
+    <h3>Update Packages</h3>
+<pre><code>// Update the package database
+results := node.Run(skills.NewAptUpdate())
+if result.Error != nil {
+    log.Fatal(result.Error)
+}
+
+// Upgrade installed packages
+results = node.Run(skills.NewAptUpgrade())</code></pre>
+
+    <h3>Create a User</h3>
+<pre><code>// Set arguments for the skill
+node.WithArg("username", "alice").
+    WithArg("shell", "/bin/bash")
+
+// Run the user creation skill
+results := node.Run(skills.NewUserCreate())
+result := results.Results["server.example.com"]
+
+if result.Error != nil {
+    log.Fatalf("User creation failed: %v", result.Error)
+}
+
+if result.Changed {
+    log.Printf("User created: %s", result.Message)
+} else {
+    log.Println("User already exists - no changes made")
+}</code></pre>
+
+    <h2>Working with Groups</h2>
+    <p>Groups allow you to manage multiple servers together:</p>
+<pre><code>// Create a group
+webGroup := ork.NewGroup("webservers").
+    WithArg("env", "production")
+
+// Add nodes to the group
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
+
+// Run skill on all nodes in the group
+results := webGroup.Run(skills.NewAptUpdate())
+
+// Check results for all nodes
+for host, result := range results.Results {
+    if result.Error != nil {
+        log.Printf("%s failed: %v", host, result.Error)
+    } else {
+        log.Printf("%s: %s (changed: %v)", host, result.Message, result.Changed)
+    }
+}</code></pre>
+
+    <h2>Working with Inventory</h2>
+    <p>For large-scale operations, use an Inventory:</p>
+<pre><code>// Create inventory
+inv := ork.NewInventory()
+
+// Create and add groups
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
+
+// Add another group
+dbGroup := ork.NewGroup("databases")
+dbGroup.AddNode(ork.NewNodeForHost("db1.example.com"))
+
+// Add groups to inventory
+inv.AddGroup(webGroup)
+inv.AddGroup(dbGroup)
+
+// Run skill across all nodes
+results := inv.Run(skills.NewPing())
+
+// Get summary
+summary := results.Summary()
+log.Printf("Total: %d, Changed: %d, Failed: %d",
+    summary.Total, summary.Changed, summary.Failed)</code></pre>
+
+    <h2>Dry-Run Mode</h2>
+    <p>Always test your operations before running them:</p>
+<pre><code>// Enable dry-run mode
+node := ork.NewNodeForHost("server.example.com").
+    SetDryRunMode(true)
+
+// This will log what would happen without making changes
+results := node.Run(skills.NewAptUpgrade())</code></pre>
+    <p>Dry-run mode works at all levels:</p>
+    <ul>
+        <li><strong>Node level</strong>: <code>node.SetDryRunMode(true)</code></li>
+        <li><strong>Group level</strong>: <code>group.SetDryRunMode(true)</code></li>
+        <li><strong>Inventory level</strong>: <code>inv.SetDryRunMode(true)</code></li>
+    </ul>
+
+    <h2>Privilege Escalation (Become)</h2>
+    <p>Ork supports running commands as a different user using <code>sudo</code>. This is useful when you need to perform operations that require elevated privileges.</p>
+
+    <h3>Basic Usage</h3>
+<pre><code>// Connect as a non-root user, but run commands as root
+node := ork.NewNodeForHost("server.example.com").
+    SetUser("deploy").
+    SetBecomeUser("root")
+
+// This will run: sudo -u root apt-get update
+results := node.RunCommand("apt-get update")</code></pre>
+
+    <h3>Running as Specific Users</h3>
+<pre><code>// Run database commands as the postgres user
+node.SetBecomeUser("postgres")
+results := node.RunCommand("psql -c 'SELECT version()'")
+
+// Run web server commands as www-data
+node.SetBecomeUser("www-data")
+results := node.RunCommand("systemctl restart nginx")</code></pre>
+
+    <h3>Precedence Rules</h3>
+    <p>The become user setting follows this precedence (highest to lowest):</p>
+    <ol>
+        <li><strong>Skill level</strong>: Skill-specific setting</li>
+        <li><strong>Node level</strong>: Node-specific setting</li>
+        <li><strong>Group level</strong>: Group setting (propagated to all nodes)</li>
+        <li><strong>Inventory level</strong>: Inventory setting (propagated to all groups and nodes)</li>
+    </ol>
+
+    <h3>Security Considerations</h3>
+    <ul>
+        <li>The connecting user must have <code>sudo</code> privileges to the target user</li>
+        <li>No password support is currently implemented - ensure passwordless sudo is configured</li>
+        <li>Use the principle of least privilege - only escalate when necessary</li>
+    </ul>
+
+    <h2>Persistent Connections</h2>
+    <p>For multiple operations, use a persistent connection:</p>
+<pre><code>node := ork.NewNodeForHost("server.example.com")
+
+// Establish connection
+if err := node.Connect(); err != nil {
+    log.Fatal(err)
+}
+defer node.Close()
+
+// These commands reuse the same SSH connection
+results1 := node.RunCommand("uptime")
+results2 := node.RunCommand("df -h")
+results3 := node.RunCommand("free -m")</code></pre>
+
+    <h2>Checking Before Running</h2>
+    <p>Use <code>Check</code> to preview if changes would be made:</p>
+<pre><code>// Check if changes would be made
+results := node.Check(skills.NewAptUpgrade())
+result := results.Results["server.example.com"]
+
+if result.Changed {
+    log.Println("Would upgrade packages")
+    // Now actually run it
+    results = node.Run(skills.NewAptUpgrade())
+} else {
+    log.Println("No upgrades needed")
+}</code></pre>
+
+    <h2>Next Steps</h2>
+    <ul>
+        <li><a href="architecture.html">Architecture</a> - System architecture and design patterns</li>
+        <li><a href="api-reference.html">API Reference</a> - Complete API documentation</li>
+        <li><a href="skills.html">Skills</a> - All available built-in skills</li>
+        <li><a href="cheatsheet.html">Cheatsheet</a> - Quick reference for common operations</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

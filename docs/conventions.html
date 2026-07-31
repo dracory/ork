@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conventions - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Ork Conventions</h1>
+
+    <p>Coding and documentation standards for Ork.</p>
+
+    <h2>Naming Conventions</h2>
+
+    <h3>Interfaces</h3>
+    <ul>
+        <li>Suffix with <code>Interface</code></li>
+        <li>PascalCase</li>
+    </ul>
+<pre><code>type NodeInterface interface { }
+type RunnableInterface interface { }
+type RunnerInterface interface { }</code></pre>
+
+    <h3>Implementations</h3>
+    <ul>
+        <li>Suffix with <code>Implementation</code></li>
+        <li>camelCase (unexported)</li>
+    </ul>
+<pre><code>type nodeImplementation struct { }
+type groupImplementation struct { }</code></pre>
+
+    <h3>Constructor Functions</h3>
+    <ul>
+        <li>Prefix with <code>New</code></li>
+        <li>Describe what is being created</li>
+        <li>Use <code>For</code> prefix when parameter is the main identifier</li>
+    </ul>
+<pre><code>func NewNodeForHost(host string) NodeInterface
+func NewGroup(name string) GroupInterface
+func NewInventory() InventoryInterface
+func NewPing() types.RunnableInterface
+func NewAptUpdate() types.RunnableInterface</code></pre>
+
+    <h3>Constants</h3>
+    <ul>
+        <li><strong>Skill IDs</strong>: <code>ID</code> prefix, PascalCase</li>
+        <li><strong>Argument keys</strong>: <code>Arg</code> prefix, PascalCase</li>
+        <li><strong>Default values</strong>: <code>Default</code> prefix, PascalCase</li>
+        <li><strong>Ork package aliases</strong>: <code>Skill</code> prefix</li>
+    </ul>
+<pre><code>const IDAptUpdate = "apt-update"
+const IDUserCreate = "user-create"
+
+const ArgUsername = "username"
+const ArgSize = "size"
+
+const DefaultShell = "/bin/bash"
+const DefaultSize = "1"
+
+const SkillAptUpdate = skills.IDAptUpdate</code></pre>
+
+    <h2>File Organization</h2>
+
+    <h3>Package Layout</h3>
+<pre><code>package/
+├── doc.go           # Package documentation
+├── interface.go     # Interface definitions
+├── implementation.go # Implementation
+├── constants.go     # Constants
+├── functions.go     # Utility functions
+└── *_test.go        # Tests</code></pre>
+
+    <h3>Example: skills Package</h3>
+<pre><code>skills/mypackage/
+├── constants.go     # Arg constants, defaults
+├── myskill.go       # Skill implementation
+└── myskill_test.go</code></pre>
+
+    <h2>Code Style</h2>
+
+    <h3>Imports</h3>
+    <p>Group imports: standard library, third-party, internal</p>
+<pre><code>import (
+    "fmt"
+    "log/slog"
+
+    "github.com/dracory/ork/types"
+    "github.com/dracory/ork/ssh"
+)</code></pre>
+
+    <h3>Documentation Comments</h3>
+    <p>All public items must have documentation:</p>
+<pre><code>// MySkill does something useful.
+// It provides functionality for X and Y.
+type MySkill struct {
+    *types.BaseSkill
+}
+
+// Check determines if changes are needed.
+// Returns true if the system is not in the desired state.
+func (m *MySkill) Check() (bool, error) {
+    // ...
+}
+
+// Run executes the skill and returns the result.
+// Changed will be true if modifications were made.
+func (m *MySkill) Run() types.Result {
+    // ...
+}</code></pre>
+
+    <h3>Error Handling</h3>
+    <p>Always wrap errors with context:</p>
+<pre><code>output, err := ssh.Run(cfg, cmd)
+if err != nil {
+    return types.Result{
+        Changed: false,
+        Error:   fmt.Errorf("failed to execute '%s': %w", cmd, err),
+    }
+}</code></pre>
+
+    <h3>Fluent Interface</h3>
+    <p>Return interface type for chaining:</p>
+<pre><code>func (n *nodeImplementation) SetPort(port string) NodeInterface {
+    n.cfg.SSHPort = port
+    return n
+}</code></pre>
+
+    <h2>Skill Structure</h2>
+
+    <h3>Standard Skill Template</h3>
+<pre><code>// Package mypackage provides skills for X.
+package mypackage
+
+import (
+    "fmt"
+    "github.com/dracory/ork/skills"
+    "github.com/dracory/ork/ssh"
+    "github.com/dracory/ork/types"
+)
+
+// Arg constants
+const (
+    ArgParameter = "parameter"
+    DefaultValue = "default"
+)
+
+// MySkill does something.
+type MySkill struct {
+    *types.BaseSkill
+}
+
+// Check determines if changes are needed.
+func (m *MySkill) Check() (bool, error) {
+    cfg := m.GetNodeConfig()
+    parameter := m.GetArg(ArgParameter)
+
+    // Check current state
+    output, _ := ssh.Run(cfg, fmt.Sprintf("check %s", parameter))
+    return output == "", nil
+}
+
+// Run executes the skill.
+func (m *MySkill) Run() types.Result {
+    cfg := m.GetNodeConfig()
+    parameter := m.GetArg(ArgParameter)
+
+    if parameter == "" {
+        parameter = DefaultValue
+    }
+
+    // Handle dry-run
+    if cfg.IsDryRunMode {
+        return types.Result{
+            Changed: true,
+            Message: fmt.Sprintf("Would run with %s", parameter),
+        }
+    }
+
+    // Check if needed
+    needsChange, _ := m.Check()
+    if !needsChange {
+        return types.Result{
+            Changed: false,
+            Message: "Already configured",
+        }
+    }
+
+    // Apply changes
+    _, err := ssh.Run(cfg, fmt.Sprintf("apply %s", parameter))
+    if err != nil {
+        return types.Result{
+            Changed: false,
+            Error:   err,
+        }
+    }
+
+    return types.Result{
+        Changed: true,
+        Message: fmt.Sprintf("Applied %s", parameter),
+        Details: map[string]string{
+            "parameter": parameter,
+        },
+    }
+}
+
+// NewMySkill creates a new instance.
+func NewMySkill() types.RunnableInterface {
+    return &amp;MySkill{
+        BaseSkill: types.NewBaseSkill().
+            WithID(skills.IDMySkill).
+            WithDescription("Does something useful"),
+    }
+}</code></pre>
+
+    <h2>Documentation Standards</h2>
+
+    <h3>LiveWiki Frontmatter</h3>
+    <p>Every documentation file must include frontmatter:</p>
+<pre><code>---
+path: filename.md
+page-type: overview | reference | tutorial | module | changelog
+summary: One-line description of this page's content.
+tags: [tag1, tag2, tag3]
+created: YYYY-MM-DD
+updated: YYYY-MM-DD
+version: X.Y.Z
+---</code></pre>
+
+    <h3>Page Types</h3>
+    <table>
+        <tr><th>Type</th><th>Use For</th></tr>
+        <tr><td><code>overview</code></td><td>High-level introductions</td></tr>
+        <tr><td><code>reference</code></td><td>API docs, technical specs</td></tr>
+        <tr><td><code>tutorial</code></td><td>Step-by-step guides</td></tr>
+        <tr><td><code>module</code></td><td>Package documentation</td></tr>
+        <tr><td><code>changelog</code></td><td>Version history</td></tr>
+    </table>
+
+    <h2>Testing Conventions</h2>
+
+    <h3>Test File Names</h3>
+<pre><code>node_implementation.go &rarr; node_implementation_test.go</code></pre>
+
+    <h3>Test Function Names</h3>
+<pre><code>func TestNode_NewNodeForHost(t *testing.T)
+func TestNode_RunCommand(t *testing.T)
+func TestAptUpdate_Check(t *testing.T)</code></pre>
+
+    <h3>Mock Pattern</h3>
+<pre><code>func TestSomething(t *testing.T) {
+    // Mock SSH via SetRunFunc
+    ssh.SetRunFunc(func(cfg types.NodeConfig, cmd types.Command) (string, error) {
+        return "mocked", nil
+    })
+    defer ssh.SetRunFunc(nil)
+
+    // Test
+    // ...
+}</code></pre>
+
+    <h2>Commit Message Format</h2>
+<pre><code>&lt;type&gt;: &lt;short summary&gt;
+
+&lt;body&gt;
+
+&lt;footer&gt;</code></pre>
+    <p>Types:</p>
+    <ul>
+        <li><code>feat</code>: New feature</li>
+        <li><code>fix</code>: Bug fix</li>
+        <li><code>docs</code>: Documentation</li>
+        <li><code>test</code>: Tests</li>
+        <li><code>refactor</code>: Code refactoring</li>
+        <li><code>chore</code>: Maintenance</li>
+    </ul>
+    <p>Example:</p>
+<pre><code>feat: add mysql backup skill
+
+- Implements mysqldump-based backup
+- Supports compression and encryption
+- Includes comprehensive tests</code></pre>
+
+    <h2>See Also</h2>
+    <ul>
+        <li><a href="architecture.html">Architecture</a> - System architecture and design patterns</li>
+        <li><a href="troubleshooting.html">Troubleshooting</a> - Common issues</li>
+        <li><a href="api-reference.html">API Reference</a> - Complete API documentation</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>
