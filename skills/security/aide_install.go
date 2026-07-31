@@ -1,12 +1,31 @@
 ﻿package security
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
+
+// aideConfigContent is appended to /etc/aide/aide.conf to monitor critical
+// paths. Kept as a constant so the content is shell-escaped at runtime
+// instead of embedded in a fragile heredoc.
+const aideConfigContent = `
+# Custom monitoring rules
+/etc/ssh p+i+n+u+g+s+b+acl+xattrs+sha256
+/etc/mysql p+i+n+u+g+s+b+acl+xattrs+sha256
+/var/lib/mysql p+i+n+u+g+s+b+acl+xattrs+sha256
+/root/.ssh p+i+n+u+g+s+b+acl+xattrs+sha256
+/home p+i+n+u+g+s+b+acl+xattrs+sha256
+`
+
+// aideCronContent is the daily AIDE check script written to
+// /etc/cron.daily/aide-check.
+const aideCronContent = `#!/bin/bash
+/usr/bin/aide --check | mail -s "AIDE Daily Report - $(hostname)" root
+`
 
 // AideInstall installs and configures AIDE (Advanced Intrusion Detection Environment).
 // AIDE is a file integrity monitoring tool that creates a database of file checksums and
@@ -77,21 +96,16 @@ func (a *AideInstall) Run() types.Result {
 	cmdInstallStr += skills.DpkgConfOptions                 // keep local config, use maintainer default if unmodified
 
 	cmdInstall := types.Command{Command: cmdInstallStr, Description: "Install AIDE package"}
-	cmdConfigure := types.Command{Command: `cat >> /etc/aide/aide.conf << 'EOF'
-
-# Custom monitoring rules
-/etc/ssh p+i+n+u+g+s+b+acl+xattrs+sha256
-/etc/mysql p+i+n+u+g+s+b+acl+xattrs+sha256
-/var/lib/mysql p+i+n+u+g+s+b+acl+xattrs+sha256
-/root/.ssh p+i+n+u+g+s+b+acl+xattrs+sha256
-/home p+i+n+u+g+s+b+acl+xattrs+sha256
-EOF`, Description: "Configure AIDE monitoring rules"}
+	cmdConfigure := types.Command{
+		Command:     fmt.Sprintf("printf '%%s' %s >> %s", skills.ShellEscapeContent(aideConfigContent), skills.ShellEscapeArg("/etc/aide/aide.conf")),
+		Description: "Configure AIDE monitoring rules",
+	}
 	cmdInit := types.Command{Command: `aideinit`, Description: "Initialize AIDE database"}
 	cmdMoveDb := types.Command{Command: `mv /var/lib/aide/aide.db.new /var/lib/aide/aide.db`, Description: "Move AIDE database to active location"}
-	cmdCron := types.Command{Command: `cat > /etc/cron.daily/aide-check << 'EOF'
-#!/bin/bash
-/usr/bin/aide --check | mail -s "AIDE Daily Report - $(hostname)" root
-EOF`, Description: "Create AIDE daily cron job"}
+	cmdCron := types.Command{
+		Command:     fmt.Sprintf("printf '%%s' %s > %s", skills.ShellEscapeContent(aideCronContent), skills.ShellEscapeArg("/etc/cron.daily/aide-check")),
+		Description: "Create AIDE daily cron job",
+	}
 	cmdChmod := types.Command{Command: `chmod +x /etc/cron.daily/aide-check`, Description: "Make AIDE cron job executable"}
 
 	// Check for dry-run mode - display actual commands

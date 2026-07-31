@@ -2,7 +2,6 @@
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/dracory/ork/skills"
@@ -158,7 +157,7 @@ func (f *FileCreate) Run() types.Result {
 
 	// Write content using a heredoc-free approach: printf is safer for content
 	// with special characters. We escape single quotes in content.
-	escContent := shellEscapeContent(content)
+	escContent := skills.ShellEscapeContent(content)
 	cmdWrite := types.Command{
 		Command:     fmt.Sprintf("printf '%%s' %s > %s", escContent, escPath),
 		Description: "Write file: " + path,
@@ -230,13 +229,6 @@ func (f *FileCreate) Run() types.Result {
 			"owner": owner,
 		},
 	}
-}
-
-// shellEscapeContent escapes file content for safe use in a printf '%s' argument.
-// It wraps the content in single quotes and escapes embedded single quotes
-// using the POSIX sequence '\â€.
-func shellEscapeContent(content string) string {
-	return "'" + strings.ReplaceAll(content, "'", "'\\''") + "'"
 }
 
 // SetPath sets the file path and returns FileCreate for chaining.

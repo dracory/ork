@@ -1,10 +1,14 @@
 package skills
 
-import "github.com/dracory/ork/ssh"
+import (
+	"strings"
+
+	"github.com/dracory/ork/ssh"
+)
 
 // ShellEscapeArg escapes a string for safe use as an unquoted shell argument.
 // It wraps the value in single quotes and escapes any embedded single quotes
-// using the POSIX sequence '\”. This prevents shell injection when
+// using the POSIX sequence '\". This prevents shell injection when
 // interpolating user-supplied values (usernames, package names, etc.) into
 // shell commands.
 //
@@ -17,4 +21,13 @@ import "github.com/dracory/ork/ssh"
 //	cmd := fmt.Sprintf("id %s", safe)
 func ShellEscapeArg(s string) string {
 	return ssh.ShellEscapeArg(s)
+}
+
+// ShellEscapeContent escapes file content for safe use in a printf '%s'
+// argument. It wraps the content in single quotes and escapes embedded
+// single quotes using the POSIX sequence '\”.
+// This is the shared version used by fs.FileCreate, security.AideInstall,
+// security.AuditdInstall, and other skills that write file content via printf.
+func ShellEscapeContent(content string) string {
+	return "'" + strings.ReplaceAll(content, "'", "'\\''") + "'"
 }

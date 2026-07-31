@@ -1,12 +1,69 @@
 ﻿package security
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
+
+// auditRulesContent is the audit rules configuration written to
+// /etc/audit/rules.d/audit.rules. Kept as a constant so the content is
+// shell-escaped at runtime instead of embedded in a fragile heredoc.
+const auditRulesContent = `# Remove any existing rules
+-D
+
+# Buffer Size
+-b 8192
+
+# Failure Mode (0=silent 1=printk 2=panic)
+-f 1
+
+# Monitor password file changes
+-w /etc/passwd -p wa -k passwd_changes
+-w /etc/shadow -p wa -k shadow_changes
+-w /etc/group -p wa -k group_changes
+-w /etc/gshadow -p wa -k gshadow_changes
+
+# Monitor SSH configuration
+-w /etc/ssh/sshd_config -p wa -k sshd_config_changes
+
+# Monitor MySQL/MariaDB configuration
+-w /etc/mysql/ -p wa -k mysql_config_changes
+-w /var/lib/mysql/ -p wa -k mysql_data_changes
+
+# Monitor sudoers
+-w /etc/sudoers -p wa -k sudoers_changes
+-w /etc/sudoers.d/ -p wa -k sudoers_changes
+
+# Monitor system calls by root
+-a always,exit -F arch=b64 -S execve -F euid=0 -k root_commands
+-a always,exit -F arch=b32 -S execve -F euid=0 -k root_commands
+
+# Monitor file deletions
+-a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -k file_deletion
+-a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -k file_deletion
+
+# Monitor permission changes
+-a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -k perm_mod
+-a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -k perm_mod
+-a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -k ownership_mod
+-a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -k ownership_mod
+
+# Monitor network connections
+-a always,exit -F arch=b64 -S socket -S connect -k network_connections
+-a always,exit -F arch=b32 -S socket -S connect -k network_connections
+
+# Monitor kernel module loading
+-w /sbin/insmod -p x -k module_insertion
+-w /sbin/rmmod -p x -k module_removal
+-w /sbin/modprobe -p x -k module_modification
+
+# Make configuration immutable (requires reboot to change)
+-e 2
+`
 
 // AuditdInstall installs and configures the Linux Audit Framework.
 // Auditd provides detailed logging of system calls and file access, enabling
@@ -78,59 +135,10 @@ func (a *AuditdInstall) Run() types.Result {
 	cmdInstallStr += skills.DpkgConfOptions                       // keep local config, use maintainer default if unmodified
 
 	cmdInstall := types.Command{Command: cmdInstallStr, Description: "Install auditd package"}
-	cmdRules := types.Command{Command: `cat > /etc/audit/rules.d/audit.rules << 'EOF'
-# Remove any existing rules
--D
-
-# Buffer Size
--b 8192
-
-# Failure Mode (0=silent 1=printk 2=panic)
--f 1
-
-# Monitor password file changes
--w /etc/passwd -p wa -k passwd_changes
--w /etc/shadow -p wa -k shadow_changes
--w /etc/group -p wa -k group_changes
--w /etc/gshadow -p wa -k gshadow_changes
-
-# Monitor SSH configuration
--w /etc/ssh/sshd_config -p wa -k sshd_config_changes
-
-# Monitor MySQL/MariaDB configuration
--w /etc/mysql/ -p wa -k mysql_config_changes
--w /var/lib/mysql/ -p wa -k mysql_data_changes
-
-# Monitor sudoers
--w /etc/sudoers -p wa -k sudoers_changes
--w /etc/sudoers.d/ -p wa -k sudoers_changes
-
-# Monitor system calls by root
--a always,exit -F arch=b64 -S execve -F euid=0 -k root_commands
--a always,exit -F arch=b32 -S execve -F euid=0 -k root_commands
-
-# Monitor file deletions
--a always,exit -F arch=b64 -S unlink -S unlinkat -S rename -S renameat -k file_deletion
--a always,exit -F arch=b32 -S unlink -S unlinkat -S rename -S renameat -k file_deletion
-
-# Monitor permission changes
--a always,exit -F arch=b64 -S chmod -S fchmod -S fchmodat -k perm_mod
--a always,exit -F arch=b32 -S chmod -S fchmod -S fchmodat -k perm_mod
--a always,exit -F arch=b64 -S chown -S fchown -S fchownat -S lchown -k ownership_mod
--a always,exit -F arch=b32 -S chown -S fchown -S fchownat -S lchown -k ownership_mod
-
-# Monitor network connections
--a always,exit -F arch=b64 -S socket -S connect -k network_connections
--a always,exit -F arch=b32 -S socket -S connect -k network_connections
-
-# Monitor kernel module loading
--w /sbin/insmod -p x -k module_insertion
--w /sbin/rmmod -p x -k module_removal
--w /sbin/modprobe -p x -k module_modification
-
-# Make configuration immutable (requires reboot to change)
--e 2
-EOF`, Description: "Create audit rules"}
+	cmdRules := types.Command{
+		Command:     fmt.Sprintf("printf '%%s' %s > %s", skills.ShellEscapeContent(auditRulesContent), skills.ShellEscapeArg("/etc/audit/rules.d/audit.rules")),
+		Description: "Create audit rules",
+	}
 	cmdLoadRules := types.Command{Command: `augenrules --load`, Description: "Load audit rules"}
 	cmdEnable := types.Command{Command: `systemctl enable auditd`, Description: "Enable auditd service"}
 	cmdStart := types.Command{Command: `systemctl start auditd`, Description: "Start auditd service"}
