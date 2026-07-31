@@ -1,11 +1,64 @@
 # Proposal: Playbook Dependencies
 
-**Date:** 2026-04-12  
-**Status:** Not Implemented  
-**Updated:** 2026-05-05  
+**Date:** 2026-04-12
+**Status:** Rejected. Superseded by Playbooks; built on deprecated APIs.
+**Rejected:** 2026-07-31
 **Author:** System Review
 
-> **Note:** Allows playbooks to declare dependencies (e.g., apt-upgrade depends on apt-update).
+> **Why rejected:** The core problem this proposal targets — ensuring prerequisites run
+> before dependent operations (e.g., `apt-update` before `apt-upgrade`, user creation
+> before app deployment) — is already handled by Playbooks, which shipped in the same
+> release cycle (see [../implemented/2026-04-15-playbooks.md](../implemented/2026-04-15-playbooks.md)
+> and [../playbooks.html](../../playbooks.html)). A playbook's `Run()` method sequences
+> skills in order today; this proposal's own "What Exists Today" section even
+> acknowledges that "skills can be chained manually in playbooks."
+>
+> Beyond coverage overlap, the proposal as written is no longer buildable in its
+> current form:
+>
+> 1. **Built on a deprecated API.** The resolver design leans on `registry.FindByID()`
+>    plus `RunByID(id)`, but `types.RunnerInterface.RunByID` is now marked
+>    `// Deprecated: Use Run() instead.` (see `types/runner_interface.go`). Building a
+>    new subsystem on top of a deprecated entry point is the wrong direction; the
+>    proposal would need to be reworked against `node.Run(runnable)`.
+>
+> 2. **CLI integration is unreachable.** Phase 3 (`--with-deps` flag, `ork deps`
+>    command) depends on the CLI tool proposal, which was itself rejected
+>    (see [rejected/2026-04-12-cli-tool.md](rejected/2026-04-12-cli-tool.md) — Ork
+>    remains a Go library). A third of the implementation plan is therefore moot.
+>
+> 3. **Title vs. body conflates skills and playbooks.** Titled "Playbook Dependencies"
+>    but the examples declare dependencies on atomic *skills* (`apt-update`,
+>    `apt-upgrade`, `user-create`). With playbooks now shipped as `RunnableInterface`
+>    orchestrators, the realistic dependency unit would be a playbook depending on
+>    other playbooks, not a skill depending on a skill — skills are already atomic and
+>    idempotent. The proposal never resolves this ambiguity.
+>
+> 4. **Code sketches do not compile against the shipped interfaces.** The examples
+>    declare `func (a *AptUpgrade) Run() types.Result` (returning `Result`), but
+>    `ExecuteParallel` then calls `p.Run()` and treats the return as `error`
+>    (`if err := p.Run(); err != nil`). The real `RunnableInterface.Run()` returns
+>    `Result`, not `error`. The `DependencyGraph` / `DependencyResolver` sketches would
+>    need to be rewritten against the current interfaces before they could even be
+>    evaluated.
+>
+> 5. **The hard question is unanswered.** Open Question #4 — "How to handle
+>    dependencies across different hosts?" — is the actually-difficult part, and it
+>    has no answer. The resolver design assumes a single `NodeConfig`, but Ork's whole
+>    purpose is multi-node inventory execution. A dependency system that only works
+>    on a single node is a significant scope limitation that the proposal does not
+>    address.
+>
+> **What is still genuinely valuable** (and worth a fresh, smaller proposal if ever
+> needed): (a) cycle detection, if a multi-playbook orchestration layer is ever built;
+> (b) within-execution caching ("don't re-run `apt-update` on this host if it already
+> ran this session") — but this is better modeled as a property of the runner/registry
+> than as a dependency-resolver feature.
+>
+> **Path forward:** If automatic dependency resolution ever becomes wanted, re-propose
+> it against the current `RunnableInterface` / `node.Run(runnable)` APIs, drop the CLI
+> integration, and scope it to playbook-on-playbook dependencies with a real answer for
+> cross-host execution.
 
 ## Current State
 

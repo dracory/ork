@@ -1,8 +1,24 @@
 # Playbooks
 
-**Status:** Proposed
+**Status:** Completed
 **Created:** 2026-04-15
+**Completed:** 2026-07-31
 **Author:** @dracory
+
+> **Note:** The core of this proposal (BasePlaybook, RunnableInterface unification,
+> `ork.NewPlaybook()`, examples, and tests) has been implemented. See
+> [../playbooks.html](../playbooks.html) for the canonical user-facing documentation.
+>
+> The **Helper Utilities** package (`ork/playbook` with `RunSequential`, `RunParallel`,
+> `RunWithRetry`, `ParseResult`, `SkillBuilder`) described in the "Helper Utilities"
+> section below was **not** implemented and remains open. If still desired, it should be
+> tracked as a separate, smaller proposal.
+>
+> Some code sketches in this document (the `BasePlaybook` struct shape, the
+> `RunnableInterface` listing, and `config.NodeConfig` references) no longer match the
+> shipped implementation, which uses an `omni.AtomInterface`-backed state, requires
+> `ToMap()`/`FromMap()` on `RunnableInterface`, and uses `types.NodeConfig`. Treat the
+> sketches as historical design intent, not current API.
 
 ## Problem Statement
 

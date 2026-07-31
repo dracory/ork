@@ -1,8 +1,53 @@
 # Composites
 
-**Status:** Proposed
+**Status:** Rejected. Superseded by Playbooks.
 **Created:** 2026-04-15
+**Rejected:** 2026-07-31
 **Author:** @dracory
+
+> **Why rejected:** The use case this proposal targets — orchestrating multiple skills
+> in sequence with reduced boilerplate — is already covered by Playbooks, which shipped
+> in the same release cycle (see [../implemented/2026-04-15-playbooks.md](../implemented/2026-04-15-playbooks.md)
+> and [../playbooks.html](../../playbooks.html)).
+>
+> Specifically:
+>
+> 1. **Coverage overlap.** Anything a Composite can express (sequential execution,
+>    simple conditions, repeat-N loops) can be written today as a playbook's `Run()`
+>    method using ordinary Go control flow. Playbooks were implemented; Composites were
+>    not. Building a second, narrower orchestration primitive on top of the existing
+>    one adds surface area without adding capability.
+>
+> 2. **API divergence.** Composites proposed a parallel execution path
+>    (`node.RunComposite(composite)` returning `CompositeResult{Steps, Summary}`) that
+>    does not flow through the unified `RunnableInterface` / `node.Run(runnable)` API
+>    that the rest of the codebase now standardizes on. Introducing it would fragment
+>    the execution model: callers would need to know whether a given orchestration is a
+>    "composite" or a "playbook" to know which method to call and which result type to
+>    unpack. The playbooks design deliberately avoided this by making a playbook just
+>    another `RunnableInterface`.
+>
+> 3. **The remaining gap is boilerplate, not capability.** The one thing raw playbooks
+>    don't provide is the *convenience* of `AddSkill(a).AddSkill(b).StopOnError(false)`.
+>    That is a real ergonomic gap for the pure-sequential case, but it is better solved
+>    by small helper functions (`RunSequential`, `RunWithRetry`, etc.) inside a
+>    `playbook` helper package — which the playbooks proposal already sketches in its
+>    "Helper Utilities" section — than by a whole new orchestration type with its own
+>    result aggregation, its own `RunnerInterface` extension, and its own Group/Inventory
+>    overloads. Helpers compose with the existing API; a new `RunComposite` path does not.
+>
+> 4. **Stale design.** The proposal predates the shipped `RunnableInterface` unification
+>    and still references `types.SkillInterface`, `node.RunSkill(...)`, and a
+>    `config.NodeConfig` type that no longer exist in that form. The `Composite` struct
+>    sketch and the `RunComposite` implementation sketch would need to be rewritten
+>    against the current `RunnableInterface` / `types.NodeConfig` / `node.Run(runnable)`
+>    APIs before they could even be evaluated for implementation.
+>
+> **Path forward:** If the sequential-convenience ergonomics turn out to matter in
+> practice, pursue the helper-utilities package from the playbooks proposal
+> (`RunSequential`, `RunParallel`, `RunWithRetry`, `ParseResult`) as a separate, smaller
+> proposal. That keeps a single orchestration primitive (playbooks) and a single
+> execution API (`node.Run`), and adds convenience without divergence.
 
 ## Problem Statement
 
