@@ -7,6 +7,7 @@ import (
 	"github.com/dracory/ork/skills/fail2ban"
 	"github.com/dracory/ork/skills/fs"
 	"github.com/dracory/ork/skills/mariadb"
+	"github.com/dracory/ork/skills/php"
 	"github.com/dracory/ork/skills/ping"
 	"github.com/dracory/ork/skills/reboot"
 	"github.com/dracory/ork/skills/security"
@@ -127,6 +128,11 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		fs.NewSymlinkCreate(),
 		fs.NewRename(),
 		fs.NewRemove(),
+		php.NewInstall(),
+		php.NewUninstall(),
+		php.NewInstallComposer(),
+		php.NewUninstallComposer(),
+		php.NewUpdateComposer(),
 	}
 
 	if err := reg.SetAll(skills); err != nil {
