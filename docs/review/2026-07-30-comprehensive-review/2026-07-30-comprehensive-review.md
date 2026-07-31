@@ -12,7 +12,9 @@ The codebase is well-documented and disciplined: fluent APIs, consistent skill b
 
 ## Critical
 
-### 1. Shared, mutable skill instances make concurrent `Inventory`/`Group` execution unsafe
+### 1. ~~Shared, mutable skill instances make concurrent `Inventory`/`Group` execution unsafe~~ ✅ Fixed
+
+**Status:** Fixed. `Run()`, `RunByID()`, and `Check()` in `node_implementation.go` now clone the skill via `cloneFromMap()` (ToMap/FromMap round-trip) before mutating any state. Each goroutine gets its own isolated clone — the original shared instance is never mutated. `BaseSkill`/`BasePlaybook` state is stored in `omni.Atom` (thread-safe) with `NodeConfig` protected by `sync.RWMutex`.
 
 `Inventory.Run()` / `RunByID()` / `Check()` spin up one goroutine per node (`inventory_implementation.go:170-223`) and call `skill.SetNodeConfig(...)`, `skill.SetArgs(...)`, `skill.Run()` on **the same `RunnableInterface` instance** for every node when:
 
@@ -34,7 +36,7 @@ This affects the primary, documented usage pattern, not an edge case.
 
 ## Low / Style
 
-- `RunnerInterface.RunByID` is marked `// Deprecated: Use Run() instead` (`runner_interface.go:23-25`), but `Run()` has the identical shared-instance hazard described in finding #1 — the deprecation doesn't actually steer users away from the underlying problem.
+- ~~`RunnerInterface.RunByID` is marked `// Deprecated: Use Run() instead` (`runner_interface.go:23-25`), but `Run()` has the identical shared-instance hazard described in finding #1 — the deprecation doesn't actually steer users away from the underlying problem.~~ ✅ Fixed — `RunByID` deprecation comment updated to note both methods are concurrency-safe via cloning; the deprecation is now purely about API simplicity.
 
 ---
 

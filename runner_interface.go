@@ -21,7 +21,9 @@ type RunnerInterface interface {
 	Run(runnable types.RunnableInterface) types.Results
 
 	// RunByID executes a skill by ID from the registry.
-	// Deprecated: Use Run() instead.
+	// Deprecated: Use Run() instead for direct skill instance passing.
+	// Both Run() and RunByID() are concurrency-safe — each call clones the
+	// skill before mutation, so shared instances are never modified.
 	RunByID(id string, opts ...types.RunnableOptions) types.Results
 
 	// Check runs the runnable's check mode to determine if changes would be made.
