@@ -259,3 +259,84 @@ func TestFileCreate_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestFileCreate_SetPath verifies that SetPath sets the path arg and returns *FileCreate.
+func TestFileCreate_SetPath(t *testing.T) {
+	skill := NewFileCreate()
+	skill.SetPath("/var/www/myapp/config.json")
+
+	if skill.GetArg(ArgPath) != "/var/www/myapp/config.json" {
+		t.Errorf("Expected path '/var/www/myapp/config.json', got '%s'", skill.GetArg(ArgPath))
+	}
+}
+
+// TestFileCreate_SetContent verifies that SetContent sets the content arg and returns *FileCreate.
+func TestFileCreate_SetContent(t *testing.T) {
+	skill := NewFileCreate()
+	skill.SetContent(`{"key": "value"}`)
+
+	if skill.GetArg(ArgContent) != `{"key": "value"}` {
+		t.Errorf("Expected content to match, got '%s'", skill.GetArg(ArgContent))
+	}
+}
+
+// TestFileCreate_SetOwner verifies that SetOwner sets the owner arg and returns *FileCreate.
+func TestFileCreate_SetOwner(t *testing.T) {
+	skill := NewFileCreate()
+	skill.SetOwner("www-data:www-data")
+
+	if skill.GetArg(ArgOwner) != "www-data:www-data" {
+		t.Errorf("Expected owner 'www-data:www-data', got '%s'", skill.GetArg(ArgOwner))
+	}
+}
+
+// TestFileCreate_SetMode verifies that SetMode sets the mode arg and returns *FileCreate.
+func TestFileCreate_SetMode(t *testing.T) {
+	skill := NewFileCreate()
+	skill.SetMode("644")
+
+	if skill.GetArg(ArgMode) != "644" {
+		t.Errorf("Expected mode '644', got '%s'", skill.GetArg(ArgMode))
+	}
+}
+
+// TestFileCreate_SetOverwrite verifies that SetOverwrite sets the overwrite arg and returns *FileCreate.
+func TestFileCreate_SetOverwrite(t *testing.T) {
+	skill := NewFileCreate()
+	skill.SetOverwrite(true)
+
+	if skill.GetArg(ArgOverwrite) != "true" {
+		t.Errorf("Expected overwrite 'true', got '%s'", skill.GetArg(ArgOverwrite))
+	}
+
+	skill.SetOverwrite(false)
+	if skill.GetArg(ArgOverwrite) != "false" {
+		t.Errorf("Expected overwrite 'false', got '%s'", skill.GetArg(ArgOverwrite))
+	}
+}
+
+// TestFileCreate_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestFileCreate_TypedSetters_Chaining(t *testing.T) {
+	skill := NewFileCreate().
+		SetPath("/var/www/myapp/config.json").
+		SetContent(`{"key": "value"}`).
+		SetOwner("www-data:www-data").
+		SetMode("644").
+		SetOverwrite(true)
+
+	if skill.GetArg(ArgPath) != "/var/www/myapp/config.json" {
+		t.Errorf("Expected path '/var/www/myapp/config.json', got '%s'", skill.GetArg(ArgPath))
+	}
+	if skill.GetArg(ArgContent) != `{"key": "value"}` {
+		t.Errorf("Expected content to match, got '%s'", skill.GetArg(ArgContent))
+	}
+	if skill.GetArg(ArgOwner) != "www-data:www-data" {
+		t.Errorf("Expected owner 'www-data:www-data', got '%s'", skill.GetArg(ArgOwner))
+	}
+	if skill.GetArg(ArgMode) != "644" {
+		t.Errorf("Expected mode '644', got '%s'", skill.GetArg(ArgMode))
+	}
+	if skill.GetArg(ArgOverwrite) != "true" {
+		t.Errorf("Expected overwrite 'true', got '%s'", skill.GetArg(ArgOverwrite))
+	}
+}

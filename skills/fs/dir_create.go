@@ -226,6 +226,30 @@ func (d *DirCreate) Run() types.Result {
 	}
 }
 
+// SetPath sets the directory path and returns DirCreate for chaining.
+func (d *DirCreate) SetPath(path string) *DirCreate {
+	d.BaseSkill.SetArg(ArgPath, path)
+	return d
+}
+
+// SetOwner sets the owner (user:group) and returns DirCreate for chaining.
+func (d *DirCreate) SetOwner(owner string) *DirCreate {
+	d.BaseSkill.SetArg(ArgOwner, owner)
+	return d
+}
+
+// SetMode sets the permissions (octal, e.g. "755") and returns DirCreate for chaining.
+func (d *DirCreate) SetMode(mode string) *DirCreate {
+	d.BaseSkill.SetArg(ArgMode, mode)
+	return d
+}
+
+// SetParents sets whether to create parent directories and returns DirCreate for chaining.
+func (d *DirCreate) SetParents(parents bool) *DirCreate {
+	d.BaseSkill.SetArg(ArgParents, fmt.Sprintf("%v", parents))
+	return d
+}
+
 // WithNodeConfig sets the node config and returns DirCreate for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (d *DirCreate) WithNodeConfig(cfg types.NodeConfig) *DirCreate {

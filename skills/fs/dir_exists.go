@@ -68,6 +68,12 @@ func (d *DirExists) Run() types.Result {
 	}
 }
 
+// SetPath sets the directory path and returns DirExists for chaining.
+func (d *DirExists) SetPath(path string) *DirExists {
+	d.BaseSkill.SetArg(ArgPath, path)
+	return d
+}
+
 // WithNodeConfig sets the node config and returns DirExists for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (d *DirExists) WithNodeConfig(cfg types.NodeConfig) *DirExists {

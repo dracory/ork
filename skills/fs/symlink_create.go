@@ -112,6 +112,18 @@ func (s *SymlinkCreate) Run() types.Result {
 	}
 }
 
+// SetTarget sets the symlink target path and returns SymlinkCreate for chaining.
+func (s *SymlinkCreate) SetTarget(target string) *SymlinkCreate {
+	s.BaseSkill.SetArg(ArgTarget, target)
+	return s
+}
+
+// SetLink sets the symlink path itself and returns SymlinkCreate for chaining.
+func (s *SymlinkCreate) SetLink(link string) *SymlinkCreate {
+	s.BaseSkill.SetArg(ArgLink, link)
+	return s
+}
+
 // WithNodeConfig sets the node config and returns SymlinkCreate for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (s *SymlinkCreate) WithNodeConfig(cfg types.NodeConfig) *SymlinkCreate {

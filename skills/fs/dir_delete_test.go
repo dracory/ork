@@ -203,3 +203,61 @@ func TestDirDelete_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestDirDelete_SetPath verifies that SetPath sets the path arg and returns *DirDelete.
+func TestDirDelete_SetPath(t *testing.T) {
+	skill := NewDirDelete()
+	skill.SetPath("/tmp/old-build")
+
+	if skill.GetArg(ArgPath) != "/tmp/old-build" {
+		t.Errorf("Expected path '/tmp/old-build', got '%s'", skill.GetArg(ArgPath))
+	}
+}
+
+// TestDirDelete_SetRecursive verifies that SetRecursive sets the recursive arg and returns *DirDelete.
+func TestDirDelete_SetRecursive(t *testing.T) {
+	skill := NewDirDelete()
+	skill.SetRecursive(true)
+
+	if skill.GetArg(ArgRecursive) != "true" {
+		t.Errorf("Expected recursive 'true', got '%s'", skill.GetArg(ArgRecursive))
+	}
+
+	skill.SetRecursive(false)
+	if skill.GetArg(ArgRecursive) != "false" {
+		t.Errorf("Expected recursive 'false', got '%s'", skill.GetArg(ArgRecursive))
+	}
+}
+
+// TestDirDelete_SetForce verifies that SetForce sets the force arg and returns *DirDelete.
+func TestDirDelete_SetForce(t *testing.T) {
+	skill := NewDirDelete()
+	skill.SetForce(true)
+
+	if skill.GetArg(ArgForce) != "true" {
+		t.Errorf("Expected force 'true', got '%s'", skill.GetArg(ArgForce))
+	}
+
+	skill.SetForce(false)
+	if skill.GetArg(ArgForce) != "false" {
+		t.Errorf("Expected force 'false', got '%s'", skill.GetArg(ArgForce))
+	}
+}
+
+// TestDirDelete_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestDirDelete_TypedSetters_Chaining(t *testing.T) {
+	skill := NewDirDelete().
+		SetPath("/tmp/old-build").
+		SetRecursive(true).
+		SetForce(false)
+
+	if skill.GetArg(ArgPath) != "/tmp/old-build" {
+		t.Errorf("Expected path '/tmp/old-build', got '%s'", skill.GetArg(ArgPath))
+	}
+	if skill.GetArg(ArgRecursive) != "true" {
+		t.Errorf("Expected recursive 'true', got '%s'", skill.GetArg(ArgRecursive))
+	}
+	if skill.GetArg(ArgForce) != "false" {
+		t.Errorf("Expected force 'false', got '%s'", skill.GetArg(ArgForce))
+	}
+}

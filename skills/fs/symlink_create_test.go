@@ -231,3 +231,37 @@ func TestSymlinkCreate_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestSymlinkCreate_SetTarget verifies that SetTarget sets the target arg and returns *SymlinkCreate.
+func TestSymlinkCreate_SetTarget(t *testing.T) {
+	skill := NewSymlinkCreate()
+	skill.SetTarget("/opt/node/bin/pm2")
+
+	if skill.GetArg(ArgTarget) != "/opt/node/bin/pm2" {
+		t.Errorf("Expected target '/opt/node/bin/pm2', got '%s'", skill.GetArg(ArgTarget))
+	}
+}
+
+// TestSymlinkCreate_SetLink verifies that SetLink sets the link arg and returns *SymlinkCreate.
+func TestSymlinkCreate_SetLink(t *testing.T) {
+	skill := NewSymlinkCreate()
+	skill.SetLink("/usr/local/bin/pm2")
+
+	if skill.GetArg(ArgLink) != "/usr/local/bin/pm2" {
+		t.Errorf("Expected link '/usr/local/bin/pm2', got '%s'", skill.GetArg(ArgLink))
+	}
+}
+
+// TestSymlinkCreate_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestSymlinkCreate_TypedSetters_Chaining(t *testing.T) {
+	skill := NewSymlinkCreate().
+		SetTarget("/opt/node/bin/pm2").
+		SetLink("/usr/local/bin/pm2")
+
+	if skill.GetArg(ArgTarget) != "/opt/node/bin/pm2" {
+		t.Errorf("Expected target '/opt/node/bin/pm2', got '%s'", skill.GetArg(ArgTarget))
+	}
+	if skill.GetArg(ArgLink) != "/usr/local/bin/pm2" {
+		t.Errorf("Expected link '/usr/local/bin/pm2', got '%s'", skill.GetArg(ArgLink))
+	}
+}

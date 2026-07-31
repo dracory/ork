@@ -164,6 +164,24 @@ func (f *FileCopy) Run() types.Result {
 	}
 }
 
+// SetSrc sets the source path and returns FileCopy for chaining.
+func (f *FileCopy) SetSrc(src string) *FileCopy {
+	f.BaseSkill.SetArg(ArgSrc, src)
+	return f
+}
+
+// SetDst sets the destination path and returns FileCopy for chaining.
+func (f *FileCopy) SetDst(dst string) *FileCopy {
+	f.BaseSkill.SetArg(ArgDst, dst)
+	return f
+}
+
+// SetForce sets whether to overwrite destination and returns FileCopy for chaining.
+func (f *FileCopy) SetForce(force bool) *FileCopy {
+	f.BaseSkill.SetArg(ArgForce, fmt.Sprintf("%v", force))
+	return f
+}
+
 // WithNodeConfig sets the node config and returns FileCopy for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (f *FileCopy) WithNodeConfig(cfg types.NodeConfig) *FileCopy {

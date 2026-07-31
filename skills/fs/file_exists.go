@@ -68,6 +68,12 @@ func (f *FileExists) Run() types.Result {
 	}
 }
 
+// SetPath sets the file path and returns FileExists for chaining.
+func (f *FileExists) SetPath(path string) *FileExists {
+	f.BaseSkill.SetArg(ArgPath, path)
+	return f
+}
+
 // WithNodeConfig sets the node config and returns FileExists for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (f *FileExists) WithNodeConfig(cfg types.NodeConfig) *FileExists {

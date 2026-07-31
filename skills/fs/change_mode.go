@@ -120,6 +120,24 @@ func (c *ChangeMode) Run() types.Result {
 	}
 }
 
+// SetPath sets the file/directory path and returns ChangeMode for chaining.
+func (c *ChangeMode) SetPath(path string) *ChangeMode {
+	c.BaseSkill.SetArg(ArgPath, path)
+	return c
+}
+
+// SetMode sets the permissions (octal, e.g. "755") and returns ChangeMode for chaining.
+func (c *ChangeMode) SetMode(mode string) *ChangeMode {
+	c.BaseSkill.SetArg(ArgMode, mode)
+	return c
+}
+
+// SetRecursive sets whether to apply recursively and returns ChangeMode for chaining.
+func (c *ChangeMode) SetRecursive(recursive bool) *ChangeMode {
+	c.BaseSkill.SetArg(ArgRecursive, fmt.Sprintf("%v", recursive))
+	return c
+}
+
 // WithNodeConfig sets the node config and returns ChangeMode for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (c *ChangeMode) WithNodeConfig(cfg types.NodeConfig) *ChangeMode {

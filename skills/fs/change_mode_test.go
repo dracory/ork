@@ -231,3 +231,56 @@ func TestChangeMode_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestChangeMode_SetPath verifies that SetPath sets the path arg and returns *ChangeMode.
+func TestChangeMode_SetPath(t *testing.T) {
+	skill := NewChangeMode()
+	skill.SetPath("/var/www/myapp")
+
+	if skill.GetArg(ArgPath) != "/var/www/myapp" {
+		t.Errorf("Expected path '/var/www/myapp', got '%s'", skill.GetArg(ArgPath))
+	}
+}
+
+// TestChangeMode_SetMode verifies that SetMode sets the mode arg and returns *ChangeMode.
+func TestChangeMode_SetMode(t *testing.T) {
+	skill := NewChangeMode()
+	skill.SetMode("755")
+
+	if skill.GetArg(ArgMode) != "755" {
+		t.Errorf("Expected mode '755', got '%s'", skill.GetArg(ArgMode))
+	}
+}
+
+// TestChangeMode_SetRecursive verifies that SetRecursive sets the recursive arg as a string bool and returns *ChangeMode.
+func TestChangeMode_SetRecursive(t *testing.T) {
+	skill := NewChangeMode()
+	skill.SetRecursive(true)
+
+	if skill.GetArg(ArgRecursive) != "true" {
+		t.Errorf("Expected recursive 'true', got '%s'", skill.GetArg(ArgRecursive))
+	}
+
+	skill.SetRecursive(false)
+	if skill.GetArg(ArgRecursive) != "false" {
+		t.Errorf("Expected recursive 'false', got '%s'", skill.GetArg(ArgRecursive))
+	}
+}
+
+// TestChangeMode_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestChangeMode_TypedSetters_Chaining(t *testing.T) {
+	skill := NewChangeMode().
+		SetPath("/var/www/myapp").
+		SetMode("755").
+		SetRecursive(true)
+
+	if skill.GetArg(ArgPath) != "/var/www/myapp" {
+		t.Errorf("Expected path '/var/www/myapp', got '%s'", skill.GetArg(ArgPath))
+	}
+	if skill.GetArg(ArgMode) != "755" {
+		t.Errorf("Expected mode '755', got '%s'", skill.GetArg(ArgMode))
+	}
+	if skill.GetArg(ArgRecursive) != "true" {
+		t.Errorf("Expected recursive 'true', got '%s'", skill.GetArg(ArgRecursive))
+	}
+}

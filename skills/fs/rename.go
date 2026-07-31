@@ -141,6 +141,24 @@ func (r *Rename) Run() types.Result {
 	}
 }
 
+// SetSrc sets the source path and returns Rename for chaining.
+func (r *Rename) SetSrc(src string) *Rename {
+	r.BaseSkill.SetArg(ArgSrc, src)
+	return r
+}
+
+// SetDst sets the destination path and returns Rename for chaining.
+func (r *Rename) SetDst(dst string) *Rename {
+	r.BaseSkill.SetArg(ArgDst, dst)
+	return r
+}
+
+// SetForce sets whether to overwrite destination and returns Rename for chaining.
+func (r *Rename) SetForce(force bool) *Rename {
+	r.BaseSkill.SetArg(ArgForce, fmt.Sprintf("%v", force))
+	return r
+}
+
 // WithNodeConfig sets the node config and returns Rename for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (r *Rename) WithNodeConfig(cfg types.NodeConfig) *Rename {

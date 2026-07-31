@@ -201,3 +201,13 @@ func TestFileExists_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestFileExists_SetPath verifies that SetPath sets the path arg and returns *FileExists.
+func TestFileExists_SetPath(t *testing.T) {
+	skill := NewFileExists()
+	skill.SetPath("/etc/hostname")
+
+	if skill.GetArg(ArgPath) != "/etc/hostname" {
+		t.Errorf("Expected path '/etc/hostname', got '%s'", skill.GetArg(ArgPath))
+	}
+}

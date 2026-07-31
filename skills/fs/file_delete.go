@@ -108,6 +108,12 @@ func (f *FileDelete) Run() types.Result {
 	}
 }
 
+// SetPath sets the file path and returns FileDelete for chaining.
+func (f *FileDelete) SetPath(path string) *FileDelete {
+	f.BaseSkill.SetArg(ArgPath, path)
+	return f
+}
+
 // WithNodeConfig sets the node config and returns FileDelete for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (f *FileDelete) WithNodeConfig(cfg types.NodeConfig) *FileDelete {

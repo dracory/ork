@@ -123,6 +123,24 @@ func (c *ChangeOwner) Run() types.Result {
 	}
 }
 
+// SetPath sets the file/directory path and returns ChangeOwner for chaining.
+func (c *ChangeOwner) SetPath(path string) *ChangeOwner {
+	c.BaseSkill.SetArg(ArgPath, path)
+	return c
+}
+
+// SetOwner sets the owner (user:group) and returns ChangeOwner for chaining.
+func (c *ChangeOwner) SetOwner(owner string) *ChangeOwner {
+	c.BaseSkill.SetArg(ArgOwner, owner)
+	return c
+}
+
+// SetRecursive sets whether to apply recursively and returns ChangeOwner for chaining.
+func (c *ChangeOwner) SetRecursive(recursive bool) *ChangeOwner {
+	c.BaseSkill.SetArg(ArgRecursive, fmt.Sprintf("%v", recursive))
+	return c
+}
+
 // WithNodeConfig sets the node config and returns ChangeOwner for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (c *ChangeOwner) WithNodeConfig(cfg types.NodeConfig) *ChangeOwner {

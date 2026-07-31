@@ -232,3 +232,56 @@ func TestFileCopy_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestFileCopy_SetSrc verifies that SetSrc sets the src arg and returns *FileCopy.
+func TestFileCopy_SetSrc(t *testing.T) {
+	skill := NewFileCopy()
+	skill.SetSrc("/etc/ssh/sshd_config")
+
+	if skill.GetArg(ArgSrc) != "/etc/ssh/sshd_config" {
+		t.Errorf("Expected src '/etc/ssh/sshd_config', got '%s'", skill.GetArg(ArgSrc))
+	}
+}
+
+// TestFileCopy_SetDst verifies that SetDst sets the dst arg and returns *FileCopy.
+func TestFileCopy_SetDst(t *testing.T) {
+	skill := NewFileCopy()
+	skill.SetDst("/etc/ssh/sshd_config.bak")
+
+	if skill.GetArg(ArgDst) != "/etc/ssh/sshd_config.bak" {
+		t.Errorf("Expected dst '/etc/ssh/sshd_config.bak', got '%s'", skill.GetArg(ArgDst))
+	}
+}
+
+// TestFileCopy_SetForce verifies that SetForce sets the force arg and returns *FileCopy.
+func TestFileCopy_SetForce(t *testing.T) {
+	skill := NewFileCopy()
+	skill.SetForce(true)
+
+	if skill.GetArg(ArgForce) != "true" {
+		t.Errorf("Expected force 'true', got '%s'", skill.GetArg(ArgForce))
+	}
+
+	skill.SetForce(false)
+	if skill.GetArg(ArgForce) != "false" {
+		t.Errorf("Expected force 'false', got '%s'", skill.GetArg(ArgForce))
+	}
+}
+
+// TestFileCopy_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestFileCopy_TypedSetters_Chaining(t *testing.T) {
+	skill := NewFileCopy().
+		SetSrc("/etc/ssh/sshd_config").
+		SetDst("/etc/ssh/sshd_config.bak").
+		SetForce(true)
+
+	if skill.GetArg(ArgSrc) != "/etc/ssh/sshd_config" {
+		t.Errorf("Expected src '/etc/ssh/sshd_config', got '%s'", skill.GetArg(ArgSrc))
+	}
+	if skill.GetArg(ArgDst) != "/etc/ssh/sshd_config.bak" {
+		t.Errorf("Expected dst '/etc/ssh/sshd_config.bak', got '%s'", skill.GetArg(ArgDst))
+	}
+	if skill.GetArg(ArgForce) != "true" {
+		t.Errorf("Expected force 'true', got '%s'", skill.GetArg(ArgForce))
+	}
+}

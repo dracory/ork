@@ -236,6 +236,36 @@ func shellEscapeContent(content string) string {
 	return "'" + strings.ReplaceAll(content, "'", "'\\''") + "'"
 }
 
+// SetPath sets the file path and returns FileCreate for chaining.
+func (f *FileCreate) SetPath(path string) *FileCreate {
+	f.BaseSkill.SetArg(ArgPath, path)
+	return f
+}
+
+// SetContent sets the file content and returns FileCreate for chaining.
+func (f *FileCreate) SetContent(content string) *FileCreate {
+	f.BaseSkill.SetArg(ArgContent, content)
+	return f
+}
+
+// SetOwner sets the owner (user:group) and returns FileCreate for chaining.
+func (f *FileCreate) SetOwner(owner string) *FileCreate {
+	f.BaseSkill.SetArg(ArgOwner, owner)
+	return f
+}
+
+// SetMode sets the permissions (octal, e.g. "644") and returns FileCreate for chaining.
+func (f *FileCreate) SetMode(mode string) *FileCreate {
+	f.BaseSkill.SetArg(ArgMode, mode)
+	return f
+}
+
+// SetOverwrite sets whether to overwrite if file exists and returns FileCreate for chaining.
+func (f *FileCreate) SetOverwrite(overwrite bool) *FileCreate {
+	f.BaseSkill.SetArg(ArgOverwrite, fmt.Sprintf("%v", overwrite))
+	return f
+}
+
 // WithNodeConfig sets the node config and returns FileCreate for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (f *FileCreate) WithNodeConfig(cfg types.NodeConfig) *FileCreate {

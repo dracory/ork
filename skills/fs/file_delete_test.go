@@ -203,3 +203,13 @@ func TestFileDelete_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestFileDelete_SetPath verifies that SetPath sets the path arg and returns *FileDelete.
+func TestFileDelete_SetPath(t *testing.T) {
+	skill := NewFileDelete()
+	skill.SetPath("/tmp/test.log")
+
+	if skill.GetArg(ArgPath) != "/tmp/test.log" {
+		t.Errorf("Expected path '/tmp/test.log', got '%s'", skill.GetArg(ArgPath))
+	}
+}

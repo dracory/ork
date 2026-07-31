@@ -117,6 +117,24 @@ func (r *Remove) Run() types.Result {
 	}
 }
 
+// SetPath sets the path to remove and returns Remove for chaining.
+func (r *Remove) SetPath(path string) *Remove {
+	r.BaseSkill.SetArg(ArgPath, path)
+	return r
+}
+
+// SetRecursive sets whether to remove recursively and returns Remove for chaining.
+func (r *Remove) SetRecursive(recursive bool) *Remove {
+	r.BaseSkill.SetArg(ArgRecursive, fmt.Sprintf("%v", recursive))
+	return r
+}
+
+// SetForce sets whether to force removal and returns Remove for chaining.
+func (r *Remove) SetForce(force bool) *Remove {
+	r.BaseSkill.SetArg(ArgForce, fmt.Sprintf("%v", force))
+	return r
+}
+
 // WithNodeConfig sets the node config and returns Remove for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (r *Remove) WithNodeConfig(cfg types.NodeConfig) *Remove {

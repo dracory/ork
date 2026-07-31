@@ -131,6 +131,24 @@ func (d *DirDelete) Run() types.Result {
 	}
 }
 
+// SetPath sets the directory path and returns DirDelete for chaining.
+func (d *DirDelete) SetPath(path string) *DirDelete {
+	d.BaseSkill.SetArg(ArgPath, path)
+	return d
+}
+
+// SetRecursive sets whether to remove recursively and returns DirDelete for chaining.
+func (d *DirDelete) SetRecursive(recursive bool) *DirDelete {
+	d.BaseSkill.SetArg(ArgRecursive, fmt.Sprintf("%v", recursive))
+	return d
+}
+
+// SetForce sets whether to force removal and returns DirDelete for chaining.
+func (d *DirDelete) SetForce(force bool) *DirDelete {
+	d.BaseSkill.SetArg(ArgForce, fmt.Sprintf("%v", force))
+	return d
+}
+
 // WithNodeConfig sets the node config and returns DirDelete for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
 func (d *DirDelete) WithNodeConfig(cfg types.NodeConfig) *DirDelete {

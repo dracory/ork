@@ -255,3 +255,70 @@ func TestDirCreate_MethodChaining_PreservesType(t *testing.T) {
 		t.Error("Method chaining should set description")
 	}
 }
+
+// TestDirCreate_SetPath verifies that SetPath sets the path arg and returns *DirCreate.
+func TestDirCreate_SetPath(t *testing.T) {
+	skill := NewDirCreate()
+	skill.SetPath("/var/www/myapp")
+
+	if skill.GetArg(ArgPath) != "/var/www/myapp" {
+		t.Errorf("Expected path '/var/www/myapp', got '%s'", skill.GetArg(ArgPath))
+	}
+}
+
+// TestDirCreate_SetOwner verifies that SetOwner sets the owner arg and returns *DirCreate.
+func TestDirCreate_SetOwner(t *testing.T) {
+	skill := NewDirCreate()
+	skill.SetOwner("www-data:www-data")
+
+	if skill.GetArg(ArgOwner) != "www-data:www-data" {
+		t.Errorf("Expected owner 'www-data:www-data', got '%s'", skill.GetArg(ArgOwner))
+	}
+}
+
+// TestDirCreate_SetMode verifies that SetMode sets the mode arg and returns *DirCreate.
+func TestDirCreate_SetMode(t *testing.T) {
+	skill := NewDirCreate()
+	skill.SetMode("755")
+
+	if skill.GetArg(ArgMode) != "755" {
+		t.Errorf("Expected mode '755', got '%s'", skill.GetArg(ArgMode))
+	}
+}
+
+// TestDirCreate_SetParents verifies that SetParents sets the parents arg as a string bool and returns *DirCreate.
+func TestDirCreate_SetParents(t *testing.T) {
+	skill := NewDirCreate()
+	skill.SetParents(true)
+
+	if skill.GetArg(ArgParents) != "true" {
+		t.Errorf("Expected parents 'true', got '%s'", skill.GetArg(ArgParents))
+	}
+
+	skill.SetParents(false)
+	if skill.GetArg(ArgParents) != "false" {
+		t.Errorf("Expected parents 'false', got '%s'", skill.GetArg(ArgParents))
+	}
+}
+
+// TestDirCreate_TypedSetters_Chaining verifies that all typed setters chain correctly.
+func TestDirCreate_TypedSetters_Chaining(t *testing.T) {
+	skill := NewDirCreate().
+		SetPath("/var/www/myapp").
+		SetOwner("www-data:www-data").
+		SetMode("755").
+		SetParents(true)
+
+	if skill.GetArg(ArgPath) != "/var/www/myapp" {
+		t.Errorf("Expected path '/var/www/myapp', got '%s'", skill.GetArg(ArgPath))
+	}
+	if skill.GetArg(ArgOwner) != "www-data:www-data" {
+		t.Errorf("Expected owner 'www-data:www-data', got '%s'", skill.GetArg(ArgOwner))
+	}
+	if skill.GetArg(ArgMode) != "755" {
+		t.Errorf("Expected mode '755', got '%s'", skill.GetArg(ArgMode))
+	}
+	if skill.GetArg(ArgParents) != "true" {
+		t.Errorf("Expected parents 'true', got '%s'", skill.GetArg(ArgParents))
+	}
+}
