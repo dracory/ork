@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ork vs Puppet Comparison - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .diagram { background: #f4f6f8; border-left: 3px solid #42b983; padding: 1rem 1.5rem; margin: 1rem 0; font-family: "SF Mono", Monaco, Inconsolata, monospace; font-size: 0.85rem; white-space: pre; overflow-x: auto; border-radius: 0 4px 4px 0; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Ork vs Puppet Comparison</h1>
+
+    <h2>Quick Comparison</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Puppet</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Language</strong></td>
+                <td>Ruby (DSL)</td>
+                <td>Go</td>
+            </tr>
+            <tr>
+                <td><strong>Architecture</strong></td>
+                <td>Agent-based (master/agent)</td>
+                <td>Agentless (SSH)</td>
+            </tr>
+            <tr>
+                <td><strong>Execution</strong></td>
+                <td>Pull</td>
+                <td>Push</td>
+            </tr>
+            <tr>
+                <td><strong>Model</strong></td>
+                <td>Declarative</td>
+                <td>Procedural</td>
+            </tr>
+            <tr>
+                <td><strong>Server Required</strong></td>
+                <td>Yes (Puppet Master)</td>
+                <td>No</td>
+            </tr>
+            <tr>
+                <td><strong>State Management</strong></td>
+                <td>Catalog + Reports</td>
+                <td>No state</td>
+            </tr>
+            <tr>
+                <td><strong>Idempotency</strong></td>
+                <td>Built into resources</td>
+                <td>Playbook-level</td>
+            </tr>
+            <tr>
+                <td><strong>Learning Curve</strong></td>
+                <td>Steep</td>
+                <td>Low</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Architecture</h2>
+
+    <h3>Puppet (Master-Agent Model)</h3>
+    <div class="diagram">┌──────────────────┐
+│  Puppet Master   │◄──────┐
+│  (Compiles       │       │
+│   catalogs)      │       │
+└──────────────────┘       │
+       ▲                   │ HTTPS
+       │                   │ Pull every 30 min
+       │            ┌──────┴──────┐
+       │            │             │
+┌──────┴─────┐  ┌───┴───┐  ┌─────┴──┐
+│ Puppet DB  │  │ Agent │  │ Agent  │
+│ (Reports)  │  │Node 1 │  │ Node 2 │
+└────────────┘  └───────┘  └────────┘</div>
+
+    <ul>
+        <li><strong>Puppet Master</strong> - Central server that compiles and serves configuration "catalogs"</li>
+        <li><strong>Puppet Agent</strong> - Runs on each node, pulls catalog every 30 minutes</li>
+        <li><strong>PuppetDB</strong> - Stores reports, facts, and exported resources</li>
+    </ul>
+
+    <h3>Ork (SSH-based, Agentless)</h3>
+    <div class="diagram">┌─────────────┐     SSH      ┌─────────────┐
+│   Your Go   │─────────────►│ Target Node │
+│   Program   │              │  (no agent) │
+└─────────────┘              └─────────────┘</div>
+
+    <ul>
+        <li>No master server</li>
+        <li>No agents on nodes</li>
+        <li>SSH connections initiated on demand</li>
+    </ul>
+
+    <h2>Configuration Model</h2>
+
+    <h3>Puppet (Declarative DSL)</h3>
+    <pre><code># site.pp - Define desired state
+node 'webserver01.example.com' {
+  package { 'nginx':
+    ensure =&gt; 'installed',
+  }
+
+  service { 'nginx':
+    ensure =&gt; 'running',
+    enable =&gt; true,
+    require =&gt; Package['nginx'],
+  }
+
+  file { '/etc/nginx/nginx.conf':
+    ensure  =&gt; 'file',
+    content =&gt; template('nginx/nginx.conf.erb'),
+    notify  =&gt; Service['nginx'],
+  }
+
+  user { 'deploy':
+    ensure     =&gt; 'present',
+    managehome =&gt; true,
+    shell      =&gt; '/bin/bash',
+  }
+}</code></pre>
+
+    <p><strong>Key concepts:</strong></p>
+    <ul>
+        <li><strong>Resources</strong> - Declarative units (package, service, file, user)</li>
+        <li><strong>Catalog</strong> - Compiled desired state for a node</li>
+        <li><strong>Manifests</strong> - Files containing Puppet code (.pp)</li>
+        <li><strong>Templates</strong> - ERB templates for dynamic content</li>
+        <li><strong>Facter</strong> - System for gathering node facts</li>
+    </ul>
+
+    <h3>Ork (Procedural Go)</h3>
+    <pre><code>// Explicit execution
+node := ork.NewNodeForHost("webserver01.example.com")
+
+// Install nginx
+results := node.Run(skills.NewAptInstall())
+
+// Configure user
+userPb := skills.NewUserCreate()
+userPb.SetArg("username", "deploy")
+userPb.SetArg("shell", "/bin/bash")
+results = node.Run(userPb)
+
+// Direct command execution
+results = node.RunCommand("sudo systemctl enable nginx")</code></pre>
+
+    <h2>Execution Flow</h2>
+
+    <h3>Puppet</h3>
+    <ol>
+        <li>Agent collects facts about the node</li>
+        <li>Agent sends facts to Master</li>
+        <li>Master compiles catalog (what should be)</li>
+        <li>Agent receives catalog</li>
+        <li>Agent applies catalog (converges to desired state)</li>
+        <li>Agent sends report back to Master</li>
+        <li>Repeats every 30 minutes</li>
+    </ol>
+
+    <h3>Ork</h3>
+    <ol>
+        <li>Your Go program starts</li>
+        <li>SSH connection established</li>
+        <li>Commands/playbooks executed</li>
+        <li>Results returned</li>
+        <li>Connection closed (unless persistent)</li>
+    </ol>
+
+    <h2>Idempotency</h2>
+
+    <h3>Puppet (Resource-level)</h3>
+    <pre><code># First run: creates user, installs nginx
+# Second run: verifies state, makes no changes
+# Third run: verifies state, makes no changes
+
+package { 'nginx':
+  ensure =&gt; installed,  # Idempotent: checks if installed first
+}
+
+file { '/etc/config':
+  ensure  =&gt; file,
+  content =&gt; "...",
+  # Only updates if content differs
+}</code></pre>
+
+    <h3>Ork (Skill-level)</h3>
+    <pre><code>// Check pattern via RunnerInterface
+ping := skills.NewPing()
+results := node.Check(ping)
+result := results.Results["server.example.com"]
+
+if result.Changed {
+    log.Printf("Would make changes: %s", result.Message)
+}</code></pre>
+
+    <h2>Key Concepts Comparison</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Puppet</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Manifest (.pp)</td>
+                <td>Go program</td>
+            </tr>
+            <tr>
+                <td>Resource</td>
+                <td>Skill</td>
+            </tr>
+            <tr>
+                <td>Facter</td>
+                <td>Direct configuration</td>
+            </tr>
+            <tr>
+                <td>Catalog</td>
+                <td>No equivalent (no state)</td>
+            </tr>
+            <tr>
+                <td>Class/Module</td>
+                <td>Package of skills</td>
+            </tr>
+            <tr>
+                <td>Node definition</td>
+                <td>Node instantiation</td>
+            </tr>
+            <tr>
+                <td>Hiera (data)</td>
+                <td>Go structs / config</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Feature Comparison Table</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Puppet</th>
+                <th>Ork</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Architecture</strong></td>
+                <td>✅ Master-Agent (centralized)</td>
+                <td>✅ Agentless (SSH)</td>
+                <td>Puppet requires master/agent; Ork uses SSH</td>
+            </tr>
+            <tr>
+                <td><strong>Execution Model</strong></td>
+                <td>✅ Pull (every 30 min)</td>
+                <td>✅ Push (on-demand)</td>
+                <td>Puppet runs continuously; Ork runs when invoked</td>
+            </tr>
+            <tr>
+                <td><strong>Server Required</strong></td>
+                <td>✅ Yes (Puppet Master)</td>
+                <td>✅ No</td>
+                <td>Puppet needs master server; Ork is standalone</td>
+            </tr>
+            <tr>
+                <td><strong>Parallel Execution</strong></td>
+                <td>✅ Native (master compiles catalogs)</td>
+                <td>✅ Configurable concurrency</td>
+                <td>Puppet parallel at master level; Ork via SetMaxConcurrency()</td>
+            </tr>
+            <tr>
+                <td><strong>State Model</strong></td>
+                <td>✅ Declarative (catalogs)</td>
+                <td>✅ Procedural</td>
+                <td>Puppet declares desired state; Ork explicit execution</td>
+            </tr>
+            <tr>
+                <td><strong>Idempotency</strong></td>
+                <td>✅ Built-in (resources)</td>
+                <td>✅ Playbook-level</td>
+                <td>Both support idempotent operations</td>
+            </tr>
+            <tr>
+                <td><strong>Secrets Management</strong></td>
+                <td>✅ Hiera (encrypted)</td>
+                <td>✅ envenc vault</td>
+                <td>Puppet has Hiera for data; Ork uses envenc</td>
+            </tr>
+            <tr>
+                <td><strong>Inventory</strong></td>
+                <td>✅ Node registry (PuppetDB)</td>
+                <td>✅ Programmatic (structs)</td>
+                <td>Puppet nodes registered; Ork explicit creation</td>
+            </tr>
+            <tr>
+                <td><strong>Configuration Language</strong></td>
+                <td>✅ Ruby (DSL)</td>
+                <td>✅ Go</td>
+                <td>Puppet uses Ruby DSL; Ork uses Go</td>
+            </tr>
+            <tr>
+                <td><strong>Package Management</strong></td>
+                <td>✅ Cross-platform (resource providers)</td>
+                <td>⚠️ Platform-specific playbooks</td>
+                <td>Puppet handles OS differences; Ork needs playbooks per OS</td>
+            </tr>
+            <tr>
+                <td><strong>Templates</strong></td>
+                <td>✅ ERB templates</td>
+                <td>✅ Go templates</td>
+                <td>Both support templating</td>
+            </tr>
+            <tr>
+                <td><strong>Facts Gathering</strong></td>
+                <td>✅ Built-in (Facter)</td>
+                <td>❌ Manual commands</td>
+                <td>Puppet auto-collects facts; Ork manual</td>
+            </tr>
+            <tr>
+                <td><strong>Catalog Compilation</strong></td>
+                <td>✅ Master compiles for each node</td>
+                <td>❌ No catalog</td>
+                <td>Puppet compiles desired state; Ork executes directly</td>
+            </tr>
+            <tr>
+                <td><strong>Reporting</strong></td>
+                <td>✅ PuppetDB (built-in)</td>
+                <td>⚠️ Manual (results map)</td>
+                <td>Puppet has reporting database; Ork returns results</td>
+            </tr>
+            <tr>
+                <td><strong>Compliance</strong></td>
+                <td>✅ Built-in (PuppetDB reports)</td>
+                <td>⚠️ Manual (via Check)</td>
+                <td>Puppet tracks compliance; Ork on-demand checks</td>
+            </tr>
+            <tr>
+                <td><strong>Module Ecosystem</strong></td>
+                <td>✅ Puppet Forge (community)</td>
+                <td>⚠️ Built-in + custom</td>
+                <td>Puppet has large module repository</td>
+            </tr>
+            <tr>
+                <td><strong>Role/Profile Pattern</strong></td>
+                <td>✅ Built-in pattern</td>
+                <td>⚠️ Manual (groups)</td>
+                <td>Puppet has role/profile concept; Ork uses groups</td>
+            </tr>
+            <tr>
+                <td><strong>Type Safety</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes (Go)</td>
+                <td>Ork has compile-time type checking</td>
+            </tr>
+            <tr>
+                <td><strong>Learning Curve</strong></td>
+                <td>⚠️ Steep (DSL + Puppet concepts)</td>
+                <td>✅ Low (Go knowledge)</td>
+                <td>Puppet requires DSL knowledge</td>
+            </tr>
+            <tr>
+                <td><strong>Scalability</strong></td>
+                <td>✅ 100+ nodes</td>
+                <td>⚠️ Smaller scale</td>
+                <td>Puppet designed for medium-large fleets</td>
+            </tr>
+            <tr>
+                <td><strong>Continuous Enforcement</strong></td>
+                <td>✅ Yes (agent runs)</td>
+                <td>❌ No (on-demand)</td>
+                <td>Puppet enforces continuously; Ork on-demand</td>
+            </tr>
+            <tr>
+                <td><strong>Drift Detection</strong></td>
+                <td>✅ Built-in (PuppetDB)</td>
+                <td>⚠️ Manual (via Check)</td>
+                <td>Puppet detects drift via reports; Ork on-demand</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>When to Choose</h2>
+
+    <h3>Use Puppet when:</h3>
+    <ul>
+        <li>Managing 100+ nodes</li>
+        <li>Need continuous enforcement</li>
+        <li>Want declarative resource management</li>
+        <li>Have Ruby expertise</li>
+        <li>Can invest in Puppet Master infrastructure</li>
+        <li>Need compliance reporting</li>
+        <li>Want role/profile pattern</li>
+    </ul>
+
+    <h3>Use Ork when:</h3>
+    <ul>
+        <li>Managing smaller fleets (&lt; 100 nodes)</li>
+        <li>Need on-demand execution</li>
+        <li>Want type safety and compile-time checking</li>
+        <li>Embedding automation in Go applications</li>
+        <li>Prefer explicit control over declarative</li>
+        <li>No infrastructure for master server</li>
+    </ul>
+
+    <h2>Summary</h2>
+
+    <p><strong>Puppet Philosophy:</strong></p>
+    <ul>
+        <li>"Define desired state, let system converge"</li>
+        <li>Continuous enforcement via agents</li>
+        <li>Heavyweight but powerful for scale</li>
+        <li>Full visibility via PuppetDB reports</li>
+    </ul>
+
+    <p><strong>Ork Philosophy:</strong></p>
+    <ul>
+        <li>"Execute commands when I say so"</li>
+        <li>On-demand SSH connections</li>
+        <li>Lightweight, no infrastructure needed</li>
+        <li>Go-native with type safety</li>
+    </ul>
+
+    <p><strong>Key Difference:</strong></p>
+    <ul>
+        <li>Puppet: Background agents continuously ensure state</li>
+        <li>Ork: Foreground execution, explicit control</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="../index.html">Back to Index</a> &mdash; <a href="index.html">Comparison Index</a></p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ork vs SSH Libraries & Deployment Tools - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .diagram { background: #f4f6f8; border-left: 3px solid #42b983; padding: 1rem 1.5rem; margin: 1rem 0; font-family: "SF Mono", Monaco, Inconsolata, monospace; font-size: 0.85rem; white-space: pre; overflow-x: auto; border-radius: 0 4px 4px 0; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Ork vs SSH Libraries &amp; Deployment Tools</h1>
+
+    <p>Comparison with lightweight SSH-based tools for task execution and deployment.</p>
+
+    <hr>
+
+    <h2>Quick Comparison</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Tool</th>
+                <th>Language</th>
+                <th>Level</th>
+                <th>Primary Use</th>
+                <th>Architecture</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Ork</strong></td>
+                <td>Go</td>
+                <td>High</td>
+                <td>Server automation, skills</td>
+                <td>Library + patterns</td>
+            </tr>
+            <tr>
+                <td><strong>Fabric</strong></td>
+                <td>Python</td>
+                <td>Medium</td>
+                <td>SSH task execution</td>
+                <td>Library</td>
+            </tr>
+            <tr>
+                <td><strong>Paramiko</strong></td>
+                <td>Python</td>
+                <td>Low</td>
+                <td>SSH protocol implementation</td>
+                <td>Library</td>
+            </tr>
+            <tr>
+                <td><strong>Capistrano</strong></td>
+                <td>Ruby</td>
+                <td>High</td>
+                <td>Application deployment</td>
+                <td>Framework</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Fabric</h2>
+
+    <h3>Overview</h3>
+    <p>Python library for SSH task execution. Simpler than Ansible, focused on running commands over SSH.</p>
+
+    <h3>Fabric Example (v2+)</h3>
+    <pre><code># fabfile.py
+from fabric import task, Connection
+
+@task
+def update(c):
+    """Update packages on remote server"""
+    c.run("sudo apt-get update")
+    c.run("sudo apt-get upgrade -y")
+
+@task
+def deploy(c):
+    """Deploy application"""
+    c.run("git pull origin main")
+    c.run("pip install -r requirements.txt")
+    c.run("systemctl restart myapp")
+
+@task
+def diskspace(c):
+    """Check disk space"""
+    c.run("df -h")</code></pre>
+
+    <h3>Usage</h3>
+    <pre><code># Run tasks
+fab -H server1.example.com update
+fab -H server1.example.com,server2.example.com deploy
+
+# With different user
+fab -H user@host -i /path/to/key.pem diskspace</code></pre>
+
+    <h3>Ork vs Fabric</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Fabric</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Language</strong></td>
+                <td>✅ Python</td>
+                <td>✅ Go</td>
+            </tr>
+            <tr>
+                <td><strong>Level</strong></td>
+                <td>⚠️ Command execution</td>
+                <td>✅ Higher-level skills</td>
+            </tr>
+            <tr>
+                <td><strong>SSH Handling</strong></td>
+                <td>✅ Built-in (Invoke+Paramiko)</td>
+                <td>✅ Built-in (custom)</td>
+            </tr>
+            <tr>
+                <td><strong>Idempotency</strong></td>
+                <td>❌ Manual</td>
+                <td>✅ Built into skills</td>
+            </tr>
+            <tr>
+                <td><strong>Type Safety</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes (Go)</td>
+            </tr>
+            <tr>
+                <td><strong>Parallel</strong></td>
+                <td>⚠️ Limited</td>
+                <td>✅ Inventory (configurable concurrency)</td>
+            </tr>
+            <tr>
+                <td><strong>Library/CLI</strong></td>
+                <td>✅ Both CLI and library</td>
+                <td>✅ Library</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Fabric with Multiple Hosts</h3>
+    <pre><code>from fabric import SerialGroup, task
+
+@task
+def uptime(c):
+    # Runs on all hosts in parallel
+    cxn = SerialGroup('host1', 'host2', 'host3')
+    cxn.run('uptime')</code></pre>
+
+    <h3>Ork Equivalent</h3>
+    <pre><code>// Sequential (single nodes)
+hosts := []string{"host1", "host2", "host3"}
+for _, host := range hosts {
+    node := ork.NewNodeForHost(host)
+    results := node.RunCommand("uptime")
+    result := results.Results[host]
+    fmt.Printf("%s: %s\n", host, result.Message)
+}
+
+// Inventory (runs on all nodes, sequential)
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
+for _, host := range hosts {
+    webGroup.AddNode(ork.NewNodeForHost(host))
+}
+inv.AddGroup(webGroup)
+results := inv.RunCommand("uptime")
+for host, result := range results.Results {
+    fmt.Printf("%s: %s\n", host, result.Message)
+}</code></pre>
+
+    <hr>
+
+    <h2>Paramiko</h2>
+
+    <h3>Overview</h3>
+    <p>Low-level Python SSH library implementing the SSHv2 protocol. What Fabric uses under the hood.</p>
+
+    <h3>Paramiko Example</h3>
+    <pre><code>import paramiko
+
+# Create SSH client
+client = paramiko.SSHClient()
+client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+# Connect
+client.connect('server.example.com', username='root', key_filename='id_rsa')
+
+# Execute command
+stdin, stdout, stderr = client.exec_command('uptime')
+print(stdout.read().decode())
+
+# SFTP file transfer
+sftp = client.open_sftp()
+sftp.put('local.txt', '/remote/path.txt')
+sftp.get('/remote/file.txt', 'local.txt')
+
+# Close
+client.close()</code></pre>
+
+    <h3>Paramiko vs Ork</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Paramiko</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Level</strong></td>
+                <td>⚠️ Very low-level</td>
+                <td>✅ High-level</td>
+            </tr>
+            <tr>
+                <td><strong>Protocol</strong></td>
+                <td>✅ SSH protocol implementation</td>
+                <td>⚠️ Uses SSH library</td>
+            </tr>
+            <tr>
+                <td><strong>Use Case</strong></td>
+                <td>⚠️ Building SSH tools</td>
+                <td>✅ End-user automation</td>
+            </tr>
+            <tr>
+                <td><strong>Connection</strong></td>
+                <td>❌ Manual management</td>
+                <td>✅ Managed (persistent option)</td>
+            </tr>
+            <tr>
+                <td><strong>Abstractions</strong></td>
+                <td>❌ None</td>
+                <td>✅ Nodes, Skills, Results</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Paramiko SFTP Example</h3>
+    <pre><code># Direct file operations over SSH
+transport = paramiko.Transport(('server.example.com', 22))
+transport.connect(username='root', pkey=my_key)
+
+sftp = paramiko.SFTPClient.from_transport(transport)
+sftp.put('/local/file.txt', '/remote/file.txt')
+
+sftp.close()
+transport.close()</code></pre>
+
+    <h3>Ork Equivalent</h3>
+    <pre><code>// Ork doesn't expose low-level SFTP
+// Focus on higher-level operations
+node := ork.NewNodeForHost("server.example.com")
+results := node.RunCommand("cat /remote/file.txt")
+result := results.Results["server.example.com"]
+
+// Or use skills for file operations
+filePb := skills.NewFileDeploy()
+filePb.SetArg("source", "/local/file.txt")
+filePb.SetArg("destination", "/remote/file.txt")
+results = node.Run(filePb)</code></pre>
+
+    <hr>
+
+    <h2>Capistrano</h2>
+
+    <h3>Overview</h3>
+    <p>Ruby-based deployment framework, primarily designed for Rails applications but works with any app.</p>
+
+    <h3>Capistrano Structure</h3>
+    <div class="diagram">capfile
+├── config/
+│   └── deploy/
+│       ├── production.rb
+│       └── staging.rb
+├── lib/
+│   └── capistrano/
+│       └── tasks/
+│           └── custom.rake</div>
+
+    <h3>Capistrano Example</h3>
+    <pre><code># config/deploy.rb
+set :application, 'myapp'
+set :repo_url, 'git@github.com:user/repo.git'
+set :deploy_to, '/var/www/myapp'
+set :user, 'deploy'
+
+# Roles
+role :web, %w{web1.example.com web2.example.com}
+role :db, %w{db1.example.com}
+
+# Tasks
+namespace :deploy do
+  desc 'Restart application'
+  task :restart do
+    on roles(:web) do
+      execute :systemctl, :restart, :myapp
+    end
+  end
+
+  desc 'Check disk space'
+  task :check_disk do
+    on roles(:all) do |host|
+      disk_usage = capture(:df, '-h', '/')
+      info "#{host}: #{disk_usage}"
+    end
+  end
+end</code></pre>
+
+    <h3>Usage</h3>
+    <pre><code># Deploy to staging
+cap staging deploy
+
+# Deploy to production
+cap production deploy
+
+# Run custom task
+cap production deploy:check_disk</code></pre>
+
+    <h3>Capistrano vs Ork</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Capistrano</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Language</strong></td>
+                <td>✅ Ruby</td>
+                <td>✅ Go</td>
+            </tr>
+            <tr>
+                <td><strong>Focus</strong></td>
+                <td>⚠️ Application deployment</td>
+                <td>✅ Server automation</td>
+            </tr>
+            <tr>
+                <td><strong>Structure</strong></td>
+                <td>⚠️ Opinionated framework</td>
+                <td>✅ Flexible library</td>
+            </tr>
+            <tr>
+                <td><strong>Roles</strong></td>
+                <td>✅ Built-in</td>
+                <td>⚠️ Planned (Inventory groups)</td>
+            </tr>
+            <tr>
+                <td><strong>Workflow</strong></td>
+                <td>⚠️ Deploy-specific (symlink, rollback)</td>
+                <td>✅ General automation</td>
+            </tr>
+            <tr>
+                <td><strong>Asset Pipeline</strong></td>
+                <td>⚠️ Rails-optimized</td>
+                <td>⚠️ Generic</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h3>Capistrano Deployment Flow</h3>
+    <div class="diagram">deploy:cleanup
+deploy:started
+  └─> git:create_release
+        ├─ git:clone
+        ├─ git:update
+        └─ git:set_current_revision
+  └─ deploy:symlink:linked_files
+  └─ deploy:symlink:linked_dirs
+  └─ bundle:install
+  └─ deploy:migrate
+  └─ deploy:symlink:release
+  └─ deploy:restart</div>
+
+    <h3>Ork Equivalent</h3>
+    <pre><code>// Manual deployment flow
+func deploy(node ork.NodeInterface, version string) {
+    // Git operations
+    results := node.RunCommand("git fetch origin")
+    results = node.RunCommand("git checkout " + version)
+
+    // Install dependencies
+    results := node.RunCommand("pip install -r requirements.txt")
+
+    // Run migrations
+    results := node.RunCommand("python manage.py migrate")
+
+    // Symlink (manual)
+    results := node.RunCommand("ln -sfn releases/" + version + " current")
+
+    // Restart
+    results := node.RunCommand("sudo systemctl restart myapp")
+}</code></pre>
+
+    <hr>
+
+    <h2>Ork-Specific Features</h2>
+
+    <h3>Vault Support</h3>
+
+    <p>Ork includes built-in vault integration for secure secrets management using envenc, which is not available in Fabric, Paramiko, or Capistrano.</p>
+
+    <pre><code>// Load secrets from encrypted vault file
+keys, err := ork.VaultFileToKeys("vault.envenc", "password")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Hydrate environment variables from vault
+err = ork.VaultFileToEnv("vault.envenc", "password")
+
+// Interactive password prompt
+keys, err = ork.VaultFileToKeysWithPrompt("vault.envenc")</code></pre>
+
+    <h3>Interactive Prompts</h3>
+
+    <p>Ork provides comprehensive prompt functions for interactive user input, which other SSH libraries lack.</p>
+
+    <pre><code>// Prompt for various input types
+username, _ := ork.PromptForString("Username")
+password, _ := ork.PromptForPasswordWithConfirmation("Password")
+port, _ := ork.PromptForIntWithDefault("Port", 8080)
+enabled, _ := ork.PromptForBool("Enable feature")
+
+// Multi-prompt with validation
+prompts := []types.PromptConfig{
+    {Name: "email", Prompt: "Email", Required: true,
+     Validate: func(v string) error {
+         if !strings.Contains(v, "@") {
+             return fmt.Errorf("invalid email")
+         }
+         return nil
+     }},
+}
+results, _ := ork.PromptMultiple(prompts)</code></pre>
+
+    <hr>
+
+    <h2>Key Differences Summary</h2>
+
+    <h3>Level of Abstraction</h3>
+
+    <div class="diagram">┌─────────────────────────────────────────────────────────┐
+│  High-Level                                             │
+│  ┌─────────┐  ┌────────────┐  ┌──────────┐            │
+│  │ Ork     │  │ Capistrano │  │ Fabric   │            │
+│  │ (Go)    │  │ (Ruby)     │  │ (Python) │            │
+│  └─────────┘  └────────────┘  └──────────┘            │
+├─────────────────────────────────────────────────────────┤
+│  Low-Level                                              │
+│  ┌──────────────────────────────────────────────────┐  │
+│  │ Paramiko (Python SSH implementation)             │  │
+│  │ Ork/SSH internal library                         │  │
+│  └──────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘</div>
+
+    <h3>Use Case Matrix</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Use Case</th>
+                <th>Best Tool</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>SSH command execution</strong></td>
+                <td>Fabric, Ork</td>
+            </tr>
+            <tr>
+                <td><strong>Build SSH tool</strong></td>
+                <td>Paramiko</td>
+            </tr>
+            <tr>
+                <td><strong>Rails deployment</strong></td>
+                <td>Capistrano</td>
+            </tr>
+            <tr>
+                <td><strong>Go application automation</strong></td>
+                <td>Ork</td>
+            </tr>
+            <tr>
+                <td><strong>Server hardening</strong></td>
+                <td>Ork (skills)</td>
+            </tr>
+            <tr>
+                <td><strong>Custom deployment workflow</strong></td>
+                <td>Fabric, Ork</td>
+            </tr>
+            <tr>
+                <td><strong>Multi-server orchestration</strong></td>
+                <td>Ork (Inventory), Fabric</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>When to Choose Each</h2>
+
+    <h3>Use Paramiko when:</h3>
+    <ul>
+        <li>Building custom SSH tools</li>
+        <li>Need low-level SSH protocol control</li>
+        <li>Implementing custom authentication</li>
+        <li>Direct SFTP operations</li>
+        <li>Fine-grained connection management</li>
+    </ul>
+
+    <h3>Use Fabric when:</h3>
+    <ul>
+        <li>Python shop</li>
+        <li>Simple SSH task execution</li>
+        <li>Ad-hoc remote commands</li>
+        <li>Quick deployment scripts</li>
+        <li>Don't need complex orchestration</li>
+    </ul>
+
+    <h3>Use Capistrano when:</h3>
+    <ul>
+        <li>Ruby/Rails shop</li>
+        <li>Standardized deployment workflow</li>
+        <li>Need rollback capability</li>
+        <li>Rails asset pipeline</li>
+        <li>Multi-stage deployments (staging/production)</li>
+    </ul>
+
+    <h3>Use Ork when:</h3>
+    <ul>
+        <li>Go shop</li>
+        <li>Need type safety and compile-time checking</li>
+        <li>Building automation into applications</li>
+        <li>Want skill-based reusable automation</li>
+        <li>Cross-platform server configuration</li>
+        <li>Embedding in larger Go projects</li>
+    </ul>
+
+    <hr>
+
+    <h2>Code Comparison: Simple Task</h2>
+
+    <p><strong>Task:</strong> Check uptime on multiple servers</p>
+
+    <h3>Paramiko (Verbose)</h3>
+    <pre><code>import paramiko
+
+hosts = ['server1', 'server2', 'server3']
+key = paramiko.RSAKey.from_private_key_file('id_rsa')
+
+for host in hosts:
+    client = paramiko.SSHClient()
+    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    client.connect(host, username='root', pkey=key)
+
+    stdin, stdout, stderr = client.exec_command('uptime')
+    print(f"{host}: {stdout.read().decode()}")
+
+    client.close()</code></pre>
+
+    <h3>Fabric (Simpler)</h3>
+    <pre><code>from fabric import SerialGroup
+
+c = SerialGroup('server1', 'server2', 'server3', user='root', connect_kwargs={"key_filename": "id_rsa"})
+results = c.run('uptime', hide=True)
+for connection, result in results.items():
+    print(f"{connection.host}: {result.stdout}")</code></pre>
+
+    <h3>Capistrano (Framework)</h3>
+    <pre><code># lib/capistrano/tasks/uptime.rake
+namespace :check do
+  desc "Check uptime on all servers"
+  task :uptime do
+    on roles(:all) do |host|
+      uptime = capture(:uptime)
+      info "#{host}: #{uptime}"
+    end
+  end
+end</code></pre>
+    <pre><code>cap production check:uptime</code></pre>
+
+    <h3>Ork (Type-safe)</h3>
+    <pre><code>hosts := []string{"server1", "server2", "server3"}
+
+for _, host := range hosts {
+    node := ork.NewNodeForHost(host).
+        SetUser("root").
+        SetKey("id_rsa")
+
+    results := node.RunCommand("uptime")
+    result := results.Results[host]
+    if result.Error != nil {
+        log.Printf("%s: error: %v", host, result.Error)
+        continue
+    }
+    fmt.Printf("%s: %s\n", host, result.Message)
+}</code></pre>
+
+    <hr>
+
+    <h2>Summary</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Need</th>
+                <th>Choose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Low-level SSH control</td>
+                <td>Paramiko</td>
+            </tr>
+            <tr>
+                <td>Python task execution</td>
+                <td>Fabric</td>
+            </tr>
+            <tr>
+                <td>Rails deployment</td>
+                <td>Capistrano</td>
+            </tr>
+            <tr>
+                <td>Go server automation</td>
+                <td>Ork</td>
+            </tr>
+            <tr>
+                <td>Type safety + compile-time checks</td>
+                <td>Ork</td>
+            </tr>
+            <tr>
+                <td>Reusable skills</td>
+                <td>Ork</td>
+            </tr>
+            <tr>
+                <td>Secure secrets management (vault)</td>
+                <td>Ork</td>
+            </tr>
+            <tr>
+                <td>Interactive user input (prompts)</td>
+                <td>Ork</td>
+            </tr>
+            <tr>
+                <td>Simple, no dependencies</td>
+                <td>Fabric (Python) or Ork (Go binary)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="../index.html">Back to Index</a> &mdash; <a href="index.html">Comparison Index</a></p>
+    </div>
+</body>
+</html>

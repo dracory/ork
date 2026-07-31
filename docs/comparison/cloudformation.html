@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ork vs CloudFormation Comparison - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .diagram { background: #f4f6f8; border-left: 3px solid #42b983; padding: 1rem 1.5rem; margin: 1rem 0; font-family: "SF Mono", Monaco, Inconsolata, monospace; font-size: 0.85rem; white-space: pre; overflow-x: auto; border-radius: 0 4px 4px 0; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Ork vs CloudFormation Comparison</h1>
+
+<h2>Quick Comparison</h2>
+<table>
+<thead><tr>
+<th>Aspect</th>
+<th>CloudFormation</th>
+<th>Ork</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>Language</strong></td>
+<td>JSON/YAML</td>
+<td>Go</td>
+</tr>
+<tr>
+<td><strong>Purpose</strong></td>
+<td>Infrastructure Provisioning</td>
+<td>Configuration Management</td>
+</tr>
+<tr>
+<td><strong>Layer</strong></td>
+<td>Infrastructure (IaaS)</td>
+<td>Software/Configuration</td>
+</tr>
+<tr>
+<td><strong>Scope</strong></td>
+<td>AWS only</td>
+<td>Any SSH server</td>
+</tr>
+<tr>
+<td><strong>Execution</strong></td>
+<td>Declarative (template → stack)</td>
+<td>Procedural (run now)</td>
+</tr>
+<tr>
+<td><strong>State Management</strong></td>
+<td>AWS CloudFormation (AWS-managed)</td>
+<td>No state file</td>
+</tr>
+<tr>
+<td><strong>Target</strong></td>
+<td>AWS APIs</td>
+<td>SSH to existing servers</td>
+</tr>
+<tr>
+<td><strong>Idempotency</strong></td>
+<td>Built-in (resource properties)</td>
+<td>Playbook-level</td>
+</tr>
+<tr>
+<td><strong>Lifecycle</strong></td>
+<td>Create, update, delete stacks</td>
+<td>Configure existing systems</td>
+</tr>
+<tr>
+<td><strong>Type Safety</strong></td>
+<td>Limited (JSON schema)</td>
+<td>Yes (Go)</td>
+</tr>
+</tbody>
+</table>
+<h2>Core Difference</h2>
+<p><strong>CloudFormation = Building AWS infrastructure</strong></p>
+<p><strong>Ork = Configuring servers (AWS or elsewhere)</strong></p>
+<div class="diagram">┌─────────────────────────────────────────────────────────┐
+│  CloudFormation Layer (AWS Infrastructure)               │
+│  - Create EC2 instances                                 │
+│  - Provision VPCs, subnets                              │
+│  - Set up security groups, IAM roles                    │
+│  - Create RDS databases                                │
+│  - Configure load balancers (ALB/NLB)                   │
+└─────────────────────────────────────────────────────────┘
+                          ▼
+              AWS resources now exist
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  Ork Layer (Configuration)                              │
+│  - Install nginx, mysql                                 │
+│  - Configure users, SSH keys                            │
+│  - Deploy applications                                  │
+│  - Run security updates                                 │
+│  - Manage system services                               │
+└─────────────────────────────────────────────────────────┘</div>
+<h2>Architecture</h2>
+<h3>CloudFormation Architecture</h3>
+<div class="diagram">┌──────────────┐
+│ CloudFormation│
+│ Template      │
+│ (JSON/YAML)   │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ AWS Cloud     │
+│ Formation     │
+│ Service       │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ AWS APIs     │
+│ (EC2, RDS,   │
+│  S3, etc.)   │
+└──────────────┘</div>
+<h3>Ork Architecture</h3>
+<div class="diagram">┌──────────────┐
+│ Your Go      │
+│ Application  │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Ork Library  │
+│ (Nodes,      │
+│  Playbooks,  │
+│  Inventory)  │
+└──────┬───────┘
+       │ SSH
+       ▼
+┌──────────────┐
+│ Target       │
+│ Servers      │
+│ (AWS or any) │
+└──────────────┘</div>
+<h2>CloudFormation Example (YAML)</h2>
+<pre><code>AWSTemplateFormatVersion: '2010-09-09'
+Description: Web server stack
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+
+Resources:
+  # VPC
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: MyVPC
+
+  # Public Subnet
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPC
+      CidrBlock: 10.0.1.0/24
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnet
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyIGW
+
+  # Route Table
+  RouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+
+  # Route to Internet
+  InternetRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  # Security Group
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP and SSH access
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # EC2 Instance
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0c55b159cbfafe1f0
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref PublicSubnet
+      SecurityGroupIds:
+        - !Ref WebSecurityGroup
+      Tags:
+        - Key: Name
+          Value: WebServer
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          apt-get update
+          apt-get install -y nginx
+
+Outputs:
+  InstanceId:
+    Description: Instance ID
+    Value: !Ref WebServer
+  PublicIP:
+    Description: Public IP address
+    Value: !GetAtt WebServer.PublicIp</code></pre>
+<h2>Ork After CloudFormation</h2>
+<pre><code>package main
+
+import (
+    "fmt"
+    "github.com/dracory/ork"
+    "github.com/dracory/ork/playbooks"
+)
+
+func main() {
+    // After CloudFormation creates the server, Ork configures it
+    serverIP := "54.123.45.67" // From CloudFormation output
+    
+    // Create node
+    node := ork.NewNodeForHost(serverIP).
+        SetUser("ubuntu").
+        SetKey("/path/to/deploy.pem")
+    
+    // Configure the server with playbooks
+    results := node.
+        Run(skills.NewAptUpdate()).
+        Run(skills.NewAptUpgrade()).
+        Run(skills.NewUfwInstall()).
+        Run(skills.NewNginxInstall())
+    
+    // Check results
+    result := results.Results[serverIP]
+    if result.Error != nil {
+        fmt.Printf("Error: %v\n", result.Error)
+    } else {
+        fmt.Printf("Success: %s\n", result.Message)
+    }
+}</code></pre>
+<h2>Ork Inventory for Multiple AWS Servers</h2>
+<pre><code>// Configure multiple servers from CloudFormation stack
+inv := ork.NewInventory()
+inv.SetMaxConcurrency(5) // Configure parallel execution
+
+// Add web servers
+webGroup := ork.NewGroup("webservers")
+for _, ip := range webServerIPs { // From CloudFormation outputs
+    webGroup.AddNode(ork.NewNodeForHost(ip).
+        SetUser("ubuntu").
+        SetKey("/path/to/deploy.pem"))
+}
+inv.AddGroup(webGroup)
+
+// Configure all web servers in parallel
+results := inv.Run(skills.NewNginxInstall())
+summary := results.Summary()
+fmt.Printf("Changed: %d, Failed: %d\n", summary.Changed, summary.Failed)</code></pre>
+<h2>Typical Workflow</h2>
+<h3>Phase 1: Infrastructure (CloudFormation)</h3>
+<pre><code># Create stack
+aws cloudformation create-stack \
+  --stack-name my-stack \
+  --template-body file://template.yaml \
+  --parameters ParameterKey=InstanceType,ParameterValue=t2.micro
+
+# Wait for completion
+aws cloudformation wait stack-create-complete --stack-name my-stack
+
+# Get outputs
+aws cloudformation describe-stacks \
+  --stack-name my-stack \
+  --query 'Stacks[0].Outputs'</code></pre>
+<h3>Phase 2: Configuration (Ork)</h3>
+<pre><code>// Use CloudFormation outputs to configure servers
+serverIP := getCloudFormationOutput("PublicIP")
+
+node := ork.NewNodeForHost(serverIP)
+results := node.Run(skills.NewUfwInstall())</code></pre>
+<h3>Phase 3: Integration</h3>
+<pre><code># Combined workflow
+aws cloudformation create-stack ...  # Create infrastructure
+./configure-servers                  # Run Ork to configure</code></pre>
+<h2>UserData vs Ork</h2>
+<h3>CloudFormation UserData</h3>
+<pre><code>UserData:
+  Fn::Base64: |
+    #!/bin/bash
+    # Limitations:
+    # - Runs only once at instance creation
+    # - No error handling
+    # - Basic shell scripts only
+    # - Cannot re-run easily
+    apt-get update
+    apt-get install -y nginx
+    systemctl start nginx</code></pre>
+<p><strong>Limitations:</strong></p>
+<ul>
+<li>Runs only at boot time</li>
+<li>No idempotency checks</li>
+<li>Difficult to debug failures</li>
+<li>Cannot update after creation</li>
+<li>Limited to basic scripts</li>
+</ul>
+<h3>Ork Skills</h3>
+<pre><code>// Advantages:
+// - Can run anytime
+// - Built-in idempotency
+// - Rich error handling
+// - Check mode for preview
+// - Reusable across servers
+
+results := node.Run(skills.NewNginxInstall())
+if results.Results[host].Error != nil {
+    log.Printf("Error: %v", results.Results[host].Error)
+}
+
+// Check what would change
+checkResults := node.Check(skills.NewNginxInstall())
+if checkResults.Results[host].Changed {
+    fmt.Println("Nginx would be installed")
+}</code></pre>
+<p><strong>Advantages:</strong></p>
+<ul>
+<li>Run anytime (not just at boot)</li>
+<li>Idempotent operations</li>
+<li>Rich error handling and logging</li>
+<li>Check mode for preview</li>
+<li>Reusable playbooks</li>
+<li>Can update configuration after creation</li>
+</ul>
+<h2>State Management</h2>
+<h3>CloudFormation State</h3>
+<ul>
+<li>Managed entirely by AWS</li>
+<li>Stored in AWS CloudFormation service</li>
+<li>Automatic drift detection</li>
+<li>Rollback capabilities</li>
+<li>Stack updates with change sets</li>
+</ul>
+<pre><code># View stack status
+aws cloudformation describe-stacks --stack-name my-stack
+
+# Detect drift
+aws cloudformation detect-stack-drift --stack-name my-stack
+
+# Rollback to previous version
+aws cloudformation rollback-stack --stack-name my-stack
+
+# Delete stack (and all resources)
+aws cloudformation delete-stack --stack-name my-stack</code></pre>
+<h3>Ork State</h3>
+<ul>
+<li>No state file</li>
+<li>Idempotency via skills</li>
+<li>Check mode to preview changes</li>
+<li>Results returned after each run</li>
+</ul>
+<pre><code>// Check what would change
+results := node.Check(skills.NewUfwInstall())
+if results.Results[host].Changed {
+    fmt.Println("Changes would be made")
+}
+
+// Actually apply
+results = node.Run(skills.NewUfwInstall())</code></pre>
+<h2>Change Sets</h2>
+<h3>CloudFormation Change Sets</h3>
+<pre><code># Create change set to preview
+aws cloudformation create-change-set \
+  --stack-name my-stack \
+  --change-set-name my-changes \
+  --template-body file://updated-template.yaml
+
+# Review changes
+aws cloudformation describe-change-set \
+  --stack-name my-stack \
+  --change-set-name my-changes
+
+# Execute change set
+aws cloudformation execute-change-set \
+  --stack-name my-stack \
+  --change-set-name my-changes</code></pre>
+<h3>Ork Check Mode</h3>
+<pre><code>// Preview changes without applying
+results := node.Check(skills.NewNginxInstall())
+if results.Results[host].Changed {
+    fmt.Printf("Would change: %s\n", results.Results[host].Message)
+}
+
+// Apply if desired
+results = node.Run(skills.NewNginxInstall())</code></pre>
+<h2>Cross-Stack References</h2>
+<h3>CloudFormation Cross-Stack References</h3>
+<pre><code># Stack 1: VPC
+Outputs:
+  VpcId:
+    Value: !Ref VPC
+    Export:
+      Name: !Sub "${AWS::StackName}-VpcId"
+
+# Stack 2: Application (references Stack 1)
+Resources:
+  Subnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !ImportValue my-vpc-stack-VpcId</code></pre>
+<h3>Ork Inventory</h3>
+<pre><code>// Ork uses programmatic references
+// No special cross-stack syntax needed
+
+vpcStack := getCloudFormationStack("my-vpc-stack")
+vpcID := vpcStack.Outputs["VpcId"]
+
+// Use the value
+node.SetArg("vpc_id", vpcID)</code></pre>
+<h2>When to Use Each</h2>
+<h3>Use CloudFormation when:</h3>
+<ul>
+<li>Creating AWS infrastructure only</li>
+<li>Managing AWS-specific resources (VPC, RDS, S3, etc.)</li>
+<li>Need AWS-native integration</li>
+<li>Want AWS-managed state</li>
+<li>Require automatic rollback on failure</li>
+<li>Need change set previews</li>
+<li>Team uses AWS console heavily</li>
+<li>Want infrastructure as code for AWS</li>
+<li>Need AWS-specific features (IAM roles, policies)</li>
+</ul>
+<h3>Use Ork when:</h3>
+<ul>
+<li>Configuring existing servers (AWS or elsewhere)</li>
+<li>Installing and configuring software</li>
+<li>Managing users, SSH keys, security settings</li>
+<li>Deploying applications</li>
+<li>Running system updates</li>
+<li>Managing services</li>
+<li>Building Go applications</li>
+<li>Need type safety and compile-time checking</li>
+<li>Want programmatic control flow</li>
+<li>Cross-platform configuration (not just AWS)</li>
+<li>Embedding automation in Go applications</li>
+</ul>
+<h3>Use Both Together</h3>
+<ul>
+<li>CloudFormation provisions AWS infrastructure</li>
+<li>Ork configures the provisioned servers</li>
+<li>Common pattern: AWS IaC + Config Management</li>
+</ul>
+<h2>Feature Comparison Table</h2>
+<table>
+<thead><tr>
+<th>Feature</th>
+<th>CloudFormation</th>
+<th>Ork</th>
+<th>Notes</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>Architecture</strong></td>
+<td>✅ IaC (AWS Infrastructure)</td>
+<td>✅ Config Management</td>
+<td>CloudFormation creates AWS resources; Ork configures</td>
+</tr>
+<tr>
+<td><strong>Scope</strong></td>
+<td>⚠️ AWS only</td>
+<td>✅ Any SSH server</td>
+<td>CloudFormation is AWS-specific</td>
+</tr>
+<tr>
+<td><strong>Execution Model</strong></td>
+<td>✅ Declarative (template → stack)</td>
+<td>✅ Procedural (run now)</td>
+<td>CloudFormation declares state; Ork executes commands</td>
+</tr>
+<tr>
+<td><strong>State Management</strong></td>
+<td>✅ AWS-managed (CloudFormation)</td>
+<td>❌ No state file</td>
+<td>CloudFormation tracks state in AWS</td>
+</tr>
+<tr>
+<td><strong>Creates VMs</strong></td>
+<td>✅ Yes (AWS EC2)</td>
+<td>❌ No</td>
+<td>CloudFormation provisions AWS resources</td>
+</tr>
+<tr>
+<td><strong>Configures Software</strong></td>
+<td>⚠️ Limited (UserData)</td>
+<td>✅ Yes</td>
+<td>Ork has rich playbook library</td>
+</tr>
+<tr>
+<td><strong>Manages Users</strong></td>
+<td>❌ No (via UserData only)</td>
+<td>✅ Yes</td>
+<td>Ork manages system users</td>
+</tr>
+<tr>
+<td><strong>Install Packages</strong></td>
+<td>⚠️ Limited (UserData)</td>
+<td>✅ Yes</td>
+<td>Ork manages software packages</td>
+</tr>
+<tr>
+<td><strong>Deploy Apps</strong></td>
+<td>❌ No</td>
+<td>✅ Yes</td>
+<td>Ork deploys applications</td>
+</tr>
+<tr>
+<td><strong>Run Commands</strong></td>
+<td>❌ No</td>
+<td>✅ Yes</td>
+<td>Ork executes shell commands</td>
+</tr>
+<tr>
+<td><strong>Parallel Execution</strong></td>
+<td>✅ Resource-level</td>
+<td>✅ Inventory-level (configurable)</td>
+<td>Both support parallel operations</td>
+</tr>
+<tr>
+<td><strong>Drift Detection</strong></td>
+<td>✅ Built-in (detect-stack-drift)</td>
+<td>⚠️ Manual (via Check)</td>
+<td>CloudFormation auto-detects</td>
+</tr>
+<tr>
+<td><strong>Rollback</strong></td>
+<td>✅ Automatic on failure</td>
+<td>⚠️ Manual</td>
+<td>CloudFormation can auto-rollback</td>
+</tr>
+<tr>
+<td><strong>Destroy Resources</strong></td>
+<td>✅ Yes (delete-stack)</td>
+<td>❌ No</td>
+<td>CloudFormation manages lifecycle</td>
+</tr>
+<tr>
+<td><strong>Change Sets</strong></td>
+<td>✅ Yes (preview changes)</td>
+<td>✅ Yes (Check mode)</td>
+<td>Both can preview before applying</td>
+</tr>
+<tr>
+<td><strong>Type Safety</strong></td>
+<td>⚠️ Limited (JSON schema)</td>
+<td>✅ Yes (Go)</td>
+<td>Ork has compile-time checking</td>
+</tr>
+<tr>
+<td><strong>IDE Support</strong></td>
+<td>⚠️ Basic (YAML/JSON)</td>
+<td>✅ Excellent (Go)</td>
+<td>Ork has better tooling</td>
+</tr>
+<tr>
+<td><strong>Preview Changes</strong></td>
+<td>✅ Yes (change sets)</td>
+<td>✅ Yes (Check mode)</td>
+<td>Both can preview before applying</td>
+</tr>
+<tr>
+<td><strong>Team Collaboration</strong></td>
+<td>✅ Yes (AWS-managed)</td>
+<td>⚠️ Manual</td>
+<td>CloudFormation has built-in team features</td>
+</tr>
+<tr>
+<td><strong>Import Existing</strong></td>
+<td>✅ Yes (import resources)</td>
+<td>N/A</td>
+<td>CloudFormation can import existing AWS resources</td>
+</tr>
+<tr>
+<td><strong>Secrets Management</strong></td>
+<td>✅ AWS Secrets Manager/Parameter Store</td>
+<td>✅ envenc vault</td>
+<td>Both handle secrets</td>
+</tr>
+<tr>
+<td><strong>Testing</strong></td>
+<td>⚠️ Limited (StackSets)</td>
+<td>✅ Go testing + testcontainers</td>
+<td>Ork has better testing support</td>
+</tr>
+<tr>
+<td><strong>Policy as Code</strong></td>
+<td>✅ SCPs, GuardDuty</td>
+<td>❌ Manual</td>
+<td>CloudFormation has AWS policy tools</td>
+</tr>
+<tr>
+<td><strong>Learning Curve</strong></td>
+<td>⚠️ Medium (AWS concepts + YAML)</td>
+<td>✅ Low (Go knowledge)</td>
+<td>CloudFormation requires AWS understanding</td>
+</tr>
+<tr>
+<td><strong>Cross-Platform</strong></td>
+<td>❌ AWS only</td>
+<td>✅ Any SSH server</td>
+<td>Ork works anywhere with SSH</td>
+</tr>
+<tr>
+<td><strong>Language</strong></td>
+<td>✅ JSON/YAML</td>
+<td>✅ Go</td>
+<td>CloudFormation uses declarative YAML/JSON</td>
+</tr>
+</tbody>
+</table>
+<h2>Concept Mapping</h2>
+<table>
+<thead><tr>
+<th>CloudFormation Concept</th>
+<th>Ork Equivalent</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Stack</td>
+<td>Inventory (collection of nodes)</td>
+</tr>
+<tr>
+<td>Resource</td>
+<td>Node (server)</td>
+</tr>
+<tr>
+<td>Template</td>
+<td>Go code (programmatic)</td>
+</tr>
+<tr>
+<td>Parameter</td>
+<td>Node argument (SetArg)</td>
+</tr>
+<tr>
+<td>Output</td>
+<td>Results map</td>
+</tr>
+<tr>
+<td>Change Set</td>
+<td>Check()</td>
+</tr>
+<tr>
+<td>Stack Update</td>
+<td>Run()</td>
+</tr>
+<tr>
+<td>Stack Delete</td>
+<td>No equivalent (Ork doesn't destroy)</td>
+</tr>
+<tr>
+<td>Drift Detection</td>
+<td>Check()</td>
+</tr>
+<tr>
+<td>Rollback</td>
+<td>Manual (re-run previous skill)</td>
+</tr>
+<tr>
+<td>Cross-Stack Reference</td>
+<td>Programmatic variable passing</td>
+</tr>
+<tr>
+<td>Resource Type</td>
+<td>Skill type</td>
+</tr>
+</tbody>
+</table>
+<h2>UserData vs Skills</h2>
+<table>
+<thead><tr>
+<th>Aspect</th>
+<th>CloudFormation UserData</th>
+<th>Ork Skills</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>Execution Time</strong></td>
+<td>Once at boot</td>
+<td>Anytime</td>
+</tr>
+<tr>
+<td><strong>Idempotency</strong></td>
+<td>Manual</td>
+<td>Built-in</td>
+</tr>
+<tr>
+<td><strong>Error Handling</strong></td>
+<td>Limited</td>
+<td>Rich</td>
+</tr>
+<tr>
+<td><strong>Re-runnable</strong></td>
+<td>No</td>
+<td>Yes</td>
+</tr>
+<tr>
+<td><strong>Debugging</strong></td>
+<td>Difficult</td>
+<td>Easy (logging)</td>
+</tr>
+<tr>
+<td><strong>Complexity</strong></td>
+<td>Basic scripts</td>
+<td>Rich operations</td>
+</tr>
+<tr>
+<td><strong>Updates</strong></td>
+<td>Requires instance recreation</td>
+<td>Can update running servers</td>
+</tr>
+<tr>
+<td><strong>Preview</strong></td>
+<td>No</td>
+<td>Check mode</td>
+</tr>
+</tbody>
+</table>
+<h2>Summary</h2>
+<p><strong>CloudFormation Strengths:</strong></p>
+<ul>
+<li>AWS-native integration</li>
+<li>AWS-managed state</li>
+<li>Automatic rollback</li>
+<li>Change set previews</li>
+<li>IAM integration</li>
+<li>AWS-specific features</li>
+<li>Free (AWS service)</li>
+<li>AWS console integration</li>
+</ul>
+<p><strong>Ork Strengths:</strong></p>
+<ul>
+<li>Go-native configuration management</li>
+<li>Rich playbook library</li>
+<li>Type safety and compile-time checking</li>
+<li>Simple, no state file</li>
+<li>Configures existing infrastructure</li>
+<li>Cross-platform (not just AWS)</li>
+<li>Embeddable in Go applications</li>
+<li>Rich error handling</li>
+<li>Check mode for preview</li>
+</ul>
+<p><strong>Key Difference:</strong></p>
+<ul>
+<li>CloudFormation: AWS infrastructure provisioning with AWS-managed state</li>
+<li>Ork: Configuration management without state (works on any SSH server)</li>
+</ul>
+<p><strong>Best Practice:</strong></p>
+<ul>
+<li>Use CloudFormation to create AWS infrastructure</li>
+<li>Use Ork to configure the infrastructure (even non-AWS servers)</li>
+<li>Combine for complete AWS infrastructure + configuration automation</li>
+</ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="../index.html">Back to Index</a> &mdash; <a href="index.html">Comparison Index</a></p>
+    </div>
+</body>
+</html>

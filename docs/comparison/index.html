@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comparison - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        .subtitle { color: #666; font-size: 1.1rem; margin-bottom: 2rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-top: 2rem; }
+        .card { border: 1px solid #eee; border-radius: 8px; padding: 1.5rem; transition: transform 0.2s, box-shadow 0.2s; text-decoration: none; color: inherit; display: block; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.05); border-color: #42b983; }
+        .card h2 { margin-top: 0; color: #42b983; font-size: 1.25rem; }
+        .card p { margin-bottom: 0; font-size: 0.9rem; color: #666; }
+        .badge { display: inline-block; background: #9b59b6; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.75rem; margin-bottom: 0.5rem; }
+        .section-title { color: #7f8c8d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin: 2rem 0 1rem 0; font-weight: 600; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Comparison with Other Tools</h1>
+    <p class="subtitle">How Ork compares to configuration management, infrastructure as code, and SSH library solutions.</p>
+
+    <div class="section-title">Configuration Management</div>
+    <div class="grid">
+        <a href="ansible.html" class="card">
+            <span class="badge">Config Mgmt</span>
+            <h2>vs Ansible</h2>
+            <p>Agentless SSH-based automation. YAML+Jinja2 vs Go. Modules vs Skills.</p>
+        </a>
+        <a href="chef.html" class="card">
+            <span class="badge">Config Mgmt</span>
+            <h2>vs Chef</h2>
+            <p>Agent-based pull model. Ruby DSL vs Go. Cookbooks vs Playbooks.</p>
+        </a>
+        <a href="puppet.html" class="card">
+            <span class="badge">Config Mgmt</span>
+            <h2>vs Puppet</h2>
+            <p>Agent-based with Puppet DSL. Declarative manifest vs procedural Go.</p>
+        </a>
+        <a href="saltstack.html" class="card">
+            <span class="badge">Config Mgmt</span>
+            <h2>vs SaltStack</h2>
+            <p>Event-driven with Salt master. Python vs Go. States vs Skills.</p>
+        </a>
+        <a href="cfengine.html" class="card">
+            <span class="badge">Config Mgmt</span>
+            <h2>vs CFEngine</h2>
+            <p>C-based agent with Promise Theory. Autonomous convergence vs on-demand push.</p>
+        </a>
+    </div>
+
+    <div class="section-title">Infrastructure as Code</div>
+    <div class="grid">
+        <a href="terraform.html" class="card">
+            <span class="badge">IaC</span>
+            <h2>vs Terraform</h2>
+            <p>Declarative cloud provisioning. HCL vs Go. State files vs stateless.</p>
+        </a>
+        <a href="pulumi.html" class="card">
+            <span class="badge">IaC</span>
+            <h2>vs Pulumi</h2>
+            <p>Multi-language IaC. Cloud resources vs server configuration.</p>
+        </a>
+        <a href="cloudformation.html" class="card">
+            <span class="badge">IaC</span>
+            <h2>vs CloudFormation</h2>
+            <p>AWS-native declarative templates. JSON/YAML vs Go. Cloud vs SSH.</p>
+        </a>
+        <a href="infrastructure-as-code.html" class="card">
+            <span class="badge">IaC</span>
+            <h2>Infrastructure as Code</h2>
+            <p>General comparison of Ork with IaC principles and tools.</p>
+        </a>
+    </div>
+
+    <div class="section-title">SSH Libraries</div>
+    <div class="grid">
+        <a href="ssh-libraries.html" class="card">
+            <span class="badge">SSH</span>
+            <h2>vs Go SSH Libraries</h2>
+            <p>Comparison with raw golang.org/x/crypto/ssh and other SSH libraries.</p>
+        </a>
+    </div>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="../index.html">Back to Index</a></p>
+    </div>
+</body>
+</html>

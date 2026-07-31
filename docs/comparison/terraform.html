@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ork vs Terraform Comparison - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .diagram { background: #f4f6f8; border-left: 3px solid #42b983; padding: 1rem 1.5rem; margin: 1rem 0; font-family: "SF Mono", Monaco, Inconsolata, monospace; font-size: 0.85rem; white-space: pre; overflow-x: auto; border-radius: 0 4px 4px 0; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Ork vs Terraform Comparison</h1>
+
+    <h2>Quick Comparison</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Terraform</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Language</strong></td>
+                <td>HCL (HashiCorp Configuration Language)</td>
+                <td>Go</td>
+            </tr>
+            <tr>
+                <td><strong>Purpose</strong></td>
+                <td>Infrastructure Provisioning</td>
+                <td>Configuration Management</td>
+            </tr>
+            <tr>
+                <td><strong>Layer</strong></td>
+                <td>Infrastructure (IaaS)</td>
+                <td>Software/Configuration</td>
+            </tr>
+            <tr>
+                <td><strong>State Management</strong></td>
+                <td>State file (local or remote)</td>
+                <td>No state file</td>
+            </tr>
+            <tr>
+                <td><strong>Target</strong></td>
+                <td>Cloud APIs, hypervisors</td>
+                <td>SSH to existing servers</td>
+            </tr>
+            <tr>
+                <td><strong>Execution</strong></td>
+                <td>Declarative (plan &rarr; apply)</td>
+                <td>Procedural (run now)</td>
+            </tr>
+            <tr>
+                <td><strong>Idempotency</strong></td>
+                <td>Built into providers</td>
+                <td>Playbook-level</td>
+            </tr>
+            <tr>
+                <td><strong>Lifecycle</strong></td>
+                <td>Create, update, destroy resources</td>
+                <td>Configure existing systems</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Core Difference</h2>
+
+    <p><strong>Terraform = Building the house</strong><br>
+    <strong>Ork = Furnishing and maintaining the house</strong></p>
+
+    <div class="diagram">┌─────────────────────────────────────────────────────────┐
+│  Terraform Layer (Infrastructure)                       │
+│  - Create EC2 instances                                 │
+│  - Provision VPCs, subnets                              │
+│  - Set up load balancers                                │
+│  - Create databases                                     │
+└─────────────────────────────────────────────────────────┘
+                          ▼
+              Servers now exist
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  Ork Layer (Configuration)                              │
+│  - Install nginx, mysql                                 │
+│  - Configure users, SSH keys                            │
+│  - Deploy applications                                  │
+│  - Run security updates                                 │
+└─────────────────────────────────────────────────────────┘</div>
+
+    <h2>What Each Tool Does</h2>
+
+    <h3>Terraform</h3>
+    <p><strong>Infrastructure as Code</strong> - Creates and manages infrastructure resources.</p>
+
+    <pre><code># main.tf - Create AWS infrastructure
+provider "aws" {
+  region = "us-west-2"
+}
+
+resource "aws_instance" "web" {
+  count         = 3
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
+
+  tags = {
+    Name = "web-server-${count.index}"
+  }
+}
+
+resource "aws_security_group" "web" {
+  name = "web-sg"
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}</code></pre>
+
+    <p><strong>Terraform workflow:</strong></p>
+    <pre><code>terraform init      # Download providers
+terraform plan      # Preview changes
+terraform apply     # Create/update infrastructure
+terraform destroy   # Remove infrastructure</code></pre>
+
+    <h3>Ork</h3>
+    <p><strong>Configuration Management</strong> - Configures existing servers.</p>
+
+    <pre><code>// After Terraform creates the server, Ork configures it
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
+
+// Add all created servers
+for _, ip := range serverIps {
+    webGroup.AddNode(ork.NewNodeForHost(ip).
+        SetUser("ubuntu").
+        SetKey("deploy.pem"))
+}
+inv.AddGroup(webGroup)
+
+// Configure all servers
+results := inv.Run(skills.NewUfwInstall())
+summary := results.Summary()
+fmt.Printf("Configured %d servers, %d changed\n", summary.Total, summary.Changed)
+
+// Custom skill for application deployment
+results = node.Run(myapp.NewDeploy())</code></pre>
+
+    <h2>Execution Model</h2>
+
+    <h3>Terraform (Declarative with State)</h3>
+    <div class="diagram">Desired State (HCL)
+       │
+       ▼
+┌──────────────┐
+│  Terraform   │──► Compare with state file
+│   Plan       │
+└──────────────┘
+       │
+       ▼
+Actual Changes Needed
+       │
+       ▼
+┌──────────────┐
+│  Terraform   │──► Execute via Cloud APIs
+│   Apply      │
+└──────────────┘
+       │
+       ▼
+Update State File</div>
+
+    <p><strong>Key characteristics:</strong></p>
+    <ul>
+        <li>Maintains state file tracking all resources</li>
+        <li>Compares desired vs actual state</li>
+        <li>Only makes necessary changes</li>
+        <li>Can destroy what it created</li>
+    </ul>
+
+    <h3>Ork (Procedural)</h3>
+    <div class="diagram">Your Go Program
+       │
+       ▼
+┌──────────────┐
+│   SSH to     │
+│   Server     │
+└──────────────┘
+       │
+       ▼
+Execute Commands/Playbooks
+       │
+       ▼
+Get Results</div>
+
+    <p><strong>Key characteristics:</strong></p>
+    <ul>
+        <li>No state file</li>
+        <li>Executes what you tell it, when you tell it</li>
+        <li>Cannot "unprovision" (no destroy)</li>
+        <li>One-way configuration</li>
+    </ul>
+
+    <h2>Use Case Examples</h2>
+
+    <h3>Scenario: Web Application Stack</h3>
+
+    <p><strong>Terraform handles:</strong></p>
+    <pre><code># Create the infrastructure
+resource "aws_vpc" "main" { cidr_block = "10.0.0.0/16" }
+
+resource "aws_instance" "web" {
+  count = 2
+  ami   = "ami-12345678"
+  # ... creates EC2 instances
+}
+
+resource "aws_rds_instance" "db" {
+  # ... creates managed database
+}
+
+resource "aws_elb" "web" {
+  # ... creates load balancer
+}</code></pre>
+
+    <p><strong>Ork handles:</strong></p>
+    <pre><code>// After Terraform creates servers, Ork configures them via Inventory
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
+
+// Add all web nodes
+for _, host := range []string{"web1.internal", "web2.internal"} {
+    webGroup.AddNode(ork.NewNodeForHost(host).
+        SetUser("ubuntu").
+        SetKey("deploy.pem"))
+}
+inv.AddGroup(webGroup)
+
+// Configure all web servers with results
+results := inv.Run(skills.NewUfwInstall())
+for host, result := range results.Results {
+    if result.Error != nil {
+        log.Printf("%s failed: %v", host, result.Error)
+    }
+}</code></pre>
+
+    <h2>Idempotency Comparison</h2>
+
+    <h3>Terraform Idempotency</h3>
+    <pre><code># Running 'terraform apply' twice:
+# First run: Creates 2 EC2 instances
+# Second run: No changes (instances already exist)
+
+resource "aws_instance" "web" {
+  count = 2
+  # ...
+}</code></pre>
+
+    <p>Terraform tracks resources in state file. Second apply = no-op.</p>
+
+    <h3>Ork Idempotency</h3>
+    <pre><code>// Running twice:
+// First run: Installs nginx, creates user
+// Second run: Same commands, nginx already installed
+
+// Skills handle idempotency internally
+results := node.Run(skills.NewAptInstall())
+result := results.Results["server.example.com"]
+if result.Changed {
+    log.Println("Nginx was installed")
+} else {
+    log.Println("Nginx already installed")
+}</code></pre>
+
+    <p>Ork skills check state before acting (e.g., "is nginx installed?").</p>
+
+    <h2>Complementary Usage</h2>
+
+    <p>Terraform and Ork work well together:</p>
+
+    <pre><code># terraform/main.tf - Create infrastructure
+resource "aws_instance" "web" {
+  count = 3
+  # ...
+
+  # Output the IPs for Ork to use
+}
+
+output "web_ips" {
+  value = aws_instance.web.*.private_ip
+}</code></pre>
+
+    <pre><code>// main.go - Configure the created servers
+// Read IPs from Terraform output
+ips := getTerraformOutput("web_ips")
+
+for _, ip := range ips {
+    node := ork.NewNodeForHost(ip)
+    results := node.Run(skills.NewPing())
+    result := results.Results[ip]
+    if result.Error != nil {
+        log.Printf("%s: %v", ip, result.Error)
+    }
+}</code></pre>
+
+    <p><strong>Typical workflow:</strong></p>
+    <ol>
+        <li><code>terraform apply</code> - Create infrastructure</li>
+        <li>Wait for instances to be ready</li>
+        <li>Ork configures the new servers</li>
+        <li>Application is deployed and running</li>
+    </ol>
+
+    <h2>Feature Comparison</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Terraform</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Create VMs</strong></td>
+                <td>✅ Yes (AWS, Azure, GCP, etc.)</td>
+                <td>❌ No</td>
+            </tr>
+            <tr>
+                <td><strong>Configure Software</strong></td>
+                <td>⚠️ Limited (user_data)</td>
+                <td>✅ Yes</td>
+            </tr>
+            <tr>
+                <td><strong>Manage Users</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+            </tr>
+            <tr>
+                <td><strong>Install Packages</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+            </tr>
+            <tr>
+                <td><strong>Deploy Apps</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+            </tr>
+            <tr>
+                <td><strong>Run Commands</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+            </tr>
+            <tr>
+                <td><strong>Parallel Execution</strong></td>
+                <td>✅ Resource-level</td>
+                <td>✅ Inventory-level (configurable)</td>
+            </tr>
+            <tr>
+                <td><strong>Rolling Updates</strong></td>
+                <td>✅ Via resource lifecycle</td>
+                <td>⚠️ Manual</td>
+            </tr>
+            <tr>
+                <td><strong>State Tracking</strong></td>
+                <td>✅ Yes (state file)</td>
+                <td>❌ No</td>
+            </tr>
+            <tr>
+                <td><strong>Drift Detection</strong></td>
+                <td>✅ Yes</td>
+                <td>⚠️ Manual (via Check)</td>
+            </tr>
+            <tr>
+                <td><strong>Destroy Resources</strong></td>
+                <td>✅ Yes</td>
+                <td>❌ No</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>When to Use Each</h2>
+
+    <h3>Use Terraform when:</h3>
+    <ul>
+        <li>Creating cloud infrastructure (AWS, Azure, GCP)</li>
+        <li>Managing network topology (VPCs, subnets, firewalls)</li>
+        <li>Provisioning VMs, databases, load balancers</li>
+        <li>You need infrastructure lifecycle (create/update/destroy)</li>
+        <li>Multi-cloud or hybrid infrastructure</li>
+    </ul>
+
+    <h3>Use Ork when:</h3>
+    <ul>
+        <li>Configuring existing servers</li>
+        <li>Installing and configuring software</li>
+        <li>Managing users, SSH keys, security settings</li>
+        <li>Running maintenance tasks (updates, backups)</li>
+        <li>Application deployment</li>
+        <li>You have Go expertise and want type safety</li>
+    </ul>
+
+    <h3>Use Both when:</h3>
+    <ul>
+        <li>Full stack automation needed</li>
+        <li>Terraform creates infrastructure</li>
+        <li>Ork configures the created servers</li>
+        <li>Terraform manages resource lifecycle</li>
+        <li>Ork manages configuration drift</li>
+    </ul>
+
+    <h2>Summary</h2>
+
+    <p><strong>Terraform:</strong></p>
+    <ul>
+        <li>"I need 3 servers in AWS with a load balancer"</li>
+        <li>Creates/manages infrastructure</li>
+        <li>Has state, can destroy</li>
+    </ul>
+
+    <p><strong>Ork:</strong></p>
+    <ul>
+        <li>"Install nginx and deploy my app on these 3 servers"</li>
+        <li>Configures existing infrastructure</li>
+        <li>No state, runs on demand</li>
+    </ul>
+
+    <p><strong>Together:</strong></p>
+    <pre><code># 1. Create infrastructure
+terraform apply
+
+# 2. Configure it
+go run configure.go
+
+# Full stack deployed!</code></pre>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="../index.html">Back to Index</a> &mdash; <a href="index.html">Comparison Index</a></p>
+    </div>
+</body>
+</html>

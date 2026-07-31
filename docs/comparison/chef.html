@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ork vs Chef Comparison - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .diagram { background: #f4f6f8; border-left: 3px solid #42b983; padding: 1rem 1.5rem; margin: 1rem 0; font-family: "SF Mono", Monaco, Inconsolata, monospace; font-size: 0.85rem; white-space: pre; overflow-x: auto; border-radius: 0 4px 4px 0; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Ork vs Chef Comparison</h1>
+
+<h2>Quick Comparison</h2>
+<table>
+<thead><tr>
+<th>Aspect</th>
+<th>Chef</th>
+<th>Ork</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>Language</strong></td>
+<td>Ruby</td>
+<td>Go</td>
+</tr>
+<tr>
+<td><strong>Architecture</strong></td>
+<td>Agent-based</td>
+<td>Agentless (SSH)</td>
+</tr>
+<tr>
+<td><strong>Execution</strong></td>
+<td>Pull</td>
+<td>Push</td>
+</tr>
+<tr>
+<td><strong>Inventory</strong></td>
+<td>Chef Server registry</td>
+<td>Go structs (programmatic)</td>
+</tr>
+<tr>
+<td><strong>Automation Unit</strong></td>
+<td>Cookbooks + Recipes</td>
+<td>Playbooks</td>
+</tr>
+<tr>
+<td><strong>State Model</strong></td>
+<td>Declarative / Convergent</td>
+<td>Procedural</td>
+</tr>
+<tr>
+<td><strong>Idempotency</strong></td>
+<td>Built into resources</td>
+<td>Playbook-level</td>
+</tr>
+<tr>
+<td><strong>Server Required</strong></td>
+<td>Yes (Chef Server)</td>
+<td>No</td>
+</tr>
+<tr>
+<td><strong>Learning Curve</strong></td>
+<td>Steep</td>
+<td>Low (Go knowledge)</td>
+</tr>
+</tbody>
+</table>
+<h2>Architecture & Execution</h2>
+<h3>Chef (Agent-based, Pull)</h3>
+<div class="diagram">┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│ Chef Server │◄────│ Chef Client  │     │ Chef Client │
+│  (API/DB)   │     │  (on node)   │     │  (on node)  │
+└─────────────┘     └──────────────┘     └─────────────┘
+        ▲                    │                  │
+        │                    ▼                  ▼
+        │            Runs every 30 min   Runs every 30 min
+        │            Pulls cookbooks     Pulls cookbooks
+        │            Converges state     Converges state
+        │
+┌───────┴───────┐
+│ Workstation   │
+│ (knife, edit  │
+│  cookbooks)   │
+└───────────────┘</div>
+<ul>
+<li><strong>Chef Server</strong> - Central API storing cookbooks, node data, policies</li>
+<li><strong>Chef Client</strong> - Agent installed on each node</li>
+<li><strong>Workstation</strong> - Developer machine for authoring cookbooks</li>
+</ul>
+<h3>Ork (Agentless, Push)</h3>
+<div class="diagram">┌─────────────┐     SSH      ┌─────────────┐
+│   Your Go   │─────────────►│ Target Node │
+│   Program   │              │  (no agent) │
+│             │─────────────►│             │
+└─────────────┘              └─────────────┘
+        │
+        │ SSH to any node
+        │
+   ┌────┴────┐
+   │ Node 2  │
+   │ Node 3  │
+   │ Node N  │
+   └─────────┘</div>
+<ul>
+<li><strong>No agent</strong> - Pure SSH connection</li>
+<li><strong>Push model</strong> - Your program initiates operations</li>
+<li><strong>On-demand</strong> - Runs when you invoke it</li>
+</ul>
+<h2>Inventory Management</h2>
+<h3>Chef Nodes (Dynamic Registry)</h3>
+<ul>
+<li>No static inventory files</li>
+<li>Nodes self-register with Chef Server</li>
+<li>Query nodes via search</li>
+</ul>
+<pre><code># Search for nodes
+knife search node 'role:webserver AND chef_environment:production'
+
+# Node attributes stored centrally
+knife node show web1.example.com -F json</code></pre>
+<pre><code># In a recipe, target nodes dynamically
+search(:node, 'role:webserver').each do |web_node|
+  # Configure each web server
+end</code></pre>
+<h3>Ork Inventory (Implemented)</h3>
+<pre><code>// Programmatic creation
+inv := ork.NewInventory()
+
+// Create and add group
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
+inv.AddGroup(webGroup)
+
+// Target specific group
+results := inv.GetGroupByName("webservers").Run(skills.NewPing())
+summary := results.Summary()</code></pre>
+<h2>Automation Units</h2>
+<h3>Chef Cookbook Structure</h3>
+<div class="diagram">cookbooks/
+└── myapp/
+    ├── recipes/
+    │   ├── default.rb      # Main recipe
+    │   └── configure.rb    # Sub-recipe
+    ├── templates/
+    │   └── config.erb      # ERB templates
+    ├── files/
+    │   └── script.sh       # Static files
+    ├── attributes/
+    │   └── default.rb      # Default values
+    └── metadata.rb         # Cookbook metadata</div>
+<h3>Chef Recipe (Declarative)</h3>
+<pre><code># cookbooks/nginx/recipes/default.rb
+# Declares desired state, not execution steps
+
+package 'nginx' do
+  action :install
+end
+
+service 'nginx' do
+  action [:enable, :start]
+end
+
+template '/etc/nginx/sites-enabled/default' do
+  source 'site.erb'
+  variables(
+    server_name: node['fqdn'],
+    port: 80
+  )
+  notifies :restart, 'service[nginx]', :delayed
+end
+
+# Chef decides HOW to achieve this state
+# Different on Ubuntu vs CentOS vs Windows</code></pre>
+<h3>Ork Skill (Procedural)</h3>
+<pre><code>// Explicit steps executed in order
+ping := skills.NewPing()
+results := node.Run(ping)
+
+// Access result for specific node
+result := results.Results["server.example.com"]
+if result.Error != nil {
+    return err
+}
+
+// Chain multiple skills
+results = node.Run(skills.NewAptUpdate())
+results = node.Run(skills.NewAptUpgrade())</code></pre>
+<h2>State Model</h2>
+<h3>Chef (Declarative / Convergent)</h3>
+<ul>
+<li><strong>Declare desired state</strong> - "Nginx should be installed and running"</li>
+<li><strong>Resources handle implementation</strong> - Chef knows how to install nginx on different OSes</li>
+<li><strong>Convergent</strong> - Repeated runs only fix drift</li>
+<li><strong>Periodic execution</strong> - Chef client runs every 30 minutes by default</li>
+</ul>
+<pre><code># Same recipe works on Ubuntu, CentOS, Windows
+package 'nginx'  # Chef picks apt, yum, or msi</code></pre>
+<h3>Ork (Procedural)</h3>
+<ul>
+<li><strong>Execute explicit steps</strong> - "Run apt update, then apt upgrade"</li>
+<li><strong>You define the implementation</strong> - Write Go code for each step</li>
+<li><strong>Run once</strong> - Executed when you call it</li>
+<li><strong>On-demand</strong> - No background processes</li>
+</ul>
+<pre><code>// You control exactly what runs and when
+results := node.Run(skills.NewAptUpgrade())
+result := results.Results["server.example.com"]</code></pre>
+<h2>Idempotency</h2>
+<h3>Chef (Resource-level)</h3>
+<pre><code># Chef resources are inherently idempotent
+package 'nginx' do
+  action :install
+end
+# First run: installs nginx
+# Second run: checks, already installed, does nothing
+
+# Idempotency built into resource providers
+template '/etc/config' do
+  source 'config.erb'
+  # Only updates if template content changed
+end</code></pre>
+<h3>Ork (Skill-level)</h3>
+<pre><code>// Check pattern via RunnerInterface
+aptUpgrade := skills.NewAptUpgrade()
+
+// Check if upgrade needed - works on Node, Group, or Inventory
+results := node.Check(aptUpgrade)
+result := results.Results["server.example.com"]
+
+if result.Changed {
+    log.Printf("Packages would be updated")
+}</code></pre>
+<h2>Key Concepts Comparison</h2>
+<table>
+<thead><tr>
+<th>Chef Concept</th>
+<th>Ork Equivalent</th>
+</tr></thead>
+<tbody>
+<tr>
+<td>Cookbook</td>
+<td>Package of related playbooks</td>
+</tr>
+<tr>
+<td>Recipe</td>
+<td>Individual playbook</td>
+</tr>
+<tr>
+<td>Resource</td>
+<td>Playbook implementation</td>
+</tr>
+<tr>
+<td>Attribute</td>
+<td>Node configuration / Args</td>
+</tr>
+<tr>
+<td>Role</td>
+<td>Group with shared playbooks</td>
+</tr>
+<tr>
+<td>Data Bag</td>
+<td>Configuration data</td>
+</tr>
+<tr>
+<td>Environment</td>
+<td>Group-level variables</td>
+</tr>
+<tr>
+<td>Node</td>
+<td>Node</td>
+</tr>
+<tr>
+<td>Knife CLI</td>
+<td>Go API / future CLI</td>
+</tr>
+</tbody>
+</table>
+<h2>Feature Comparison Table</h2>
+<table>
+<thead><tr>
+<th>Feature</th>
+<th>Chef</th>
+<th>Ork</th>
+<th>Notes</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><strong>Architecture</strong></td>
+<td>✅ Agent-based (Chef Client)</td>
+<td>✅ Agentless (SSH)</td>
+<td>Chef requires agent installation; Ork uses SSH</td>
+</tr>
+<tr>
+<td><strong>Execution Model</strong></td>
+<td>✅ Pull (every 30 min)</td>
+<td>✅ Push (on-demand)</td>
+<td>Chef runs continuously; Ork runs when invoked</td>
+</tr>
+<tr>
+<td><strong>Server Required</strong></td>
+<td>✅ Yes (Chef Server)</td>
+<td>✅ No</td>
+<td>Chef needs central server; Ork is standalone</td>
+</tr>
+<tr>
+<td><strong>Parallel Execution</strong></td>
+<td>✅ Native (Chef Server)</td>
+<td>✅ Configurable concurrency</td>
+<td>Chef parallel via server; Ork via SetMaxConcurrency()</td>
+</tr>
+<tr>
+<td><strong>State Model</strong></td>
+<td>✅ Declarative / Convergent</td>
+<td>✅ Procedural</td>
+<td>Chef declares desired state; Ork explicit execution</td>
+</tr>
+<tr>
+<td><strong>Idempotency</strong></td>
+<td>✅ Built-in (resources)</td>
+<td>✅ Playbook-level</td>
+<td>Both support idempotent operations</td>
+</tr>
+<tr>
+<td><strong>Secrets Management</strong></td>
+<td>✅ Chef Vault / Data Bags</td>
+<td>✅ envenc vault</td>
+<td>Chef has encrypted data bags; Ork uses envenc</td>
+</tr>
+<tr>
+<td><strong>Inventory</strong></td>
+<td>✅ Dynamic (node registry)</td>
+<td>✅ Programmatic (structs)</td>
+<td>Chef nodes self-register; Ork explicit creation</td>
+</tr>
+<tr>
+<td><strong>Configuration Language</strong></td>
+<td>✅ Ruby (DSL)</td>
+<td>✅ Go</td>
+<td>Chef uses Ruby DSL; Ork uses Go</td>
+</tr>
+<tr>
+<td><strong>Package Management</strong></td>
+<td>✅ Cross-platform (resource providers)</td>
+<td>⚠️ Platform-specific playbooks</td>
+<td>Chef handles OS differences; Ork needs playbooks per OS</td>
+</tr>
+<tr>
+<td><strong>Templates</strong></td>
+<td>✅ ERB templates</td>
+<td>✅ Go templates</td>
+<td>Both support templating</td>
+</tr>
+<tr>
+<td><strong>Search/Query</strong></td>
+<td>✅ Built-in search API</td>
+<td>❌ Manual filtering</td>
+<td>Chef can query node attributes; Ork manual</td>
+</tr>
+<tr>
+<td><strong>Role Management</strong></td>
+<td>✅ Built-in roles</td>
+<td>⚠️ Manual (groups)</td>
+<td>Chef has role system; Ork uses groups</td>
+</tr>
+<tr>
+<td><strong>Environments</strong></td>
+<td>✅ Built-in environments</td>
+<td>⚠️ Group-level args</td>
+<td>Chef has environment concept; Ork uses args</td>
+</tr>
+<tr>
+<td><strong>Data Bags</strong></td>
+<td>✅ Built-in data storage</td>
+<td>⚠️ Go structs / config</td>
+<td>Chef has data bags; Ork uses Go structures</td>
+</tr>
+<tr>
+<td><strong>Cookbook Ecosystem</strong></td>
+<td>✅ Supermarket (community)</td>
+<td>⚠️ Built-in + custom</td>
+<td>Chef has large cookbook repository</td>
+</tr>
+<tr>
+<td><strong>Test Framework</strong></td>
+<td>✅ Test Kitchen, InSpec</td>
+<td>⚠️ Go testing + testcontainers</td>
+<td>Chef has mature testing tools</td>
+</tr>
+<tr>
+<td><strong>Compliance</strong></td>
+<td>✅ InSpec (built-in)</td>
+<td>❌ Manual</td>
+<td>Chef has compliance scanning</td>
+</tr>
+<tr>
+<td><strong>Type Safety</strong></td>
+<td>❌ No</td>
+<td>✅ Yes (Go)</td>
+<td>Ork has compile-time type checking</td>
+</tr>
+<tr>
+<td><strong>Learning Curve</strong></td>
+<td>⚠️ Steep (Ruby + Chef concepts)</td>
+<td>✅ Low (Go knowledge)</td>
+<td>Chef requires Ruby and DSL knowledge</td>
+</tr>
+<tr>
+<td><strong>Scalability</strong></td>
+<td>✅ Hundreds/thousands of nodes</td>
+<td>⚠️ Smaller scale</td>
+<td>Chef designed for large fleets</td>
+</tr>
+<tr>
+<td><strong>Continuous Enforcement</strong></td>
+<td>✅ Yes (client runs)</td>
+<td>❌ No (on-demand)</td>
+<td>Chef enforces continuously; Ork on-demand</td>
+</tr>
+</tbody>
+</table>
+<h2>When to Choose Each</h2>
+<h3>Choose Chef when:</h3>
+<ul>
+<li>Managing hundreds/thousands of nodes</li>
+<li>Need continuous enforcement (not just on-demand)</li>
+<li>Want declarative "desired state" model</li>
+<li>Team has Ruby expertise</li>
+<li>Need complete lifecycle management</li>
+<li>Can invest in Chef Server infrastructure</li>
+</ul>
+<h3>Choose Ork when:</h3>
+<ul>
+<li>Building Go applications</li>
+<li>Need programmatic/automated workflows</li>
+<li>Want type safety and compile-time checking</li>
+<li>Embedding automation in larger projects</li>
+<li>Prefer SSH-based, agentless approach</li>
+<li>Need simple, lightweight solution</li>
+</ul>
+<h2>Summary</h2>
+<p><strong>Chef Philosophy:</strong></p>
+<ul>
+<li>Set up once, converge continuously</li>
+<li>Nodes self-heal to desired state</li>
+<li>Heavy infrastructure, powerful for scale</li>
+</ul>
+<p><strong>Ork Philosophy:</strong></p>
+<ul>
+<li>Run when needed, explicit control</li>
+<li>Simple SSH-based execution</li>
+<li>Lightweight, embeddable, type-safe</li>
+</ul>
+<p><strong>Fundamental Difference:</strong></p>
+<ul>
+<li>Chef: "Ensure the system is always in this state" (background agent)</li>
+<li>Ork: "Run this task now" (on-demand execution)</li>
+</ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="../index.html">Back to Index</a> &mdash; <a href="index.html">Comparison Index</a></p>
+    </div>
+</body>
+</html>

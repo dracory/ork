@@ -18,6 +18,7 @@
         .badge.start { background: #42b983; }
         .badge.core { background: #3498db; }
         .badge.ops { background: #e67e22; }
+        .badge.compare { background: #9b59b6; }
         .section-title { color: #7f8c8d; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; margin: 2rem 0 1rem 0; font-weight: 600; }
         .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
         .footer a { color: #42b983; text-decoration: none; }
@@ -133,6 +134,30 @@
             <span class="badge ops">Ops</span>
             <h2>Conventions</h2>
             <p>Coding and documentation standards for Ork contributors.</p>
+        </a>
+    </div>
+
+    <div class="section-title">Comparison</div>
+    <div class="grid">
+        <a href="comparison/index.html" class="card">
+            <span class="badge ops">Compare</span>
+            <h2>Comparison Index</h2>
+            <p>How Ork compares to Ansible, Chef, Puppet, SaltStack, CFEngine, Terraform, Pulumi, and more.</p>
+        </a>
+        <a href="comparison/ansible.html" class="card">
+            <span class="badge ops">Compare</span>
+            <h2>vs Ansible</h2>
+            <p>Agentless SSH automation: YAML+Jinja2 vs Go. Modules vs Skills.</p>
+        </a>
+        <a href="comparison/terraform.html" class="card">
+            <span class="badge ops">Compare</span>
+            <h2>vs Terraform</h2>
+            <p>Declarative cloud provisioning with state files vs stateless SSH automation.</p>
+        </a>
+        <a href="comparison/ssh-libraries.html" class="card">
+            <span class="badge ops">Compare</span>
+            <h2>vs SSH Libraries</h2>
+            <p>Raw golang.org/x/crypto/ssh and other SSH libraries vs Ork's abstraction.</p>
         </a>
     </div>
 

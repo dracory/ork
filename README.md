@@ -61,9 +61,19 @@ Full documentation is available as a static HTML site in the [docs](docs/) direc
 - [Cheatsheet](docs/cheatsheet.html) - Quick reference for common operations
 - [Conventions](docs/conventions.html) - Coding and documentation standards for contributors
 
-### Reference
+### Comparison
 
-- [Comparison with Ansible](docs/comparison/ansible.md) - How Ork compares to Ansible
+- [Comparison Index](docs/comparison/index.html) - Overview of all comparisons
+- [vs Ansible](docs/comparison/ansible.html) - Agentless SSH automation: YAML+Jinja2 vs Go
+- [vs Chef](docs/comparison/chef.html) - Agent-based pull: Ruby DSL vs Go
+- [vs Puppet](docs/comparison/puppet.html) - Agent-based with Puppet DSL vs Go
+- [vs SaltStack](docs/comparison/saltstack.html) - Event-driven with Salt master vs Go
+- [vs CFEngine](docs/comparison/cfengine.html) - C-based Promise Theory vs Go
+- [vs Terraform](docs/comparison/terraform.html) - Declarative cloud provisioning vs SSH automation
+- [vs Pulumi](docs/comparison/pulumi.html) - Multi-language IaC vs server configuration
+- [vs CloudFormation](docs/comparison/cloudformation.html) - AWS-native templates vs Go
+- [Infrastructure as Code](docs/comparison/infrastructure-as-code.html) - General IaC comparison
+- [vs SSH Libraries](docs/comparison/ssh-libraries.html) - Raw Go SSH libraries vs Ork
 
 ## License
 

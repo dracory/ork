@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ork vs Infrastructure-as-Code Tools Comparison - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .diagram { background: #f4f6f8; border-left: 3px solid #42b983; padding: 1rem 1.5rem; margin: 1rem 0; font-family: "SF Mono", Monaco, Inconsolata, monospace; font-size: 0.85rem; white-space: pre; overflow-x: auto; border-radius: 0 4px 4px 0; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Ork vs Infrastructure-as-Code Tools Comparison</h1>
+
+    <p>This document compares Ork with modern Infrastructure-as-Code (IaC) tools.</p>
+
+    <p><strong>Key Distinction:</strong></p>
+    <ul>
+        <li><strong>IaC Tools</strong> (Pulumi, CloudFormation, etc.) = Create infrastructure (servers, networks, databases)</li>
+        <li><strong>Ork</strong> = Configure existing infrastructure (install software, manage users)</li>
+    </ul>
+
+    <hr>
+
+    <h2>Quick Comparison Table</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Tool</th>
+                <th>Language</th>
+                <th>Provider</th>
+                <th>Model</th>
+                <th>Scope</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Ork</strong></td>
+                <td>Go</td>
+                <td>Any (SSH)</td>
+                <td>Procedural</td>
+                <td>Configuration</td>
+            </tr>
+            <tr>
+                <td><strong>Pulumi</strong></td>
+                <td>TypeScript/Python/Go/C#</td>
+                <td>Multi-cloud</td>
+                <td>Declarative</td>
+                <td>Infrastructure</td>
+            </tr>
+            <tr>
+                <td><strong>CloudFormation</strong></td>
+                <td>JSON/YAML</td>
+                <td>AWS only</td>
+                <td>Declarative</td>
+                <td>Infrastructure</td>
+            </tr>
+            <tr>
+                <td><strong>Deployment Manager</strong></td>
+                <td>YAML/Python</td>
+                <td>GCP only</td>
+                <td>Declarative</td>
+                <td>Infrastructure</td>
+            </tr>
+            <tr>
+                <td><strong>Crossplane</strong></td>
+                <td>YAML (Kubernetes)</td>
+                <td>Multi-cloud</td>
+                <td>Declarative</td>
+                <td>Infrastructure</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Pulumi</h2>
+
+    <h3>Overview</h3>
+    <p>Modern Infrastructure-as-Code using real programming languages instead of YAML/JSON.</p>
+
+    <h3>Pulumi Example (TypeScript)</h3>
+    <pre><code>import * as aws from "@pulumi/aws";
+
+// Create EC2 instance
+const server = new aws.ec2.Instance("web-server", {
+    ami: "ami-0c55b159cbfafe1f0",
+    instanceType: "t2.micro",
+    tags: {
+        Name: "web-server",
+    },
+});
+
+// Export the IP
+export const publicIp = server.publicIp;</code></pre>
+
+    <h3>Ork After Pulumi</h3>
+    <pre><code>// After Pulumi creates the server, Ork configures it via Inventory
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
+webGroup.AddNode(ork.NewNodeForHost(server.PublicIp).
+    SetUser("ubuntu").
+    SetKey("deploy.pem"))
+inv.AddGroup(webGroup)
+
+// Configure the server with skills
+results := inv.Run(skills.NewUfwInstall())
+summary := results.Summary()</code></pre>
+
+    <h3>Pulumi vs Ork</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Pulumi</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Creates VMs</strong></td>
+                <td>✅ Yes</td>
+                <td>❌ No</td>
+            </tr>
+            <tr>
+                <td><strong>Configures Software</strong></td>
+                <td>⚠️ Limited (user_data)</td>
+                <td>✅ Yes</td>
+            </tr>
+            <tr>
+                <td><strong>Language</strong></td>
+                <td>✅ TS/Python/Go/C#</td>
+                <td>✅ Go</td>
+            </tr>
+            <tr>
+                <td><strong>State</strong></td>
+                <td>✅ State file (backend)</td>
+                <td>❌ None</td>
+            </tr>
+            <tr>
+                <td><strong>Type Safety</strong></td>
+                <td>✅ Yes (your language)</td>
+                <td>✅ Yes (Go)</td>
+            </tr>
+            <tr>
+                <td><strong>IDE Support</strong></td>
+                <td>✅ Excellent</td>
+                <td>✅ Excellent</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong>Use together:</strong> Pulumi provisions, Ork configures.</p>
+
+    <hr>
+
+    <h2>AWS CloudFormation</h2>
+
+    <h3>Overview</h3>
+    <p>AWS-native Infrastructure-as-Code. JSON/YAML templates describing AWS resources.</p>
+
+    <h3>CloudFormation Example (YAML)</h3>
+    <pre><code>AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-0c55b159cbfafe1f0
+      InstanceType: t2.micro
+      KeyName: my-key
+      SecurityGroups:
+        - !Ref WebSecurityGroup
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          apt-get update
+          apt-get install -y nginx
+
+  WebSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable HTTP
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0</code></pre>
+
+    <h3>CloudFormation vs Ork</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>CloudFormation</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Scope</strong></td>
+                <td>⚠️ AWS only</td>
+                <td>✅ Any SSH server</td>
+            </tr>
+            <tr>
+                <td><strong>Language</strong></td>
+                <td>✅ JSON/YAML</td>
+                <td>✅ Go</td>
+            </tr>
+            <tr>
+                <td><strong>UserData</strong></td>
+                <td>⚠️ Limited scripting</td>
+                <td>✅ Full playbook library</td>
+            </tr>
+            <tr>
+                <td><strong>Drift Detection</strong></td>
+                <td>✅ Built-in</td>
+                <td>⚠️ Manual (via Check)</td>
+            </tr>
+            <tr>
+                <td><strong>Rollback</strong></td>
+                <td>✅ Automatic</td>
+                <td>⚠️ Manual</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong>CloudFormation UserData limitations:</strong></p>
+    <ul>
+        <li>Run once at boot</li>
+        <li>No error handling</li>
+        <li>Basic shell scripts only</li>
+    </ul>
+
+    <p><strong>Ork advantages:</strong></p>
+    <ul>
+        <li>Rich playbook ecosystem</li>
+        <li>Error handling</li>
+        <li>Can re-run anytime</li>
+        <li>Cross-platform (not AWS-specific)</li>
+    </ul>
+
+    <hr>
+
+    <h2>Google Cloud Deployment Manager</h2>
+
+    <h3>Overview</h3>
+    <p>GCP-native Infrastructure-as-Code. Similar to CloudFormation but for GCP.</p>
+
+    <h3>Deployment Manager Example (YAML)</h3>
+    <pre><code>resources:
+- name: vm-instance
+  type: compute.v1.instance
+  properties:
+    zone: us-central1-a
+    machineType: zones/us-central1-a/machineTypes/f1-micro
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: projects/debian-cloud/global/images/family/debian-9
+    networkInterfaces:
+    - network: global/networks/default
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT</code></pre>
+
+    <h3>Deployment Manager vs Ork</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Deployment Manager</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Scope</strong></td>
+                <td>⚠️ GCP only</td>
+                <td>✅ Any SSH server</td>
+            </tr>
+            <tr>
+                <td><strong>Templates</strong></td>
+                <td>✅ Jinja2/Python</td>
+                <td>✅ Go code</td>
+            </tr>
+            <tr>
+                <td><strong>Configuration</strong></td>
+                <td>⚠️ Limited (startup scripts)</td>
+                <td>✅ Full playbooks</td>
+            </tr>
+            <tr>
+                <td><strong>Multi-cloud</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Crossplane</h2>
+
+    <h3>Overview</h3>
+    <p>Kubernetes-native Infrastructure-as-Code. Uses Kubernetes controllers to provision cloud resources.</p>
+
+    <h3>Crossplane Example (YAML)</h3>
+    <pre><code>apiVersion: compute.aws.crossplane.io/v1beta1
+kind: Instance
+metadata:
+  name: my-ec2-instance
+spec:
+  forProvider:
+    region: us-east-1
+    imageId: ami-0c55b159cbfafe1f0
+    instanceType: t2.micro
+  providerConfigRef:
+    name: aws-provider</code></pre>
+
+    <h3>Crossplane Architecture</h3>
+    <div class="diagram">┌─────────────────┐
+│   Kubernetes    │
+│   Cluster       │
+│                 │
+│ ┌─────────────┐ │
+│ │ Crossplane  │ │◄─── YAML resources
+│ │ Controller  │ │      (like above)
+│ └──────┬──────┘ │
+└────────┼─────────┘
+         │
+    Cloud APIs
+         │
+   ┌─────┴──────┐
+   │ AWS/GCP/   │
+   │ Azure      │
+   └────────────┘</div>
+
+    <h3>Crossplane vs Ork</h3>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Crossplane</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Platform</strong></td>
+                <td>✅ Kubernetes</td>
+                <td>✅ Any Go runtime</td>
+            </tr>
+            <tr>
+                <td><strong>Interface</strong></td>
+                <td>✅ YAML/Kubectl</td>
+                <td>✅ Go API</td>
+            </tr>
+            <tr>
+                <td><strong>Creates Resources</strong></td>
+                <td>✅ Yes</td>
+                <td>❌ No</td>
+            </tr>
+            <tr>
+                <td><strong>Configures VMs</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+            </tr>
+            <tr>
+                <td><strong>GitOps</strong></td>
+                <td>✅ Native (ArgoCD/Flux)</td>
+                <td>⚠️ User implements</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <hr>
+
+    <h2>Common Pattern: IaC + Ork</h2>
+
+    <p>All these IaC tools work well with Ork in a two-phase workflow:</p>
+
+    <h3>Phase 1: Infrastructure (IaC Tool)</h3>
+    <pre><code># CloudFormation, Pulumi, etc. create infrastructure
+Resources:
+  WebServer:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      # ... creates the server
+
+Outputs:
+  ServerIP:
+    Value: !GetAtt WebServer.PublicIp
+    Description: IP of created server</code></pre>
+
+    <h3>Phase 2: Configuration (Ork)</h3>
+    <pre><code>// Read IPs from IaC output
+ips := getCloudFormationOutput("ServerIPs")
+
+// Load secrets from vault (if needed)
+vaultKeys, err := ork.VaultFileToKeysWithPrompt("vault.envenc")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Configure with Ork via Inventory
+inv := ork.NewInventory()
+webGroup := ork.NewGroup("webservers")
+for _, ip := range ips {
+    node := ork.NewNodeForHost(ip).
+        SetUser("ubuntu").
+        SetKey("deploy.pem")
+    // Set vault secrets as node args
+    for key, value := range vaultKeys {
+        node.SetArg(key, value)
+    }
+    webGroup.AddNode(node)
+}
+inv.AddGroup(webGroup)
+
+// Security hardening across all servers
+results := inv.Run(skills.NewUfwInstall())
+results = inv.Run(skills.NewFail2banInstall())
+
+// Install stack
+results = inv.Run(skills.NewAptUpdate())
+
+// Deploy application with per-node results
+deploy := myapp.NewDeploy()
+deploy.SetArg("version", "1.2.3")
+results = inv.Run(deploy)
+for host, result := range results.Results {
+    if result.Error != nil {
+        log.Printf("%s deploy failed: %v", host, result.Error)
+    }
+}</code></pre>
+
+    <hr>
+
+    <h2>When to Use Each</h2>
+
+    <h3>Use IaC Tools (Pulumi/CloudFormation/etc.) when:</h3>
+    <ul>
+        <li>Creating cloud infrastructure</li>
+        <li>Managing VPCs, subnets, security groups</li>
+        <li>Provisioning managed services (RDS, S3, etc.)</li>
+        <li>Need infrastructure lifecycle (create/update/destroy)</li>
+        <li>Multi-cloud or cloud-native approach</li>
+    </ul>
+
+    <h3>Use Ork when:</h3>
+    <ul>
+        <li>Configuring existing servers</li>
+        <li>Installing and configuring software</li>
+        <li>Managing users, SSH keys, firewalls</li>
+        <li>Running maintenance tasks</li>
+        <li>Application deployment</li>
+        <li>Cross-platform (works on any SSH server)</li>
+        <li>Secure secrets management (vault integration)</li>
+        <li>Interactive configuration (prompt functions)</li>
+    </ul>
+
+    <h3>Use Both when:</h3>
+    <div class="diagram">┌─────────────────────────────────────┐
+│  1. Pulumi/CloudFormation           │
+│     - Create EC2 instance           │
+│     - Setup networking              │
+│     - Output IP address             │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  2. Ork                             │
+│     - SSH to new server             │
+│     - Install security tools          │
+│     - Configure users                 │
+│     - Deploy application              │
+└─────────────────────────────────────┘</div>
+
+    <hr>
+
+    <h2>Summary</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Need</th>
+                <th>Tool Category</th>
+                <th>Examples</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Create VMs</strong></td>
+                <td>IaC</td>
+                <td>Pulumi, CloudFormation, Crossplane</td>
+            </tr>
+            <tr>
+                <td><strong>Configure VMs</strong></td>
+                <td>Config Management</td>
+                <td>Ork, Ansible, Chef</td>
+            </tr>
+            <tr>
+                <td><strong>Full Stack</strong></td>
+                <td>Both</td>
+                <td>IaC + Ork</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <p><strong>Remember:</strong></p>
+    <ul>
+        <li>IaC tools are for <strong>infrastructure provisioning</strong></li>
+        <li>Ork is for <strong>configuration management</strong></li>
+        <li>They are <strong>complementary</strong>, not competitive</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="../index.html">Back to Index</a> &mdash; <a href="index.html">Comparison Index</a></p>
+    </div>
+</body>
+</html>

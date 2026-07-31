@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ork vs Pulumi Comparison - Ork Documentation</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 2rem; }
+        a { color: #42b983; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-block; margin-bottom: 2rem; color: #666; }
+        .back-link:hover { color: #42b983; }
+        h1 { color: #2c3e50; border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        h2 { color: #34495e; margin-top: 2rem; border-bottom: 1px solid #eee; padding-bottom: 0.3rem; }
+        h3 { color: #555; margin-top: 1.5rem; }
+        pre { background: #f8f9fa; padding: 1rem; border-radius: 4px; overflow-x: auto; border: 1px solid #e9ecef; }
+        code { background: #f8f9fa; padding: 0.2rem 0.4rem; border-radius: 3px; font-family: "SF Mono", Monaco, Inconsolata, "Fira Code", monospace; font-size: 0.9em; }
+        pre code { background: none; padding: 0; }
+        ul, ol { padding-left: 2rem; }
+        li { margin: 0.3rem 0; }
+        p { margin: 1rem 0; }
+        strong { color: #2c3e50; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        th, td { border: 1px solid #ddd; padding: 0.6rem 0.8rem; text-align: left; }
+        th { background: #f4f6f8; color: #2c3e50; }
+        tr:nth-child(even) { background: #fafbfc; }
+        .diagram { background: #f4f6f8; border-left: 3px solid #42b983; padding: 1rem 1.5rem; margin: 1rem 0; font-family: "SF Mono", Monaco, Inconsolata, monospace; font-size: 0.85rem; white-space: pre; overflow-x: auto; border-radius: 0 4px 4px 0; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eee; color: #999; font-size: 0.85rem; text-align: center; }
+        .footer a { color: #42b983; }
+    </style>
+</head>
+<body>
+    <a href="../index.html" class="back-link">&larr; Back to Index</a>
+
+    <h1>Ork vs Pulumi Comparison</h1>
+
+    <h2>Quick Comparison</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Aspect</th>
+                <th>Pulumi</th>
+                <th>Ork</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Language</strong></td>
+                <td>TypeScript, Python, Go, C#, Java</td>
+                <td>Go</td>
+            </tr>
+            <tr>
+                <td><strong>Purpose</strong></td>
+                <td>Infrastructure Provisioning</td>
+                <td>Configuration Management</td>
+            </tr>
+            <tr>
+                <td><strong>Layer</strong></td>
+                <td>Infrastructure (IaaS)</td>
+                <td>Software/Configuration</td>
+            </tr>
+            <tr>
+                <td><strong>State Management</strong></td>
+                <td>State file (local or remote backends)</td>
+                <td>No state file</td>
+            </tr>
+            <tr>
+                <td><strong>Target</strong></td>
+                <td>Cloud APIs (AWS, Azure, GCP, etc.)</td>
+                <td>SSH to existing servers</td>
+            </tr>
+            <tr>
+                <td><strong>Execution</strong></td>
+                <td>Declarative (plan → apply → destroy)</td>
+                <td>Procedural (run now)</td>
+            </tr>
+            <tr>
+                <td><strong>Idempotency</strong></td>
+                <td>Built into providers</td>
+                <td>Playbook-level</td>
+            </tr>
+            <tr>
+                <td><strong>Lifecycle</strong></td>
+                <td>Create, update, destroy resources</td>
+                <td>Configure existing systems</td>
+            </tr>
+            <tr>
+                <td><strong>Type Safety</strong></td>
+                <td>Yes (your chosen language)</td>
+                <td>Yes (Go)</td>
+            </tr>
+            <tr>
+                <td><strong>IDE Support</strong></td>
+                <td>Excellent (language servers)</td>
+                <td>Excellent (Go)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Core Difference</h2>
+
+    <p><strong>Pulumi = Building the house</strong><br>
+    <strong>Ork = Furnishing and maintaining the house</strong></p>
+
+    <div class="diagram">┌─────────────────────────────────────────────────────────┐
+│  Pulumi Layer (Infrastructure)                           │
+│  - Create EC2 instances                                 │
+│  - Provision VPCs, subnets                              │
+│  - Set up load balancers                                │
+│  - Create databases                                     │
+│  - Configure cloud resources                            │
+└─────────────────────────────────────────────────────────┘
+                          ▼
+              Servers now exist
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│  Ork Layer (Configuration)                              │
+│  - Install nginx, mysql                                 │
+│  - Configure users, SSH keys                            │
+│  - Deploy applications                                  │
+│  - Run security updates                                 │
+│  - Manage system services                               │
+└─────────────────────────────────────────────────────────┘</div>
+
+    <h2>What Each Tool Does</h2>
+
+    <h3>Pulumi (Infrastructure Provisioning)</h3>
+    <ul>
+        <li>Creates cloud resources (VMs, databases, networks)</li>
+        <li>Manages infrastructure lifecycle</li>
+        <li>Uses real programming languages (not YAML)</li>
+        <li>Tracks infrastructure state</li>
+        <li>Supports multi-cloud deployments</li>
+        <li>Provides drift detection</li>
+        <li>Enables preview before changes</li>
+    </ul>
+
+    <h3>Ork (Configuration Management)</h3>
+    <ul>
+        <li>Configures existing servers</li>
+        <li>Installs and manages software</li>
+        <li>Manages users and permissions</li>
+        <li>Deploys applications</li>
+        <li>Runs security updates</li>
+        <li>Manages system services</li>
+        <li>Executes commands across fleets</li>
+    </ul>
+
+    <h2>Architecture</h2>
+
+    <h3>Pulumi Architecture</h3>
+    <div class="diagram">┌──────────────┐
+│ Pulumi CLI    │
+│ or SDK        │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ State File   │◄─── Local file or remote backend
+│ (JSON)       │     (S3, Azure Blob, GCS, etc.)
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Cloud APIs   │
+│ (AWS, Azure, │
+│  GCP, etc.)  │
+└──────────────┘</div>
+
+    <h3>Ork Architecture</h3>
+    <div class="diagram">┌──────────────┐
+│ Your Go      │
+│ Application  │
+└──────┬───────┘
+       │
+       ▼
+┌──────────────┐
+│ Ork Library  │
+│ (Nodes,      │
+│  Playbooks,  │
+│  Inventory)  │
+└──────┬───────┘
+       │ SSH
+       ▼
+┌──────────────┐
+│ Target       │
+│ Servers      │
+└──────────────┘</div>
+
+    <h2>Pulumi Example (TypeScript)</h2>
+
+    <pre><code>import * as aws from "@pulumi/aws";
+
+// Create VPC
+const vpc = new aws.ec2.Vpc("my-vpc", {
+    cidrBlock: "10.0.0.0/16",
+    enableDnsHostnames: true,
+    enableDnsSupport: true,
+});
+
+// Create subnet
+const subnet = new aws.ec2.Subnet("my-subnet", {
+    vpcId: vpc.id,
+    cidrBlock: "10.0.1.0/24",
+    mapPublicIpOnLaunch: true,
+});
+
+// Create security group
+const sg = new aws.ec2.SecurityGroup("web-sg", {
+    vpcId: vpc.id,
+    ingress: [
+        { protocol: "tcp", fromPort: 22, toPort: 22, cidrBlocks: ["0.0.0.0/0"] },
+        { protocol: "tcp", fromPort: 80, toPort: 80, cidrBlocks: ["0.0.0.0/0"] },
+    ],
+});
+
+// Create EC2 instance
+const server = new aws.ec2.Instance("web-server", {
+    ami: "ami-0c55b159cbfafe1f0",
+    instanceType: "t2.micro",
+    subnetId: subnet.id,
+    vpcSecurityGroupIds: [sg.id],
+    tags: {
+        Name: "web-server",
+        Environment: "production",
+    },
+});
+
+// Export outputs
+export const serverIp = server.publicIp;
+export const serverId = server.id;</code></pre>
+
+    <h2>Ork After Pulumi</h2>
+
+    <pre><code>package main
+
+import (
+    "fmt"
+    "github.com/dracory/ork"
+    "github.com/dracory/ork/playbooks"
+)
+
+func main() {
+    // After Pulumi creates the server, Ork configures it
+    serverIP := "54.123.45.67" // From Pulumi output
+
+    // Create node
+    node := ork.NewNodeForHost(serverIP).
+        SetUser("ubuntu").
+        SetKey("/path/to/deploy.pem")
+
+    // Configure the server with playbooks
+    results := node.
+        Run(skills.NewAptUpdate()).
+        Run(skills.NewAptUpgrade()).
+        Run(skills.NewUfwInstall()).
+        Run(skills.NewNginxInstall())
+
+    // Check results
+    result := results.Results[serverIP]
+    if result.Error != nil {
+        fmt.Printf("Error: %v\n", result.Error)
+    } else {
+        fmt.Printf("Success: %s\n", result.Message)
+    }
+}</code></pre>
+
+    <h2>Ork Inventory for Multiple Servers</h2>
+
+    <pre><code>// Configure multiple servers from Pulumi
+inv := ork.NewInventory()
+inv.SetMaxConcurrency(5) // Configure parallel execution
+
+// Add web servers
+webGroup := ork.NewGroup("webservers")
+for _, ip := range webServerIPs { // From Pulumi outputs
+    webGroup.AddNode(ork.NewNodeForHost(ip).
+        SetUser("ubuntu").
+        SetKey("/path/to/deploy.pem"))
+}
+inv.AddGroup(webGroup)
+
+// Configure all web servers in parallel
+results := inv.Run(skills.NewNginxInstall())
+summary := results.Summary()
+fmt.Printf("Changed: %d, Failed: %d\n", summary.Changed, summary.Failed)</code></pre>
+
+    <h2>Typical Workflow</h2>
+
+    <h3>Phase 1: Infrastructure (Pulumi)</h3>
+    <pre><code># Preview changes
+pulumi preview
+
+# Apply infrastructure changes
+pulumi up
+
+# Export server IPs
+pulumi stack output serverIp</code></pre>
+
+    <h3>Phase 2: Configuration (Ork)</h3>
+    <pre><code>// Use Pulumi outputs to configure servers
+serverIP := pulumiStack.Output("serverIp")
+
+node := ork.NewNodeForHost(serverIP)
+results := node.Run(skills.NewUfwInstall())</code></pre>
+
+    <h3>Phase 3: Integration</h3>
+    <pre><code># Combined workflow
+pulumi up          # Create infrastructure
+./configure-servers # Run Ork to configure</code></pre>
+
+    <h2>State Management</h2>
+
+    <h3>Pulumi State</h3>
+    <ul>
+        <li>Tracks all managed resources</li>
+        <li>Stores in local file or remote backend</li>
+        <li>Enables drift detection</li>
+        <li>Supports import of existing resources</li>
+        <li>Provides state locking for teams</li>
+    </ul>
+
+    <pre><code># View state
+pulumi stack export
+
+# Import existing resource
+pulumi import aws:ec2/instance:Instance web-server i-1234567890abcdef0
+
+# Remove from state (keep resource)
+pulumi state rm aws:ec2/instance:Instance web-server</code></pre>
+
+    <h3>Ork State</h3>
+    <ul>
+        <li>No state file</li>
+        <li>Idempotency via skills</li>
+        <li>Check mode to preview changes</li>
+        <li>Results returned after each run</li>
+        <li>Manual tracking if needed</li>
+    </ul>
+
+    <pre><code>// Check what would change
+results := node.Check(skills.NewUfwInstall())
+if results.Results[host].Changed {
+    fmt.Println("Changes would be made")
+}
+
+// Actually apply
+results = node.Run(skills.NewUfwInstall())</code></pre>
+
+    <h2>Drift Detection</h2>
+
+    <h3>Pulumi Drift Detection</h3>
+    <pre><code># Check for drift (resources changed outside Pulumi)
+pulumi refresh
+
+# View what changed
+pulumi diff</code></pre>
+
+    <h3>Ork Drift Detection</h3>
+    <pre><code>// Check if configuration matches desired state
+results := node.Check(skills.NewUfwInstall())
+if results.Results[host].Changed {
+    fmt.Println("Configuration has drifted")
+    // Re-apply skill
+    node.Run(skills.NewUfwInstall())
+}</code></pre>
+
+    <h2>Multi-Language Support</h2>
+
+    <h3>Pulumi Languages</h3>
+    <ul>
+        <li>TypeScript/JavaScript</li>
+        <li>Python</li>
+        <li>Go</li>
+        <li>C# (.NET)</li>
+        <li>Java</li>
+        <li>YAML (for simple cases)</li>
+    </ul>
+
+    <h3>Ork Languages</h3>
+    <ul>
+        <li>Go (only)</li>
+    </ul>
+
+    <p><strong>Note:</strong> Pulumi's multi-language support is for infrastructure definition. Ork is Go-only for configuration automation.</p>
+
+    <h2>When to Use Each</h2>
+
+    <h3>Use Pulumi when:</h3>
+    <ul>
+        <li>Creating cloud infrastructure (AWS, Azure, GCP)</li>
+        <li>Managing network topology (VPCs, subnets, firewalls)</li>
+        <li>Provisioning VMs, databases, load balancers</li>
+        <li>You need infrastructure lifecycle (create/update/destroy)</li>
+        <li>Multi-cloud or hybrid infrastructure</li>
+        <li>You prefer real programming languages over YAML</li>
+        <li>Team has TypeScript/Python/Go/C# expertise</li>
+        <li>Need state tracking and drift detection</li>
+    </ul>
+
+    <h3>Use Ork when:</h3>
+    <ul>
+        <li>Configuring existing servers</li>
+        <li>Installing and configuring software</li>
+        <li>Managing users, SSH keys, security settings</li>
+        <li>Deploying applications</li>
+        <li>Running system updates</li>
+        <li>Managing services</li>
+        <li>Building Go applications</li>
+        <li>Need type safety and compile-time checking</li>
+        <li>Want programmatic control flow</li>
+        <li>Embedding automation in Go applications</li>
+    </ul>
+
+    <h3>Use Both Together</h3>
+    <ul>
+        <li>Pulumi provisions infrastructure</li>
+        <li>Ork configures the provisioned servers</li>
+        <li>Common pattern: IaC + Config Management</li>
+    </ul>
+
+    <h2>Feature Comparison Table</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Pulumi</th>
+                <th>Ork</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Architecture</strong></td>
+                <td>✅ IaC (Infrastructure)</td>
+                <td>✅ Config Management</td>
+                <td>Pulumi creates; Ork configures</td>
+            </tr>
+            <tr>
+                <td><strong>Execution Model</strong></td>
+                <td>✅ Declarative (plan → apply)</td>
+                <td>✅ Procedural (run now)</td>
+                <td>Pulumi declares state; Ork executes commands</td>
+            </tr>
+            <tr>
+                <td><strong>State Management</strong></td>
+                <td>✅ State file (remote backends)</td>
+                <td>❌ No state file</td>
+                <td>Pulumi tracks infrastructure state</td>
+            </tr>
+            <tr>
+                <td><strong>Creates VMs</strong></td>
+                <td>✅ Yes (cloud APIs)</td>
+                <td>❌ No</td>
+                <td>Pulumi provisions resources</td>
+            </tr>
+            <tr>
+                <td><strong>Configures Software</strong></td>
+                <td>⚠️ Limited (user_data/cloud-init)</td>
+                <td>✅ Yes</td>
+                <td>Ork has rich playbook library</td>
+            </tr>
+            <tr>
+                <td><strong>Manages Users</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+                <td>Ork manages system users</td>
+            </tr>
+            <tr>
+                <td><strong>Install Packages</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+                <td>Ork manages software packages</td>
+            </tr>
+            <tr>
+                <td><strong>Deploy Apps</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+                <td>Ork deploys applications</td>
+            </tr>
+            <tr>
+                <td><strong>Run Commands</strong></td>
+                <td>❌ No</td>
+                <td>✅ Yes</td>
+                <td>Ork executes shell commands</td>
+            </tr>
+            <tr>
+                <td><strong>Parallel Execution</strong></td>
+                <td>✅ Resource-level</td>
+                <td>✅ Inventory-level (configurable)</td>
+                <td>Both support parallel operations</td>
+            </tr>
+            <tr>
+                <td><strong>Drift Detection</strong></td>
+                <td>✅ Built-in (refresh)</td>
+                <td>⚠️ Manual (via Check)</td>
+                <td>Pulumi auto-detects; Ork manual</td>
+            </tr>
+            <tr>
+                <td><strong>Rollback</strong></td>
+                <td>✅ Automatic (state rollback)</td>
+                <td>⚠️ Manual</td>
+                <td>Pulumi can undo changes</td>
+            </tr>
+            <tr>
+                <td><strong>Destroy Resources</strong></td>
+                <td>✅ Yes (destroy command)</td>
+                <td>❌ No</td>
+                <td>Pulumi manages lifecycle</td>
+            </tr>
+            <tr>
+                <td><strong>Multi-Language</strong></td>
+                <td>✅ TS, Python, Go, C#, Java</td>
+                <td>✅ Go (only)</td>
+                <td>Pulumi supports many languages</td>
+            </tr>
+            <tr>
+                <td><strong>Type Safety</strong></td>
+                <td>✅ Yes (your language)</td>
+                <td>✅ Yes (Go)</td>
+                <td>Both have compile-time checking</td>
+            </tr>
+            <tr>
+                <td><strong>IDE Support</strong></td>
+                <td>✅ Excellent (language servers)</td>
+                <td>✅ Excellent (Go)</td>
+                <td>Both have good tooling</td>
+            </tr>
+            <tr>
+                <td><strong>Preview Changes</strong></td>
+                <td>✅ Yes (preview/diff)</td>
+                <td>✅ Yes (Check mode)</td>
+                <td>Both can preview before applying</td>
+            </tr>
+            <tr>
+                <td><strong>Team Collaboration</strong></td>
+                <td>✅ Yes (state backends, locking)</td>
+                <td>⚠️ Manual</td>
+                <td>Pulumi has built-in team features</td>
+            </tr>
+            <tr>
+                <td><strong>Import Existing</strong></td>
+                <td>✅ Yes (import command)</td>
+                <td>N/A</td>
+                <td>Pulumi can import existing resources</td>
+            </tr>
+            <tr>
+                <td><strong>Secrets Management</strong></td>
+                <td>✅ Pulumi Secrets</td>
+                <td>✅ envenc vault</td>
+                <td>Both handle secrets</td>
+            </tr>
+            <tr>
+                <td><strong>Testing</strong></td>
+                <td>✅ Pulumi Test (unit/integration)</td>
+                <td>✅ Go testing + testcontainers</td>
+                <td>Both support testing</td>
+            </tr>
+            <tr>
+                <td><strong>Policy as Code</strong></td>
+                <td>✅ CrossGuard</td>
+                <td>❌ Manual</td>
+                <td>Pulumi has policy framework</td>
+            </tr>
+            <tr>
+                <td><strong>Learning Curve</strong></td>
+                <td>⚠️ Medium (IaC concepts)</td>
+                <td>✅ Low (Go knowledge)</td>
+                <td>Pulumi requires IaC understanding</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Concept Mapping</h2>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Pulumi Concept</th>
+                <th>Ork Equivalent</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Resource</td>
+                <td>Node (server)</td>
+            </tr>
+            <tr>
+                <td>Stack</td>
+                <td>Inventory (collection of nodes)</td>
+            </tr>
+            <tr>
+                <td>Provider</td>
+                <td>SSH connection</td>
+            </tr>
+            <tr>
+                <td>State file</td>
+                <td>No equivalent (idempotent skills)</td>
+            </tr>
+            <tr>
+                <td><code>pulumi up</code></td>
+                <td><code>Run()</code></td>
+            </tr>
+            <tr>
+                <td><code>pulumi preview</code></td>
+                <td><code>Check()</code></td>
+            </tr>
+            <tr>
+                <td><code>pulumi destroy</code></td>
+                <td>No equivalent (Ork doesn't destroy)</td>
+            </tr>
+            <tr>
+                <td><code>pulumi refresh</code></td>
+                <td><code>Check()</code> (drift detection)</td>
+            </tr>
+            <tr>
+                <td><code>pulumi import</code></td>
+                <td>No equivalent</td>
+            </tr>
+            <tr>
+                <td>Component (multiple resources)</td>
+                <td>Group (multiple nodes)</td>
+            </tr>
+            <tr>
+                <td>Output</td>
+                <td>Results map</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Summary</h2>
+
+    <p><strong>Pulumi Strengths:</strong></p>
+    <ul>
+        <li>Real programming languages for infrastructure</li>
+        <li>Multi-cloud support</li>
+        <li>State management and drift detection</li>
+        <li>Team collaboration features</li>
+        <li>Rich ecosystem of providers</li>
+        <li>Preview before applying changes</li>
+    </ul>
+
+    <p><strong>Ork Strengths:</strong></p>
+    <ul>
+        <li>Go-native configuration management</li>
+        <li>Rich playbook library</li>
+        <li>Type safety and compile-time checking</li>
+        <li>Simple, no state file</li>
+        <li>Configures existing infrastructure</li>
+        <li>Embeddable in Go applications</li>
+    </ul>
+
+    <p><strong>Key Difference:</strong></p>
+    <ul>
+        <li>Pulumi: Infrastructure provisioning with state tracking</li>
+        <li>Ork: Configuration management without state</li>
+    </ul>
+
+    <p><strong>Best Practice:</strong></p>
+    <ul>
+        <li>Use Pulumi to create infrastructure</li>
+        <li>Use Ork to configure the infrastructure</li>
+        <li>Combine for complete infrastructure + configuration automation</li>
+    </ul>
+
+    <div class="footer">
+        <p>Ork Documentation &mdash; <a href="../index.html">Back to Index</a> &mdash; <a href="index.html">Comparison Index</a></p>
+    </div>
+</body>
+</html>
