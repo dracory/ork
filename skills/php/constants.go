@@ -17,7 +17,10 @@ const (
 
 // Default configuration constants.
 const (
-	// DefaultExtensions is the default set of PHP extensions to install
+	// DefaultExtensions is a convenience set of common PHP extensions.
+	// It is NOT auto-applied by Install; pass it explicitly via
+	// SetExtensions(php.DefaultExtensions) when you want the bundled set.
+	// Each entry maps to a php<version>-<ext> package on Debian/Ubuntu.
 	DefaultExtensions = "cli fpm mysql mbstring xml curl gd zip intl bcmath readline"
 
 	// DefaultFpmPoolPath is the default FPM pool config path pattern

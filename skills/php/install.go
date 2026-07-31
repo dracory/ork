@@ -22,21 +22,30 @@ import (
 // Args:
 //   - version (required): PHP version, e.g. "8.3"
 //   - user (required): User to run PHP-FPM as
-//   - extensions (optional): Space-separated additional extensions, defaults to DefaultExtensions
+//   - extensions (optional): Space-separated extensions to install as
+//     php<version>-<ext> packages. When unset or empty, NO extension packages
+//     are installed; the FPM pool config and service restart still run and will
+//     fail if php<version>-fpm is not otherwise present (surfacing the
+//     misconfiguration explicitly). Pass php.DefaultExtensions for the bundled
+//     convenience set.
 //
 // Execution Flow:
 //  1. Validates version and user args
 //  2. Checks if php<version> is already installed and FPM is configured for user
-//  3. Runs apt-get update
-//  4. Installs php<version>-<ext> for each extension
-//  5. Configures FPM pool: sets user, group, listen.owner, listen.group, listen.mode
-//  6. Restarts and enables php<version>-fpm service
+//  3. When extensions are present: runs apt-get update and installs
+//     php<version>-<ext> for each extension
+//  4. Configures FPM pool: sets user, group, listen.owner, listen.group, listen.mode
+//  5. Restarts and enables php<version>-fpm service
 //
 // Usage:
 //
 //	node.Run(php.NewInstall().SetVersion("8.3").SetUser("deploy"))
-//	// or with custom extensions:
-//	node.Run(php.NewInstall().SetVersion("8.3").SetUser("deploy").SetExtensions("cli fpm mysql"))
+//	// with the bundled default extension set:
+//	node.Run(php.NewInstall().SetVersion("8.3").SetUser("deploy").SetExtensions(php.DefaultExtensions))
+//	// with a custom set (variadic):
+//	node.Run(php.NewInstall().SetVersion("8.3").SetUser("deploy").SetExtensions("cli", "fpm", "mysql"))
+//	// with no extensions (FPM must be preinstalled or the run will error):
+//	node.Run(php.NewInstall().SetVersion("8.3").SetUser("deploy").SetExtensions())
 //
 // Idempotency:
 //   - Check() verifies that the php<version> binary exists AND the FPM pool is
@@ -127,9 +136,6 @@ func (s *Install) Run() types.Result {
 	}
 
 	extensions := s.GetArg(ArgExtensions)
-	if extensions == "" {
-		extensions = DefaultExtensions
-	}
 
 	cfg := s.GetNodeConfig()
 
@@ -159,55 +165,60 @@ func (s *Install) Run() types.Result {
 		}
 	}
 
-	// Run apt-get update first.
-	cmdUpdate := types.Command{
-		Command:     "apt-get update -y",
-		Description: "Update package database",
-	}
-	cfg.GetLoggerOrDefault().Info("running apt update before PHP install")
-	updateOutput, err := ssh.Run(cfg, cmdUpdate)
-	if err != nil {
-		return types.Result{
-			Changed: false,
-			Message: "apt-get update failed",
-			Error:   fmt.Errorf("apt-get update failed: %w\nOutput: %s", err, updateOutput),
-		}
-	}
-
 	// Build the package list: php<version>-<ext> for each extension.
 	parts := strings.Fields(extensions)
 	for i, p := range parts {
 		parts[i] = "php" + version + "-" + p
 	}
-	packageList := strings.Join(parts, "")
+	packageList := strings.Join(parts, " ")
 
-	// Escape each package name for shell safety.
-	escapedParts := make([]string, len(parts))
-	for i, p := range parts {
-		escapedParts[i] = skills.ShellEscapeArg(p)
-	}
-	escapedPackages := strings.Join(escapedParts, " ")
-
-	// See skills.DebianNonInteractive and skills.DpkgConfOptions for details.
-	cmdInstallStr := ""
-	cmdInstallStr += skills.DebianNonInteractive   // prevent interactive prompts
-	cmdInstallStr += " apt-get install -y -- "     // install packages, auto-confirm, -- prevents option injection
-	cmdInstallStr += escapedPackages               // escape each package name
-	cmdInstallStr += skills.DpkgConfOptions        // keep local config, use maintainer default if unmodified
-
-	cmdInstall := types.Command{
-		Command:     cmdInstallStr,
-		Description: "Install PHP packages: " + packageList,
-	}
-
-	cfg.GetLoggerOrDefault().Info("installing PHP packages", "packages", packageList)
-	installOutput, err := ssh.Run(cfg, cmdInstall)
-	if err != nil {
-		return types.Result{
-			Changed: false,
-			Message: "PHP package installation failed",
-			Error:   fmt.Errorf("apt-get install failed for %s: %w\nOutput: %s", packageList, err, installOutput),
+	var installOutput string
+	if len(parts) > 0 {
+		// Run apt-get update first.
+		cmdUpdate := types.Command{
+			Command:     "apt-get update -y",
+			Description: "Update package database",
 		}
+		cfg.GetLoggerOrDefault().Info("running apt update before PHP install")
+		updateOutput, err := ssh.Run(cfg, cmdUpdate)
+		if err != nil {
+			return types.Result{
+				Changed: false,
+				Message: "apt-get update failed",
+				Error:   fmt.Errorf("apt-get update failed: %w\nOutput: %s", err, updateOutput),
+			}
+		}
+
+		// Escape each package name for shell safety.
+		escapedParts := make([]string, len(parts))
+		for i, p := range parts {
+			escapedParts[i] = skills.ShellEscapeArg(p)
+		}
+		escapedPackages := strings.Join(escapedParts, " ")
+
+		// See skills.DebianNonInteractive and skills.DpkgConfOptions for details.
+		cmdInstallStr := ""
+		cmdInstallStr += skills.DebianNonInteractive // prevent interactive prompts
+		cmdInstallStr += " apt-get install -y -- "   // install packages, auto-confirm, -- prevents option injection
+		cmdInstallStr += escapedPackages             // escape each package name
+		cmdInstallStr += skills.DpkgConfOptions      // keep local config, use maintainer default if unmodified
+
+		cmdInstall := types.Command{
+			Command:     cmdInstallStr,
+			Description: "Install PHP packages: " + packageList,
+		}
+
+		cfg.GetLoggerOrDefault().Info("installing PHP packages", "packages", packageList)
+		installOutput, err = ssh.Run(cfg, cmdInstall)
+		if err != nil {
+			return types.Result{
+				Changed: false,
+				Message: "PHP package installation failed",
+				Error:   fmt.Errorf("apt-get install failed for %s: %w\nOutput: %s", packageList, err, installOutput),
+			}
+		}
+	} else {
+		cfg.GetLoggerOrDefault().Info("no extensions requested; skipping apt-get update/install", "version", version)
 	}
 
 	// Configure FPM pool: set user, group, listen.owner, listen.group, listen.mode.
@@ -282,9 +293,12 @@ func (s *Install) SetUser(user string) *Install {
 	return s
 }
 
-// SetExtensions sets the space-separated list of PHP extensions and returns Install for chaining.
-func (s *Install) SetExtensions(extensions string) *Install {
-	s.BaseSkill.SetArg(ArgExtensions, extensions)
+// SetExtensions sets the PHP extensions to install (variadic) and returns Install
+// for chaining. Extensions are joined with spaces internally to match the
+// ArgExtensions format. With no arguments, no extension packages are installed.
+// Example: SetExtensions("cli", "fpm", "mysql")
+func (s *Install) SetExtensions(extensions ...string) *Install {
+	s.BaseSkill.SetArg(ArgExtensions, strings.Join(extensions, " "))
 	return s
 }
 

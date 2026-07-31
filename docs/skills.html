@@ -163,6 +163,33 @@ log.Printf("Total: %d, Changed: %d, Failed: %d",
         <tr><td>MariaDB Purge</td><td><code>mariadb-purge</code></td><td>-</td><td>Remove MariaDB and its data</td></tr>
     </table>
 
+    <h3>PHP</h3>
+    <table>
+        <tr><th>Skill</th><th>ID</th><th>Args</th><th>Description</th></tr>
+        <tr><td>PHP Install</td><td><code>php-install</code></td><td><code>version</code>, <code>user</code>, <code>extensions</code> (optional)</td><td>Install PHP with extensions and configure FPM</td></tr>
+        <tr><td>PHP Uninstall</td><td><code>php-uninstall</code></td><td><code>version</code></td><td>Remove PHP packages and FPM configuration</td></tr>
+        <tr><td>PHP Install Composer</td><td><code>php-install-composer</code></td><td>-</td><td>Install Composer with signature verification</td></tr>
+        <tr><td>PHP Uninstall Composer</td><td><code>php-uninstall-composer</code></td><td>-</td><td>Remove Composer binary</td></tr>
+        <tr><td>PHP Update Composer</td><td><code>php-update-composer</code></td><td>-</td><td>Update Composer to latest version</td></tr>
+    </table>
+
+    <h3>Filesystem</h3>
+    <table>
+        <tr><th>Skill</th><th>ID</th><th>Args</th><th>Description</th></tr>
+        <tr><td>Dir Create</td><td><code>fs-dir-create</code></td><td><code>path</code>, <code>owner</code> (optional), <code>mode</code> (optional)</td><td>Create directory with ownership and permissions</td></tr>
+        <tr><td>Dir Exists</td><td><code>fs-dir-exists</code></td><td><code>path</code></td><td>Check if directory exists (read-only)</td></tr>
+        <tr><td>Dir Delete</td><td><code>fs-dir-delete</code></td><td><code>path</code>, <code>recursive</code> (optional), <code>force</code> (optional)</td><td>Delete a directory</td></tr>
+        <tr><td>File Create</td><td><code>fs-file-create</code></td><td><code>path</code>, <code>content</code> (optional), <code>owner</code> (optional), <code>mode</code> (optional), <code>overwrite</code> (optional)</td><td>Create file with content, ownership, and permissions</td></tr>
+        <tr><td>File Exists</td><td><code>fs-file-exists</code></td><td><code>path</code></td><td>Check if file exists (read-only)</td></tr>
+        <tr><td>File Delete</td><td><code>fs-file-delete</code></td><td><code>path</code></td><td>Delete a single file</td></tr>
+        <tr><td>File Copy</td><td><code>fs-file-copy</code></td><td><code>src</code>, <code>dst</code>, <code>force</code> (optional)</td><td>Copy a file on the remote server</td></tr>
+        <tr><td>Change Owner</td><td><code>fs-change-owner</code></td><td><code>path</code>, <code>owner</code>, <code>recursive</code> (optional)</td><td>Change file/directory ownership (chown)</td></tr>
+        <tr><td>Change Mode</td><td><code>fs-change-mode</code></td><td><code>path</code>, <code>mode</code>, <code>recursive</code> (optional)</td><td>Change file/directory permissions (chmod)</td></tr>
+        <tr><td>Symlink Create</td><td><code>fs-symlink-create</code></td><td><code>target</code>, <code>link</code></td><td>Create or update symbolic link (ln -sf)</td></tr>
+        <tr><td>Rename</td><td><code>fs-rename</code></td><td><code>src</code>, <code>dst</code>, <code>force</code> (optional)</td><td>Rename/move a file or directory (mv)</td></tr>
+        <tr><td>Remove</td><td><code>fs-remove</code></td><td><code>path</code>, <code>recursive</code> (optional), <code>force</code> (optional)</td><td>Remove file or directory (rm)</td></tr>
+    </table>
+
     <h2>Setting Arguments</h2>
     <p>Many skills accept arguments to customize their behavior:</p>
 <pre><code>node := ork.NewNodeForHost("server.example.com")

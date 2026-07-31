@@ -62,6 +62,33 @@ func TestInstall_SetExtensions(t *testing.T) {
 	}
 }
 
+// TestInstall_SetExtensions_Variadic verifies that SetExtensions joins variadic args with spaces.
+func TestInstall_SetExtensions_Variadic(t *testing.T) {
+	skill := NewInstall().SetExtensions("cli", "fpm", "mysql")
+
+	if skill.GetArg(ArgExtensions) != "cli fpm mysql" {
+		t.Errorf("Expected extensions 'cli fpm mysql', got '%s'", skill.GetArg(ArgExtensions))
+	}
+}
+
+// TestInstall_SetExtensions_None verifies that SetExtensions with no args means no extensions.
+func TestInstall_SetExtensions_None(t *testing.T) {
+	skill := NewInstall().SetExtensions()
+
+	if skill.GetArg(ArgExtensions) != "" {
+		t.Errorf("Expected empty extensions, got '%s'", skill.GetArg(ArgExtensions))
+	}
+}
+
+// TestInstall_SetExtensions_Defaults verifies that DefaultExtensions can be passed explicitly.
+func TestInstall_SetExtensions_Defaults(t *testing.T) {
+	skill := NewInstall().SetExtensions(DefaultExtensions)
+
+	if skill.GetArg(ArgExtensions) != DefaultExtensions {
+		t.Errorf("Expected DefaultExtensions, got '%s'", skill.GetArg(ArgExtensions))
+	}
+}
+
 // TestInstall_TypedSetters_Chaining verifies that all typed setters chain correctly.
 func TestInstall_TypedSetters_Chaining(t *testing.T) {
 	skill := NewInstall().
