@@ -87,14 +87,14 @@ package main
 import (
     "log"
     "github.com/dracory/ork"
-    "github.com/dracory/ork/playbooks"
+    "github.com/dracory/ork/skills"
 )
 
 func main() {
     node := ork.NewNodeForHost("server.example.com")
     
     // Check SSH connectivity
-    results := node.RunPlaybook(playbooks.NewPing())
+    results := node.Run(skills.NewPing())
     result := results.Results["server.example.com"]
     
     if result.Error != nil {
@@ -109,13 +109,13 @@ func main() {
 
 ```go
 // Update the package database
-results := node.RunPlaybook(playbooks.NewAptUpdate())
+results := node.Run(skills.NewAptUpdate())
 if result.Error != nil {
     log.Fatal(result.Error)
 }
 
 // Upgrade installed packages
-results = node.RunPlaybook(playbooks.NewAptUpgrade())
+results = node.Run(skills.NewAptUpgrade())
 ```
 
 ### Create a User
@@ -126,7 +126,7 @@ node.WithArg("username", "alice").
     WithArg("shell", "/bin/bash")
 
 // Run the user creation playbook
-results := node.RunPlaybook(playbooks.NewUserCreate())
+results := node.Run(skills.NewUserCreate())
 result := results.Results["server.example.com"]
 
 if result.Error != nil {
@@ -154,7 +154,7 @@ webGroup.AddNode(ork.NewNodeForHost("web1.example.com"))
 webGroup.AddNode(ork.NewNodeForHost("web2.example.com"))
 
 // Run playbook on all nodes in the group
-results := webGroup.RunPlaybook(playbooks.NewAptUpdate())
+results := webGroup.Run(skills.NewAptUpdate())
 
 // Check results for all nodes
 for host, result := range results.Results {
@@ -188,7 +188,7 @@ inv.AddGroup(webGroup)
 inv.AddGroup(dbGroup)
 
 // Run playbook across all nodes
-results := inv.RunPlaybook(playbooks.NewPing())
+results := inv.Run(skills.NewPing())
 
 // Get summary
 summary := results.Summary()
@@ -206,7 +206,7 @@ node := ork.NewNodeForHost("server.example.com").
     SetDryRunMode(true)
 
 // This will log what would happen without making changes
-results := node.RunPlaybook(playbooks.NewAptUpgrade())
+results := node.Run(skills.NewAptUpgrade())
 ```
 
 Dry-run mode works at all levels:
@@ -304,17 +304,17 @@ results3 := node.RunCommand("free -m")
 
 ## Checking Before Running
 
-Use `CheckPlaybook` to preview if changes would be made:
+Use `Check` to preview if changes would be made:
 
 ```go
 // Check if changes would be made
-results := node.CheckPlaybook(playbooks.NewAptUpgrade())
+results := node.Check(skills.NewAptUpgrade())
 result := results.Results["server.example.com"]
 
 if result.Changed {
     log.Println("Would upgrade packages")
     // Now actually run it
-    results = node.RunPlaybook(playbooks.NewAptUpgrade())
+    results = node.Run(skills.NewAptUpgrade())
 } else {
     log.Println("No upgrades needed")
 }

@@ -4,13 +4,14 @@ page-type: reference
 summary: Complete API reference for all public interfaces, functions, and types.
 tags: [reference, api, interfaces, vault, prompts, privilege-escalation]
 created: 2025-04-14
-updated: 2026-05-01
-version: 2.2.0
+updated: 2026-07-31
+version: 2.4.0
 ---
 
 # API Reference
 
 ## Changelog
+- **v2.4.0** (2026-07-31): Documented ToMap()/FromMap() on RunnableInterface, added missing skills (apt-install, ufw-allow/deny/delete/enable/default/disable/reset, mariadb-purge, user-add-to-group), added KexAlgorithms/HostKeyAlgorithms to NodeConfig, marked RunByID as deprecated
 - **v2.3.0** (2026-05-02): Added WithArg method to GroupInterface for consistent fluent interface pattern across all ork APIs
 - **v2.2.0** (2026-05-01): Added CommandInterface for shell command execution, added Chdir field to NodeConfig for working directory support
 - **v2.1.0** (2026-04-15): Added privilege escalation (become) feature with BecomeInterface, BaseBecome, and BecomeUser field in NodeConfig
@@ -130,6 +131,7 @@ Base interface for all executable entities.
 type RunnerInterface interface {
     RunCommand(cmd string) types.Results
     Run(runnable types.RunnableInterface) types.Results
+    // Deprecated: Use Run instead.
     RunByID(id string, opts ...types.RunnableOptions) types.Results
     Check(runnable types.RunnableInterface) types.Results
     GetLogger() *slog.Logger
@@ -143,10 +145,10 @@ type RunnerInterface interface {
 
 ```go
 // Get the global skill registry singleton (lazily initialized)
-func GetGlobalPlaybookRegistry() (*types.Registry, error)
+func GetGlobalSkillRegistry() (*types.Registry, error)
 
 // Create a new empty registry
-func NewPlaybookRegistry() *types.Registry
+func NewSkillRegistry() *types.Registry
 
 // Create a new isolated registry with all built-in skills registered
 func NewDefaultRegistry() (*types.Registry, error)
@@ -330,6 +332,14 @@ type NodeConfig struct {
 
     // Chdir is the working directory for command execution
     Chdir string
+
+    // KexAlgorithms specifies the SSH key exchange algorithms.
+    // If empty, defaults to DefaultKexAlgorithms.
+    KexAlgorithms []string
+
+    // HostKeyAlgorithms specifies the SSH host key algorithms.
+    // If empty, defaults to DefaultHostKeyAlgorithms.
+    HostKeyAlgorithms []string
 }
 
 #### Methods
@@ -382,6 +392,10 @@ type RunnableInterface interface {
     // Core operations
     Check() (bool, error)
     Run() types.Result
+
+    // Serialization for concurrency-safe cloning (see Architecture > Concurrency Model)
+    ToMap() map[string]any
+    FromMap(m map[string]any)
 
     BecomeInterface
 }
@@ -553,6 +567,7 @@ func Run(cfg types.NodeConfig, cmd string) (string, error)
 func ping.NewPing() types.RunnableInterface
 
 // Apt
+func apt.NewAptInstall() types.RunnableInterface
 func apt.NewAptUpdate() types.RunnableInterface
 func apt.NewAptUpgrade() types.RunnableInterface
 func apt.NewAptStatus() types.RunnableInterface
@@ -568,6 +583,7 @@ func user.NewUserCreate() types.RunnableInterface
 func user.NewUserDelete() types.RunnableInterface
 func user.NewUserList() types.RunnableInterface
 func user.NewUserStatus() types.RunnableInterface
+func user.NewUserAddToGroup() types.RunnableInterface
 ```
 
 ### Swap Management
@@ -593,6 +609,13 @@ func security.NewSshChangePort() types.RunnableInterface
 ```go
 func ufw.NewUfwInstall() types.RunnableInterface
 func ufw.NewUfwStatus() types.RunnableInterface
+func ufw.NewAllow() types.RunnableInterface
+func ufw.NewDeny() types.RunnableInterface
+func ufw.NewDelete() types.RunnableInterface
+func ufw.NewEnable() types.RunnableInterface
+func ufw.NewDefault() types.RunnableInterface
+func ufw.NewDisable() types.RunnableInterface
+func ufw.NewReset() types.RunnableInterface
 func ufw.NewAllowMariaDB() types.RunnableInterface
 ```
 
@@ -614,11 +637,12 @@ func mariadb.NewStatus() types.RunnableInterface
 func mariadb.NewListDBs() types.RunnableInterface
 func mariadb.NewListUsers() types.RunnableInterface
 func mariadb.NewBackup() types.RunnableInterface
+func mariadb.NewBackupEncrypt() types.RunnableInterface
 func mariadb.NewSecurityAudit() types.RunnableInterface
 func mariadb.NewChangePort() types.RunnableInterface
 func mariadb.NewEnableSSL() types.RunnableInterface
 func mariadb.NewEnableEncryption() types.RunnableInterface
-func mariadb.NewBackupEncrypt() types.RunnableInterface
+func mariadb.NewPurge() types.RunnableInterface
 ```
 
 ## Usage Examples

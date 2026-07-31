@@ -126,54 +126,60 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     User->>+Node: Run(skill)
-    
-    Node->>Skill: SetConfig(node.cfg)
-    Note over Node,Skill: Copy NodeConfig to skill
-    
-    Node->>Skill: SetDryRun(node.IsDryRunMode)
-    
+
+    Node->>Skill: skill.ToMap()
+    Node->>Node: cloneFromMap(skill, map)
+    Note over Node,Clone: Per-goroutine clone so concurrent runs are isolated
+
+    Node->>Clone: SetNodeConfig(node.cfg)
+    Node->>Clone: SetDryRun(node.IsDryRunMode)
+
     alt Dry Run Mode
-        Skill->>Skill: Check if changes needed
-        Skill->>Logger: Log planned actions
-        Skill->>Skill: Return Result{Changed: true/false}
+        Clone->>Clone: Check if changes needed
+        Clone->>Logger: Log planned actions
+        Clone->>Clone: Return Result{Changed: true/false}
     else Normal Execution
-        Skill->>Skill: Check()
-        Skill->>ssh: Run(check command)
+        Clone->>Clone: Check()
+        Clone->>ssh: Run(check command)
         ssh->>Remote: Execute
         Remote-->>ssh: Output
-        ssh-->>Skill: Output
-        
+        ssh-->>Clone: Output
+
         alt Changes Needed
-            Skill->>ssh: Run(apply command)
+            Clone->>ssh: Run(apply command)
             ssh->>Remote: Execute
             Remote-->>ssh: Output
-            ssh-->>Skill: Output
-            Skill->>Skill: Build Result{Changed: true}
+            ssh-->>Clone: Output
+            Clone->>Clone: Build Result{Changed: true}
         else No Changes Needed
-            Skill->>Skill: Build Result{Changed: false}
+            Clone->>Clone: Build Result{Changed: false}
         end
     end
-    
-    Skill-->>Node: Result
+
+    Clone-->>Node: Result
     Node->>Node: Wrap in Results map
     Node-->>-User: Results{host: Result}
 ```
 
 ### Registry-Based Skill Execution
 
+> **Note:** `RunByID` is deprecated. Prefer `Run(skills.NewXxx())` with a direct
+> skill instance. The flow below documents the legacy registry-based path.
+
 ```mermaid
 sequenceDiagram
     User->>+Node: RunByID("apt-update")
-    
-    Node->>Registry: PlaybookFindByID("apt-update")
+
+    Node->>Registry: FindByID("apt-update")
     Registry->>Registry: Lookup in map
-    
+
     alt Found
         Registry-->>Node: RunnableInterface, true
-        Node->>Skill: SetConfig(node.cfg)
-        Node->>Skill: SetDryRun(node.IsDryRunMode)
-        Node->>Skill: Run()
-        Skill-->>Node: Result
+        Node->>Node: cloneFromMap(skill, skill.ToMap())
+        Node->>Clone: SetNodeConfig(node.cfg)
+        Node->>Clone: SetDryRun(node.IsDryRunMode)
+        Node->>Clone: Run()
+        Clone-->>Node: Result
         Node-->>User: Results{host: Result}
     else Not Found
         Registry-->>Node: nil, false

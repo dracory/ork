@@ -58,12 +58,12 @@ fmt.Printf("Total: %d, Changed: %d, Unchanged: %d, Failed: %d\n",
 
 ## Direct Skill Access (Advanced)
 
-For programmatic skill handling, use the `skill` package directly:
+For programmatic skill handling, use the `skills` and `types` packages directly:
 
 ```go
 import (
-    "github.com/dracory/ork/skill"
     "github.com/dracory/ork/skills"
+    "github.com/dracory/ork/types"
 )
 
 // Execute directly with config
@@ -72,7 +72,9 @@ aptUpgrade.SetNodeConfig(cfg)
 result := aptUpgrade.Run()
 
 // Or check before running via Check
-needsChange, _ := skills.NewSwapCreate().SetNodeConfig(cfg).Check()
+swapCreate := skills.NewSwapCreate()
+swapCreate.SetNodeConfig(cfg)
+needsChange, _ := swapCreate.Check()
 if !needsChange {
     log.Println("Swap already exists, skipping...")
     return
@@ -84,35 +86,44 @@ if !needsChange {
 When creating custom skills, implement both `Check()` and `Run()` methods for full idempotency:
 
 ```go
-type MyCustomSkill struct{}
+type MyCustomSkill struct {
+    *types.BaseSkill
+}
 
-func (s *MyCustomSkill) GetID() string { return "my-task" }
-func (s *MyCustomSkill) Description() string { return "Does something" }
+func NewMyCustomSkill() types.RunnableInterface {
+    return &MyCustomSkill{
+        BaseSkill: types.NewBaseSkill().
+            WithID("my-task").
+            WithDescription("Does something"),
+    }
+}
 
 // Check() - returns true if changes needed
-func (s *MyCustomSkill) Check(cfg types.NodeConfig) (bool, error) {
+func (s *MyCustomSkill) Check() (bool, error) {
+    cfg := s.GetNodeConfig()
     // Check if already configured
     output, _ := ssh.Run(cfg, types.Command{Command: "cat /etc/my-config"})
     return !strings.Contains(output, "configured"), nil
 }
 
 // Run() - execute and return Result
-func (s *MyCustomSkill) Run(cfg types.NodeConfig) skill.Result {
-    needsChange, _ := s.Check(cfg)
+func (s *MyCustomSkill) Run() types.Result {
+    needsChange, _ := s.Check()
     if !needsChange {
-        return skill.Result{
+        return types.Result{
             Changed: false,
             Message: "Already configured",
         }
     }
 
     // Apply changes...
+    cfg := s.GetNodeConfig()
     _, err := ssh.Run(cfg, types.Command{Command: "setup-command"})
     if err != nil {
-        return skill.Result{Changed: false, Error: err}
+        return types.Result{Changed: false, Error: err}
     }
 
-    return skill.Result{
+    return types.Result{
         Changed: true,
         Message: "Configuration applied",
     }

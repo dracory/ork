@@ -27,7 +27,7 @@ go get github.com/dracory/ork
 node := ork.NewNodeForHost("server.example.com")
 
 // From config
-cfg := config.NodeConfig{
+cfg := types.NodeConfig{
     SSHHost: "server.example.com",
     SSHPort: "2222",
     RootUser: "deploy",
@@ -67,14 +67,14 @@ results2 := node.RunCommand("df -h")
 
 ```go
 // Direct instance (preferred)
-results := node.RunPlaybook(playbooks.NewPing())
-results := node.RunPlaybook(playbooks.NewAptUpdate())
+results := node.Run(skills.NewPing())
+results := node.Run(skills.NewAptUpdate())
 
-// By ID
-results := node.RunPlaybookByID(playbooks.IDPing)
+// By ID (deprecated, prefer Run() with a direct instance)
+results := node.RunByID(skills.IDPing)
 
-// Check mode (dry-run for single playbook)
-results := node.CheckPlaybook(playbooks.NewAptUpgrade())
+// Check mode (dry-run for single skill)
+results := node.Check(skills.NewAptUpgrade())
 ```
 
 ## Working with Groups
@@ -91,7 +91,7 @@ group.AddNode(node2)
 group.WithArg("env", "production")
 
 // Run on all nodes
-results := group.RunPlaybook(playbooks.NewAptUpdate())
+results := group.Run(skills.NewAptUpdate())
 ```
 
 ## Working with Inventory
@@ -111,13 +111,13 @@ inv.AddNode(node)
 inv.SetMaxConcurrency(20)
 
 // Run on all nodes across all groups
-results := inv.RunPlaybook(playbooks.NewPing())
+results := inv.Run(skills.NewPing())
 ```
 
 ## Result Handling
 
 ```go
-results := inv.RunPlaybook(playbooks.NewAptUpdate())
+results := inv.Run(skills.NewAptUpdate())
 
 // Get summary
 summary := results.Summary()
@@ -141,11 +141,11 @@ for host, result := range results.Results {
 ### System
 
 ```go
-playbooks.NewPing()        // Check connectivity
-playbooks.NewAptUpdate()   // Update package lists
-playbooks.NewAptUpgrade()  // Upgrade packages
-playbooks.NewAptStatus()   // Check for updates
-playbooks.NewReboot()      // Reboot server
+skills.NewPing()        // Check connectivity
+skills.NewAptUpdate()   // Update package lists
+skills.NewAptUpgrade()  // Upgrade packages
+skills.NewAptStatus()   // Check for updates
+skills.NewReboot()      // Reboot server
 ```
 
 ### Users
@@ -153,12 +153,12 @@ playbooks.NewReboot()      // Reboot server
 ```go
 node.SetArg("username", "alice")
 node.SetArg("shell", "/bin/bash")
-results := node.RunPlaybook(playbooks.NewUserCreate())
+results := node.Run(skills.NewUserCreate())
 
 node.SetArg("username", "bob")
-results := node.RunPlaybook(playbooks.NewUserDelete())
+results := node.Run(skills.NewUserDelete())
 
-results := node.RunPlaybook(playbooks.NewUserStatus())
+results := node.Run(skills.NewUserStatus())
 ```
 
 ### Swap
@@ -166,52 +166,52 @@ results := node.RunPlaybook(playbooks.NewUserStatus())
 ```go
 node.SetArg("size", "2")
 node.SetArg("swappiness", "10")
-results := node.RunPlaybook(playbooks.NewSwapCreate())
+results := node.Run(skills.NewSwapCreate())
 
-results := node.RunPlaybook(playbooks.NewSwapDelete())
-results := node.RunPlaybook(playbooks.NewSwapStatus())
+results := node.Run(skills.NewSwapDelete())
+results := node.Run(skills.NewSwapStatus())
 ```
 
 ### MariaDB
 
 ```go
-results := node.RunPlaybook(playbooks.NewMariadbInstall())
+results := node.Run(skills.NewMariadbInstall())
 
 node.SetArg("root-password", "secret")
-results := node.RunPlaybook(playbooks.NewSecure())
+results := node.Run(skills.NewSecure())
 
 node.SetArg("database", "myapp")
-results := node.RunPlaybook(playbooks.NewCreateDB())
+results := node.Run(skills.NewCreateDB())
 
 node.SetArg("username", "appuser")
 node.SetArg("password", "apppass")
-results := node.RunPlaybook(playbooks.NewCreateUser())
+results := node.Run(skills.NewCreateUser())
 ```
 
 ### Security
 
 ```go
-results := node.RunPlaybook(playbooks.NewSshHarden())
-results := node.RunPlaybook(playbooks.NewKernelHarden())
-results := node.RunPlaybook(playbooks.NewAideInstall())
+results := node.Run(skills.NewSshHarden())
+results := node.Run(skills.NewKernelHarden())
+results := node.Run(skills.NewAideInstall())
 
 node.SetArg("port", "2222")
-results := node.RunPlaybook(playbooks.NewSshChangePort())
+results := node.Run(skills.NewSshChangePort())
 ```
 
 ### Firewall
 
 ```go
-results := node.RunPlaybook(playbooks.NewUfwInstall())
-results := node.RunPlaybook(playbooks.NewUfwStatus())
-results := node.RunPlaybook(playbooks.NewAllowMariaDB())
+results := node.Run(skills.NewUfwInstall())
+results := node.Run(skills.NewUfwStatus())
+results := node.Run(skills.NewAllowMariaDB())
 ```
 
 ### Fail2ban
 
 ```go
-results := node.RunPlaybook(playbooks.NewFail2banInstall())
-results := node.RunPlaybook(playbooks.NewFail2banStatus())
+results := node.Run(skills.NewFail2banInstall())
+results := node.Run(skills.NewFail2banStatus())
 ```
 
 ## Dry-Run Mode
@@ -267,32 +267,32 @@ addr := cfg.SSHAddr()  // "host:port"
 
 ```go
 // System
-playbooks.IDPing
-playbooks.IDAptUpdate
-playbooks.IDAptUpgrade
-playbooks.IDAptStatus
-playbooks.IDReboot
+skills.IDPing
+skills.IDAptUpdate
+skills.IDAptUpgrade
+skills.IDAptStatus
+skills.IDReboot
 
 // Users
-playbooks.IDUserCreate
-playbooks.IDUserDelete
-playbooks.IDUserStatus
+skills.IDUserCreate
+skills.IDUserDelete
+skills.IDUserStatus
 
 // Swap
-playbooks.IDSwapCreate
-playbooks.IDSwapDelete
-playbooks.IDSwapStatus
+skills.IDSwapCreate
+skills.IDSwapDelete
+skills.IDSwapStatus
 
 // Security
-playbooks.IDSshHarden
-playbooks.IDKernelHarden
-playbooks.IDAideInstall
-playbooks.IDAuditdInstall
+skills.IDSshHarden
+skills.IDKernelHarden
+skills.IDAideInstall
+skills.IDAuditdInstall
 
 // MariaDB
-playbooks.IDMariadbInstall
-playbooks.IDMariadbSecure
-playbooks.IDMariadbCreateDB
+skills.IDMariadbInstall
+skills.IDMariadbSecure
+skills.IDMariadbCreateDB
 // ... etc
 ```
 
@@ -304,8 +304,7 @@ package main
 import (
     "log"
     "github.com/dracory/ork"
-    "github.com/dracory/ork/playbook"
-    "github.com/dracory/ork/playbooks"
+    "github.com/dracory/ork/skills"
 )
 
 func main() {
@@ -315,13 +314,13 @@ func main() {
         SetUser("deploy")
     
     // Check connectivity
-    results := node.RunPlaybook(playbooks.NewPing())
+    results := node.Run(skills.NewPing())
     if results.Results["server.example.com"].Error != nil {
         log.Fatal("Connection failed")
     }
     
     // Update packages
-    results = node.RunPlaybook(playbooks.NewAptUpdate())
+    results = node.Run(skills.NewAptUpdate())
     if results.Results["server.example.com"].Error != nil {
         log.Printf("Update failed: %v", results.Results["server.example.com"].Error)
     }
@@ -329,14 +328,14 @@ func main() {
     // Create user (dry-run first)
     node.SetDryRunMode(true)
     node.SetArg("username", "alice")
-    results = node.RunPlaybook(playbooks.NewUserCreate())
+    results = node.Run(skills.NewUserCreate())
     
     if results.Results["server.example.com"].Changed {
         log.Println("Would create user")
         
         // Actually create
         node.SetDryRunMode(false)
-        results = node.RunPlaybook(playbooks.NewUserCreate())
+        results = node.Run(skills.NewUserCreate())
         log.Println(results.Results["server.example.com"].Message)
     }
 }

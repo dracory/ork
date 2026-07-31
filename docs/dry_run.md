@@ -42,11 +42,12 @@ results := inv.RunCommand("uptime")
 ## Detecting Dry-Run in Skills
 
 ```go
-func (s *MySkill) Run() skill.Result {
-    output, _ := ssh.Run(s.cfg, "apt-get upgrade -y")
+func (s *MySkill) Run() types.Result {
+    cfg := s.GetNodeConfig()
+    output, _ := ssh.Run(cfg, "apt-get upgrade -y")
 
     if output == "[dry-run]" {
-        return skill.Result{
+        return types.Result{
             Changed: true,
             Message: "Would run: apt-get upgrade -y",
         }

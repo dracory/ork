@@ -4,8 +4,8 @@ page-type: reference
 summary: Coding conventions and documentation standards for Ork contributors.
 tags: [conventions, standards, guidelines]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-07-31
+version: 1.1.0
 ---
 
 # Ork Conventions
@@ -21,7 +21,7 @@ Coding and documentation standards for Ork.
 
 ```go
 type NodeInterface interface { }
-type PlaybookInterface interface { }
+type RunnableInterface interface { }
 type RunnerInterface interface { }
 ```
 
@@ -45,13 +45,13 @@ type groupImplementation struct { }
 func NewNodeForHost(host string) NodeInterface
 func NewGroup(name string) GroupInterface
 func NewInventory() InventoryInterface
-func NewPing() types.PlaybookInterface
-func NewAptUpdate() types.PlaybookInterface
+func NewPing() types.RunnableInterface
+func NewAptUpdate() types.RunnableInterface
 ```
 
 ### Constants
 
-- **Playbook IDs**: `ID` prefix, PascalCase
+- **Skill IDs**: `ID` prefix, PascalCase
   ```go
   const IDAptUpdate = "apt-update"
   const IDUserCreate = "user-create"
@@ -69,9 +69,9 @@ func NewAptUpdate() types.PlaybookInterface
   const DefaultSize = "1"
   ```
 
-- **Ork package aliases**: `Playbook` prefix
+- **Ork package aliases**: `Skill` prefix
   ```go
-  const PlaybookAptUpdate = playbooks.IDAptUpdate
+  const SkillAptUpdate = skills.IDAptUpdate
   ```
 
 ## File Organization
@@ -88,13 +88,13 @@ package/
 └── *_test.go        # Tests
 ```
 
-### Example: Playbook Package
+### Example: skills Package
 
 ```
-playbooks/mypackage/
+skills/mypackage/
 ├── constants.go     # Arg constants, defaults
-├── myplaybook.go    # Playbook implementation
-└── myplaybook_test.go
+├── myskill.go       # Skill implementation
+└── myskill_test.go
 ```
 
 ## Code Style
@@ -107,8 +107,8 @@ Group imports: standard library, third-party, internal
 import (
     "fmt"
     "log/slog"
-    
-    "github.com/dracory/ork/playbook"
+
+    "github.com/dracory/ork/types"
     "github.com/dracory/ork/ssh"
 )
 ```
@@ -118,21 +118,21 @@ import (
 All public items must have documentation:
 
 ```go
-// MyPlaybook does something useful.
+// MySkill does something useful.
 // It provides functionality for X and Y.
-type MyPlaybook struct {
-    *playbook.BasePlaybook
+type MySkill struct {
+    *types.BaseSkill
 }
 
 // Check determines if changes are needed.
 // Returns true if the system is not in the desired state.
-func (m *MyPlaybook) Check() (bool, error) {
+func (m *MySkill) Check() (bool, error) {
     // ...
 }
 
-// Run executes the playbook and returns the result.
+// Run executes the skill and returns the result.
 // Changed will be true if modifications were made.
-func (m *MyPlaybook) Run() playbook.Result {
+func (m *MySkill) Run() types.Result {
     // ...
 }
 ```
@@ -144,7 +144,7 @@ Always wrap errors with context:
 ```go
 output, err := ssh.Run(cfg, cmd)
 if err != nil {
-    return playbook.Result{
+    return types.Result{
         Changed: false,
         Error:   fmt.Errorf("failed to execute '%s': %w", cmd, err),
     }
@@ -162,18 +162,19 @@ func (n *nodeImplementation) SetPort(port string) NodeInterface {
 }
 ```
 
-## Playbook Structure
+## Skill Structure
 
-### Standard Playbook Template
+### Standard Skill Template
 
 ```go
-// Package mypackage provides playbooks for X.
+// Package mypackage provides skills for X.
 package mypackage
 
 import (
     "fmt"
-    "github.com/dracory/ork/playbook"
+    "github.com/dracory/ork/skills"
     "github.com/dracory/ork/ssh"
+    "github.com/dracory/ork/types"
 )
 
 // Arg constants
@@ -182,57 +183,57 @@ const (
     DefaultValue = "default"
 )
 
-// MyPlaybook does something.
-type MyPlaybook struct {
-    *playbook.BasePlaybook
+// MySkill does something.
+type MySkill struct {
+    *types.BaseSkill
 }
 
 // Check determines if changes are needed.
-func (m *MyPlaybook) Check() (bool, error) {
-    cfg := m.GetConfig()
+func (m *MySkill) Check() (bool, error) {
+    cfg := m.GetNodeConfig()
     parameter := m.GetArg(ArgParameter)
-    
+
     // Check current state
     output, _ := ssh.Run(cfg, fmt.Sprintf("check %s", parameter))
     return output == "", nil
 }
 
-// Run executes the playbook.
-func (m *MyPlaybook) Run() playbook.Result {
-    cfg := m.GetConfig()
+// Run executes the skill.
+func (m *MySkill) Run() types.Result {
+    cfg := m.GetNodeConfig()
     parameter := m.GetArg(ArgParameter)
-    
+
     if parameter == "" {
         parameter = DefaultValue
     }
-    
+
     // Handle dry-run
     if cfg.IsDryRunMode {
-        return playbook.Result{
+        return types.Result{
             Changed: true,
             Message: fmt.Sprintf("Would run with %s", parameter),
         }
     }
-    
+
     // Check if needed
     needsChange, _ := m.Check()
     if !needsChange {
-        return playbook.Result{
+        return types.Result{
             Changed: false,
             Message: "Already configured",
         }
     }
-    
+
     // Apply changes
     _, err := ssh.Run(cfg, fmt.Sprintf("apply %s", parameter))
     if err != nil {
-        return playbook.Result{
+        return types.Result{
             Changed: false,
             Error:   err,
         }
     }
-    
-    return playbook.Result{
+
+    return types.Result{
         Changed: true,
         Message: fmt.Sprintf("Applied %s", parameter),
         Details: map[string]string{
@@ -241,12 +242,13 @@ func (m *MyPlaybook) Run() playbook.Result {
     }
 }
 
-// NewMyPlaybook creates a new instance.
-func NewMyPlaybook() types.PlaybookInterface {
-    pb := playbook.NewBasePlaybook()
-    pb.SetID(playbooks.IDMyPlaybook)
-    pb.SetDescription("Does something useful")
-    return &MyPlaybook{BasePlaybook: pb}
+// NewMySkill creates a new instance.
+func NewMySkill() types.RunnableInterface {
+    return &MySkill{
+        BaseSkill: types.NewBaseSkill().
+            WithID(skills.IDMySkill).
+            WithDescription("Does something useful"),
+    }
 }
 ```
 
@@ -312,7 +314,7 @@ func TestAptUpdate_Check(t *testing.T)
 ```go
 func TestSomething(t *testing.T) {
     // Mock SSH via SetRunFunc
-    ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
+    ssh.SetRunFunc(func(cfg types.NodeConfig, cmd types.Command) (string, error) {
         return "mocked", nil
     })
     defer ssh.SetRunFunc(nil)
@@ -342,7 +344,7 @@ Types:
 
 Example:
 ```
-feat: add mysql backup playbook
+feat: add mysql backup skill
 
 - Implements mysqldump-based backup
 - Supports compression and encryption

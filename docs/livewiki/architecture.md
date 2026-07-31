@@ -4,11 +4,12 @@ page-type: reference
 summary: System architecture, design patterns, and key architectural decisions in Ork.
 tags: [architecture, design, patterns]
 created: 2025-04-14
-updated: 2026-04-15
-version: 2.0.0
+updated: 2026-07-31
+version: 2.1.0
 ---
 
 ## Changelog
+- **v2.1.0** (2026-07-31): Documented the skill-cloning concurrency model (ToMap/FromMap + cloneFromMap) and updated RunnableInterface, BaseSkill/BasePlaybook diagrams and Skill Execution Flow to reflect the cloning step
 - **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, BasePlaybook moved to types package, NodeConfig moved to types package, config package removed, playbook package removed
 - **v1.1.0** (2026-04-14): Updated architecture diagrams and package references
 - **v1.0.0** (2025-04-14): Initial creation
@@ -173,22 +174,27 @@ type RunnableInterface interface {
     SetArg(key, value string) RunnableInterface
     Check() (bool, error)
     Run() Result
+    ToMap() map[string]any   // serialize state for cloning
+    FromMap(m map[string]any) // restore state from a clone
+    BecomeInterface
 }
 ```
 
+The `ToMap()`/`FromMap()` pair is the contract the framework uses to clone a
+runnable before mutating it during parallel execution (see
+[Concurrency Model](#concurrency-model)).
+
 #### BasePlaybook (types package)
 
-Provides default implementation with fluent API:
+Provides default implementation with fluent API. State is stored in an
+`omni.AtomInterface` (thread-safe) plus a mutex-guarded `NodeConfig`:
 
 ```mermaid
 classDiagram
     class BasePlaybook {
-        -id string
-        -description string
-        -config NodeConfig
-        -args map[string]string
-        -dryRun bool
-        -timeout Duration
+        -atom omni.AtomInterface
+        -nodeCfg NodeConfig
+        -mu sync.RWMutex
         +GetID() string
         +SetID(id string) RunnableInterface
         +GetDescription() string
@@ -197,30 +203,32 @@ classDiagram
         +SetNodeConfig(cfg NodeConfig) RunnableInterface
         +GetArg(key string) string
         +SetArg(key, value string) RunnableInterface
+        +ToMap() map[string]any
+        +FromMap(m map[string]any)
     }
-    
+
     class RunnableInterface {
         <<interface>>
         +Check() (bool, error)
         +Run() Result
+        +ToMap() map[string]any
+        +FromMap(m map[string]any)
     }
-    
+
     BasePlaybook ..|> RunnableInterface
 ```
 
 #### BaseSkill (types package)
 
-Provides default implementation with Check() and Run() stubs:
+Provides default implementation with `Check()` and `Run()` stubs. Uses the same
+Atom-backed state storage and cloning contract as `BasePlaybook`:
 
 ```mermaid
 classDiagram
     class BaseSkill {
-        -id string
-        -description string
-        -config NodeConfig
-        -args map[string]string
-        -dryRun bool
-        -timeout Duration
+        -atom omni.AtomInterface
+        -nodeCfg NodeConfig
+        -mu sync.RWMutex
         +GetID() string
         +SetID(id string) RunnableInterface
         +GetDescription() string
@@ -229,14 +237,18 @@ classDiagram
         +SetNodeConfig(cfg NodeConfig) RunnableInterface
         +GetArg(key string) string
         +SetArg(key, value string) RunnableInterface
+        +ToMap() map[string]any
+        +FromMap(m map[string]any)
     }
-    
+
     class RunnableInterface {
         <<interface>>
         +Check() (bool, error)
         +Run() Result
+        +ToMap() map[string]any
+        +FromMap(m map[string]any)
     }
-    
+
     BaseSkill ..|> RunnableInterface
 ```
 
@@ -260,11 +272,11 @@ Skill registry (types.Registry) for ID-based lookup:
 
 ```mermaid
 graph LR
-    A[types.Registry] --> B[Register Skill]
+    A[types.Registry] --> B[Set Skill]
     C[Node] --> D[Run by ID]
     D --> A
-    A --> E[Find by ID]
-    F[GetGlobalPlaybookRegistry] --> A
+    A --> E[FindByID]
+    F[GetGlobalSkillRegistry] --> A
     G[NewDefaultRegistry] --> A
 ```
 
@@ -328,6 +340,48 @@ sequenceDiagram
 
 Configurable via `SetMaxConcurrency()`.
 
+### Skill Cloning (per-goroutine isolation)
+
+When `Inventory` (or `Group`) runs a single shared skill instance across many
+nodes concurrently, the framework must not let goroutines mutate the same skill
+fields. To guarantee this, `nodeImplementation` clones the skill **before**
+setting any per-execution state on it:
+
+```mermaid
+sequenceDiagram
+    User->>Node: Run(skill)
+    Node->>Skill: skill.ToMap()
+    Node->>Node: cloneFromMap(skill, map)
+    Note over Node,Clone: reflect.New(typ) then clone.FromMap(map)
+    Note over Node,Clone: function-typed fields (runFunc, checkFunc)
+    Note over Node,Clone: are copied directly from the template
+    Node->>Clone: SetNodeConfig(node.cfg)
+    Node->>Clone: SetDryRun(node.IsDryRunMode)
+    Node->>Clone: SetBecomeUser (if empty)
+    Clone->>Clone: Run()
+    Clone->>Node: Result
+    Node->>User: Results
+```
+
+The clone is created via `cloneFromMap(template, m)` in `node_implementation.go`,
+which uses `reflect.New` to allocate a fresh value of the same concrete type as
+the template, calls `FromMap(m)` to restore serializable state, and then copies
+function-typed fields (`runFunc`, `checkFunc`, ...) directly from the template
+because they cannot survive a `ToMap`/`FromMap` round-trip.
+
+**Requirements for custom skill types:**
+
+- Implement `ToMap()`/`FromMap()` to serialize any custom non-function fields.
+  Fields that are neither serialized via `ToMap`/`FromMap` nor function-typed
+  will be lost on clone. For example, `commandImplementation` overrides
+  `ToMap`/`FromMap` to preserve `command`/`required`/`chdir`.
+- The embedded `*BaseSkill` / `*BasePlaybook` already implements
+  `ToMap()`/`FromMap()` for the standard properties (`id`, `description`,
+  `args`, `dryRun`, `timeout`, `becomeUser`, `nodeConfig`).
+
+A race-detector test (`race_detector_test.go`) verifies that concurrent
+`node.Run()` calls sharing a single skill instance do not race.
+
 ### Thread Safety
 
 Key thread-safe mechanisms:
@@ -349,6 +403,11 @@ func (g *groupImplementation) SetDryRunMode(dryRun bool) RunnerInterface {
     return g
 }
 ```
+
+`BaseSkill` and `BasePlaybook` store simple properties in an `omni.AtomInterface`
+(thread-safe via its own `sync.RWMutex`) and guard `NodeConfig` with a per-struct
+`sync.RWMutex`. Combined with the per-call cloning above, this means the original
+shared skill instance is never mutated during parallel execution.
 
 ## Data Flow
 
@@ -379,21 +438,24 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     User->>Node: Run(skill)
-    Node->>Skill: SetConfig(node.cfg)
-    Node->>Skill: SetDryRun(node.IsDryRunMode)
-    
+    Node->>Skill: skill.ToMap()
+    Node->>Clone: cloneFromMap(skill, map)
+    Node->>Clone: SetNodeConfig(node.cfg)
+    Node->>Clone: SetDryRun(node.IsDryRunMode)
+    Node->>Clone: SetBecomeUser (if empty)
+
     alt Dry Run
-        Skill->>Logger: Log planned actions
-        Skill->>Skill: Return [dry-run] Result
+        Clone->>Logger: Log planned actions
+        Clone->>Clone: Return [dry-run] Result
     else Normal Execution
-        Skill->>SSH: Run(command)
+        Clone->>SSH: Run(command)
         SSH->>Remote: Execute
         Remote->>SSH: Return output
-        SSH->>Skill: Return output
-        Skill->>Skill: Build Result
+        SSH->>Clone: Return output
+        Clone->>Clone: Build Result
     end
-    
-    Skill->>Node: Return Result
+
+    Clone->>Node: Return Result
     Node->>Node: Wrap in Results
     Node->>User: Return Results
 ```
@@ -455,7 +517,7 @@ Errors bubble up with context:
 ```go
 output, err := ssh.Run(cfg, cmd)
 if err != nil {
-    return playbook.Result{
+    return types.Result{
         Changed: false,
         Message: "Operation failed",
         Error:   fmt.Errorf("failed to execute '%s': %w", cmd, err),
@@ -498,11 +560,11 @@ func (p *MySkill) Check() (bool, error) { ... }
 func (p *MySkill) Run() types.Result { ... }
 
 // Register globally
-registry, err := ork.GetGlobalPlaybookRegistry()
+registry, err := ork.GetGlobalSkillRegistry()
 if err != nil {
     log.Fatal(err)
 }
-registry.PlaybookRegister(mySkill)
+registry.Set(mySkill)
 ```
 
 ## See Also

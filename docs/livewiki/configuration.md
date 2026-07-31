@@ -4,8 +4,8 @@ page-type: reference
 summary: Configuration options, environment variables, and settings for Ork.
 tags: [configuration, settings, options]
 created: 2025-04-14
-updated: 2025-04-14
-version: 1.0.0
+updated: 2026-07-31
+version: 1.1.0
 ---
 
 # Configuration
@@ -24,6 +24,8 @@ graph TD
     A --> E[Arguments]
     A --> F[Logging]
     A --> G[Dry-Run Mode]
+    A --> H[Privilege Escalation]
+    A --> I[Working Directory]
 ```
 
 ## NodeConfig Structure
@@ -35,23 +37,39 @@ type NodeConfig struct {
     SSHPort  string  // SSH port (default: "22")
     SSHLogin string  // SSH login user
     SSHKey   string  // Private key filename
-    
+
     // User settings
     RootUser    string  // Root/admin user for privileged operations
     NonRootUser string  // Non-root user for non-privileged operations
-    
+
     // Database settings
     DBPort         string  // Database port (e.g., "3306")
     DBRootPassword string  // Database root password
-    
-    // Arguments for playbooks
+
+    // Arguments for skills
     Args map[string]string
-    
+
     // Logger for structured logging
     Logger *slog.Logger
-    
+
     // Dry-run mode flag
     IsDryRunMode bool
+
+    // BecomeUser is the user to become when executing commands via sudo.
+    // If empty, no privilege escalation is performed.
+    BecomeUser string
+
+    // Chdir is the working directory for command execution.
+    // If set, commands will be executed in this directory.
+    Chdir string
+
+    // KexAlgorithms specifies the SSH key exchange algorithms.
+    // If empty, defaults to DefaultKexAlgorithms.
+    KexAlgorithms []string
+
+    // HostKeyAlgorithms specifies the SSH host key algorithms.
+    // If empty, defaults to DefaultHostKeyAlgorithms.
+    HostKeyAlgorithms []string
 }
 ```
 
@@ -66,7 +84,7 @@ The hostname or IP address of the remote server.
 node := ork.NewNodeForHost("server.example.com")
 
 // Via config
-node := ork.NewNodeFromConfig(config.NodeConfig{
+node := ork.NewNodeFromConfig(types.NodeConfig{
     SSHHost: "192.168.1.100",
 })
 ```
@@ -83,7 +101,7 @@ node := ork.NewNodeForHost("server.example.com")
 node.SetPort("2222")
 
 // Via config
-cfg := config.NodeConfig{
+cfg := types.NodeConfig{
     SSHHost: "server.example.com",
     SSHPort: "40022",
 }
@@ -105,7 +123,7 @@ node := ork.NewNodeForHost("server.example.com")
 node.SetKey("production.prv")
 
 // Via config
-cfg := config.NodeConfig{
+cfg := types.NodeConfig{
     SSHKey: "deploy_key",
 }
 ```
@@ -144,12 +162,12 @@ The database root password.
 
 ```go
 node.SetArg("root-password", "secure-password")
-results := node.RunPlaybook(playbooks.NewSecure())
+results := node.Run(skills.NewSecure())
 ```
 
 ## Arguments
 
-Arguments are key-value pairs passed to playbooks for configuration.
+Arguments are key-value pairs passed to skills for configuration.
 
 ### Setting Arguments
 
@@ -169,7 +187,7 @@ node.SetArgs(map[string]string{
 })
 ```
 
-### Common Arguments by Playbook
+### Common Arguments by Skill
 
 #### User Management
 
@@ -242,7 +260,7 @@ inv.SetLogger(logger)
 ### Logger in Config
 
 ```go
-cfg := config.NodeConfig{
+cfg := types.NodeConfig{
     Logger: slog.Default(),
 }
 
@@ -281,29 +299,29 @@ Group (inherits)
   ↓
 Node (inherits)
   ↓
-Playbook (inherits)
+Skill (inherits)
 ```
 
 ```go
 // Set on inventory, affects all
 inv.SetDryRunMode(true)
-results := inv.RunPlaybook(playbooks.NewAptUpgrade())
+results := inv.Run(skills.NewAptUpgrade())
 // All nodes in all groups will be in dry-run mode
 ```
 
-### Detecting Dry-Run in Playbooks
+### Detecting Dry-Run in Skills
 
 ```go
-func (p *MyPlaybook) Run() playbook.Result {
-    cfg := p.GetConfig()
-    
+func (s *MySkill) Run() types.Result {
+    cfg := s.GetNodeConfig()
+
     if cfg.IsDryRunMode {
-        return playbook.Result{
+        return types.Result{
             Changed: true,
             Message: "Would execute: some-command",
         }
     }
-    
+
     // Normal execution
     output, err := ssh.Run(cfg, "some-command")
     // ...
@@ -324,7 +342,7 @@ node := ork.NewNodeForHost("server.example.com").
 ### Method 2: From Config
 
 ```go
-cfg := config.NodeConfig{
+cfg := types.NodeConfig{
     SSHHost:  "server.example.com",
     SSHPort:  "2222",
     RootUser: "deploy",
@@ -368,7 +386,7 @@ addr := cfg.SSHAddr()     // "server.example.com:2222"
 ## SSHAddr Helper
 
 ```go
-cfg := config.NodeConfig{
+cfg := types.NodeConfig{
     SSHHost: "server.example.com",
     SSHPort: "2222",
 }
@@ -376,7 +394,7 @@ cfg := config.NodeConfig{
 addr := cfg.SSHAddr()  // "server.example.com:2222"
 
 // Empty port defaults to "22"
-cfg2 := config.NodeConfig{
+cfg2 := types.NodeConfig{
     SSHHost: "server.example.com",
 }
 addr2 := cfg2.SSHAddr()  // "server.example.com:22"
@@ -391,45 +409,45 @@ import (
     "log/slog"
     "os"
     "github.com/dracory/ork"
-    "github.com/dracory/ork/config"
-    "github.com/dracory/ork/playbooks"
+    "github.com/dracory/ork/skills"
+    "github.com/dracory/ork/types"
 )
 
 func main() {
     // Create structured logger
     logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-    
+
     // Create node with full configuration
     node := ork.NewNodeForHost("db.production.example.com").
         SetPort("40022").
         SetUser("admin").
         SetKey("production_deploy.prv").
         SetLogger(logger)
-    
-    // Set playbook-specific arguments
+
+    // Set skill-specific arguments
     node.SetArg("username", "appuser").
         SetArg("shell", "/bin/bash").
         SetArg("ssh-key", "ssh-rsa AAAAB3...")
-    
+
     // Get the config for inspection
     cfg := node.GetNodeConfig()
-    logger.Info("configuration", 
+    logger.Info("configuration",
         "host", cfg.SSHHost,
         "port", cfg.SSHPort,
         "addr", cfg.SSHAddr(),
     )
-    
-    // Run playbooks
-    results := node.RunPlaybook(playbooks.NewPing())
+
+    // Run skills
+    results := node.Run(skills.NewPing())
     if results.Results["db.production.example.com"].Error != nil {
         logger.Error("connection failed")
         return
     }
-    
+
     // Enable dry-run for testing
     node.SetDryRunMode(true)
-    results = node.RunPlaybook(playbooks.NewUserCreate())
-    logger.Info("dry-run result", 
+    results = node.Run(skills.NewUserCreate())
+    logger.Info("dry-run result",
         "changed", results.Results["db.production.example.com"].Changed,
         "message", results.Results["db.production.example.com"].Message,
     )

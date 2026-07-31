@@ -77,14 +77,14 @@ node := ork.NewNode()
 **Solution**: Use the correct ID or run the playbook directly:
 
 ```go
-// By ID (must be registered)
-results := node.RunPlaybookByID(playbooks.IDAptUpdate)
+// By ID (must be registered) - deprecated, prefer Run() with a direct instance
+results := node.RunByID(skills.IDAptUpdate)
 
 // Direct instance (preferred)
-results := node.RunPlaybook(playbooks.NewAptUpdate())
+results := node.Run(skills.NewAptUpdate())
 ```
 
-Check available IDs in `playbook/constants.go`.
+Check available IDs in `skills/constants.go`.
 
 ### "username is required"
 
@@ -94,7 +94,7 @@ Check available IDs in `playbook/constants.go`.
 
 ```go
 node.SetArg("username", "alice")
-results := node.RunPlaybook(playbooks.NewUserCreate())
+results := node.Run(skills.NewUserCreate())
 ```
 
 ### Playbook reports "Changed: false" but should have changed
@@ -336,7 +336,7 @@ for _, node := range nodes {
 
 ### Inventory results missing some hosts
 
-**Problem**: Inventory RunPlaybook missing results for some nodes.
+**Problem**: Inventory Run missing results for some nodes.
 
 **Possible Causes**:
 
@@ -448,7 +448,7 @@ log.Println("2. Setting args...")
 node.SetArg("key", "value")
 
 log.Println("3. Running playbook...")
-results := node.RunPlaybook(playbooks.NewPing())
+results := node.Run(skills.NewPing())
 log.Printf("4. Results: %+v", results)
 ```
 

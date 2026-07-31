@@ -4,13 +4,14 @@ page-type: module
 summary: Shared types including RunnableInterface, BasePlaybook, BaseSkill, Registry, NodeConfig, Command, PromptConfig, PromptResult, and result types for operation outcomes across all Ork packages.
 tags: [module, types, results, prompts]
 created: 2025-04-14
-updated: 2026-04-15
-version: 2.0.0
+updated: 2026-07-31
+version: 2.1.0
 ---
 
 # types Package
 
 ## Changelog
+- **v2.1.0** (2026-07-31): Documented ToMap()/FromMap() cloning contract on RunnableInterface and the omni.Atom-backed state storage in BaseSkill/BasePlaybook for concurrency safety
 - **v2.0.0** (2026-04-15): Major terminology refactoring - PlaybookInterface renamed to RunnableInterface, PlaybookOptions renamed to RunnableOptions, BasePlaybook and BaseSkill moved to types package, NodeConfig moved from config to types package
 - **v1.2.0** (2026-04-14): Added PromptConfig and PromptResult types for interactive user input
 - **v1.1.0** (2026-04-14): Updated PlaybookInterface and Registry documentation
@@ -35,18 +36,24 @@ The `types` package provides:
 
 | File | Purpose |
 |------|---------|
-| `runner_interface.go` | RunnerInterface - base for all executables |
-| `base_playbook.go` | BasePlaybook default implementation |
-| `base_skill.go` | BaseSkill default implementation |
-| `node_config.go` | NodeConfig struct and methods |
-| `registry.go` | RunnableInterface, RunnableOptions, Registry |
-| `command.go` | Command struct with description |
-| `prompt.go` | PromptConfig, PromptResult types |
-| `results.go` | Result, Results, and Summary types |
+| `runnable_interface.go` | `RunnableInterface` - the contract all skills/playbooks must implement (includes `ToMap()`/`FromMap()` for cloning) |
+| `runner_interface.go` | `RunnerInterface` - base for Node, Group, Inventory (`RunCommand`, `Run`, `Check`, ...) |
+| `become_interface.go` | `BecomeInterface` - privilege escalation contract |
+| `base_playbook.go` | `BasePlaybook` default implementation |
+| `base_skill.go` | `BaseSkill` default implementation |
+| `constants.go` | Property key and map key constants used by `BaseSkill`/`BasePlaybook` for state storage and cloning |
+| `node_config.go` | `NodeConfig` struct and methods |
+| `registry.go` | `Registry`, `RunnableOptions` |
+| `command.go` | `Command` struct with description |
+| `prompt.go` | `PromptConfig`, `PromptResult` types |
+| `results.go` | `Result`, `Results`, and `Summary` types |
 
 ## RunnableInterface
 
-All automation skills must implement this interface.
+All automation skills must implement this interface. The `ToMap()` / `FromMap()`
+pair is used by the framework to clone a skill before mutating it during parallel
+execution, so each goroutine operates on its own isolated copy (see
+[Concurrency Model](../architecture.md#concurrency-model) for details).
 
 ```go
 type RunnableInterface interface {
@@ -55,26 +62,33 @@ type RunnableInterface interface {
     SetID(id string) RunnableInterface
     GetDescription() string
     SetDescription(description string) RunnableInterface
-    
+
     // Configuration
     GetNodeConfig() NodeConfig
     SetNodeConfig(cfg NodeConfig) RunnableInterface
-    
+
     // Arguments
     GetArg(key string) string
     SetArg(key, value string) RunnableInterface
     GetArgs() map[string]string
     SetArgs(args map[string]string) RunnableInterface
-    
+
     // Execution options
     IsDryRun() bool
     SetDryRun(dryRun bool) RunnableInterface
     GetTimeout() time.Duration
     SetTimeout(timeout time.Duration) RunnableInterface
-    
+
     // Core operations
     Check() (bool, error)
     Run() Result
+
+    // Serialization for concurrency-safe cloning
+    ToMap() map[string]any
+    FromMap(m map[string]any)
+
+    // Privilege escalation
+    BecomeInterface
 }
 ```
 
@@ -100,18 +114,32 @@ func (p RunnableInterface) Run() Result
 
 The `Result.Changed` field indicates whether any modifications were made.
 
+### ToMap / FromMap
+
+`ToMap()` returns the skill's serializable state as a `map[string]any`; `FromMap()`
+is the inverse. The framework calls `cloneFromMap(skill, skill.ToMap())` before
+mutating a shared skill instance so concurrent `Run()` calls do not race on the
+same fields. Custom skills that add non-function fields must override these two
+methods to preserve those fields across a clone (function-typed fields such as
+`runFunc`/`checkFunc` are copied directly by the framework and do not need to be
+serialized).
+
 ## BasePlaybook
 
-Provides a default implementation of RunnableInterface with fluent API. Use this when you want optional Check() with a default implementation.
+Provides a default implementation of `RunnableInterface` with fluent API. Use this when you want optional `Check()` with a default implementation.
+
+State is stored in an `omni.AtomInterface` (thread-safe via `sync.RWMutex`) for
+simple properties (`id`, `description`, `args`, `dryRun`, `timeout`, `becomeUser`).
+`NodeConfig` is held in a separate typed field because it contains a `*slog.Logger`
+pointer that cannot be serialized to the Atom's flat `map[string]string`. The
+framework clones the playbook via `ToMap()`/`FromMap()` before mutating it for
+concurrency safety.
 
 ```go
 type BasePlaybook struct {
-    id          string
-    description string
-    nodeCfg     NodeConfig
-    args        map[string]string
-    dryRun      bool
-    timeout     time.Duration
+    atom    omni.AtomInterface  // thread-safe property store
+    nodeCfg NodeConfig          // guarded by mu
+    mu      sync.RWMutex        // protects nodeCfg
 }
 ```
 
@@ -123,10 +151,11 @@ func NewBasePlaybook() *BasePlaybook
 
 ### Features
 
-- Fluent API for method chaining
-- Optional Check() (returns false by default)
-- Must implement Run() yourself
-- Useful for simple skills where Check() is not critical
+- Fluent API for method chaining (`WithID`, `WithDescription`, `WithArg`, ...)
+- Optional `Check()` (returns false by default)
+- Must implement `Run()` yourself
+- `ToMap()`/`FromMap()` implemented for framework cloning
+- Useful for simple skills where `Check()` is not critical
 
 ### Example
 
@@ -138,8 +167,8 @@ type MySkill struct {
 func NewMySkill() types.RunnableInterface {
     return &MySkill{
         BasePlaybook: types.NewBasePlaybook().
-            SetID("my-skill").
-            SetDescription("Does something useful"),
+            WithID("my-skill").
+            WithDescription("Does something useful"),
     }
 }
 
@@ -151,16 +180,17 @@ func (m *MySkill) Run() types.Result {
 
 ## BaseSkill
 
-Provides a default implementation of RunnableInterface with Check() and Run() stubs that must be implemented. Use this when you want to enforce implementation of both Check() and Run().
+Provides a default implementation of `RunnableInterface` with `Check()` and `Run()` stubs that must be implemented. Use this when you want to enforce implementation of both `Check()` and `Run()`.
+
+State storage and cloning semantics are identical to `BasePlaybook` (see above):
+an `omni.AtomInterface` for serializable properties plus a mutex-guarded
+`NodeConfig`, and `ToMap()`/`FromMap()` for framework-driven cloning.
 
 ```go
 type BaseSkill struct {
-    id          string
-    description string
-    nodeCfg     NodeConfig
-    args        map[string]string
-    dryRun      bool
-    timeout     time.Duration
+    atom    omni.AtomInterface  // thread-safe property store
+    nodeCfg NodeConfig          // guarded by mu
+    mu      sync.RWMutex        // protects nodeCfg
 }
 ```
 
@@ -172,10 +202,11 @@ func NewBaseSkill() *BaseSkill
 
 ### Features
 
-- Fluent API for method chaining
-- Check() stub that returns error (must be implemented)
-- Run() stub that returns error (must be implemented)
+- Fluent API for method chaining (`WithID`, `WithDescription`, `WithArg`, ...)
+- `Check()` stub that returns error (must be implemented)
+- `Run()` stub that returns error (must be implemented)
 - Enforces idempotency pattern
+- `ToMap()`/`FromMap()` implemented for framework cloning
 
 ### Example
 
@@ -228,23 +259,39 @@ type NodeConfig struct {
     SSHPort  string            // SSH port (default: "22")
     SSHLogin string            // SSH login user
     SSHKey   string            // Private key filename (resolved to ~/.ssh/)
-    
+
     // User settings
     RootUser    string         // Root/admin user
     NonRootUser string         // Non-root user
-    
+
     // Database settings
     DBPort         string      // Database port
     DBRootPassword string      // Database root password
-    
+
     // Extra arguments for skills
     Args map[string]string
-    
+
     // Logger for structured logging
     Logger *slog.Logger
-    
+
     // Dry-run mode flag
     IsDryRunMode bool
+
+    // BecomeUser is the user to become when executing commands via sudo.
+    // If empty, no privilege escalation is performed.
+    BecomeUser string
+
+    // Chdir is the working directory for command execution.
+    // If set, commands will be executed in this directory.
+    Chdir string
+
+    // KexAlgorithms specifies the key exchange algorithms to use for SSH.
+    // If empty, defaults to DefaultKexAlgorithms.
+    KexAlgorithms []string
+
+    // HostKeyAlgorithms specifies the host key algorithms to use for SSH.
+    // If empty, defaults to DefaultHostKeyAlgorithms.
+    HostKeyAlgorithms []string
 }
 ```
 
@@ -372,8 +419,7 @@ Skill registry for ID-based lookup.
 
 ```go
 type Registry struct {
-    playbooks map[string]RunnableInterface
-    mu        sync.RWMutex
+    // internal map guarded by sync.RWMutex
 }
 ```
 
@@ -386,17 +432,20 @@ func NewRegistry() *Registry
 ### Methods
 
 ```go
-// Register a skill
-func (r *Registry) PlaybookRegister(p RunnableInterface) error
+// Register a skill (returns error on duplicate ID)
+func (r *Registry) Set(runnable RunnableInterface) error
+
+// Register multiple skills at once (returns error on first failure)
+func (r *Registry) SetAll(runnables []RunnableInterface) error
 
 // Find skill by ID
-func (r *Registry) PlaybookFindByID(id string) (RunnableInterface, bool)
+func (r *Registry) FindByID(id string) (RunnableInterface, bool)
 
 // List all registered skills
-func (r *Registry) PlaybookList() []RunnableInterface
+func (r *Registry) List() []RunnableInterface
 
 // Get all skill IDs
-func (r *Registry) GetPlaybookIDs() []string
+func (r *Registry) GetIDs() []string
 ```
 
 ### Usage
@@ -406,11 +455,11 @@ func (r *Registry) GetPlaybookIDs() []string
 registry := types.NewRegistry()
 
 // Register skills
-registry.PlaybookRegister(skills.NewPing())
-registry.PlaybookRegister(skills.NewAptUpdate())
+registry.Set(skills.NewPing())
+registry.Set(skills.NewAptUpdate())
 
 // Lookup by ID
-skill, ok := registry.PlaybookFindByID("ping")
+skill, ok := registry.FindByID("ping")
 if ok {
     result := skill.Run()
 }
@@ -639,7 +688,7 @@ log.Println(result.Message)
 inv := ork.NewInventory()
 // ... add groups with nodes ...
 
-results := inv.RunPlaybook(playbooks.NewPing())
+results := inv.Run(skills.NewPing())
 
 // Get summary first
 summary := results.Summary()

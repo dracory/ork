@@ -139,13 +139,13 @@ skill.SetBecomeUser("root")
 results := node.Run(skill)
 ```
 
-### Setting Become User on Playbooks
+### Setting Become User on Skills
 
 ```go
-playbook := playbooks.NewUserCreate()
-playbook.SetBecomeUser("root")
+skill := skills.NewUserCreate()
+skill.SetBecomeUser("root")
 
-results := node.Run(playbook)
+results := node.Run(skill)
 ```
 
 ### Dynamic User Selection in Custom Skills

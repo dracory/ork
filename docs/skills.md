@@ -64,6 +64,7 @@ log.Printf("Total: %d, Changed: %d, Failed: %d",
 |-------|-----|------|-------------|
 | Ping | `ping` | - | Check SSH connectivity |
 | Reboot | `reboot` | - | Reboot server |
+| Apt Install | `apt-install` | - | Install packages via apt-get |
 | Apt Update | `apt-update` | - | Refresh package database |
 | Apt Upgrade | `apt-upgrade` | - | Install available updates |
 | Apt Status | `apt-status` | - | Show available updates |
@@ -76,6 +77,7 @@ log.Printf("Total: %d, Changed: %d, Failed: %d",
 | User Delete | `user-delete` | `username` | Delete user |
 | User List | `user-list` | - | List all non-system users |
 | User Status | `user-status` | `username` (optional) | Show user info |
+| User Add To Group | `user-add-to-group` | `username`, `group` | Add user to a group |
 
 ### Swap Management
 
@@ -101,6 +103,13 @@ log.Printf("Total: %d, Changed: %d, Failed: %d",
 |-------|-----|------|-------------|
 | UFW Install | `ufw-install` | - | Install UFW firewall |
 | UFW Status | `ufw-status` | - | Show UFW status |
+| UFW Allow | `ufw-allow` | `port`, `protocol` (optional) | Allow traffic through UFW |
+| UFW Deny | `ufw-deny` | `port`, `protocol` (optional) | Deny traffic through UFW |
+| UFW Delete | `ufw-delete` | `port`, `protocol` (optional) | Delete a UFW rule |
+| UFW Enable | `ufw-enable` | - | Enable UFW firewall |
+| UFW Default | `ufw-default` | `policy` (optional) | Set UFW default policy |
+| UFW Disable | `ufw-disable` | - | Disable UFW firewall |
+| UFW Reset | `ufw-reset` | - | Reset UFW to defaults |
 | UFW Allow MariaDB | `ufw-allow-mariadb` | - | Allow MariaDB through UFW |
 
 ### Fail2Ban
@@ -127,6 +136,7 @@ log.Printf("Total: %d, Changed: %d, Failed: %d",
 | MariaDB Change Port | `mariadb-change-port` | `port` | Change MariaDB port |
 | MariaDB Enable SSL | `mariadb-enable-ssl` | - | Enable SSL connections |
 | MariaDB Enable Encryption | `mariadb-enable-encryption` | - | Enable encryption at rest |
+| MariaDB Purge | `mariadb-purge` | - | Remove MariaDB and its data |
 
 ## Setting Arguments
 
@@ -152,9 +162,14 @@ results := node.Run(skills.NewUserCreate())
 You can also run skills by their string ID:
 
 ```go
-// Run by ID (registry lookup)
+// Run by ID (registry lookup) - deprecated, prefer Run() with a direct instance
 results := node.RunByID("ping")
 ```
+
+> **Deprecated:** `RunByID` is retained for backward compatibility but is marked
+> deprecated. Prefer `node.Run(skills.NewPing())` with a direct skill instance
+> when you have one in scope. `RunByID` still works via the global skill registry
+> (`ork.GetGlobalSkillRegistry()`).
 
 ## Checking Before Running
 

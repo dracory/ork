@@ -4,8 +4,8 @@ page-type: tutorial
 summary: Development workflow, testing guidelines, and contributing to Ork.
 tags: [development, testing, contributing]
 created: 2025-04-14
-updated: 2026-04-14
-version: 1.1.0
+updated: 2026-07-31
+version: 1.2.0
 ---
 
 # Development Guide
@@ -18,49 +18,58 @@ This document covers the development workflow for contributing to Ork.
 ork/
 ├── ork.go                  # Main package entry point
 ├── node_interface.go       # NodeInterface definition
-├── node_implementation.go  # Node implementation
+├── node_implementation.go  # Node implementation (includes skill cloning logic)
 ├── node_interface_test.go  # Node tests
 ├── group_implementation.go # Group implementation
 ├── group_implementation_test.go
 ├── inventory_implementation.go
 ├── inventory_implementation_test.go
 ├── inventory_interface.go
-├── runnable_interface.go   # Base runnable interface
-├── constants.go            # Playbook ID constants
+├── runner_interface.go     # RunnerInterface base for Node/Group/Inventory
+├── command_implementation.go # CommandInterface implementation
+├── clone_id_test.go        # Tests for skill cloning
+├── race_detector_test.go   # Race detector test for concurrent node.Run()
+├── constants.go            # Skill ID constants (ork package aliases)
 ├── registry.go             # Global registry + NewDefaultRegistry factory
 ├── registry_test.go
-├── config/
-│   └── node_config.go      # Configuration types
+├── vault.go                # Vault functions for secure secrets
+├── prompts.go              # Interactive prompt functions
+├── prompts_test.go
 ├── ssh/
-│   ├── ssh.go             # SSH client wrapper
-│   ├── functions.go       # SSH utility functions
+│   ├── ssh.go              # SSH client wrapper
+│   ├── functions.go        # SSH utility functions
 │   └── ssh_test.go
-├── playbook/
-│   ├── playbook.go        # BasePlaybook implementation
-│   ├── base_playbook.go   # Base implementation
-│   ├── constants.go       # Playbook IDs
-│   └── functions.go       # Utility functions
-├── playbooks/
-│   ├── doc.go             # Package documentation
-│   ├── apt/               # Apt playbooks
-│   ├── ping/              # Ping playbook
-│   ├── reboot/            # Reboot playbook
-│   ├── swap/              # Swap management
-│   ├── user/              # User management
-│   ├── mariadb/           # MariaDB playbooks
-│   ├── security/          # Security hardening
-│   ├── ufw/               # UFW firewall
-│   └── fail2ban/          # Fail2ban playbooks
+├── skills/
+│   ├── doc.go              # Package documentation
+│   ├── constants.go        # Skill ID constants
+│   ├── functions.go        # Shared skill utilities (shell/SQL escaping, etc.)
+│   ├── apt/                # apt-install, apt-update, apt-upgrade, apt-status
+│   ├── ping/               # ping connectivity check
+│   ├── reboot/             # server reboot
+│   ├── swap/               # swap-create, swap-delete, swap-status
+│   ├── user/               # user-create, user-delete, user-list, user-status, user-add-to-group
+│   ├── mariadb/            # 13 MariaDB skills + mariadb-purge
+│   ├── security/           # ssh-harden, kernel-harden, aide-install, auditd-install, ssh-change-port
+│   ├── ufw/                # ufw-install, ufw-status, ufw-allow, ufw-deny, ufw-delete, ufw-enable, ufw-default, ufw-disable, ufw-reset, ufw-allow-mariadb
+│   └── fail2ban/           # fail2ban-install, fail2ban-status
 ├── types/
-│   ├── registry.go        # PlaybookInterface, Registry, PlaybookOptions
-│   ├── command.go         # Command struct
-│   └── results.go         # Result types
+│   ├── runnable_interface.go # RunnableInterface (skills/playbooks contract)
+│   ├── runner_interface.go   # RunnerInterface (Node/Group/Inventory base)
+│   ├── become_interface.go   # BecomeInterface (privilege escalation)
+│   ├── base_playbook.go      # BasePlaybook default implementation
+│   ├── base_skill.go         # BaseSkill default implementation
+│   ├── constants.go          # Property/map key constants for cloning
+│   ├── registry.go           # Registry, RunnableOptions
+│   ├── command.go            # Command struct
+│   ├── node_config.go        # NodeConfig struct + methods
+│   ├── prompt.go             # PromptConfig, PromptResult
+│   └── results.go            # Result, Results, Summary types
 ├── internal/
-│   ├── playbooktest/      # Test helpers for playbook testing
-│   ├── sshtest/           # Mock SSH client for testing
-│   └── README.md          # Testing framework documentation
+│   ├── skilltest/          # Test helpers for skill testing
+│   ├── sshtest/            # Mock SSH client for testing
+│   └── README.md           # Testing framework documentation
 └── docs/
-    └── livewiki/          # This documentation
+    └── livewiki/           # This documentation
 ```
 
 ## Setting Up Development Environment
@@ -100,10 +109,14 @@ go test ./...
 
 # Run specific package tests
 go test ./ssh/
-go test ./playbook/
+go test ./types/
 
 # Run with coverage
 go test -cover ./...
+
+# Run the race detector (recommended when touching node_implementation.go
+# or anything that runs skills concurrently)
+go test -race ./...
 ```
 
 ### Integration Tests
@@ -167,7 +180,7 @@ func TestNode_RunCommand(t *testing.T) {
 ```go
 func TestNode_RunCommand(t *testing.T) {
     // Mock SSH via SetRunFunc
-    ssh.SetRunFunc(func(cfg config.NodeConfig, cmd types.Command) (string, error) {
+    ssh.SetRunFunc(func(cfg types.NodeConfig, cmd types.Command) (string, error) {
         return "mocked output", nil
     })
     defer ssh.SetRunFunc(nil)
@@ -179,21 +192,21 @@ func TestNode_RunCommand(t *testing.T) {
 }
 ```
 
-## Creating a New Playbook
+## Creating a New Skill
 
 ### 1. Create Package Structure
 
 ```bash
-mkdir -p playbooks/myplaybook
-touch playbooks/myplaybook/constants.go
-touch playbooks/myplaybook/myplaybook.go
+mkdir -p skills/myskill
+touch skills/myskill/constants.go
+touch skills/myskill/myskill.go
 ```
 
 ### 2. Define Constants
 
 ```go
-// playbooks/myplaybook/constants.go
-package myplaybook
+// skills/myskill/constants.go
+package myskill
 
 const (
     ArgParameter = "parameter"
@@ -201,90 +214,93 @@ const (
 )
 ```
 
-### 3. Implement Playbook
+### 3. Implement Skill
 
 ```go
-// playbooks/myplaybook/myplaybook.go
-package myplaybook
+// skills/myskill/myskill.go
+package myskill
 
 import (
     "fmt"
-    "github.com/dracory/ork/playbook"
+
+    "github.com/dracory/ork/skills"
     "github.com/dracory/ork/ssh"
+    "github.com/dracory/ork/types"
 )
 
-// MyPlaybook does something useful.
-type MyPlaybook struct {
-    *playbook.BasePlaybook
+// MySkill does something useful.
+type MySkill struct {
+    *types.BaseSkill
 }
 
-// Check determines if the playbook needs to run.
-func (m *MyPlaybook) Check() (bool, error) {
-    cfg := m.GetConfig()
+// Check determines if the skill needs to run.
+func (m *MySkill) Check() (bool, error) {
+    cfg := m.GetNodeConfig()
     parameter := m.GetArg(ArgParameter)
-    
+
     // Check current state
     output, _ := ssh.Run(cfg, fmt.Sprintf("check %s", parameter))
     return output == "", nil
 }
 
-// Run executes the playbook.
-func (m *MyPlaybook) Run() playbook.Result {
-    cfg := m.GetConfig()
+// Run executes the skill.
+func (m *MySkill) Run() types.Result {
+    cfg := m.GetNodeConfig()
     parameter := m.GetArg(ArgParameter)
-    
+
     if parameter == "" {
         parameter = DefaultValue
     }
-    
+
     // Check dry-run
     if cfg.IsDryRunMode {
-        return playbook.Result{
+        return types.Result{
             Changed: true,
-            Message: fmt.Sprintf("Would run myplaybook with %s", parameter),
+            Message: fmt.Sprintf("Would run myskill with %s", parameter),
         }
     }
-    
+
     // Check if needed
     needsChange, _ := m.Check()
     if !needsChange {
-        return playbook.Result{
+        return types.Result{
             Changed: false,
             Message: "Already configured",
         }
     }
-    
+
     // Apply changes
     _, err := ssh.Run(cfg, fmt.Sprintf("apply %s", parameter))
     if err != nil {
-        return playbook.Result{
+        return types.Result{
             Changed: false,
             Message: "Failed to apply",
             Error:   err,
         }
     }
-    
-    return playbook.Result{
+
+    return types.Result{
         Changed: true,
         Message: fmt.Sprintf("Applied %s", parameter),
     }
 }
 
-// NewMyPlaybook creates a new instance.
-func NewMyPlaybook() types.PlaybookInterface {
-    pb := playbook.NewBasePlaybook()
-    pb.SetID(playbooks.IDMyPlaybook)  // Add to playbook/constants.go
-    pb.SetDescription("Does something useful")
-    return &MyPlaybook{BasePlaybook: pb}
+// NewMySkill creates a new instance.
+func NewMySkill() types.RunnableInterface {
+    return &MySkill{
+        BaseSkill: types.NewBaseSkill().
+            WithID(skills.IDMySkill).  // Add to skills/constants.go
+            WithDescription("Does something useful"),
+    }
 }
 ```
 
-### 4. Add ID to playbook/constants.go
+### 4. Add ID to skills/constants.go
 
 ```go
 const (
     // ... existing constants
-    IDMyPlaybook = "my-playbook"
+    IDMySkill = "my-skill"
 )
 ```
 
@@ -293,62 +309,62 @@ const (
 ```go
 const (
     // ... existing constants
-    PlaybookMyPlaybook = playbooks.IDMyPlaybook
+    SkillMySkill = skills.IDMySkill
 )
 ```
 
 ### 6. Register in registry.go
 
 ```go
-import "github.com/dracory/ork/playbooks/myplaybook"
+import "github.com/dracory/ork/skills/myskill"
 
-// Add to the playbooks slice in NewDefaultRegistry()
-playbooks := []types.PlaybookInterface{
-    // ... existing playbooks
-    myplaybook.NewMyPlaybook(),
+// Add to the skills slice in NewDefaultRegistry()
+skills := []types.RunnableInterface{
+    // ... existing skills
+    myskill.NewMySkill(),
 }
 ```
 
 ### 7. Write Tests
 
-Using the internal/playbooktest helper (recommended):
+Using the internal/skilltest helper (recommended):
 
 ```go
-// playbooks/myplaybook/myplaybook_test.go
-package myplaybook
+// skills/myskill/myskill_test.go
+package myskill
 
 import (
     "testing"
-    "github.com/dracory/ork/internal/playbooktest"
+    "github.com/dracory/ork/internal/skilltest"
 )
 
-func TestMyPlaybook_Check(t *testing.T) {
-    test := playbooktest.New(t)
+func TestMySkill_Check(t *testing.T) {
+    test := skilltest.New(t)
     defer test.Cleanup()
     test.Setup()
-    
+
     test.SetArg(ArgParameter, "test")
     test.ExpectCommand("check parameter", "not configured")
-    
-    pb := NewMyPlaybook()
-    pb.SetNodeConfig(test.Config())
-    
-    needsChange, err := pb.Check()
+
+    s := NewMySkill()
+    s.SetNodeConfig(test.Config())
+
+    needsChange, err := s.Check()
     test.AssertNoError(err)
     if !needsChange {
         t.Error("expected changes needed")
     }
 }
 
-func TestMyPlaybook_Run(t *testing.T) {
-    test := playbooktest.New(t)
+func TestMySkill_Run(t *testing.T) {
+    test := skilltest.New(t)
     defer test.Cleanup()
     test.Setup()
-    
-    pb := NewMyPlaybook()
-    pb.SetNodeConfig(test.Config())
-    
-    result := pb.Run()
+
+    s := NewMySkill()
+    s.SetNodeConfig(test.Config())
+
+    result := s.Run()
     test.AssertResultChanged(result)
 }
 ```
@@ -356,35 +372,35 @@ func TestMyPlaybook_Run(t *testing.T) {
 Or using traditional mocking:
 
 ```go
-// playbooks/myplaybook/myplaybook_test.go
-package myplaybook
+// skills/myskill/myskill_test.go
+package myskill
 
 import (
     "testing"
-    "github.com/dracory/ork/config"
+    "github.com/dracory/ork/types"
 )
 
-func TestMyPlaybook_Check(t *testing.T) {
-    pb := NewMyPlaybook()
-    pb.SetNodeConfig(config.NodeConfig{
+func TestMySkill_Check(t *testing.T) {
+    s := NewMySkill()
+    s.SetNodeConfig(types.NodeConfig{
         SSHHost: "test.example.com",
         Args: map[string]string{
             ArgParameter: "test",
         },
     })
-    
-    needsChange, err := pb.Check()
+
+    needsChange, err := s.Check()
     // Add assertions
 }
 
-func TestMyPlaybook_Run(t *testing.T) {
-    pb := NewMyPlaybook()
-    pb.SetNodeConfig(config.NodeConfig{
+func TestMySkill_Run(t *testing.T) {
+    s := NewMySkill()
+    s.SetNodeConfig(types.NodeConfig{
         SSHHost: "test.example.com",
         IsDryRunMode: true,
     })
-    
-    result := pb.Run()
+
+    result := s.Run()
     if !result.Changed {
         t.Error("expected Changed=true in dry-run mode")
     }
@@ -395,7 +411,7 @@ func TestMyPlaybook_Run(t *testing.T) {
 
 ### Naming Conventions
 
-- **Interfaces**: `NodeInterface`, `PlaybookInterface`
+- **Interfaces**: `NodeInterface`, `RunnableInterface`, `RunnerInterface`
 - **Implementations**: `nodeImplementation`, `groupImplementation`
 - **Constructors**: `NewNodeForHost()`, `NewPing()`, `NewAptUpdate()`
 - **Constants**: `IDAptUpdate`, `ArgUsername`, `DefaultShell`
@@ -405,15 +421,15 @@ func TestMyPlaybook_Run(t *testing.T) {
 All public types and functions must have documentation comments:
 
 ```go
-// MyPlaybook does something useful.
+// MySkill does something useful.
 // It provides detailed functionality for X.
-type MyPlaybook struct {
-    *playbook.BasePlaybook
+type MySkill struct {
+    *types.BaseSkill
 }
 
 // Check determines if changes are needed.
 // Returns true if the system needs modification.
-func (m *MyPlaybook) Check() (bool, error) {
+func (m *MySkill) Check() (bool, error) {
     // ...
 }
 ```
@@ -425,7 +441,7 @@ Always wrap errors with context:
 ```go
 output, err := ssh.Run(cfg, cmd)
 if err != nil {
-    return playbook.Result{
+    return types.Result{
         Error: fmt.Errorf("failed to execute '%s': %w", cmd, err),
     }
 }
@@ -451,7 +467,7 @@ Types:
 
 Example:
 ```
-feat: add mysql backup playbook
+feat: add mysql backup skill
 
 - Implements mysqldump-based backup
 - Supports compression

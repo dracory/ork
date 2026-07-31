@@ -241,22 +241,21 @@ The `Run()` method accepts any `RunnableInterface`, which includes both simple s
 
 ### BasePlaybook
 
-Create `types.BasePlaybook` as a foundation for playbook development:
+`types.BasePlaybook` is the foundation for playbook development. State is stored
+in an `omni.AtomInterface` (thread-safe) plus a mutex-guarded `NodeConfig`, and
+`ToMap()`/`FromMap()` are implemented so the framework can clone the playbook
+before mutating it during parallel execution:
 
 ```go
 type BasePlaybook struct {
-    id          string
-    description string
-    nodeCfg     types.NodeConfig
-    args        map[string]string
-    dryRun      bool
-    timeout     time.Duration
+    atom    omni.AtomInterface  // thread-safe property store (id, description, args, ...)
+    nodeCfg NodeConfig          // guarded by mu
+    mu      sync.RWMutex        // protects nodeCfg
 }
 
 func NewBasePlaybook() *BasePlaybook {
     return &BasePlaybook{
-        args:   make(map[string]string),
-        dryRun: false,
+        atom: omni.NewAtom("playbook"),
     }
 }
 
@@ -269,6 +268,10 @@ func (b *BasePlaybook) Run() Result {
 func (b *BasePlaybook) Check() (bool, error) {
     return false, nil
 }
+
+// ToMap/FromMap serialize state for concurrency-safe cloning
+func (b *BasePlaybook) ToMap() map[string]any { /* ... */ }
+func (b *BasePlaybook) FromMap(m map[string]any) { /* ... */ }
 ```
 
 ### Interface Hierarchy
@@ -293,6 +296,9 @@ type RunnableInterface interface {
     SetTimeout(timeout time.Duration) RunnableInterface
     Check() (bool, error)
     Run() Result
+    ToMap() map[string]any    // serialize state for cloning
+    FromMap(m map[string]any) // restore state from a clone
+    BecomeInterface
 }
 ```
 

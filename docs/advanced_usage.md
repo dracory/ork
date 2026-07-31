@@ -17,7 +17,7 @@ cfg := node.GetNodeConfig()
 
 ## Custom Skills
 
-Extend Ork with custom automation tasks by implementing the `Skill` interface.
+Extend Ork with custom automation tasks by implementing the `RunnableInterface`.
 
 ### Registering Custom Skills
 
@@ -26,29 +26,32 @@ Register your custom skills to use them via `node.RunByID("custom-id")`:
 ```go
 import (
     "github.com/dracory/ork"
-    "github.com/dracory/ork/skill"
+    "github.com/dracory/ork/types"
 )
 
 // Create a custom skill
-customSkill := skill.NewBaseSkill()
-customSkill.SetID("install-docker")
-customSkill.SetDescription("Install Docker on the server")
+customSkill := types.NewBaseSkill().
+    WithID("install-docker").
+    WithDescription("Install Docker on the server")
 
 // Register it globally
 registry, err := ork.GetGlobalSkillRegistry()
 if err != nil {
     log.Fatalf("Failed to get registry: %v", err)
 }
-if err := registry.Register(customSkill); err != nil {
+if err := registry.Set(customSkill); err != nil {
     log.Fatalf("Failed to register skill: %v", err)
 }
 
 // Now use it like any built-in skill
 node := ork.NewNodeForHost("server.example.com")
-result := node.RunByID("install-docker")
+results := node.RunByID("install-docker")
 ```
 
 **Note**: For complex orchestration logic with decision making, loops, and custom error handling, see [Playbooks](playbooks.md).
+
+**Note**: `RunByID` is deprecated. Prefer `node.Run(customSkill)` with a direct
+skill instance when you already have one in scope.
 
 ## Privilege Escalation in Custom Skills
 
@@ -140,37 +143,44 @@ For comprehensive documentation on creating playbooks with complex orchestration
 For simple playbook implementation with full idempotency support:
 
 ```go
-type MyCustomPlaybook struct{}
+type MyCustomPlaybook struct {
+    *types.BasePlaybook
+}
 
-func (p *MyCustomPlaybook) GetID() string { return "my-task" }
-func (p *MyCustomPlaybook) Description() string { return "Does something" }
-
-// Check() - returns true if changes needed
-func (p *MyCustomPlaybook) Check(cfg types.NodeConfig) (bool, error) {
+func (p *MyCustomPlaybook) Check() (bool, error) {
+    cfg := p.GetNodeConfig()
     // Check if already configured
     output, _ := ssh.Run(cfg, types.Command{Command: "cat /etc/my-config"})
     return !strings.Contains(output, "configured"), nil
 }
 
-// Run() - execute and return Result
-func (p *MyCustomPlaybook) Run(cfg types.NodeConfig) skill.Result {
-    needsChange, _ := p.Check(cfg)
+func (p *MyCustomPlaybook) Run() types.Result {
+    needsChange, _ := p.Check()
     if !needsChange {
-        return skill.Result{
+        return types.Result{
             Changed: false,
             Message: "Already configured",
         }
     }
 
     // Apply changes...
+    cfg := p.GetNodeConfig()
     _, err := ssh.Run(cfg, types.Command{Command: "setup-command"})
     if err != nil {
-        return skill.Result{Changed: false, Error: err}
+        return types.Result{Changed: false, Error: err}
     }
 
-    return skill.Result{
+    return types.Result{
         Changed: true,
         Message: "Configuration applied",
+    }
+}
+
+func NewMyCustomPlaybook() types.RunnableInterface {
+    return &MyCustomPlaybook{
+        BasePlaybook: types.NewBasePlaybook().
+            WithID("my-task").
+            WithDescription("Does something"),
     }
 }
 ```
@@ -182,11 +192,9 @@ For advanced use cases or when you need fine-grained control, you can use the in
 ### Package Overview
 
 - `ork` - Main API: `NodeInterface`, `InventoryInterface`, `GroupInterface`, `RunnerInterface`
-- `types` - Shared types: `Result`, `Results`, `Summary`, `NodeConfig`
-- `runnable` - `RunnerInterface` for Node, Group, and Inventory
+- `types` - Shared types: `RunnableInterface`, `BaseSkill`, `BasePlaybook`, `Result`, `Results`, `Summary`, `NodeConfig`, `Registry`
 - `ssh` - SSH client with connection management
-- `skill` - Skill interface and registry
-- `skills` - Built-in skill implementations
+- `skills` - Built-in skill implementations (one subpackage per domain: `apt`, `ping`, `user`, ...)
 
 ### Using Internal Packages Directly
 

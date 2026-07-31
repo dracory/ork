@@ -4,13 +4,14 @@ page-type: module
 summary: Main ork package providing Node, Group, and Inventory interfaces for SSH-based server automation, with vault and prompts support.
 tags: [module, ork, node, group, inventory, vault, prompts]
 created: 2025-04-14
-updated: 2026-04-15
-version: 2.0.0
+updated: 2026-07-31
+version: 2.1.0
 ---
 
 # ork Package
 
 ## Changelog
+- **v2.1.0** (2026-07-31): Updated registry function names to GetGlobalSkillRegistry/NewSkillRegistry and Registry methods to Set/FindByID
 - **v2.3.0** (2026-05-02): Added WithArg method to GroupInterface for consistent fluent interface pattern across all ork APIs
 - **v2.0.0** (2026-04-15): Major terminology refactoring - playbooks renamed to skills, PlaybookInterface renamed to RunnableInterface, config package moved to types
 - **v1.2.0** (2026-04-14): Added vault functions for secure secrets management and prompt functions for interactive user input
@@ -234,21 +235,21 @@ Global skill registry for ID-based skill lookup:
 
 ```go
 // Get the global registry singleton (lazily initialized)
-registry, err := ork.GetGlobalRegistry()
+registry, err := ork.GetGlobalSkillRegistry()
 if err != nil {
     log.Fatal(err)
 }
 
 // Find skill by ID
-skill, ok := registry.PlaybookFindByID("apt-update")
+skill, ok := registry.FindByID("apt-update")
 
 // Register custom skill
-registry.PlaybookRegister(mySkill)
+registry.Set(mySkill)
 
 // Create empty registry for custom configuration
-emptyRegistry := ork.NewRegistry()
+emptyRegistry := ork.NewSkillRegistry()
 
-// Create isolated registry for testing
+// Create isolated registry for testing (pre-populated with built-in skills)
 isolatedRegistry, err := ork.NewDefaultRegistry()
 ```
 
