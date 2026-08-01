@@ -214,4 +214,31 @@ const (
 
 	// IDPhpUpdateComposer updates Composer to the latest version
 	IDPhpUpdateComposer = "php-update-composer"
+
+	// Systemctl skills (systemd unit management)
+	// IDSystemctlDaemonReload reloads the systemd manager configuration
+	IDSystemctlDaemonReload = "systemctl-daemon-reload"
+
+	// IDSystemctlRestart restarts a systemd unit (requires "service" arg)
+	IDSystemctlRestart = "systemctl-restart"
+
+	// IDSystemctlReload reloads a systemd unit, falling back to restart
+	// (requires "service" arg)
+	IDSystemctlReload = "systemctl-reload"
+
+	// IDSystemctlStatus shows the status of a systemd unit (read-only,
+	// requires "service" arg)
+	IDSystemctlStatus = "systemctl-status"
+
+	// IDSystemctlIsActive checks whether a systemd unit is active (read-only,
+	// requires "service" arg)
+	IDSystemctlIsActive = "systemctl-is-active"
+
+	// IDSystemctlEnable enables a systemd unit, optionally starting it
+	// (requires "service" arg, optional "start" arg)
+	IDSystemctlEnable = "systemctl-enable"
+
+	// IDSystemctlDisable disables a systemd unit, optionally stopping it
+	// (requires "service" arg, optional "stop" arg)
+	IDSystemctlDisable = "systemctl-disable"
 )

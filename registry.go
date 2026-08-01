@@ -12,6 +12,7 @@ import (
 	"github.com/dracory/ork/skills/reboot"
 	"github.com/dracory/ork/skills/security"
 	"github.com/dracory/ork/skills/swap"
+	"github.com/dracory/ork/skills/systemctl"
 	"github.com/dracory/ork/skills/ufw"
 	"github.com/dracory/ork/skills/user"
 	"github.com/dracory/ork/types"
@@ -133,6 +134,13 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		php.NewInstallComposer(),
 		php.NewUninstallComposer(),
 		php.NewUpdateComposer(),
+		systemctl.NewDaemonReload(),
+		systemctl.NewRestart(),
+		systemctl.NewReload(),
+		systemctl.NewStatus(),
+		systemctl.NewIsActive(),
+		systemctl.NewEnable(),
+		systemctl.NewDisable(),
 	}
 
 	if err := reg.SetAll(skills); err != nil {
