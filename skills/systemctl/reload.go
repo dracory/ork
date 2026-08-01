@@ -96,7 +96,18 @@ func (r *Reload) Run() types.Result {
 		}
 	}
 
-	// Reload failed (service may not support it, or unit not active).
+	// Reload failed. If it's an SSH connection error (not a command exit
+	// error), propagate it directly — attempting restart would also fail
+	// and produce a misleading "both failed" error message.
+	if !ssh.IsExitError(err) {
+		return types.Result{
+			Changed: false,
+			Message: "Failed to reload unit: " + service,
+			Error:   fmt.Errorf("systemctl reload %s failed: %w\nOutput: %s", service, err, output),
+		}
+	}
+
+	// Exit error — service may not support reload, or unit not active.
 	// Fall back to restart so the configuration change still takes effect.
 	cfg.GetLoggerOrDefault().Info("reload failed, falling back to restart", "service", service, "reload_error", err)
 

@@ -1,10 +1,13 @@
 package systemctl
 
 import (
+	"fmt"
 	"log/slog"
 	"testing"
 	"time"
 
+	"github.com/dracory/ork/internal/skilltest"
+	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
 
@@ -621,5 +624,525 @@ func TestSetStart_SetStop_ReturnConcreteType(t *testing.T) {
 	}
 	if _, ok := any(NewDisable().SetStop(true)).(*Disable); !ok {
 		t.Error("Disable.SetStop should return *Disable")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Mock-based tests (using skilltest helpers)
+// ---------------------------------------------------------------------------
+
+// exitErr creates a *ssh.ExitError for testing command exit failures.
+// The exit code doesn't matter — what matters is that errors.As matches
+// the *ssh.ExitError type, distinguishing command exits from SSH failures.
+func exitErr() error {
+	return ssh.NewExitError()
+}
+
+// connErr creates a connection error for testing SSH failures.
+func connErr() error {
+	return fmt.Errorf("connection refused")
+}
+
+// --- Enable.Check idempotency ---
+
+func TestEnable_Check_AlreadyEnabled(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectCommand("systemctl is-enabled 'caddy'", "enabled")
+
+	pb := NewEnable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	needs, err := pb.Check()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if needs {
+		t.Error("Expected Check to return false for already-enabled unit")
+	}
+}
+
+func TestEnable_Check_AlreadyEnabled_NotActive(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectCommand("systemctl is-enabled 'caddy'", "enabled")
+	test.ExpectError("systemctl is-active 'caddy'", exitErr())
+
+	pb := NewEnable().SetService("caddy").SetStart(true)
+	pb.SetNodeConfig(test.Config())
+
+	needs, err := pb.Check()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if !needs {
+		t.Error("Expected Check to return true for enabled-but-not-active unit with start")
+	}
+}
+
+func TestEnable_Check_NotEnabled(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", exitErr())
+
+	pb := NewEnable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	needs, err := pb.Check()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if !needs {
+		t.Error("Expected Check to return true for not-enabled unit")
+	}
+}
+
+func TestEnable_Check_SSHErrors_IsEnabled(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", connErr())
+
+	pb := NewEnable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	_, err := pb.Check()
+	if err == nil {
+		t.Error("Expected SSH connection error to be propagated")
+	}
+}
+
+func TestEnable_Check_SSHErrors_IsActive(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectCommand("systemctl is-enabled 'caddy'", "enabled")
+	test.ExpectError("systemctl is-active 'caddy'", connErr())
+
+	pb := NewEnable().SetService("caddy").SetStart(true)
+	pb.SetNodeConfig(test.Config())
+
+	_, err := pb.Check()
+	if err == nil {
+		t.Error("Expected SSH connection error from is-active to be propagated")
+	}
+}
+
+// --- Enable.Run idempotency and command construction ---
+
+func TestEnable_Run_AlreadyEnabled(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectCommand("systemctl is-enabled 'caddy'", "enabled")
+
+	pb := NewEnable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed=false for already-enabled unit")
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error, got: %v", result.Error)
+	}
+	test.AssertCommandNotRun("systemctl enable 'caddy'")
+}
+
+func TestEnable_Run_WithStart_CommandConstruction(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", exitErr())
+	test.ExpectCommand("systemctl enable 'caddy' && systemctl start 'caddy'", "")
+
+	pb := NewEnable().SetService("caddy").SetStart(true)
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if !result.Changed {
+		t.Error("Expected Changed=true")
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error, got: %v", result.Error)
+	}
+	test.AssertCommandRun("systemctl enable 'caddy' && systemctl start 'caddy'")
+}
+
+func TestEnable_Run_CommandConstruction_NoStart(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", exitErr())
+	test.ExpectCommand("systemctl enable 'caddy'", "")
+
+	pb := NewEnable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if !result.Changed {
+		t.Error("Expected Changed=true")
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error, got: %v", result.Error)
+	}
+	test.AssertCommandRun("systemctl enable 'caddy'")
+	test.AssertCommandNotRun("systemctl enable 'caddy' && systemctl start 'caddy'")
+}
+
+// --- Disable.Check idempotency ---
+
+func TestDisable_Check_AlreadyDisabled(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", exitErr())
+
+	pb := NewDisable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	needs, err := pb.Check()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if needs {
+		t.Error("Expected Check to return false for already-disabled unit")
+	}
+}
+
+func TestDisable_Check_AlreadyDisabled_StillActive(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", exitErr())
+	test.ExpectCommand("systemctl is-active 'caddy'", "active")
+
+	pb := NewDisable().SetService("caddy").SetStop(true)
+	pb.SetNodeConfig(test.Config())
+
+	needs, err := pb.Check()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if !needs {
+		t.Error("Expected Check to return true for disabled-but-still-active unit with stop")
+	}
+}
+
+func TestDisable_Check_AlreadyDisabled_NotActive(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", exitErr())
+	test.ExpectError("systemctl is-active 'caddy'", exitErr())
+
+	pb := NewDisable().SetService("caddy").SetStop(true)
+	pb.SetNodeConfig(test.Config())
+
+	needs, err := pb.Check()
+	if err != nil {
+		t.Errorf("Expected no error, got: %v", err)
+	}
+	if needs {
+		t.Error("Expected Check to return false for disabled-and-not-active unit")
+	}
+}
+
+func TestDisable_Check_SSHErrors_IsEnabled(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", connErr())
+
+	pb := NewDisable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	_, err := pb.Check()
+	if err == nil {
+		t.Error("Expected SSH connection error to be propagated")
+	}
+}
+
+func TestDisable_Check_SSHErrors_IsActive(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", exitErr())
+	test.ExpectError("systemctl is-active 'caddy'", connErr())
+
+	pb := NewDisable().SetService("caddy").SetStop(true)
+	pb.SetNodeConfig(test.Config())
+
+	_, err := pb.Check()
+	if err == nil {
+		t.Error("Expected SSH connection error from is-active to be propagated")
+	}
+}
+
+// --- Disable.Run idempotency and command construction ---
+
+func TestDisable_Run_AlreadyDisabled(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", exitErr())
+
+	pb := NewDisable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed=false for already-disabled unit")
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error, got: %v", result.Error)
+	}
+	test.AssertCommandNotRun("systemctl disable 'caddy'")
+}
+
+func TestDisable_Run_WithStop_CommandConstruction(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectCommand("systemctl is-enabled 'caddy'", "enabled")
+	test.ExpectCommand("systemctl disable 'caddy' && systemctl stop 'caddy'", "")
+
+	pb := NewDisable().SetService("caddy").SetStop(true)
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if !result.Changed {
+		t.Error("Expected Changed=true")
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error, got: %v", result.Error)
+	}
+	test.AssertCommandRun("systemctl disable 'caddy' && systemctl stop 'caddy'")
+}
+
+func TestDisable_Run_CommandConstruction_NoStop(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectCommand("systemctl is-enabled 'caddy'", "enabled")
+	test.ExpectCommand("systemctl disable 'caddy'", "")
+
+	pb := NewDisable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if !result.Changed {
+		t.Error("Expected Changed=true")
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error, got: %v", result.Error)
+	}
+	test.AssertCommandRun("systemctl disable 'caddy'")
+	test.AssertCommandNotRun("systemctl disable 'caddy' && systemctl stop 'caddy'")
+}
+
+// --- Reload.Run fallback ---
+
+func TestReload_Run_ReloadSucceeds(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectCommand("systemctl reload 'caddy'", "")
+
+	pb := NewReload().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if !result.Changed {
+		t.Error("Expected Changed=true")
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error, got: %v", result.Error)
+	}
+	if result.Details["method"] != "reload" {
+		t.Errorf("Expected method 'reload', got '%s'", result.Details["method"])
+	}
+	test.AssertCommandNotRun("systemctl restart 'caddy'")
+}
+
+func TestReload_Run_ReloadFails_RestartSucceeds(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl reload 'caddy'", exitErr())
+	test.ExpectCommand("systemctl restart 'caddy'", "")
+
+	pb := NewReload().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if !result.Changed {
+		t.Error("Expected Changed=true")
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error, got: %v", result.Error)
+	}
+	if result.Details["method"] != "restart" {
+		t.Errorf("Expected method 'restart', got '%s'", result.Details["method"])
+	}
+	test.AssertCommandRun("systemctl restart 'caddy'")
+}
+
+func TestReload_Run_BothFail(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl reload 'caddy'", exitErr())
+	test.ExpectError("systemctl restart 'caddy'", exitErr())
+
+	pb := NewReload().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed=false when both reload and restart fail")
+	}
+	if result.Error == nil {
+		t.Error("Expected error when both reload and restart fail")
+	}
+}
+
+func TestReload_Run_SSHErrors_NoFallback(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl reload 'caddy'", connErr())
+
+	pb := NewReload().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed=false for SSH connection error")
+	}
+	if result.Error == nil {
+		t.Error("Expected error to be propagated for SSH connection failure")
+	}
+	test.AssertCommandNotRun("systemctl restart 'caddy'")
+}
+
+// --- Enable.Run with SSH error during Check ---
+
+func TestEnable_Run_CheckSSHErrors(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", connErr())
+
+	pb := NewEnable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed=false when Check fails with SSH error")
+	}
+	if result.Error == nil {
+		t.Error("Expected SSH error to be propagated from Run")
+	}
+	test.AssertCommandNotRun("systemctl enable 'caddy'")
+}
+
+// --- Disable.Run with SSH error during Check ---
+
+func TestDisable_Run_CheckSSHErrors(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-enabled 'caddy'", connErr())
+
+	pb := NewDisable().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed=false when Check fails with SSH error")
+	}
+	if result.Error == nil {
+		t.Error("Expected SSH error to be propagated from Run")
+	}
+	test.AssertCommandNotRun("systemctl disable 'caddy'")
+}
+
+// --- IsActive.Run with SSH connection error ---
+
+func TestIsActive_Run_SSHErrors(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-active 'caddy'", connErr())
+
+	pb := NewIsActive().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed=false for SSH connection error")
+	}
+	if result.Error == nil {
+		t.Error("Expected SSH connection error to be propagated")
+	}
+}
+
+func TestIsActive_Run_ExitError_NoError(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	test.ExpectError("systemctl is-active 'caddy'", exitErr())
+
+	pb := NewIsActive().SetService("caddy")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed=false for read-only is-active")
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error for exit error (inactive unit), got: %v", result.Error)
 	}
 }

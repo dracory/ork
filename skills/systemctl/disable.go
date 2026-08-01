@@ -71,6 +71,9 @@ func (d *Disable) Check() (bool, error) {
 	}
 	_, err := ssh.Run(cfg, cmdEnabled)
 	if err != nil {
+		if !ssh.IsExitError(err) {
+			return false, err
+		}
 		// Already disabled (or unit file missing). If stop is requested,
 		// check if it's still active.
 		if d.shouldStop() {
@@ -81,6 +84,9 @@ func (d *Disable) Check() (bool, error) {
 			}
 			_, actErr := ssh.Run(cfg, cmdActive)
 			if actErr != nil {
+				if !ssh.IsExitError(actErr) {
+					return false, actErr
+				}
 				// Disabled and not active — nothing to do.
 				return false, nil
 			}

@@ -72,6 +72,9 @@ func (e *Enable) Check() (bool, error) {
 	}
 	_, err := ssh.Run(cfg, cmdEnabled)
 	if err != nil {
+		if !ssh.IsExitError(err) {
+			return false, err
+		}
 		// Not enabled (or unit file missing) — needs enabling.
 		return true, nil
 	}
@@ -85,6 +88,9 @@ func (e *Enable) Check() (bool, error) {
 		}
 		_, err := ssh.Run(cfg, cmdActive)
 		if err != nil {
+			if !ssh.IsExitError(err) {
+				return false, err
+			}
 			// Enabled but not active — needs starting.
 			return true, nil
 		}

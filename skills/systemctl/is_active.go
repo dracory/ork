@@ -75,7 +75,14 @@ func (s *IsActive) Run() types.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("checking if unit is active", "service", service, "host", cfg.SSHHost)
-	output, _ := ssh.Run(cfg, cmd)
+	output, err := ssh.Run(cfg, cmd)
+	if err != nil && !ssh.IsExitError(err) {
+		return types.Result{
+			Changed: false,
+			Message: "Failed to check if unit is active: " + service,
+			Error:   fmt.Errorf("failed to check if unit %s is active: %w", service, err),
+		}
+	}
 	state := strings.TrimSpace(output)
 
 	return types.Result{

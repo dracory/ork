@@ -2,7 +2,6 @@
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/dracory/ork/skills"
@@ -151,15 +150,16 @@ func (s *SshHarden) Run() types.Result {
 		return types.Result{Changed: false, Message: "Failed to backup SSH config", Error: err}
 	}
 
-	// Step 2: Verify non-root user
+	// Step 2: Verify non-root user exists and has sudo privileges.
+	// The command exits non-zero if the user doesn't exist or isn't in the
+	// sudo group, so the error check alone is sufficient — no output parsing.
 	cfg.GetLoggerOrDefault().Info("verifying non-root user exists")
 	output, err := ssh.Run(cfg, cmdVerifyUser)
-	_ = output
-	if err != nil || !strings.Contains(output, "OK") {
+	if err != nil {
 		return types.Result{
 			Changed: false,
 			Message: "Non-root user not configured properly",
-			Error:   fmt.Errorf("user '%s' doesn't exist or lacks sudo privileges", nonRootUser),
+			Error:   fmt.Errorf("user '%s' doesn't exist or lacks sudo privileges: %s", nonRootUser, output),
 		}
 	}
 
