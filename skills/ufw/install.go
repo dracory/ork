@@ -17,7 +17,7 @@ import (
 //
 // Usage:
 //
-//	node.Run(ufw.NewUfwInstall().SetAllowSSH(true).SetAllowHTTP(true).SetAllowHTTPS(true).SetAllowPorts("8080,9000"))
+//	node.Run(ufw.NewUfwInstall().SetAllowSSH(true).SetAllowHTTP(true).SetAllowHTTPS(true).SetAllowPorts("8080", "9000"))
 //
 // Execution Flow:
 //  1. Updates package lists via apt-get update
@@ -257,9 +257,14 @@ func (u *UfwInstall) SetAllowHTTPS(allow bool) *UfwInstall {
 	return u
 }
 
-// SetAllowPorts sets custom ports to allow (comma-separated) and returns UfwInstall for chaining.
-func (u *UfwInstall) SetAllowPorts(ports string) *UfwInstall {
-	u.BaseSkill.SetArg(ArgAllowPorts, ports)
+// SetAllowPorts adds custom ports to allow and returns UfwInstall for chaining.
+// Pass each port as a separate argument. Multiple calls accumulate — ports
+// from each call are appended to the existing list (duplicates are removed).
+// To reset the list, call SetArg(ArgAllowPorts, "") directly.
+func (u *UfwInstall) SetAllowPorts(ports ...string) *UfwInstall {
+	existing := u.BaseSkill.GetArg(ArgAllowPorts)
+	merged := mergePorts(existing, ports)
+	u.BaseSkill.SetArg(ArgAllowPorts, merged)
 	return u
 }
 

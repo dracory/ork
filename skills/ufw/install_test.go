@@ -452,7 +452,7 @@ func TestUfwInstall_SetAllowHTTPS(t *testing.T) {
 
 // TestUfwInstall_SetAllowPorts verifies that SetAllowPorts sets the allow-ports arg.
 func TestUfwInstall_SetAllowPorts(t *testing.T) {
-	skill := NewUfwInstall().SetAllowPorts("8080,9000")
+	skill := NewUfwInstall().SetAllowPorts("8080", "9000")
 
 	if skill.GetArg(ArgAllowPorts) != "8080,9000" {
 		t.Errorf("Expected allow-ports '8080,9000', got '%s'", skill.GetArg(ArgAllowPorts))
@@ -465,7 +465,7 @@ func TestUfwInstall_TypedSetters_Chaining(t *testing.T) {
 		SetAllowSSH(true).
 		SetAllowHTTP(true).
 		SetAllowHTTPS(true).
-		SetAllowPorts("8080,9000")
+		SetAllowPorts("8080", "9000")
 
 	if skill.GetArg(ArgAllowSSH) != "true" {
 		t.Errorf("Expected allow-ssh 'true', got '%s'", skill.GetArg(ArgAllowSSH))
@@ -478,5 +478,29 @@ func TestUfwInstall_TypedSetters_Chaining(t *testing.T) {
 	}
 	if skill.GetArg(ArgAllowPorts) != "8080,9000" {
 		t.Errorf("Expected allow-ports '8080,9000', got '%s'", skill.GetArg(ArgAllowPorts))
+	}
+}
+
+// TestUfwInstall_SetAllowPorts_Accumulates verifies that multiple SetAllowPorts
+// calls accumulate ports instead of overwriting.
+func TestUfwInstall_SetAllowPorts_Accumulates(t *testing.T) {
+	skill := NewUfwInstall().
+		SetAllowPorts("8080", "9000").
+		SetAllowPorts("3306")
+
+	if skill.GetArg(ArgAllowPorts) != "8080,9000,3306" {
+		t.Errorf("Expected accumulated '8080,9000,3306', got '%s'", skill.GetArg(ArgAllowPorts))
+	}
+}
+
+// TestUfwInstall_SetAllowPorts_Deduplicates verifies that duplicate ports
+// are not added twice.
+func TestUfwInstall_SetAllowPorts_Deduplicates(t *testing.T) {
+	skill := NewUfwInstall().
+		SetAllowPorts("8080", "9000").
+		SetAllowPorts("8080", "3306")
+
+	if skill.GetArg(ArgAllowPorts) != "8080,9000,3306" {
+		t.Errorf("Expected deduplicated '8080,9000,3306', got '%s'", skill.GetArg(ArgAllowPorts))
 	}
 }

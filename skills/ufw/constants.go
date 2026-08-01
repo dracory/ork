@@ -2,6 +2,8 @@
 // UFW is a simple interface for managing iptables firewall rules on Debian/Ubuntu systems.
 package ufw
 
+import "strings"
+
 // Argument key constants for use with GetArg.
 const (
 	// ArgAllowSSH enables SSH access (port 22) - "true" or "false"
@@ -49,3 +51,33 @@ const (
 	// DefaultAllowHTTPS is the default for HTTPS access (false)
 	DefaultAllowHTTPS = "false"
 )
+
+// mergePorts combines an existing comma-separated port list with new ports,
+// trimming whitespace and removing duplicates. Order is preserved (existing
+// ports first, then new ones that aren't already present).
+func mergePorts(existing string, additions []string) string {
+	seen := make(map[string]bool)
+	var result []string
+
+	// Parse existing ports
+	for _, p := range strings.Split(existing, ",") {
+		p = strings.TrimSpace(p)
+		if p == "" || seen[p] {
+			continue
+		}
+		seen[p] = true
+		result = append(result, p)
+	}
+
+	// Add new ports
+	for _, p := range additions {
+		p = strings.TrimSpace(p)
+		if p == "" || seen[p] {
+			continue
+		}
+		seen[p] = true
+		result = append(result, p)
+	}
+
+	return strings.Join(result, ",")
+}

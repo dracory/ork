@@ -615,6 +615,20 @@ func (n *nodeImplementation) RunByID(id string, opts ...types.RunnableOptions) t
 		return results
 	}
 
+	// Refuse to execute runnables that have been explicitly disabled.
+	if comment, disabled := registry.IsDisabled(id); disabled {
+		msg := fmt.Sprintf("runnable '%s' is disabled", id)
+		if comment != "" {
+			msg = fmt.Sprintf("runnable '%s' is disabled: %s", id, comment)
+		}
+		results.Results[n.GetHost()] = types.Result{
+			Changed: false,
+			Message: msg,
+			Error:   fmt.Errorf("runnable '%s' is disabled", id),
+		}
+		return results
+	}
+
 	// Clone the skill to avoid mutating the shared registry instance
 	clone, err := cloneFromMap(skill, skill.ToMap())
 	if err != nil {
