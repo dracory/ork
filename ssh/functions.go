@@ -97,7 +97,11 @@ func ShellEscapeArg(s string) string {
 //
 //	cd <dir> && sudo -u <user> <command>
 //
-// If Required is false and the command fails, the error is logged but not returned.
+// If Required is false and the command exits non-zero, the error is logged
+// but not returned. Connection or session failures (e.g. host key verification,
+// auth, network, timeout) are always propagated regardless of Required, since
+// they mean the command never ran and a non-zero exit cannot be inferred.
+// Use IsExitError to distinguish the two error categories at the call site.
 //
 // SAFETY: When cfg.IsDryRunMode is true, this function will NOT execute
 // any commands on the server. Instead, it logs the command and returns
@@ -147,9 +151,11 @@ func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 
 	output, err := runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description}, cfg.KexAlgorithms, cfg.HostKeyAlgorithms)
 
-	// If command is not required, log warning but don't return error
-	if err != nil && !cmd.Required {
-		cfg.GetLoggerOrDefault().Warn("command failed but not required", "command", cmd.Command, "error", err)
+	// If command is not required, suppress only non-zero exit errors.
+	// Connection/session failures are always propagated: they mean the
+	// command never ran, so a "not required" non-zero exit cannot be assumed.
+	if err != nil && !cmd.Required && IsExitError(err) {
+		cfg.GetLoggerOrDefault().Warn("command exited non-zero but not required", "command", cmd.Command, "error", err)
 		return output, nil
 	}
 

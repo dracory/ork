@@ -402,10 +402,14 @@ func TestRun_CombinedChdirAndBecomeUser(t *testing.T) {
 	}
 }
 
-// TestRun_RequiredFalse_SuppressesError verifies that Required=false suppresses errors.
-func TestRun_RequiredFalse_SuppressesError(t *testing.T) {
+// TestRun_RequiredFalse_SuppressesExitError verifies that Required=false
+// suppresses non-zero exit errors (the command ran but exited non-zero,
+// which is a valid result for commands like `test -d` or `systemctl is-active`).
+// Connection/session failures must still propagate — see
+// TestRun_RequiredFalse_PropagatesConnectionError.
+func TestRun_RequiredFalse_SuppressesExitError(t *testing.T) {
 	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
-		return "some output", errors.New("command failed")
+		return "some output", NewExitError()
 	})
 	defer SetRunSingleCommandFunc(nil)
 
@@ -426,13 +430,87 @@ func TestRun_RequiredFalse_SuppressesError(t *testing.T) {
 
 	output, err := Run(cfg, cmd)
 
-	// Should not return error when Required=false
+	// Should not return error when Required=false and command exited non-zero
 	if err != nil {
-		t.Errorf("Expected error to be suppressed when Required=false, got: %v", err)
+		t.Errorf("Expected exit error to be suppressed when Required=false, got: %v", err)
 	}
 	// Output should still be returned
 	if output != "some output" {
 		t.Errorf("Expected output to be 'some output', got: %s", output)
+	}
+}
+
+// TestRun_RequiredFalse_PropagatesConnectionError verifies that Required=false
+// does NOT suppress connection/session failures (host key verification, auth,
+// network, timeout). Such errors mean the command never ran, so a non-zero
+// exit cannot be assumed. This is the regression test for the silent-success
+// bug where apt-update reported "Package database updated" on a host key
+// verification failure.
+func TestRun_RequiredFalse_PropagatesConnectionError(t *testing.T) {
+	connErr := errors.New("ssh: handshake failed: knownhosts: key is unknown")
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+		return "", connErr
+	})
+	defer SetRunSingleCommandFunc(nil)
+
+	cfg := types.NodeConfig{
+		SSHHost:      "localhost",
+		SSHPort:      "22",
+		SSHLogin:     "root",
+		SSHKey:       "test",
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+
+	cmd := types.Command{
+		Command:     "apt-get update -y",
+		Description: "Update package database",
+		Required:    false,
+	}
+
+	_, err := Run(cfg, cmd)
+
+	// Connection failures must propagate even when Required=false
+	if err == nil {
+		t.Error("Expected connection error to propagate when Required=false, got nil")
+	}
+	if err != connErr {
+		t.Errorf("Expected error to be the connection error, got: %v", err)
+	}
+}
+
+// TestRun_RequiredTrue_PropagatesConnectionError verifies that Required=true
+// propagates connection/session failures (unchanged behavior; this test
+// documents the contract alongside the Required=false case).
+func TestRun_RequiredTrue_PropagatesConnectionError(t *testing.T) {
+	connErr := errors.New("ssh: handshake failed: knownhosts: key is unknown")
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+		return "", connErr
+	})
+	defer SetRunSingleCommandFunc(nil)
+
+	cfg := types.NodeConfig{
+		SSHHost:      "localhost",
+		SSHPort:      "22",
+		SSHLogin:     "root",
+		SSHKey:       "test",
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+
+	cmd := types.Command{
+		Command:     "apt-get update -y",
+		Description: "Update package database",
+		Required:    true,
+	}
+
+	_, err := Run(cfg, cmd)
+
+	if err == nil {
+		t.Error("Expected connection error to propagate when Required=true, got nil")
+	}
+	if err != connErr {
+		t.Errorf("Expected error to be the connection error, got: %v", err)
 	}
 }
 

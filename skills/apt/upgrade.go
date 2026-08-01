@@ -65,7 +65,7 @@ func (a *AptUpgrade) Check() (bool, error) {
 	}
 
 	// First ensure package lists are updated
-	cmdUpdate := types.Command{Command: "apt-get update -qq", Description: "Update package lists"}
+	cmdUpdate := types.Command{Command: "apt-get update -qq", Description: "Update package lists", Required: true}
 	_, err := ssh.Run(cfg, cmdUpdate)
 	if err != nil {
 		return false, fmt.Errorf("failed to update package lists: %w", err)
@@ -115,6 +115,7 @@ func (a *AptUpgrade) Run() types.Result {
 	cmdUpgrade := types.Command{
 		Command:     cmdUpgradeStr,
 		Description: "Upgrade packages (keep local config files)",
+		Required:    true,
 	}
 
 	// Check for dry-run mode

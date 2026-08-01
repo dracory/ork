@@ -73,7 +73,7 @@ func (a *AptUpdate) Check() (bool, error) {
 //   - output: Full output from apt-get update command
 func (a *AptUpdate) Run() types.Result {
 	cfg := a.GetNodeConfig()
-	cmdUpdate := types.Command{Command: "apt-get update -y", Description: "Update package database"}
+	cmdUpdate := types.Command{Command: "apt-get update -y", Description: "Update package database", Required: true}
 
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {
