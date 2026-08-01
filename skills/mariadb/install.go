@@ -60,6 +60,7 @@ func (m *Install) Check() (bool, error) {
 func (m *Install) Run() types.Result {
 	cfg := m.GetNodeConfig()
 	rootPassword := m.GetArg(ArgRootPassword)
+	port := m.GetArg(ArgPort)
 
 	// Define commands
 	cmdInstallStr := ""
@@ -74,6 +75,15 @@ func (m *Install) Run() types.Result {
 	cmdBindAddr := types.Command{Command: `sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/mysql/mariadb.conf.d/50-server.cnf || sed -i 's/^bind-address.*/bind-address = 0.0.0.0/' /etc/my.cnf.d/mariadb-server.cnf || true`, Description: "Configure bind address"}
 	cmdRestart := types.Command{Command: "systemctl restart mariadb", Description: "Restart MariaDB"}
 
+	// Set custom port if provided and different from default
+	var cmdSetPort *types.Command
+	if port != "" && port != DefaultPort {
+		cmdSetPort = &types.Command{
+			Command:     fmt.Sprintf(`sh -c 'grep -q "^port[[:space:]]*=" /etc/mysql/mariadb.conf.d/50-server.cnf && sed -i "s/^port[[:space:]]*=.*/port = %s/" /etc/mysql/mariadb.conf.d/50-server.cnf || sed -i "/^\[mysqld\]/a port = %s" /etc/mysql/mariadb.conf.d/50-server.cnf'`, port, port),
+			Description: "Set MariaDB port",
+		}
+	}
+
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstallCmd.Command, "description", cmdInstallCmd.Description)
@@ -81,6 +91,9 @@ func (m *Install) Run() types.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdWaitReady.Command, "description", cmdWaitReady.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would set root password")
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBindAddr.Command, "description", cmdBindAddr.Description)
+		if cmdSetPort != nil {
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSetPort.Command, "description", cmdSetPort.Description)
+		}
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdRestart.Command, "description", cmdRestart.Description)
 		return types.Result{
 			Changed: true,
@@ -144,6 +157,12 @@ func (m *Install) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("configuring MariaDB to listen on all interfaces")
 	_, _ = ssh.Run(cfg, cmdBindAddr)
 
+	// Set custom port if provided
+	if cmdSetPort != nil {
+		cfg.GetLoggerOrDefault().Info("setting MariaDB port", "port", port)
+		_, _ = ssh.Run(cfg, *cmdSetPort)
+	}
+
 	// Restart MariaDB to apply config changes
 	restartOutput, err := ssh.Run(cfg, cmdRestart)
 	if err != nil {
@@ -173,6 +192,13 @@ func (i *Install) SetArgs(args map[string]string) types.RunnableInterface {
 // SetRootPassword sets the MariaDB root password and returns Install for chaining.
 func (i *Install) SetRootPassword(password string) *Install {
 	i.BaseSkill.SetArg(ArgRootPassword, password)
+	return i
+}
+
+// SetPort sets the MariaDB server port and returns Install for chaining.
+// If not called, MariaDB uses the default port (3306).
+func (i *Install) SetPort(port string) *Install {
+	i.BaseSkill.SetArg(ArgPort, port)
 	return i
 }
 

@@ -192,3 +192,12 @@ func TestInstall_SetRootPassword(t *testing.T) {
 		t.Errorf("Expected root-password 's3cret', got '%s'", skill.GetArg(ArgRootPassword))
 	}
 }
+
+// TestInstall_SetPort verifies that SetPort sets the port arg.
+func TestInstall_SetPort(t *testing.T) {
+	skill := NewInstall().SetPort("3307")
+
+	if skill.GetArg(ArgPort) != "3307" {
+		t.Errorf("Expected port '3307', got '%s'", skill.GetArg(ArgPort))
+	}
+}
