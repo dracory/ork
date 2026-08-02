@@ -139,6 +139,8 @@ func TestInstall_Run_NotInstalled(t *testing.T) {
 	test.ExpectCommand("curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --batch --yes --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg", "")
 	// Repo add
 	test.ExpectCommand("curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list", "")
+	// chmod keyring + sources list world-readable
+	test.ExpectCommand("chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list", "")
 
 	// apt update check: dpkg-query for apt itself (apt-update's Check) — it doesn't use dpkg-query,
 	// but apt-update's Check runs `apt-get update --dry-run` or similar. We just expect it to succeed.

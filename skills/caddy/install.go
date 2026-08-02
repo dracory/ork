@@ -146,6 +146,28 @@ func (i *Install) Run() types.Result {
 		}
 	}
 
+	// Step 3b: Ensure keyring and sources list are world-readable.
+	// apt runs repository checks as the _apt user, not root — a restrictive
+	// umask (e.g. 027) can create these files without o+r, causing GPG
+	// signature verification failures during apt update.
+	cmdChmodKeyring := types.Command{
+		Command:     "chmod o+r /usr/share/keyrings/caddy-stable-archive-keyring.gpg /etc/apt/sources.list.d/caddy-stable.list",
+		Description: "Ensure Caddy keyring and sources list are world-readable",
+		Required:    true,
+	}
+	if cfg.IsDryRunMode {
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdChmodKeyring.Command)
+	} else {
+		output, err := ssh.Run(cfg, cmdChmodKeyring)
+		if err != nil {
+			return types.Result{
+				Changed: false,
+				Message: "Failed to set permissions on Caddy keyring/sources list",
+				Error:   fmt.Errorf("%w: %s", err, output),
+			}
+		}
+	}
+
 	// Step 4: Update apt cache to pick up the new repository.
 	updateResult := runSub(apt.NewAptUpdate(), cfg)
 	if updateResult.Error != nil {
