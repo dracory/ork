@@ -309,12 +309,22 @@ func (c *commandImplementation) Run() types.Result {
 	output, err := ssh.Run(cfg, cmd)
 
 	if err != nil {
-		// If command is required, return error
+		// If command is required, return error with output in details
 		if c.required {
+			var runErr error
+			if output != "" {
+				runErr = fmt.Errorf("command failed: %w: %s", err, output)
+			} else {
+				runErr = fmt.Errorf("command failed: %w", err)
+			}
 			return types.Result{
 				Changed: false,
 				Message: fmt.Sprintf("Command failed (required): %s", c.GetDescription()),
-				Error:   fmt.Errorf("command failed: %w", err),
+				Error:   runErr,
+				Details: map[string]string{
+					"output": output,
+					"error":  err.Error(),
+				},
 			}
 		}
 
@@ -330,12 +340,13 @@ func (c *commandImplementation) Run() types.Result {
 		}
 	}
 
-	// Success
+	// Success — include output in message so callers can inspect it
 	return types.Result{
 		Changed: true,
-		Message: c.GetDescription(),
+		Message: output,
 		Details: map[string]string{
-			"output": output,
+			"output":      output,
+			"description": c.GetDescription(),
 		},
 	}
 }

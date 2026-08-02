@@ -10,6 +10,7 @@ type Result struct {
 	Changed bool
 
 	// Message is a human-readable description of what happened.
+	// For command executions, this contains the raw command output.
 	Message string
 
 	// Details contains additional information about the execution.
