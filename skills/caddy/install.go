@@ -7,6 +7,7 @@ import (
 	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/skills/apt"
 	"github.com/dracory/ork/skills/fs"
+	"github.com/dracory/ork/skills/systemctl"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -201,7 +202,21 @@ func (i *Install) Run() types.Result {
 		}
 	}
 
-	// Step 7: Verify the caddy user exists (created by the apt package).
+	// Step 7: Ensure Caddy service is enabled and started.
+	// The apt package postinst should do this, but we make it explicit to
+	// match Ansible community roles (paultibbetts.caddy, maxhoesel.caddy).
+	enableResult := runSub(systemctl.NewEnable().
+		SetService(DefaultCaddyService).
+		SetStart(true), cfg)
+	if enableResult.Error != nil {
+		return types.Result{
+			Changed: false,
+			Message: "Failed to enable and start Caddy service",
+			Error:   enableResult.Error,
+		}
+	}
+
+	// Step 8: Verify the caddy user exists (created by the apt package).
 	// Non-required: a failure here is informational, not fatal.
 	cmdCheckUser := types.Command{
 		Command:     "id " + skills.ShellEscapeArg(DefaultCaddyUser),

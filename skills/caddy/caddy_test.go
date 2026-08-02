@@ -159,6 +159,11 @@ func TestInstall_Run_NotInstalled(t *testing.T) {
 	test.ExpectCommand("chown 'caddy:caddy' '/var/log/caddy'", "")
 	test.ExpectCommand("chmod '755' '/var/log/caddy'", "")
 
+	// systemctl enable check: is-enabled fails (not yet enabled)
+	test.ExpectError("systemctl is-enabled 'caddy'", exitErr())
+	// systemctl enable + start
+	test.ExpectCommand("systemctl enable 'caddy' && systemctl start 'caddy'", "")
+
 	// User check (non-required, output doesn't matter)
 	test.ExpectCommand("id 'caddy'", "uid=999(caddy)\n")
 
