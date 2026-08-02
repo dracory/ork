@@ -124,14 +124,16 @@ func (s *Uninstall) Run() types.Result {
 	// Purge php<version>-* packages.
 	// See skills.DebianNonInteractive and skills.DpkgConfOptions for details.
 	cmdPurgeStr := ""
-	cmdPurgeStr += skills.DebianNonInteractive   // prevent interactive prompts
-	cmdPurgeStr += " apt-get purge -y -- "       // purge packages, auto-confirm, -- prevents option injection
+	cmdPurgeStr += skills.DebianNonInteractive // prevent interactive prompts
+	cmdPurgeStr += " apt-get purge -y"         // purge packages, auto-confirm
+	cmdPurgeStr += skills.DpkgConfOptions      // keep local config, use maintainer default if unmodified
+	cmdPurgeStr += " -- "                      // -- prevents option injection: everything after is a package name
 	cmdPurgeStr += skills.ShellEscapeArg("php" + version + "-*")
-	cmdPurgeStr += skills.DpkgConfOptions        // keep local config, use maintainer default if unmodified
 
 	cmdPurge := types.Command{
 		Command:     cmdPurgeStr,
 		Description: "Purge php" + version + "-* packages",
+		Required:    true,
 	}
 	cfg.GetLoggerOrDefault().Info("purging PHP packages", "version", version)
 	purgeOutput, err := ssh.Run(cfg, cmdPurge)

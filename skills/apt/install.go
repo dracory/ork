@@ -135,13 +135,15 @@ func (a *AptInstall) Run() types.Result {
 	// See skills.DebianNonInteractive and skills.DpkgConfOptions for details
 	cmdInstallStr := ""
 	cmdInstallStr += skills.DebianNonInteractive   // prevent interactive prompts
-	cmdInstallStr += " apt-get install -y -- "     // install packages, auto-confirm, -- prevents option injection
-	cmdInstallStr += shellEscapePackages(packages) // escape each package name
+	cmdInstallStr += " apt-get install -y"         // install packages, auto-confirm
 	cmdInstallStr += skills.DpkgConfOptions        // keep local config, use maintainer default if unmodified
+	cmdInstallStr += " -- "                        // -- prevents option injection: everything after is a package name
+	cmdInstallStr += shellEscapePackages(packages) // escape each package name
 
 	cmdInstall := types.Command{
 		Command:     cmdInstallStr,
 		Description: "Install packages: " + packages,
+		Required:    true,
 	}
 
 	// Check for dry-run mode
