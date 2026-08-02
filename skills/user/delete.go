@@ -30,7 +30,8 @@ func (u *UserDelete) Check() (bool, error) {
 	}
 	cmdCheck := types.Command{Command: fmt.Sprintf("id %s", skills.ShellEscapeArg(username)), Description: "Check if user exists"}
 	output, _ := ssh.Run(cfg, cmdCheck)
-	return strings.Contains(output, username), nil
+	// "uid=" only appears in successful id output, not in "no such user" errors
+	return strings.Contains(output, "uid="), nil
 }
 
 // Run removes a non-root system user.
@@ -84,8 +85,10 @@ func (u *UserDelete) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("deleting user", "username", username)
 
-	// Delete user and home directory (try -r first, then without)
-	cmdDelete := types.Command{Command: fmt.Sprintf("userdel -r %s 2>/dev/null || userdel %s", skills.ShellEscapeArg(username), skills.ShellEscapeArg(username)), Description: "Delete user"}
+	// Delete user and home directory (try -r first, then without).
+	// Wrap in sh -c so the || stays inside sudo's scope when BecomeUser is set.
+	innerDelete := fmt.Sprintf("userdel -r %s 2>/dev/null || userdel %s", skills.ShellEscapeArg(username), skills.ShellEscapeArg(username))
+	cmdDelete := types.Command{Command: fmt.Sprintf("sh -c %s", skills.ShellEscapeArg(innerDelete)), Description: "Delete user"}
 
 	// Check for dry-run mode
 	if cfg.IsDryRunMode {

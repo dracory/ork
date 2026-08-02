@@ -30,7 +30,8 @@ func (u *UserCreate) Check() (bool, error) {
 	}
 	cmdCheck := types.Command{Command: fmt.Sprintf("id %s", skills.ShellEscapeArg(username)), Description: "Check if user exists"}
 	output, _ := ssh.Run(cfg, cmdCheck)
-	return !strings.Contains(output, username), nil
+	// "uid=" only appears in successful id output, not in "no such user" errors
+	return !strings.Contains(output, "uid="), nil
 }
 
 // Run creates a non-root system user with sudo privileges and SSH access.
@@ -101,12 +102,16 @@ func (u *UserCreate) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("creating user", "username", username)
 
-	// Build useradd command with options
+	// Build useradd command with options.
+	// The id||useradd compound must be wrapped in sh -c so that when ssh.Run
+	// wraps it with "sudo -H -n -u root <cmd>", the || is inside sudo's scope.
+	// Without sh -c, the shell splits at || and useradd runs WITHOUT sudo.
 	useraddOpts := fmt.Sprintf("-m -s %s", skills.ShellEscapeArg(shell))
 	if group != "" {
 		useraddOpts = fmt.Sprintf("%s -g %s", useraddOpts, skills.ShellEscapeArg(group))
 	}
-	cmdCreateStr := fmt.Sprintf("id %s &>/dev/null || useradd %s %s", skills.ShellEscapeArg(username), useraddOpts, skills.ShellEscapeArg(username))
+	innerCmd := fmt.Sprintf("id %s >/dev/null 2>&1 || useradd %s %s", skills.ShellEscapeArg(username), useraddOpts, skills.ShellEscapeArg(username))
+	cmdCreateStr := fmt.Sprintf("sh -c %s", skills.ShellEscapeArg(innerCmd))
 	cmdSudoStr := fmt.Sprintf("usermod -aG %s %s", skills.ShellEscapeArg(sudoGroup), skills.ShellEscapeArg(username))
 	cmdCreate := types.Command{Command: cmdCreateStr, Description: "Create user", Required: true}
 	cmdSudo := types.Command{Command: cmdSudoStr, Description: "Add user to sudo group", Required: true}
@@ -118,13 +123,18 @@ func (u *UserCreate) Run() types.Result {
 	}
 	var cmdPass, cmdSSHDir, cmdAuthKey, cmdSSHPerms types.Command
 	if password != "" {
-		passStr := fmt.Sprintf("echo %s | chpasswd", skills.ShellEscapeArg(username+":"+password))
+		// Wrap in sh -c so the | stays inside sudo's scope when BecomeUser is set
+		innerPass := fmt.Sprintf("echo %s | chpasswd", skills.ShellEscapeArg(username+":"+password))
+		passStr := fmt.Sprintf("sh -c %s", skills.ShellEscapeArg(innerPass))
 		cmdPass = types.Command{Command: passStr, Description: "Set user password", Required: true, Sensitive: true}
 	}
 	if sshKey != "" {
-		sshDirStr := fmt.Sprintf("mkdir -p %s && chmod 700 %s", skills.ShellEscapeArg(homeDir+"/.ssh"), skills.ShellEscapeArg(homeDir+"/.ssh"))
+		// Wrap compound commands in sh -c so && stays inside sudo's scope
+		innerDir := fmt.Sprintf("mkdir -p %s && chmod 700 %s", skills.ShellEscapeArg(homeDir+"/.ssh"), skills.ShellEscapeArg(homeDir+"/.ssh"))
+		sshDirStr := fmt.Sprintf("sh -c %s", skills.ShellEscapeArg(innerDir))
 		authKeyStr := fmt.Sprintf("echo %s > %s", skills.ShellEscapeArg(sshKey), skills.ShellEscapeArg(homeDir+"/.ssh/authorized_keys"))
-		sshPermsStr := fmt.Sprintf("chmod 600 %s && chown -R %s %s", skills.ShellEscapeArg(homeDir+"/.ssh/authorized_keys"), skills.ShellEscapeArg(username+":"+username), skills.ShellEscapeArg(homeDir+"/.ssh"))
+		innerPerms := fmt.Sprintf("chmod 600 %s && chown -R %s %s", skills.ShellEscapeArg(homeDir+"/.ssh/authorized_keys"), skills.ShellEscapeArg(username+":"+username), skills.ShellEscapeArg(homeDir+"/.ssh"))
+		sshPermsStr := fmt.Sprintf("sh -c %s", skills.ShellEscapeArg(innerPerms))
 		cmdSSHDir = types.Command{Command: sshDirStr, Description: "Create SSH directory"}
 		cmdAuthKey = types.Command{Command: authKeyStr, Description: "Add SSH authorized key"}
 		cmdSSHPerms = types.Command{Command: sshPermsStr, Description: "Set SSH key permissions"}
