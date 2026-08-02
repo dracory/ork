@@ -354,6 +354,11 @@ func TestIntegration_Caddy_Install_DryRun(t *testing.T) {
 	container := setupSSHContainerSystemd(t)
 	defer container.terminate(t)
 
+	// Reset state: remove caddy so we can verify dry-run doesn't install it.
+	// The systemd container is shared across caddy tests, so prior tests
+	// may have already installed caddy.
+	resetCaddyState(t, container)
+
 	node := newTestNode(container)
 	node.SetDryRunMode(true)
 

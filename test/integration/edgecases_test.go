@@ -230,14 +230,6 @@ func TestIntegration_SensitiveCommand_NotRedactedWhenNotSensitive(t *testing.T) 
 
 // --- 3.4 Sudo password delivery state machine ---
 
-// setupSSHContainerWithSudoPassword starts an SSH container and configures
-// password-based sudo for testuser (NOT NOPASSWD). The password is "sudopass".
-// This is needed for testing the BecomePassword state machine path.
-func setupSSHContainerWithSudoPassword(t *testing.T) *sshContainer {
-	t.Helper()
-	return setupSSHContainerWithSudoConfig(t, true, "sudopass")
-}
-
 // TestIntegration_BecomePasswordDelivery verifies that the sudo password
 // delivery state machine works: BecomeUser + BecomePassword causes the
 // password to be delivered on-demand via prompt detection, and the command

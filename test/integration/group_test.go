@@ -34,7 +34,7 @@ func newTestNode(container *sshContainer) ork.NodeInterface {
 func TestIntegration_Group_RunCommand(t *testing.T) {
 	container1 := setupSSHContainer(t)
 	defer container1.terminate(t)
-	container2 := setupSSHContainer(t)
+	container2 := setupSSHContainer2(t)
 	defer container2.terminate(t)
 
 	node1 := newTestNode(container1)
@@ -65,7 +65,7 @@ func TestIntegration_Group_RunCommand(t *testing.T) {
 func TestIntegration_Group_RunByID(t *testing.T) {
 	container1 := setupSSHContainer(t)
 	defer container1.terminate(t)
-	container2 := setupSSHContainer(t)
+	container2 := setupSSHContainer2(t)
 	defer container2.terminate(t)
 
 	node1 := newTestNode(container1)
@@ -92,7 +92,7 @@ func TestIntegration_Group_RunByID(t *testing.T) {
 func TestIntegration_Group_Run(t *testing.T) {
 	container1 := setupSSHContainer(t)
 	defer container1.terminate(t)
-	container2 := setupSSHContainer(t)
+	container2 := setupSSHContainer2(t)
 	defer container2.terminate(t)
 
 	node1 := newTestNode(container1)

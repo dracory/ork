@@ -24,5 +24,10 @@ jobs:
     - name: Build
       run: go build -v ./...
 
+    - name: Pre-pull Docker images for integration tests
+      run: |
+        docker pull linuxserver/openssh-server:latest
+        docker pull geerlingguy/docker-ubuntu2404-ansible:latest
+
     - name: Test
-      run: go test -v ./...
+      run: go test -timeout 30m -v ./...
