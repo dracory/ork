@@ -1,7 +1,7 @@
 # Task: fs.FileExists
 
 **Date:** 2026-07-31
-**Status:** Draft
+**Status:** Completed
 **Skill ID:** `fs-file-exists`
 **Package:** `github.com/dracory/ork/skills/fs`
 

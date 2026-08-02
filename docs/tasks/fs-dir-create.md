@@ -1,7 +1,7 @@
 # Task: fs.DirCreate
 
 **Date:** 2026-07-31
-**Status:** Draft
+**Status:** Completed
 **Skill ID:** `fs-dir-create`
 **Package:** `github.com/dracory/ork/skills/fs`
 

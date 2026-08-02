@@ -1,7 +1,7 @@
 # Task: fs.ChangeMode
 
 **Date:** 2026-07-31
-**Status:** Draft
+**Status:** Completed
 **Skill ID:** `fs-change-mode`
 **Package:** `github.com/dracory/ork/skills/fs`
 

@@ -1,7 +1,7 @@
 # Task: fs.Remove
 
 **Date:** 2026-07-31
-**Status:** Draft
+**Status:** Completed
 **Skill ID:** `fs-remove`
 **Package:** `github.com/dracory/ork/skills/fs`
 
