@@ -1,0 +1,34 @@
+# docker-compose.yml — standing SSH server for manual debugging.
+#
+# This is NOT used by the integration tests (those use testcontainers-go and
+# spin up their own per-test container). Use this when you want to poke at a
+# real SSH server by hand, e.g. to reproduce a test failure or try out a
+# skill against a live target.
+#
+# Usage:
+#   docker compose up -d
+#   ssh testuser@localhost -p 2222   # password: testpass
+#   docker compose down              # when done
+#
+# To use key-based auth instead, generate a key and pass the public key via
+# the PUBLIC_KEY env var:
+#   ssh-keygen -t ed25519 -f ~/.ssh/ork-debug-key -N ""
+#   PUBLIC_KEY="$(cat ~/.ssh/ork-debug-key.pub)" docker compose up -d
+#   ssh -i ~/.ssh/ork-debug-key testuser@localhost -p 2222
+
+services:
+  ssh:
+    image: linuxserver/openssh-server:latest
+    container_name: ork-ssh-debug
+    ports:
+      - "2222:2222/tcp"
+    environment:
+      PUID: "1000"
+      PGID: "1000"
+      TZ: UTC
+      PASSWORD_ACCESS: "true"
+      USER_NAME: testuser
+      USER_PASSWORD: testpass
+      # Set PUBLIC_KEY in the environment to switch to key-based auth:
+      # PUBLIC_KEY: "ssh-ed25519 AAAA... user@host"
+    restart: unless-stopped
