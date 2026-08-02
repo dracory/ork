@@ -365,17 +365,18 @@ func TestIntegration_Node_WithoutPersistentConnection(t *testing.T) {
 	}
 }
 
-// TestIntegration_Node_Playbook tests playbook execution via Node
+// TestIntegration_Node_Playbook tests playbook execution via Node.
+// The "ping" skill is registered by default in the global skill registry
+// (see NewDefaultRegistry), so RunByID("ping") must succeed against a
+// live SSH server.
 func TestIntegration_Node_Playbook(t *testing.T) {
 	container := setupSSHContainer(t)
 	defer container.terminate(t)
 
-	t.Skip("Skipping: requires SSH key setup in container")
-
 	node := ork.NewNodeForHost(container.host).
 		SetPort(container.port).
 		SetUser(container.user).
-		SetKey("test_key")
+		SetKey(container.keyName)
 
 	err := node.Connect()
 	if err != nil {
