@@ -454,16 +454,22 @@ func (n *nodeImplementation) RunCommand(cmd string) types.Results {
 	var output string
 	var err error
 
-	if n.sshClient != nil && n.connected {
+	// When BecomeUser is set, always route through ssh.Run so the command
+	// gets wrapped with sudo. The persistent client path (sshClient.Run)
+	// does not apply BecomeUser wrapping — only ssh.Run does.
+	// When BecomeUser is not set, use the persistent client directly for
+	// efficiency (avoids reconnecting per command).
+	// Required is set to true so that non-zero exits (e.g. sudo failure) are
+	// propagated as errors, matching the persistent client's behavior.
+	if n.cfg.BecomeUser != "" {
+		output, err = ssh.Run(n.cfg, types.Command{Command: cmd, Required: true})
+	} else if n.sshClient != nil && n.connected {
 		output, err = n.sshClient.Run(cmd)
-		if err != nil {
-			err = fmt.Errorf("failed to execute command '%s': %w", cmd, err)
-		}
 	} else {
-		output, err = ssh.Run(n.cfg, types.Command{Command: cmd})
-		if err != nil {
-			err = fmt.Errorf("failed to execute command '%s': %w", cmd, err)
-		}
+		output, err = ssh.Run(n.cfg, types.Command{Command: cmd, Required: true})
+	}
+	if err != nil {
+		err = fmt.Errorf("failed to execute command '%s': %w", cmd, err)
 	}
 
 	results.Results[n.GetHost()] = types.Result{
@@ -690,12 +696,13 @@ func (n *nodeImplementation) Check(skill types.RunnableInterface) types.Results 
 	if clone.GetBecomeUser() == "" {
 		clone.SetBecomeUser(n.cfg.BecomeUser)
 	}
-	result := clone.Run()
+	// Call Check() (not Run()) — Check returns (bool, error) indicating
+	// whether changes would be made, without making them.
+	needsChange, err := clone.Check()
 	results.Results[n.GetHost()] = types.Result{
-		Changed: result.Changed,
-		Message: result.Message,
-		Details: result.Details,
-		Error:   result.Error,
+		Changed: needsChange,
+		Message: fmt.Sprintf("check: needs change=%v", needsChange),
+		Error:   err,
 	}
 	return results
 }

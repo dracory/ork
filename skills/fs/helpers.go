@@ -24,6 +24,7 @@ func dirExists(cfg types.NodeConfig, path string) bool {
 	cmd := types.Command{
 		Command:     fmt.Sprintf("test -d %s", skills.ShellEscapeArg(path)),
 		Description: "Check if directory exists: " + path,
+		Required:    true, // propagate non-zero exit so we can distinguish exists/not-exists
 	}
 	_, err := ssh.Run(cfg, cmd)
 	return err == nil
@@ -35,6 +36,7 @@ func fileExists(cfg types.NodeConfig, path string) bool {
 	cmd := types.Command{
 		Command:     fmt.Sprintf("test -f %s", skills.ShellEscapeArg(path)),
 		Description: "Check if file exists: " + path,
+		Required:    true, // propagate non-zero exit so we can distinguish exists/not-exists
 	}
 	_, err := ssh.Run(cfg, cmd)
 	return err == nil
@@ -46,6 +48,7 @@ func pathExists(cfg types.NodeConfig, path string) bool {
 	cmd := types.Command{
 		Command:     fmt.Sprintf("test -e %s", skills.ShellEscapeArg(path)),
 		Description: "Check if path exists: " + path,
+		Required:    true, // propagate non-zero exit so we can distinguish exists/not-exists
 	}
 	_, err := ssh.Run(cfg, cmd)
 	return err == nil
@@ -112,6 +115,7 @@ func filesIdentical(cfg types.NodeConfig, src, dst string) bool {
 	cmd := types.Command{
 		Command:     fmt.Sprintf("cmp -s %s %s", skills.ShellEscapeArg(src), skills.ShellEscapeArg(dst)),
 		Description: "Compare content of " + src + " and " + dst,
+		Required:    true, // propagate non-zero exit so we can distinguish identical/different
 	}
 	_, err := ssh.Run(cfg, cmd)
 	return err == nil

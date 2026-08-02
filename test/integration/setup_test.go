@@ -244,3 +244,29 @@ func (sc *sshContainer) terminate(t *testing.T) {
 		}
 	}
 }
+
+// setupSSHContainerWithSudo starts an SSH container and configures passwordless
+// sudo for the testuser. This is needed for BecomeUser (sudo escalation) tests.
+// The linuxserver/openssh-server image is Alpine-based and already has sudo
+// installed — we just need to add testuser to the sudoers file.
+func setupSSHContainerWithSudo(t *testing.T) *sshContainer {
+	t.Helper()
+	sc := setupSSHContainer(t)
+
+	ctx := context.Background()
+
+	// Configure NOPASSWD sudo for testuser. The container runs as root during
+	// init, so we can write to /etc/sudoers.
+	exitCode, _, err := sc.container.Exec(ctx, []string{
+		"sh", "-c",
+		"echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers",
+	})
+	if err != nil {
+		t.Fatalf("Failed to configure sudo in container: %v", err)
+	}
+	if exitCode != 0 {
+		t.Fatalf("Failed to configure sudoers in container, exit code: %d", exitCode)
+	}
+
+	return sc
+}
