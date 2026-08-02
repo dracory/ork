@@ -22,6 +22,9 @@ import (
 // Args:
 //   - version (required): PHP version, e.g. "8.3"
 //   - user (required): User to run PHP-FPM as
+//   - listen.group (optional): Group that owns the FPM socket. Defaults to the
+//     value of user when unset. Set to the web server's group (e.g. "caddy",
+//     "www-data") so the web server can connect to the FastCGI socket.
 //   - extensions (optional): Space-separated extensions to install as
 //     php<version>-<ext> packages. When unset or empty, NO extension packages
 //     are installed; the FPM pool config and service restart still run and will
@@ -42,6 +45,8 @@ import (
 //	node.Run(php.NewInstall().SetVersion("8.3").SetUser("deploy"))
 //	// with the bundled default extension set:
 //	node.Run(php.NewInstall().SetVersion("8.3").SetUser("deploy").SetExtensions(php.DefaultExtensions))
+//	// with a custom socket group (e.g. so the caddy web server can connect):
+//	node.Run(php.NewInstall().SetVersion("8.3").SetUser("deploy").SetListenGroup("caddy").SetExtensions(php.DefaultExtensions))
 //	// with a custom set (variadic):
 //	node.Run(php.NewInstall().SetVersion("8.3").SetUser("deploy").SetExtensions("cli", "fpm", "mysql"))
 //	// with no extensions (FPM must be preinstalled or the run will error):
@@ -228,15 +233,24 @@ func (s *Install) Run() types.Result {
 	}
 
 	// Configure FPM pool: set user, group, listen.owner, listen.group, listen.mode.
+	// listen.group defaults to the FPM user when unset, but can be set to the web
+	// server's group (e.g. "caddy") so the web server can connect to the socket
+	// without being added to the app user's primary group.
 	poolPath := fmt.Sprintf(DefaultFpmPoolPath, version)
 	escapedPoolPath := skills.ShellEscapeArg(poolPath)
 	escapedUser := skills.ShellEscapeArg(user)
+
+	listenGroup := s.GetArg(ArgListenGroup)
+	if listenGroup == "" {
+		listenGroup = user
+	}
+	escapedListenGroup := skills.ShellEscapeArg(listenGroup)
 
 	sedCommands := []string{
 		fmt.Sprintf("sed -i 's/^user = .*/user = %s/' %s", escapedUser, escapedPoolPath),
 		fmt.Sprintf("sed -i 's/^group = .*/group = %s/' %s", escapedUser, escapedPoolPath),
 		fmt.Sprintf("sed -i 's/^listen.owner = .*/listen.owner = %s/' %s", escapedUser, escapedPoolPath),
-		fmt.Sprintf("sed -i 's/^listen.group = .*/listen.group = %s/' %s", escapedUser, escapedPoolPath),
+		fmt.Sprintf("sed -i 's/^listen.group = .*/listen.group = %s/' %s", escapedListenGroup, escapedPoolPath),
 		fmt.Sprintf("sed -i 's/^listen.mode = .*/listen.mode = 0660/' %s", escapedPoolPath),
 	}
 
@@ -296,6 +310,15 @@ func (s *Install) SetVersion(version string) *Install {
 // SetUser sets the user to run PHP-FPM as and returns Install for chaining.
 func (s *Install) SetUser(user string) *Install {
 	s.BaseSkill.SetArg(ArgUser, user)
+	return s
+}
+
+// SetListenGroup sets the group that owns the FPM socket and returns Install
+// for chaining. When unset, listen.group defaults to the FPM user. Set this to
+// the web server's group (e.g. "caddy", "www-data") so the web server can
+// connect to the FastCGI socket without being added to the app user's group.
+func (s *Install) SetListenGroup(group string) *Install {
+	s.BaseSkill.SetArg(ArgListenGroup, group)
 	return s
 }
 

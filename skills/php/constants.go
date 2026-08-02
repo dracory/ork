@@ -11,6 +11,12 @@ const (
 	// ArgUser specifies the user to run PHP-FPM as
 	ArgUser = "user"
 
+	// ArgListenGroup specifies the group that owns the FPM socket.
+	// Defaults to the value of ArgUser when unset. Set this to the web
+	// server's group (e.g. "caddy", "www-data") so the web server can
+	// connect to the FastCGI socket without being added to the app user's group.
+	ArgListenGroup = "listen.group"
+
 	// ArgExtensions specifies additional PHP extensions (space-separated)
 	ArgExtensions = "extensions"
 )

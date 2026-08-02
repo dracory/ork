@@ -10,7 +10,7 @@ package ork_test
 
 import (
 	"bytes"
-	"context"
+	"fmt"
 	"log/slog"
 	"strings"
 	"sync"
@@ -23,32 +23,34 @@ import (
 
 // --- 3.1 Getter methods ---
 
-// TestIntegration_Node_Getters verifies that all getter methods return the
-// values that were set via the fluent API, and that GetNodeConfig returns
-// a valid config that can be used to connect.
-func TestIntegration_Node_Getters(t *testing.T) {
-	container := setupSSHContainer(t)
-	defer container.terminate(t)
+// TestIntegration_Node_Getters_PureState verifies that all getter methods
+// return the values that were set via the fluent API. This is a pure local
+// state test that does not require a container.
+func TestIntegration_Node_Getters_PureState(t *testing.T) {
+	const testHost = "testhost.example.com"
+	const testPort = "2222"
+	const testUser = "testuser"
+	const testKey = "/path/to/key"
 
-	node := ork.NewNodeForHost(container.host).
-		SetPort(container.port).
-		SetUser(container.user).
-		SetKey(container.keyName).
+	node := ork.NewNodeForHost(testHost).
+		SetPort(testPort).
+		SetUser(testUser).
+		SetKey(testKey).
 		SetArg("env", "test").
 		SetArg("role", "web")
 
 	// Verify individual getters
-	if node.GetHost() != container.host {
-		t.Errorf("GetHost: expected %q, got %q", container.host, node.GetHost())
+	if node.GetHost() != testHost {
+		t.Errorf("GetHost: expected %q, got %q", testHost, node.GetHost())
 	}
-	if node.GetPort() != container.port {
-		t.Errorf("GetPort: expected %q, got %q", container.port, node.GetPort())
+	if node.GetPort() != testPort {
+		t.Errorf("GetPort: expected %q, got %q", testPort, node.GetPort())
 	}
-	if node.GetUser() != container.user {
-		t.Errorf("GetUser: expected %q, got %q", container.user, node.GetUser())
+	if node.GetUser() != testUser {
+		t.Errorf("GetUser: expected %q, got %q", testUser, node.GetUser())
 	}
-	if node.GetKey() != container.keyName {
-		t.Errorf("GetKey: expected %q, got %q", container.keyName, node.GetKey())
+	if node.GetKey() != testKey {
+		t.Errorf("GetKey: expected %q, got %q", testKey, node.GetKey())
 	}
 
 	// Verify GetArg
@@ -79,26 +81,39 @@ func TestIntegration_Node_Getters(t *testing.T) {
 
 	// Verify GetNodeConfig returns a usable config
 	cfg := node.GetNodeConfig()
-	if cfg.SSHHost != container.host {
-		t.Errorf("GetNodeConfig.SSHHost: expected %q, got %q", container.host, cfg.SSHHost)
+	if cfg.SSHHost != testHost {
+		t.Errorf("GetNodeConfig.SSHHost: expected %q, got %q", testHost, cfg.SSHHost)
 	}
-	if cfg.SSHPort != container.port {
-		t.Errorf("GetNodeConfig.SSHPort: expected %q, got %q", container.port, cfg.SSHPort)
+	if cfg.SSHPort != testPort {
+		t.Errorf("GetNodeConfig.SSHPort: expected %q, got %q", testPort, cfg.SSHPort)
 	}
-	if cfg.RootUser != container.user {
-		t.Errorf("GetNodeConfig.RootUser: expected %q, got %q", container.user, cfg.RootUser)
+	if cfg.RootUser != testUser {
+		t.Errorf("GetNodeConfig.RootUser: expected %q, got %q", testUser, cfg.RootUser)
 	}
-	if cfg.SSHKey != container.keyName {
-		t.Errorf("GetNodeConfig.SSHKey: expected %q, got %q", container.keyName, cfg.SSHKey)
+	if cfg.SSHKey != testKey {
+		t.Errorf("GetNodeConfig.SSHKey: expected %q, got %q", testKey, cfg.SSHKey)
 	}
+}
 
-	// Prove the config is valid by connecting
+// TestIntegration_Node_Getters_ConnectProof verifies that the config returned
+// by GetNodeConfig is actually usable to connect and run a command.
+func TestIntegration_Node_Getters_ConnectProof(t *testing.T) {
+	container := setupSSHContainer(t)
+	defer container.terminate(t)
+
+	node := ork.NewNodeForHost(container.host).
+		SetPort(container.port).
+		SetUser(container.user).
+		SetKey(container.keyName)
+
+	// Prove the config from getters is valid by connecting
 	if err := node.Connect(); err != nil {
 		t.Fatalf("Connect failed with config from getters: %v", err)
 	}
 	defer node.Close()
 
 	results := node.RunCommand("echo getters-work")
+	// Results are keyed by host
 	result := results.Results[container.host]
 	if result.Error != nil {
 		t.Errorf("RunCommand failed: %v", result.Error)
@@ -138,10 +153,12 @@ func TestIntegration_Node_CustomLogger(t *testing.T) {
 
 	logOutput := buf.String()
 	if logOutput == "" {
-		t.Error("Expected custom logger to capture log output, got empty buffer")
+		t.Fatal("Expected custom logger to capture log output, got empty buffer")
 	}
-	if !strings.Contains(logOutput, "dry-run") {
-		t.Errorf("Expected log output to contain 'dry-run', got: %s", logOutput)
+	// Assert on the command text (the meaningful signal that the custom logger
+	// received the call), not on the exact log message wording which could change.
+	if !strings.Contains(logOutput, "echo logged-via-custom-logger") {
+		t.Errorf("Expected log output to contain the command text, got: %s", logOutput)
 	}
 }
 
@@ -150,19 +167,16 @@ func TestIntegration_Node_CustomLogger(t *testing.T) {
 // TestIntegration_SensitiveCommand_Redacted verifies that when a command has
 // Sensitive=true, the command string is replaced with [redacted] in log output
 // and the actual command text does NOT appear.
+//
+// This test uses dry-run mode, which returns early in ssh.Run without connecting
+// to any server, so no container is needed.
 func TestIntegration_SensitiveCommand_Redacted(t *testing.T) {
-	container := setupSSHContainer(t)
-	defer container.terminate(t)
-
 	var buf bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
 
-	// Use ssh.Run directly with a Sensitive command in dry-run mode
-	cfg := nodeConfigFromContainer(container)
-	cfg.IsDryRunMode = true
-	cfg.Logger = logger
+	cfg := types.NodeConfig{IsDryRunMode: true, Logger: logger}
 
 	secretCmd := "echo super-secret-value-12345"
 	cmd := types.Command{
@@ -187,18 +201,16 @@ func TestIntegration_SensitiveCommand_Redacted(t *testing.T) {
 
 // TestIntegration_SensitiveCommand_NotRedactedWhenNotSensitive verifies that
 // non-sensitive commands DO appear in log output (the normal case).
+//
+// This test uses dry-run mode, which returns early in ssh.Run without connecting
+// to any server, so no container is needed.
 func TestIntegration_SensitiveCommand_NotRedactedWhenNotSensitive(t *testing.T) {
-	container := setupSSHContainer(t)
-	defer container.terminate(t)
-
 	var buf bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&buf, &slog.HandlerOptions{
 		Level: slog.LevelInfo,
 	}))
 
-	cfg := nodeConfigFromContainer(container)
-	cfg.IsDryRunMode = true
-	cfg.Logger = logger
+	cfg := types.NodeConfig{IsDryRunMode: true, Logger: logger}
 
 	plainCmd := "echo not-sensitive-at-all"
 	cmd := types.Command{
@@ -223,27 +235,7 @@ func TestIntegration_SensitiveCommand_NotRedactedWhenNotSensitive(t *testing.T) 
 // This is needed for testing the BecomePassword state machine path.
 func setupSSHContainerWithSudoPassword(t *testing.T) *sshContainer {
 	t.Helper()
-	sc := setupSSHContainer(t)
-
-	ctx := context.Background()
-
-	// Set a password for testuser
-	exitCode, _, err := sc.container.Exec(ctx, []string{
-		"sh", "-c", "echo 'testuser:sudopass' | chpasswd",
-	})
-	if err != nil || exitCode != 0 {
-		t.Fatalf("Failed to set testuser password: err=%v exitCode=%d", err, exitCode)
-	}
-
-	// Configure sudoers to require a password (no NOPASSWD)
-	exitCode, _, err = sc.container.Exec(ctx, []string{
-		"sh", "-c", "echo 'testuser ALL=(ALL) ALL' >> /etc/sudoers",
-	})
-	if err != nil || exitCode != 0 {
-		t.Fatalf("Failed to configure sudoers: err=%v exitCode=%d", err, exitCode)
-	}
-
-	return sc
+	return setupSSHContainerWithSudoConfig(t, true, "sudopass")
 }
 
 // TestIntegration_BecomePasswordDelivery verifies that the sudo password
@@ -285,6 +277,12 @@ func TestIntegration_BecomeWrongPassword(t *testing.T) {
 	_, err := ssh.Run(cfg, cmd)
 	if err == nil {
 		t.Fatal("Expected error with wrong sudo password, got nil")
+	}
+	// Verify the error is actually about sudo/password, not an incidental
+	// network or connection error
+	errStr := strings.ToLower(err.Error())
+	if !strings.Contains(errStr, "sudo") && !strings.Contains(errStr, "password") {
+		t.Errorf("Expected error to mention sudo or password, got: %v", err)
 	}
 }
 
@@ -336,14 +334,16 @@ func TestIntegration_BecomePasswordWithStdin(t *testing.T) {
 // --- 3.5 Concurrent operations against real SSH ---
 
 // TestIntegration_Concurrent_MultipleNodes verifies that running commands
-// concurrently across multiple nodes via a Group produces correct results
-// for each node without interference.
+// concurrently across multiple nodes (each with its own persistent connection)
+// produces correct results for each node without interference.
 func TestIntegration_Concurrent_MultipleNodes(t *testing.T) {
 	container := setupSSHContainer(t)
 	defer container.terminate(t)
 
-	// Create 3 nodes pointing to the same container
-	nodes := make([]ork.NodeInterface, 3)
+	// Create 3 nodes pointing to the same container, each with its own
+	// persistent SSH connection.
+	const numNodes = 3
+	nodes := make([]ork.NodeInterface, numNodes)
 	for i := range nodes {
 		n := ork.NewNodeForHost(container.host).
 			SetPort(container.port).
@@ -356,25 +356,19 @@ func TestIntegration_Concurrent_MultipleNodes(t *testing.T) {
 		nodes[i] = n
 	}
 
-	group := ork.NewGroup("concurrent-test")
-	for i, n := range nodes {
-		group.AddNode(n)
-		// Tag each node with a unique arg so we can verify per-node isolation
-		n.SetArg("node-id", string(rune('A'+i)))
-	}
-
-	// Run a command that echoes a unique value per node
-	// All nodes share the same host, so results collapse to one entry.
-	// Instead, run concurrently via goroutines on individual nodes.
+	// Run a command that echoes a unique value per node concurrently.
+	// All nodes share the same host, so results.Results is keyed by host and
+	// would collapse if we used Group.RunCommand. Instead, run via goroutines
+	// on individual nodes and collect per-node output.
 	var wg sync.WaitGroup
-	errs := make([]error, len(nodes))
-	outputs := make([]string, len(nodes))
+	errs := make([]error, numNodes)
+	outputs := make([]string, numNodes)
 
 	for i, n := range nodes {
 		wg.Add(1)
 		go func(idx int, node ork.NodeInterface) {
 			defer wg.Done()
-			results := node.RunCommand("echo concurrent-" + string(rune('A'+idx)))
+			results := node.RunCommand(fmt.Sprintf("echo concurrent-node-%d", idx))
 			result := results.Results[container.host]
 			errs[idx] = result.Error
 			outputs[idx] = strings.TrimSpace(result.Message)
@@ -387,7 +381,7 @@ func TestIntegration_Concurrent_MultipleNodes(t *testing.T) {
 		if errs[i] != nil {
 			t.Errorf("Node %d failed: %v", i, errs[i])
 		}
-		expected := "concurrent-" + string(rune('A'+i))
+		expected := fmt.Sprintf("concurrent-node-%d", i)
 		if outputs[i] != expected {
 			t.Errorf("Node %d: expected %q, got %q", i, expected, outputs[i])
 		}
@@ -413,6 +407,7 @@ func TestIntegration_Concurrent_SameNode(t *testing.T) {
 	const numGoroutines = 10
 	var wg sync.WaitGroup
 	errs := make([]error, numGoroutines)
+	outputs := make([]string, numGoroutines)
 
 	for i := 0; i < numGoroutines; i++ {
 		wg.Add(1)
@@ -421,14 +416,18 @@ func TestIntegration_Concurrent_SameNode(t *testing.T) {
 			results := node.RunCommand("echo ok")
 			result := results.Results[container.host]
 			errs[idx] = result.Error
+			outputs[idx] = strings.TrimSpace(result.Message)
 		}(i)
 	}
 
 	wg.Wait()
 
-	for i, err := range errs {
-		if err != nil {
-			t.Errorf("Goroutine %d failed: %v", i, err)
+	for i := range outputs {
+		if errs[i] != nil {
+			t.Errorf("Goroutine %d failed: %v", i, errs[i])
+		}
+		if outputs[i] != "ok" {
+			t.Errorf("Goroutine %d: expected 'ok' in output, got %q", i, outputs[i])
 		}
 	}
 }

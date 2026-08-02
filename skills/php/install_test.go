@@ -53,6 +53,26 @@ func TestInstall_SetUser(t *testing.T) {
 	}
 }
 
+// TestInstall_SetListenGroup verifies that SetListenGroup sets the listen.group arg.
+func TestInstall_SetListenGroup(t *testing.T) {
+	skill := NewInstall().SetListenGroup("caddy")
+
+	if skill.GetArg(ArgListenGroup) != "caddy" {
+		t.Errorf("Expected listen.group 'caddy', got '%s'", skill.GetArg(ArgListenGroup))
+	}
+}
+
+// TestInstall_SetListenGroup_DefaultsToUser verifies that listen.group defaults
+// to the user when unset (the Run method handles this, so we only check the arg
+// is empty by default here).
+func TestInstall_SetListenGroup_DefaultsToUser(t *testing.T) {
+	skill := NewInstall().SetUser("deploy")
+
+	if skill.GetArg(ArgListenGroup) != "" {
+		t.Errorf("Expected empty listen.group by default, got '%s'", skill.GetArg(ArgListenGroup))
+	}
+}
+
 // TestInstall_SetExtensions verifies that SetExtensions sets the extensions arg.
 func TestInstall_SetExtensions(t *testing.T) {
 	skill := NewInstall().SetExtensions("cli fpm mysql")
@@ -94,6 +114,7 @@ func TestInstall_TypedSetters_Chaining(t *testing.T) {
 	skill := NewInstall().
 		SetVersion("8.3").
 		SetUser("deploy").
+		SetListenGroup("caddy").
 		SetExtensions("cli fpm mysql")
 
 	if skill.GetArg(ArgVersion) != "8.3" {
@@ -101,6 +122,9 @@ func TestInstall_TypedSetters_Chaining(t *testing.T) {
 	}
 	if skill.GetArg(ArgUser) != "deploy" {
 		t.Errorf("Expected user 'deploy', got '%s'", skill.GetArg(ArgUser))
+	}
+	if skill.GetArg(ArgListenGroup) != "caddy" {
+		t.Errorf("Expected listen.group 'caddy', got '%s'", skill.GetArg(ArgListenGroup))
 	}
 	if skill.GetArg(ArgExtensions) != "cli fpm mysql" {
 		t.Errorf("Expected extensions 'cli fpm mysql', got '%s'", skill.GetArg(ArgExtensions))

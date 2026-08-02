@@ -248,18 +248,42 @@ func (sc *sshContainer) terminate(t *testing.T) {
 // setupSSHContainerWithSudo starts an SSH container and configures passwordless
 // sudo for the testuser. This is needed for BecomeUser (sudo escalation) tests.
 // The linuxserver/openssh-server image is Alpine-based and already has sudo
-// installed — we just need to add testuser to the sudoers file.
+// installed — we just need to add a sudoers drop-in file.
 func setupSSHContainerWithSudo(t *testing.T) *sshContainer {
+	t.Helper()
+	return setupSSHContainerWithSudoConfig(t, false, "")
+}
+
+// setupSSHContainerWithSudoConfig starts an SSH container and configures sudo
+// for the testuser. If passwordRequired is false, NOPASSWD is set. If
+// passwordRequired is true, the given password is set for testuser and sudo
+// requires it. Uses a drop-in file under /etc/sudoers.d/ for robustness.
+func setupSSHContainerWithSudoConfig(t *testing.T, passwordRequired bool, password string) *sshContainer {
 	t.Helper()
 	sc := setupSSHContainer(t)
 
 	ctx := context.Background()
 
-	// Configure NOPASSWD sudo for testuser. The container runs as root during
-	// init, so we can write to /etc/sudoers.
+	if passwordRequired {
+		// Set a password for testuser
+		exitCode, _, err := sc.container.Exec(ctx, []string{
+			"sh", "-c", "echo 'testuser:" + password + "' | chpasswd",
+		})
+		if err != nil || exitCode != 0 {
+			t.Fatalf("Failed to set testuser password: err=%v exitCode=%d", err, exitCode)
+		}
+	}
+
+	// Write a sudoers drop-in file (validated by visudo -cf).
+	// Include Defaults lecture="never" to suppress the sudo lecture that would
+	// otherwise pollute command output on first password-based sudo use.
+	sudoersLine := "testuser ALL=(ALL) NOPASSWD:ALL"
+	if passwordRequired {
+		sudoersLine = "Defaults lecture=\"never\"\ntestuser ALL=(ALL) ALL"
+	}
 	exitCode, _, err := sc.container.Exec(ctx, []string{
 		"sh", "-c",
-		"echo 'testuser ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers",
+		"mkdir -p /etc/sudoers.d && printf '" + sudoersLine + "\\n' > /etc/sudoers.d/testuser && chmod 440 /etc/sudoers.d/testuser && visudo -cf /etc/sudoers.d/testuser",
 	})
 	if err != nil {
 		t.Fatalf("Failed to configure sudo in container: %v", err)
