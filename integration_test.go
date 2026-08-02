@@ -392,17 +392,18 @@ func TestIntegration_Node_Playbook(t *testing.T) {
 	}
 }
 
-// TestIntegration_MultipleOperations tests complex workflows
+// TestIntegration_MultipleOperations tests complex workflows on a persistent
+// connection: connect, run a command, mutate node args, run another command,
+// execute a playbook, run whoami, and verify the connection stays alive
+// throughout the whole sequence.
 func TestIntegration_MultipleOperations(t *testing.T) {
 	container := setupSSHContainer(t)
 	defer container.terminate(t)
 
-	t.Skip("Skipping: requires SSH key setup in container")
-
 	node := ork.NewNodeForHost(container.host).
 		SetPort(container.port).
 		SetUser(container.user).
-		SetKey("test_key")
+		SetKey(container.keyName)
 
 	err := node.Connect()
 	if err != nil {
