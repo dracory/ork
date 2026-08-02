@@ -17,7 +17,7 @@ var runFuncMu sync.RWMutex
 
 // runSingleCommandFunc is the function used to execute single SSH commands.
 // Can be overridden for testing.
-var runSingleCommandFunc func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error)
+var runSingleCommandFunc func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error)
 var runSingleCommandFuncMu sync.RWMutex
 
 // SetRunFunc sets a custom function for executing SSH commands.
@@ -32,7 +32,7 @@ func SetRunFunc(fn func(types.NodeConfig, types.Command) (string, error)) {
 // SetRunSingleCommandFunc sets a custom function for executing single SSH commands.
 // This is intended for testing purposes only.
 // Call with nil to restore the default behavior.
-func SetRunSingleCommandFunc(fn func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error)) {
+func SetRunSingleCommandFunc(fn func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error)) {
 	runSingleCommandFuncMu.Lock()
 	defer runSingleCommandFuncMu.Unlock()
 	runSingleCommandFunc = fn
@@ -42,14 +42,14 @@ func SetRunSingleCommandFunc(fn func(host, port, user, key string, cmd types.Com
 // Use this for single commands where you don't need to maintain the connection.
 // The host parameter should be just the hostname, port is the SSH port (empty defaults to 22).
 // This is a lower-level function; prefer using Run() for playbook development.
-func runSingleCommand(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+func runSingleCommand(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 	// Check if a test override is set
 	runSingleCommandFuncMu.RLock()
 	fn := runSingleCommandFunc
 	runSingleCommandFuncMu.RUnlock()
 
 	if fn != nil {
-		return fn(host, port, user, key, cmd, kexAlgorithms, hostKeyAlgorithms)
+		return fn(host, port, user, key, cmd, kexAlgorithms, hostKeyAlgorithms, becomePassword, becomePrompt, becomeSuccess)
 	}
 
 	client := NewClient(host, port, user, key).
@@ -59,7 +59,7 @@ func runSingleCommand(host, port, user, key string, cmd types.Command, kexAlgori
 		return "", err
 	}
 	defer client.Close()
-	return client.Run(cmd.Command)
+	return client.RunWithBecome(cmd.Command, becomePassword, becomePrompt, becomeSuccess, cmd.Stdin)
 }
 
 // PrivateKeyPath constructs the absolute path to an SSH private key file.
@@ -92,10 +92,14 @@ func ShellEscapeArg(s string) string {
 // over config-level settings (cfg.Chdir, cfg.BecomeUser).
 //
 // If Chdir is set, the command is wrapped with cd <dir> && <command>.
-// If BecomeUser is set, the command is wrapped with sudo -u <user>.
+// If BecomeUser is set, the command is wrapped with sudo:
+//   - If BecomePassword is empty: sudo -H -n -u <user> <command> (fail-fast).
+//   - If BecomePassword is set: sudo -H -S -p "<prompt>" -u <user> bash -c 'echo BECOME-SUCCESS-<id>; <command>'
+//     with prompt-triggered password delivery via ssh.Client.RunWithBecome.
+//
 // The order is: cd first (outside sudo), then become (sudo), so the final command is:
 //
-//	cd <dir> && sudo -u <user> <command>
+//	cd <dir> && sudo -H -n -u <user> <command>
 //
 // If Required is false and the command exits non-zero, the error is logged
 // but not returned. Connection or session failures (e.g. host key verification,
@@ -142,10 +146,39 @@ func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 		chdir = cfg.Chdir
 	}
 
-	// Wrap command with sudo if become user is set
+	// Wrap command with sudo if become user is set.
+	// Two paths:
+	//   - No password: sudo -H -n -u <user> <cmd> (fail-fast if a password is
+	//     actually required; backward-compatible with NOPASSWD/cached creds).
+	//   - Password set: sudo -H -S -p "<prompt>" -u <user> echo 'BECOME-SUCCESS-<id>'; <cmd>
+	//     The success marker lets the state machine confirm escalation before
+	//     sending command stdin.
 	commandToRun := cmd.Command
+	var becomePassword string
+	var becomePrompt string
+	var becomeSuccess string
 	if becomeUser != "" {
-		commandToRun = fmt.Sprintf("sudo -u %s %s", ShellEscapeArg(becomeUser), cmd.Command)
+		becomePassword = cfg.BecomePassword
+		if becomePassword == "" {
+			// No password — fail-fast path. -n makes sudo return an error if a
+			// password is actually required, instead of hanging. This is
+			// backward-compatible with NOPASSWD and cached credentials.
+			commandToRun = fmt.Sprintf("sudo -H -n -u %s %s", ShellEscapeArg(becomeUser), cmd.Command)
+		} else {
+			// Password path — prompt detection + success marker.
+			promptID := generateBecomeID()
+			becomePrompt = BuildBecomePrompt(promptID)
+			becomeSuccess = BuildBecomeSuccess(promptID)
+			// Wrap the command with the success marker so the state machine can
+			// confirm escalation succeeded before sending command stdin.
+			// The echo;cmd must be inside bash -c so the semicolon is within
+			// sudo's scope — otherwise the shell splits at the semicolon and
+			// the actual command runs as the original user, not the become user.
+			// This matches Ansible's _build_success_command which wraps the
+			// whole thing in shlex.quote + bash -c.
+			wrappedCmd := fmt.Sprintf("echo %s; %s", ShellEscapeArg(becomeSuccess), cmd.Command)
+			commandToRun = fmt.Sprintf("sudo -H -S -p %s -u %s bash -c %s", ShellEscapeArg(becomePrompt), ShellEscapeArg(becomeUser), ShellEscapeArg(wrappedCmd))
+		}
 	}
 
 	// Wrap command with cd if chdir is set (outside sudo)
@@ -153,7 +186,7 @@ func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 		commandToRun = fmt.Sprintf("cd %s && %s", ShellEscapeArg(chdir), commandToRun)
 	}
 
-	output, err := runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description, Required: cmd.Required, Sensitive: cmd.Sensitive}, cfg.KexAlgorithms, cfg.HostKeyAlgorithms)
+	output, err := runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description, Required: cmd.Required, Sensitive: cmd.Sensitive, Stdin: cmd.Stdin}, cfg.KexAlgorithms, cfg.HostKeyAlgorithms, becomePassword, becomePrompt, becomeSuccess)
 
 	// If command is not required, suppress only non-zero exit errors.
 	// Connection/session failures are always propagated: they mean the

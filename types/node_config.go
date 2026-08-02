@@ -66,6 +66,12 @@ type NodeConfig struct {
 	// If empty, no privilege escalation is performed.
 	BecomeUser string
 
+	// BecomePassword is the password delivered to sudo -S when BecomeUser is set.
+	// It is sent via prompt detection, not blind-piped. See ssh.RunWithBecome.
+	// If empty, sudo is invoked with -n (fail-fast) instead of -S (stdin password),
+	// which is backward-compatible with NOPASSWD and cached credentials.
+	BecomePassword string
+
 	// Chdir is the working directory for command execution.
 	// If set, commands will be executed in this directory.
 	Chdir string
@@ -197,6 +203,12 @@ func (c *NodeConfig) WithDryRun(dryRun bool) *NodeConfig {
 // WithBecomeUser sets the become user and returns NodeConfig for chaining.
 func (c *NodeConfig) WithBecomeUser(user string) *NodeConfig {
 	c.BecomeUser = user
+	return c
+}
+
+// WithBecomePassword sets the become password and returns NodeConfig for chaining.
+func (c *NodeConfig) WithBecomePassword(password string) *NodeConfig {
+	c.BecomePassword = password
 	return c
 }
 

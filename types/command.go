@@ -20,6 +20,7 @@ type Command struct {
 	Description string
 	Chdir       string // Working directory for command execution
 	BecomeUser  string // User to become when executing command (e.g., "postgres", "www-data")
+	Stdin       string // Optional input piped to the remote command's stdin (NOT the sudo password)
 	Required    bool   // Whether the command must succeed for execution to continue
 	Sensitive   bool   // Whether the command contains secrets (redacted in logs)
 }

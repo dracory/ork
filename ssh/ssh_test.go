@@ -236,7 +236,7 @@ func findSubstring(s, substr string) bool {
 // TestRun_CommandChdir verifies that command-level Chdir is respected.
 func TestRun_CommandChdir(t *testing.T) {
 	var capturedCmd types.Command
-	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 		capturedCmd = cmd
 		return "output", nil
 	})
@@ -270,7 +270,7 @@ func TestRun_CommandChdir(t *testing.T) {
 // TestRun_ConfigChdir verifies that config-level Chdir is used when command-level is not set.
 func TestRun_ConfigChdir(t *testing.T) {
 	var capturedCmd types.Command
-	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 		capturedCmd = cmd
 		return "output", nil
 	})
@@ -303,7 +303,7 @@ func TestRun_ConfigChdir(t *testing.T) {
 // TestRun_CommandBecomeUser verifies that command-level BecomeUser is respected.
 func TestRun_CommandBecomeUser(t *testing.T) {
 	var capturedCmd types.Command
-	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 		capturedCmd = cmd
 		return "output", nil
 	})
@@ -329,7 +329,8 @@ func TestRun_CommandBecomeUser(t *testing.T) {
 	Run(cfg, cmd)
 
 	// Command-level BecomeUser should take precedence
-	if capturedCmd.Command != "sudo -u 'postgres' psql -l" {
+	// No BecomePassword set → sudo -H -n (fail-fast path)
+	if capturedCmd.Command != "sudo -H -n -u 'postgres' psql -l" {
 		t.Errorf("Expected command to be wrapped with command-level become user, got: %s", capturedCmd.Command)
 	}
 }
@@ -337,7 +338,7 @@ func TestRun_CommandBecomeUser(t *testing.T) {
 // TestRun_ConfigBecomeUser verifies that config-level BecomeUser is used when command-level is not set.
 func TestRun_ConfigBecomeUser(t *testing.T) {
 	var capturedCmd types.Command
-	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 		capturedCmd = cmd
 		return "output", nil
 	})
@@ -362,7 +363,8 @@ func TestRun_ConfigBecomeUser(t *testing.T) {
 	Run(cfg, cmd)
 
 	// Config-level BecomeUser should be used
-	if capturedCmd.Command != "sudo -u 'config-user' psql -l" {
+	// No BecomePassword set → sudo -H -n (fail-fast path)
+	if capturedCmd.Command != "sudo -H -n -u 'config-user' psql -l" {
 		t.Errorf("Expected command to be wrapped with config-level become user, got: %s", capturedCmd.Command)
 	}
 }
@@ -370,7 +372,7 @@ func TestRun_ConfigBecomeUser(t *testing.T) {
 // TestRun_CombinedChdirAndBecomeUser verifies that Chdir and BecomeUser work together.
 func TestRun_CombinedChdirAndBecomeUser(t *testing.T) {
 	var capturedCmd types.Command
-	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 		capturedCmd = cmd
 		return "output", nil
 	})
@@ -396,7 +398,8 @@ func TestRun_CombinedChdirAndBecomeUser(t *testing.T) {
 	Run(cfg, cmd)
 
 	// Should wrap with cd first (outside sudo), then become
-	expected := "cd '/var/lib/postgresql' && sudo -u 'postgres' psql -l"
+	// No BecomePassword set → sudo -H -n (fail-fast path)
+	expected := "cd '/var/lib/postgresql' && sudo -H -n -u 'postgres' psql -l"
 	if capturedCmd.Command != expected {
 		t.Errorf("Expected command to be wrapped with chdir and become user, got: %s", capturedCmd.Command)
 	}
@@ -408,7 +411,7 @@ func TestRun_CombinedChdirAndBecomeUser(t *testing.T) {
 // Connection/session failures must still propagate — see
 // TestRun_RequiredFalse_PropagatesConnectionError.
 func TestRun_RequiredFalse_SuppressesExitError(t *testing.T) {
-	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 		return "some output", NewExitError()
 	})
 	defer SetRunSingleCommandFunc(nil)
@@ -448,7 +451,7 @@ func TestRun_RequiredFalse_SuppressesExitError(t *testing.T) {
 // verification failure.
 func TestRun_RequiredFalse_PropagatesConnectionError(t *testing.T) {
 	connErr := errors.New("ssh: handshake failed: knownhosts: key is unknown")
-	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 		return "", connErr
 	})
 	defer SetRunSingleCommandFunc(nil)
@@ -484,7 +487,7 @@ func TestRun_RequiredFalse_PropagatesConnectionError(t *testing.T) {
 // documents the contract alongside the Required=false case).
 func TestRun_RequiredTrue_PropagatesConnectionError(t *testing.T) {
 	connErr := errors.New("ssh: handshake failed: knownhosts: key is unknown")
-	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 		return "", connErr
 	})
 	defer SetRunSingleCommandFunc(nil)
@@ -516,7 +519,7 @@ func TestRun_RequiredTrue_PropagatesConnectionError(t *testing.T) {
 
 // TestRun_RequiredTrue_PropagatesError verifies that Required=true propagates errors.
 func TestRun_RequiredTrue_PropagatesError(t *testing.T) {
-	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 		return "", errors.New("command failed")
 	})
 	defer SetRunSingleCommandFunc(nil)

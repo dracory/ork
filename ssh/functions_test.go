@@ -168,7 +168,7 @@ func TestRun_NotRequired_SensitiveRedacted(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(&buf, nil))
 
 	// Use SetRunSingleCommandFunc to simulate an exit error (non-zero exit code)
-	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string) (string, error) {
+	SetRunSingleCommandFunc(func(host, port, user, key string, cmd types.Command, kexAlgorithms []string, hostKeyAlgorithms []string, becomePassword string, becomePrompt string, becomeSuccess string) (string, error) {
 		return "some output", NewExitError()
 	})
 	defer SetRunSingleCommandFunc(nil)
