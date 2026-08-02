@@ -36,6 +36,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/moby/moby/api/types/container"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 	"golang.org/x/crypto/ssh"
@@ -290,6 +291,128 @@ func setupSSHContainerWithSudoConfig(t *testing.T, passwordRequired bool, passwo
 	}
 	if exitCode != 0 {
 		t.Fatalf("Failed to configure sudoers in container, exit code: %d", exitCode)
+	}
+
+	return sc
+}
+
+// setupSSHContainerSystemd starts a systemd-enabled Ubuntu container for
+// integration tests that require apt, systemctl, and other Debian/Ubuntu
+// tools. The container runs systemd as PID 1 (privileged mode required).
+//
+// The image (geerlingguy/docker-ubuntu2404-ansible) is purpose-built for
+// Ansible/Molecule testing: it has Python, SSH, and systemd pre-installed.
+//
+// SSH key injection is done post-start via container.Exec (the image does
+// not support PUBLIC_KEY env var like linuxserver/openssh-server).
+func setupSSHContainerSystemd(t *testing.T) *sshContainer {
+	t.Helper()
+
+	if testing.Short() {
+		t.Skip("skipping integration test in short mode")
+	}
+
+	if os.Getenv("CI") == "" {
+		t.Skip("skipping integration test: only runs in CI (set CI=true to run)")
+	}
+
+	// --- Generate ed25519 keypair ---
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("Failed to generate ed25519 key: %v", err)
+	}
+
+	privBytes, err := x509.MarshalPKCS8PrivateKey(privKey)
+	if err != nil {
+		t.Fatalf("Failed to marshal private key: %v", err)
+	}
+	privPEM := pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: privBytes})
+
+	sshPub, err := ssh.NewPublicKey(pubKey)
+	if err != nil {
+		t.Fatalf("Failed to marshal public key: %v", err)
+	}
+	authorizedKey := strings.TrimSpace(string(ssh.MarshalAuthorizedKey(sshPub)))
+
+	// --- Write private key to ~/.ssh/<integrationKeyName> ---
+	usr, err := user.Current()
+	if err != nil {
+		t.Fatalf("Failed to resolve current user: %v", err)
+	}
+	sshDir := filepath.Join(usr.HomeDir, ".ssh")
+	if err := os.MkdirAll(sshDir, 0o700); err != nil {
+		t.Fatalf("Failed to create ~/.ssh: %v", err)
+	}
+	keyPath := filepath.Join(sshDir, integrationKeyName)
+	if err := os.WriteFile(keyPath, privPEM, 0o600); err != nil {
+		t.Fatalf("Failed to write private key to %s: %v", keyPath, err)
+	}
+	t.Cleanup(func() {
+		if err := os.Remove(keyPath); err != nil && !os.IsNotExist(err) {
+			t.Logf("Failed to remove integration key %s: %v", keyPath, err)
+		}
+	})
+
+	// --- Start the systemd-enabled Ubuntu container ---
+	ctx := context.Background()
+
+	req := testcontainers.ContainerRequest{
+		Image:        "geerlingguy/docker-ubuntu2404-ansible:latest",
+		ExposedPorts: []string{"22/tcp"},
+		Cmd:          []string{"/lib/systemd/systemd"},
+		Privileged:   true,
+		WaitingFor:   wait.ForLog("Reached target .*Multi-User System.*").WithStartupTimeout(120 * time.Second),
+		Binds:        []string{"/sys/fs/cgroup:/sys/fs/cgroup:rw"},
+		HostConfigModifier: func(hc *container.HostConfig) {
+			hc.CgroupnsMode = "host"
+		},
+		Tmpfs: map[string]string{
+			"/run": "",
+			"/tmp": "rw,mode=1777",
+		},
+	}
+
+	container, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
+		ContainerRequest: req,
+		Started:          true,
+	})
+	if err != nil {
+		t.Fatalf("Failed to start systemd container: %v", err)
+	}
+
+	// --- Inject SSH public key for root ---
+	exitCode, _, err := container.Exec(ctx, []string{
+		"sh", "-c",
+		"mkdir -p /root/.ssh && chmod 700 /root/.ssh && echo '" + authorizedKey + "' > /root/.ssh/authorized_keys && chmod 600 /root/.ssh/authorized_keys",
+	})
+	if err != nil || exitCode != 0 {
+		t.Fatalf("Failed to inject SSH key (exitCode=%d): %v", exitCode, err)
+	}
+
+	host, err := container.Host(ctx)
+	if err != nil {
+		t.Fatalf("Failed to get container host: %v", err)
+	}
+
+	mappedPort, err := container.MappedPort(ctx, "22")
+	if err != nil {
+		t.Fatalf("Failed to get container port: %v", err)
+	}
+
+	// Give sshd a moment to be fully ready.
+	time.Sleep(3 * time.Second)
+
+	sc := &sshContainer{
+		container: container,
+		host:      host,
+		port:      mappedPort.Port(),
+		user:      "root",
+		keyName:   integrationKeyName,
+	}
+
+	// Capture the container's host key and add it to ~/.ssh/known_hosts.
+	if err := addHostKeyToKnownHosts(sc.host, sc.port, privPEM); err != nil {
+		t.Fatalf("Failed to capture/add container host key: %v", err)
 	}
 
 	return sc

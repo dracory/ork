@@ -5,10 +5,12 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/dracory/ork/internal/skilltest"
+	"github.com/dracory/ork/skills"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -721,5 +723,447 @@ func TestRunSub_PropagatesDryRun(t *testing.T) {
 	// With dry-run propagated, systemctl.Status returns its dry-run message.
 	if result.Error != nil {
 		t.Errorf("Expected no error in dry-run (dry-run should be propagated to sub-skill), got: %v", result.Error)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Harden — Constructor and metadata
+// ---------------------------------------------------------------------------
+
+func TestNewHarden(t *testing.T) {
+	pb := NewHarden()
+	if pb.GetID() != "caddy-harden" {
+		t.Errorf("Expected ID 'caddy-harden', got '%s'", pb.GetID())
+	}
+	if pb.GetDescription() != "Harden Caddy systemd unit with sandboxing directives" {
+		t.Errorf("Expected description, got '%s'", pb.GetDescription())
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Harden — Check
+// ---------------------------------------------------------------------------
+
+func TestHarden_Check_DryRun(t *testing.T) {
+	pb := NewHarden()
+	pb.SetNodeConfig(dryRunCfg())
+
+	needsChange, err := pb.Check()
+	if err != nil {
+		t.Fatalf("Check failed: %v", err)
+	}
+	if !needsChange {
+		t.Error("Expected Check()=true in dry-run mode")
+	}
+}
+
+func TestHarden_Check_NonDryRun_AlwaysTrue(t *testing.T) {
+	pb := NewHarden()
+	pb.SetNodeConfig(nonDryRunCfg())
+
+	needsChange, err := pb.Check()
+	if err != nil {
+		t.Fatalf("Check failed: %v", err)
+	}
+	if !needsChange {
+		t.Error("Expected Check()=true (Harden is intentionally non-idempotent)")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Harden — Dry-run
+// ---------------------------------------------------------------------------
+
+func TestHarden_Run_DryRun(t *testing.T) {
+	pb := NewHarden()
+	pb.SetNodeConfig(dryRunCfg())
+
+	result := pb.Run()
+
+	if result.Error != nil {
+		t.Errorf("Expected no error in dry-run, got: %v", result.Error)
+	}
+	if !result.Changed {
+		t.Error("Expected Changed=true in dry-run")
+	}
+	// In dry-run mode, sub-skills (DirCreate, FileCreate, DaemonReload, Restart)
+	// each handle dry-run individually via runSub. Harden.Run() itself does not
+	// short-circuit, so the final message is the standard success message.
+}
+
+// ---------------------------------------------------------------------------
+// Harden — buildOverrideContent
+// ---------------------------------------------------------------------------
+
+func TestBuildOverrideContent_Defaults(t *testing.T) {
+	content := buildOverrideContent(DefaultProtectSystem, DefaultProtectHome, DefaultReadWritePaths, DefaultMemoryDenyWriteExecute)
+
+	expectedDirectives := []string{
+		"[Service]",
+		"ProtectSystem=strict",
+		"ProtectHome=true",
+		"PrivateTmp=true",
+		"PrivateDevices=true",
+		"NoNewPrivileges=true",
+		"AmbientCapabilities=CAP_NET_ADMIN CAP_NET_BIND_SERVICE",
+		"CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_BIND_SERVICE",
+		"ProtectKernelTunables=true",
+		"ProtectKernelModules=true",
+		"ProtectControlGroups=true",
+		"RestrictSUIDSGID=true",
+		"RestrictNamespaces=true",
+		"LockPersonality=true",
+		"MemoryDenyWriteExecute=true",
+		"ReadWritePaths=/var/lib/caddy /var/log/caddy",
+	}
+	for _, directive := range expectedDirectives {
+		if !strings.Contains(content, directive) {
+			t.Errorf("Expected override to contain %q, got:\n%s", directive, content)
+		}
+	}
+}
+
+func TestBuildOverrideContent_CustomProtectSystem(t *testing.T) {
+	content := buildOverrideContent("full", DefaultProtectHome, DefaultReadWritePaths, DefaultMemoryDenyWriteExecute)
+	if !strings.Contains(content, "ProtectSystem=full") {
+		t.Errorf("Expected ProtectSystem=full, got:\n%s", content)
+	}
+	if strings.Contains(content, "ProtectSystem=strict") {
+		t.Error("Should not contain ProtectSystem=strict when full is set")
+	}
+}
+
+func TestBuildOverrideContent_CustomProtectHome(t *testing.T) {
+	content := buildOverrideContent(DefaultProtectSystem, "false", DefaultReadWritePaths, DefaultMemoryDenyWriteExecute)
+	if !strings.Contains(content, "ProtectHome=false") {
+		t.Errorf("Expected ProtectHome=false, got:\n%s", content)
+	}
+}
+
+func TestBuildOverrideContent_CustomReadWritePaths(t *testing.T) {
+	customPaths := "/var/lib/caddy /var/log/caddy /srv/uploads"
+	content := buildOverrideContent(DefaultProtectSystem, DefaultProtectHome, customPaths, DefaultMemoryDenyWriteExecute)
+	if !strings.Contains(content, "ReadWritePaths="+customPaths) {
+		t.Errorf("Expected ReadWritePaths=%s, got:\n%s", customPaths, content)
+	}
+}
+
+func TestBuildOverrideContent_MemoryDenyWriteExecuteFalse(t *testing.T) {
+	content := buildOverrideContent(DefaultProtectSystem, DefaultProtectHome, DefaultReadWritePaths, "false")
+	if !strings.Contains(content, "MemoryDenyWriteExecute=false") {
+		t.Errorf("Expected MemoryDenyWriteExecute=false, got:\n%s", content)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Harden — Mock SSH tests
+// ---------------------------------------------------------------------------
+
+// TestHarden_Run_Success verifies the full harden flow with mock SSH.
+func TestHarden_Run_Success(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	// DirCreate check: dir doesn't exist
+	test.ExpectError("test -d '/etc/systemd/system/caddy.service.d'", exitErr())
+	// mkdir
+	test.ExpectCommand("mkdir -p '/etc/systemd/system/caddy.service.d'", "")
+	// chmod
+	test.ExpectCommand("chmod '755' '/etc/systemd/system/caddy.service.d'", "")
+
+	// FileCreate check: file doesn't exist
+	test.ExpectError("test -f '/etc/systemd/system/caddy.service.d/override.conf'", exitErr())
+	// printf to write the override file
+	test.ExpectCommand("printf '%s' '"+skills.ShellEscapeContent(buildOverrideContent(DefaultProtectSystem, DefaultProtectHome, DefaultReadWritePaths, DefaultMemoryDenyWriteExecute))+"' > '/etc/systemd/system/caddy.service.d/override.conf' && chmod '644' '/etc/systemd/system/caddy.service.d/override.conf'", "")
+
+	// daemon-reload
+	test.ExpectCommand("systemctl daemon-reload", "")
+
+	// restart
+	test.ExpectCommand("systemctl restart 'caddy'", "")
+
+	pb := NewHarden()
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Error != nil {
+		t.Fatalf("Harden failed: %v", result.Error)
+	}
+	if !result.Changed {
+		t.Error("Expected Changed=true after hardening")
+	}
+}
+
+// TestHarden_Run_DirCreateFails verifies that a failed DirCreate stops
+// hardening and returns an error.
+func TestHarden_Run_DirCreateFails(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	// DirCreate check: dir doesn't exist
+	test.ExpectError("test -d '/etc/systemd/system/caddy.service.d'", exitErr())
+	// mkdir fails
+	test.ExpectError("mkdir -p '/etc/systemd/system/caddy.service.d'", connErr())
+
+	pb := NewHarden()
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Error == nil {
+		t.Error("Expected error when DirCreate fails")
+	}
+	if result.Changed {
+		t.Error("Expected Changed=false when DirCreate fails")
+	}
+}
+
+// TestHarden_Run_DaemonReloadFails verifies that a failed daemon-reload
+// returns an error.
+func TestHarden_Run_DaemonReloadFails(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	// DirCreate check: dir doesn't exist
+	test.ExpectError("test -d '/etc/systemd/system/caddy.service.d'", exitErr())
+	test.ExpectCommand("mkdir -p '/etc/systemd/system/caddy.service.d'", "")
+	test.ExpectCommand("chmod '755' '/etc/systemd/system/caddy.service.d'", "")
+
+	// FileCreate check: file doesn't exist
+	test.ExpectError("test -f '/etc/systemd/system/caddy.service.d/override.conf'", exitErr())
+	test.ExpectCommand("printf '%s' '"+skills.ShellEscapeContent(buildOverrideContent(DefaultProtectSystem, DefaultProtectHome, DefaultReadWritePaths, DefaultMemoryDenyWriteExecute))+"' > '/etc/systemd/system/caddy.service.d/override.conf' && chmod '644' '/etc/systemd/system/caddy.service.d/override.conf'", "")
+
+	// daemon-reload fails
+	test.ExpectError("systemctl daemon-reload", connErr())
+
+	pb := NewHarden()
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Error == nil {
+		t.Error("Expected error when daemon-reload fails")
+	}
+	if result.Changed {
+		t.Error("Expected Changed=false when daemon-reload fails")
+	}
+}
+
+// TestHarden_Run_RestartFails verifies that a failed restart returns an error.
+func TestHarden_Run_RestartFails(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	// DirCreate
+	test.ExpectError("test -d '/etc/systemd/system/caddy.service.d'", exitErr())
+	test.ExpectCommand("mkdir -p '/etc/systemd/system/caddy.service.d'", "")
+	test.ExpectCommand("chmod '755' '/etc/systemd/system/caddy.service.d'", "")
+
+	// FileCreate
+	test.ExpectError("test -f '/etc/systemd/system/caddy.service.d/override.conf'", exitErr())
+	test.ExpectCommand("printf '%s' '"+skills.ShellEscapeContent(buildOverrideContent(DefaultProtectSystem, DefaultProtectHome, DefaultReadWritePaths, DefaultMemoryDenyWriteExecute))+"' > '/etc/systemd/system/caddy.service.d/override.conf' && chmod '644' '/etc/systemd/system/caddy.service.d/override.conf'", "")
+
+	// daemon-reload succeeds
+	test.ExpectCommand("systemctl daemon-reload", "")
+
+	// restart fails
+	test.ExpectError("systemctl restart 'caddy'", connErr())
+
+	pb := NewHarden()
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Error == nil {
+		t.Error("Expected error when restart fails")
+	}
+	if result.Changed {
+		t.Error("Expected Changed=false when restart fails")
+	}
+}
+
+// TestHarden_Run_CustomProtectSystem verifies that SetProtectSystem("full")
+// is reflected in the override content written to the file.
+func TestHarden_Run_CustomProtectSystem(t *testing.T) {
+	test := skilltest.New(t)
+	defer test.Cleanup()
+	test.Setup()
+
+	customContent := buildOverrideContent("full", DefaultProtectHome, DefaultReadWritePaths, DefaultMemoryDenyWriteExecute)
+
+	// DirCreate
+	test.ExpectError("test -d '/etc/systemd/system/caddy.service.d'", exitErr())
+	test.ExpectCommand("mkdir -p '/etc/systemd/system/caddy.service.d'", "")
+	test.ExpectCommand("chmod '755' '/etc/systemd/system/caddy.service.d'", "")
+
+	// FileCreate
+	test.ExpectError("test -f '/etc/systemd/system/caddy.service.d/override.conf'", exitErr())
+	test.ExpectCommand("printf '%s' '"+skills.ShellEscapeContent(customContent)+"' > '/etc/systemd/system/caddy.service.d/override.conf' && chmod '644' '/etc/systemd/system/caddy.service.d/override.conf'", "")
+
+	// daemon-reload + restart
+	test.ExpectCommand("systemctl daemon-reload", "")
+	test.ExpectCommand("systemctl restart 'caddy'", "")
+
+	pb := NewHarden().SetProtectSystem("full")
+	pb.SetNodeConfig(test.Config())
+
+	result := pb.Run()
+
+	if result.Error != nil {
+		t.Fatalf("Harden with custom ProtectSystem failed: %v", result.Error)
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Harden — SetProtectSystem / SetProtectHome / SetReadWritePaths / SetMemoryDenyWriteExecute
+// ---------------------------------------------------------------------------
+
+func TestHarden_SetProtectSystem(t *testing.T) {
+	pb := NewHarden().SetProtectSystem("full")
+	if pb.GetArg(ArgProtectSystem) != "full" {
+		t.Errorf("Expected protect-system 'full', got '%s'", pb.GetArg(ArgProtectSystem))
+	}
+}
+
+func TestHarden_SetProtectHome(t *testing.T) {
+	pb := NewHarden().SetProtectHome("false")
+	if pb.GetArg(ArgProtectHome) != "false" {
+		t.Errorf("Expected protect-home 'false', got '%s'", pb.GetArg(ArgProtectHome))
+	}
+}
+
+func TestHarden_SetReadWritePaths(t *testing.T) {
+	custom := "/var/lib/caddy /srv/uploads"
+	pb := NewHarden().SetReadWritePaths(custom)
+	if pb.GetArg(ArgReadWritePaths) != custom {
+		t.Errorf("Expected read-write-paths '%s', got '%s'", custom, pb.GetArg(ArgReadWritePaths))
+	}
+}
+
+func TestHarden_SetMemoryDenyWriteExecute(t *testing.T) {
+	pb := NewHarden().SetMemoryDenyWriteExecute("false")
+	if pb.GetArg(ArgMemoryDenyWriteExecute) != "false" {
+		t.Errorf("Expected memory-deny-write-execute 'false', got '%s'", pb.GetArg(ArgMemoryDenyWriteExecute))
+	}
+}
+
+func TestHarden_SetOverrideDir(t *testing.T) {
+	custom := "/custom/path"
+	pb := NewHarden().SetOverrideDir(custom)
+	if pb.GetArg(ArgOverrideDir) != custom {
+		t.Errorf("Expected override-dir '%s', got '%s'", custom, pb.GetArg(ArgOverrideDir))
+	}
+}
+
+func TestHarden_SetProtectSystem_ReturnsConcreteType(t *testing.T) {
+	if _, ok := any(NewHarden().SetProtectSystem("full")).(*Harden); !ok {
+		t.Error("SetProtectSystem should return *Harden")
+	}
+}
+
+func TestHarden_SetProtectHome_ReturnsConcreteType(t *testing.T) {
+	if _, ok := any(NewHarden().SetProtectHome("false")).(*Harden); !ok {
+		t.Error("SetProtectHome should return *Harden")
+	}
+}
+
+func TestHarden_SetReadWritePaths_ReturnsConcreteType(t *testing.T) {
+	if _, ok := any(NewHarden().SetReadWritePaths("/tmp")).(*Harden); !ok {
+		t.Error("SetReadWritePaths should return *Harden")
+	}
+}
+
+func TestHarden_SetMemoryDenyWriteExecute_ReturnsConcreteType(t *testing.T) {
+	if _, ok := any(NewHarden().SetMemoryDenyWriteExecute("false")).(*Harden); !ok {
+		t.Error("SetMemoryDenyWriteExecute should return *Harden")
+	}
+}
+
+func TestHarden_SetOverrideDir_ReturnsConcreteType(t *testing.T) {
+	if _, ok := any(NewHarden().SetOverrideDir("/custom")).(*Harden); !ok {
+		t.Error("SetOverrideDir should return *Harden")
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Harden — Method chaining
+// ---------------------------------------------------------------------------
+
+func TestHarden_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewHarden()
+	result := skill.SetArgs(map[string]string{"x": "y"})
+	if _, ok := result.(*Harden); !ok {
+		t.Error("SetArgs should return *Harden")
+	}
+}
+
+func TestHarden_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewHarden()
+	result := skill.SetArg("x", "y")
+	if _, ok := result.(*Harden); !ok {
+		t.Error("SetArg should return *Harden")
+	}
+}
+
+func TestHarden_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewHarden()
+	result := skill.SetID("custom")
+	if _, ok := result.(*Harden); !ok {
+		t.Error("SetID should return *Harden")
+	}
+}
+
+func TestHarden_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewHarden()
+	result := skill.SetDescription("custom desc")
+	if _, ok := result.(*Harden); !ok {
+		t.Error("SetDescription should return *Harden")
+	}
+}
+
+func TestHarden_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewHarden()
+	result := skill.SetTimeout(30 * time.Second)
+	if _, ok := result.(*Harden); !ok {
+		t.Error("SetTimeout should return *Harden")
+	}
+}
+
+func TestHarden_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewHarden().
+		SetProtectSystem("full").
+		SetProtectHome("false").
+		SetReadWritePaths("/var/lib/caddy /srv").
+		SetMemoryDenyWriteExecute("false").
+		SetOverrideDir("/custom/path").
+		SetID("custom-id").
+		SetDescription("custom description").
+		SetTimeout(45 * time.Second)
+
+	if skill.GetArg(ArgProtectSystem) != "full" {
+		t.Error("Method chaining failed for SetProtectSystem")
+	}
+	if skill.GetArg(ArgProtectHome) != "false" {
+		t.Error("Method chaining failed for SetProtectHome")
+	}
+	if skill.GetArg(ArgReadWritePaths) != "/var/lib/caddy /srv" {
+		t.Error("Method chaining failed for SetReadWritePaths")
+	}
+	if skill.GetArg(ArgMemoryDenyWriteExecute) != "false" {
+		t.Error("Method chaining failed for SetMemoryDenyWriteExecute")
+	}
+	if skill.GetArg(ArgOverrideDir) != "/custom/path" {
+		t.Error("Method chaining failed for SetOverrideDir")
+	}
+	if skill.GetID() != "custom-id" {
+		t.Error("Method chaining failed for SetID")
+	}
+	if skill.GetDescription() != "custom description" {
+		t.Error("Method chaining failed for SetDescription")
 	}
 }
