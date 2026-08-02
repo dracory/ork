@@ -1,9 +1,13 @@
 package user
 
 import (
+	"bytes"
+	"errors"
 	"log/slog"
+	"strings"
 	"testing"
 
+	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
 
@@ -329,5 +333,113 @@ func TestUserCreate_TypedSetters_Chaining(t *testing.T) {
 	}
 	if skill.GetArg(ArgHomeDir) != "/home/alice" {
 		t.Errorf("Expected home-dir '/home/alice', got '%s'", skill.GetArg(ArgHomeDir))
+	}
+}
+
+// TestUserCreate_Run_SudoGroupFailure verifies that when user creation succeeds but
+// adding to sudo group fails, Changed is true (user was created) and Error is set.
+func TestUserCreate_Run_SudoGroupFailure(t *testing.T) {
+	callCount := 0
+	ssh.SetRunFunc(func(cfg types.NodeConfig, cmd types.Command) (string, error) {
+		callCount++
+		if callCount == 1 {
+			return "user created", nil
+		}
+		return "sudo error output", errors.New("usermod: group does not exist")
+	})
+	defer ssh.SetRunFunc(nil)
+
+	pb := NewUserCreate()
+	pb.SetArg("username", "testuser")
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+	pb.SetNodeConfig(cfg)
+
+	result := pb.Run()
+
+	if !result.Changed {
+		t.Error("Expected Changed to be true because user was already created")
+	}
+	if result.Error == nil {
+		t.Error("Expected error for sudo group failure")
+	}
+	if result.Message != "User created but failed to add to sudo group" {
+		t.Errorf("Expected partial failure message, got '%s'", result.Message)
+	}
+}
+
+// TestUserCreate_Run_PasswordFailure verifies that when user creation and sudo group
+// succeed but password setting fails, Changed is true and Error is set.
+func TestUserCreate_Run_PasswordFailure(t *testing.T) {
+	callCount := 0
+	ssh.SetRunFunc(func(cfg types.NodeConfig, cmd types.Command) (string, error) {
+		callCount++
+		if callCount == 1 {
+			return "user created", nil
+		}
+		if callCount == 2 {
+			return "added to sudo", nil
+		}
+		return "chpasswd error", errors.New("chpasswd: invalid password")
+	})
+	defer ssh.SetRunFunc(nil)
+
+	pb := NewUserCreate()
+	pb.SetArg("username", "testuser")
+	pb.SetArg("password", "s3cret")
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+	}
+	pb.SetNodeConfig(cfg)
+
+	result := pb.Run()
+
+	if !result.Changed {
+		t.Error("Expected Changed to be true because user was already created")
+	}
+	if result.Error == nil {
+		t.Error("Expected error for password failure")
+	}
+	if result.Message != "User created but failed to set password" {
+		t.Errorf("Expected partial failure message, got '%s'", result.Message)
+	}
+}
+
+// TestUserCreate_Run_DryRun_PasswordRedacted verifies that in dry-run mode,
+// the password command is redacted in the log output.
+func TestUserCreate_Run_DryRun_PasswordRedacted(t *testing.T) {
+	var buf bytes.Buffer
+	logger := slog.New(slog.NewTextHandler(&buf, nil))
+
+	pb := NewUserCreate()
+	pb.SetArg("username", "testuser")
+	pb.SetArg("password", "s3cret")
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       logger,
+	}
+	pb.SetNodeConfig(cfg)
+
+	result := pb.Run()
+
+	if !result.Changed {
+		t.Error("Expected Changed to be true in dry-run mode")
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error in dry-run mode, got: %v", result.Error)
+	}
+
+	logOutput := buf.String()
+	if strings.Contains(logOutput, "s3cret") {
+		t.Errorf("Password should be redacted in dry-run log, but log contains: %s", logOutput)
+	}
+	if !strings.Contains(logOutput, "[redacted]") {
+		t.Errorf("Expected '[redacted]' in dry-run log, but log is: %s", logOutput)
 	}
 }

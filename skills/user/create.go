@@ -108,8 +108,8 @@ func (u *UserCreate) Run() types.Result {
 	}
 	cmdCreateStr := fmt.Sprintf("id %s &>/dev/null || useradd %s %s", skills.ShellEscapeArg(username), useraddOpts, skills.ShellEscapeArg(username))
 	cmdSudoStr := fmt.Sprintf("usermod -aG %s %s", skills.ShellEscapeArg(sudoGroup), skills.ShellEscapeArg(username))
-	cmdCreate := types.Command{Command: cmdCreateStr, Description: "Create user"}
-	cmdSudo := types.Command{Command: cmdSudoStr, Description: "Add user to sudo group"}
+	cmdCreate := types.Command{Command: cmdCreateStr, Description: "Create user", Required: true}
+	cmdSudo := types.Command{Command: cmdSudoStr, Description: "Add user to sudo group", Required: true}
 
 	// Determine home directory and SSH key commands (if needed)
 	homeDir := u.GetArg(ArgHomeDir)
@@ -119,7 +119,7 @@ func (u *UserCreate) Run() types.Result {
 	var cmdPass, cmdSSHDir, cmdAuthKey, cmdSSHPerms types.Command
 	if password != "" {
 		passStr := fmt.Sprintf("echo %s | chpasswd", skills.ShellEscapeArg(username+":"+password))
-		cmdPass = types.Command{Command: passStr, Description: "Set user password"}
+		cmdPass = types.Command{Command: passStr, Description: "Set user password", Required: true, Sensitive: true}
 	}
 	if sshKey != "" {
 		sshDirStr := fmt.Sprintf("mkdir -p %s && chmod 700 %s", skills.ShellEscapeArg(homeDir+"/.ssh"), skills.ShellEscapeArg(homeDir+"/.ssh"))
@@ -135,7 +135,11 @@ func (u *UserCreate) Run() types.Result {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCreate.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSudo.Command)
 		if cmdPass.Command != "" {
-			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdPass.Command)
+			logCmd := cmdPass.Command
+			if cmdPass.Sensitive {
+				logCmd = "[redacted]"
+			}
+			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", logCmd, "description", cmdPass.Description)
 		}
 		if cmdSSHDir.Command != "" {
 			cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdSSHDir.Command)
@@ -158,13 +162,23 @@ func (u *UserCreate) Run() types.Result {
 	}
 
 	// Add to sudo group
-	_, _ = ssh.Run(cfg, cmdSudo)
+	if output, err := ssh.Run(cfg, cmdSudo); err != nil {
+		return types.Result{
+			Changed: true,
+			Message: "User created but failed to add to sudo group",
+			Error:   fmt.Errorf("failed to add user to sudo group: %w\nOutput: %s", err, output),
+		}
+	}
 
 	// Set password if provided
 	if cmdPass.Command != "" {
 		output, err = ssh.Run(cfg, cmdPass)
 		if err != nil {
-			cfg.GetLoggerOrDefault().Warn("failed to set password", "username", username, "error", err)
+			return types.Result{
+				Changed: true,
+				Message: "User created but failed to set password",
+				Error:   fmt.Errorf("failed to set user password: %w\nOutput: %s", err, output),
+			}
 		}
 	}
 

@@ -21,4 +21,5 @@ type Command struct {
 	Chdir       string // Working directory for command execution
 	BecomeUser  string // User to become when executing command (e.g., "postgres", "www-data")
 	Required    bool   // Whether the command must succeed for execution to continue
+	Sensitive   bool   // Whether the command contains secrets (redacted in logs)
 }

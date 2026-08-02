@@ -121,7 +121,11 @@ func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 	}
 
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run", "command:", cmd.Command, "description:", cmd.Description)
+		logCmd := cmd.Command
+		if cmd.Sensitive {
+			logCmd = "[redacted]"
+		}
+		cfg.GetLoggerOrDefault().Info("dry-run: would run", "command:", logCmd, "description:", cmd.Description)
 		// Return marker that playbook can detect
 		return "[dry-run]", nil
 	}
@@ -149,13 +153,17 @@ func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 		commandToRun = fmt.Sprintf("cd %s && %s", ShellEscapeArg(chdir), commandToRun)
 	}
 
-	output, err := runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description}, cfg.KexAlgorithms, cfg.HostKeyAlgorithms)
+	output, err := runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description, Required: cmd.Required, Sensitive: cmd.Sensitive}, cfg.KexAlgorithms, cfg.HostKeyAlgorithms)
 
 	// If command is not required, suppress only non-zero exit errors.
 	// Connection/session failures are always propagated: they mean the
 	// command never ran, so a "not required" non-zero exit cannot be assumed.
 	if err != nil && !cmd.Required && IsExitError(err) {
-		cfg.GetLoggerOrDefault().Warn("command exited non-zero but not required", "command", cmd.Command, "error", err)
+		logCmd := cmd.Command
+		if cmd.Sensitive {
+			logCmd = "[redacted]"
+		}
+		cfg.GetLoggerOrDefault().Warn("command exited non-zero but not required", "command", logCmd, "error", err)
 		return output, nil
 	}
 
