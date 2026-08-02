@@ -335,17 +335,18 @@ func TestIntegration_Node_PersistentConnectionReuse(t *testing.T) {
 	}
 }
 
-// TestIntegration_Node_WithoutPersistentConnection tests one-time connections
+// TestIntegration_Node_WithoutPersistentConnection tests one-time connections.
+// RunCommand is called without a prior Connect(); the Node should open a
+// one-shot connection, run the command, and close the connection. After the
+// call, IsConnected() must return false.
 func TestIntegration_Node_WithoutPersistentConnection(t *testing.T) {
 	container := setupSSHContainer(t)
 	defer container.terminate(t)
 
-	t.Skip("Skipping: requires SSH key setup in container")
-
 	node := ork.NewNodeForHost(container.host).
 		SetPort(container.port).
 		SetUser(container.user).
-		SetKey("test_key")
+		SetKey(container.keyName)
 
 	// Run without calling Connect() - should create one-time connection
 	results := node.RunCommand("echo 'one-time'")

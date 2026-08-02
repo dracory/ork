@@ -85,8 +85,9 @@ func ShellEscapeArg(s string) string {
 }
 
 // Run connects to a node using NodeConfig and executes a command.
-// It extracts SSH connection settings (SSHHost, SSHPort, SSHLogin, SSHKey)
+// It extracts SSH connection settings (SSHHost, SSHPort, RootUser/SSHLogin, SSHKey)
 // from the config and runs the command, returning the output.
+// The SSH user is resolved as cfg.RootUser if set, else cfg.SSHLogin.
 //
 // Command-level settings (cmd.Chdir, cmd.BecomeUser, cmd.Required) take precedence
 // over config-level settings (cfg.Chdir, cfg.BecomeUser).
@@ -186,7 +187,18 @@ func Run(cfg types.NodeConfig, cmd types.Command) (string, error) {
 		commandToRun = fmt.Sprintf("cd %s && %s", ShellEscapeArg(chdir), commandToRun)
 	}
 
-	output, err := runSingleCommand(cfg.SSHHost, cfg.SSHPort, cfg.SSHLogin, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description, Required: cmd.Required, Sensitive: cmd.Sensitive, Stdin: cmd.Stdin}, cfg.KexAlgorithms, cfg.HostKeyAlgorithms, becomePassword, becomePrompt, becomeSuccess)
+	// Resolve the SSH user: prefer RootUser (set by Node.SetUser and used by
+	// the persistent Connect() path), falling back to SSHLogin (set by
+	// NodeConfig.WithLogin) for backward compatibility. Without this, the
+	// one-time RunCommand path would authenticate as an empty user when the
+	// caller used SetUser, while Connect() would succeed — an inconsistency
+	// between the two code paths.
+	sshUser := cfg.RootUser
+	if sshUser == "" {
+		sshUser = cfg.SSHLogin
+	}
+
+	output, err := runSingleCommand(cfg.SSHHost, cfg.SSHPort, sshUser, cfg.SSHKey, types.Command{Command: commandToRun, Description: cmd.Description, Required: cmd.Required, Sensitive: cmd.Sensitive, Stdin: cmd.Stdin}, cfg.KexAlgorithms, cfg.HostKeyAlgorithms, becomePassword, becomePrompt, becomeSuccess)
 
 	// If command is not required, suppress only non-zero exit errors.
 	// Connection/session failures are always propagated: they mean the
