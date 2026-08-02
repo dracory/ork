@@ -292,17 +292,17 @@ func TestIntegration_Node_ConnectRunClose(t *testing.T) {
 	}
 }
 
-// TestIntegration_Node_PersistentConnectionReuse tests connection reuse
+// TestIntegration_Node_PersistentConnectionReuse tests connection reuse.
+// After Connect(), multiple RunCommand() calls must share a single SSH
+// session and the connection must remain usable throughout.
 func TestIntegration_Node_PersistentConnectionReuse(t *testing.T) {
 	container := setupSSHContainer(t)
 	defer container.terminate(t)
 
-	t.Skip("Skipping: requires SSH key setup in container")
-
 	node := ork.NewNodeForHost(container.host).
 		SetPort(container.port).
 		SetUser(container.user).
-		SetKey("test_key")
+		SetKey(container.keyName)
 
 	err := node.Connect()
 	if err != nil {
