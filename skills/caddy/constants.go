@@ -1,9 +1,11 @@
 // Package caddy provides skills for managing the Caddy web server when
 // installed via the official apt repository on Debian/Ubuntu.
 //
-// It covers the three operations needed to provision and operate Caddy:
+// It covers the four operations needed to provision and operate Caddy:
 //   - Install: add the official Caddy apt repo, install the package, and
 //     prepare the log directory (Install).
+//   - Harden: apply a systemd drop-in override with sandboxing directives
+//     (Harden).
 //   - Restart: upload a local Caddyfile, validate it, and reload the
 //     systemd unit with a restart fallback (Restart).
 //   - Status: show the systemd unit status (Status, read-only).
@@ -16,6 +18,7 @@
 // Usage:
 //
 //	node.Run(caddy.NewInstall())
+//	node.Run(caddy.NewHarden())
 //	node.Run(caddy.NewRestart().SetCaddyfilePath("webserver/Caddyfile"))
 //	node.Run(caddy.NewStatus())
 package caddy
@@ -31,6 +34,37 @@ const (
 	// uploaded Caddyfile. Defaults to DefaultCaddyfileRemotePath when not set.
 	// Only used by Restart.
 	ArgCaddyfileRemotePath = "caddyfile-remote-path"
+
+	// ArgOverrideDir is the systemd drop-in directory for the Caddy unit
+	// override. Defaults to DefaultOverrideDir when not set. Only used by
+	// Harden.
+	ArgOverrideDir = "override-dir"
+
+	// ArgProtectHome controls the systemd ProtectHome directive in the Harden
+	// override. Accepted values: "true", "false", "read-only". Defaults to
+	// DefaultProtectHome ("true"). Set to "false" if the web root is under
+	// /home, otherwise Caddy cannot read it. Only used by Harden.
+	ArgProtectHome = "protect-home"
+
+	// ArgReadWritePaths is a space-separated list of paths Caddy may write to,
+	// mapped to the systemd ReadWritePaths directive in the Harden override.
+	// Defaults to DefaultReadWritePaths. Add custom data/cache directories
+	// here. Only used by Harden.
+	ArgReadWritePaths = "read-write-paths"
+
+	// ArgMemoryDenyWriteExecute controls the systemd
+	// MemoryDenyWriteExecute directive in the Harden override. Accepted
+	// values: "true", "false". Defaults to DefaultMemoryDenyWriteExecute
+	// ("true"). Set to "false" if a Caddy plugin needs W^X memory (rare).
+	// Only used by Harden.
+	ArgMemoryDenyWriteExecute = "memory-deny-write-execute"
+
+	// ArgProtectSystem controls the systemd ProtectSystem directive in the
+	// Harden override. Accepted values: "strict", "full", "true". Defaults
+	// to DefaultProtectSystem ("strict"). Set to "full" if Caddy manages
+	// ACME certificates itself and needs to write to /etc/letsencrypt.
+	// Only used by Harden.
+	ArgProtectSystem = "protect-system"
 )
 
 // Default values for Caddy paths and service name. These match the layout
@@ -56,4 +90,36 @@ const (
 	// DefaultCaddyLogDir is where Caddy writes its structured JSON access
 	// logs. Created by Install with the caddy user as owner.
 	DefaultCaddyLogDir = "/var/log/caddy"
+
+	// DefaultCaddyDataDir is where Caddy stores its data and cache. Used by
+	// Harden as a default ReadWritePaths entry.
+	DefaultCaddyDataDir = "/var/lib/caddy"
+
+	// DefaultOverrideDir is the systemd drop-in directory for the Caddy unit
+	// override. Harden writes override.conf here.
+	DefaultOverrideDir = "/etc/systemd/system/caddy.service.d"
+
+	// DefaultProtectHome is the default value for the systemd ProtectHome
+	// directive in the Harden override. "true" hides /home, /root, and
+	// /run/user from the caddy process — safe when the web root is under
+	// /var/www (the apt package's default).
+	DefaultProtectHome = "true"
+
+	// DefaultReadWritePaths is the default value for the systemd
+	// ReadWritePaths directive in the Harden override. Lists the directories
+	// Caddy may write to under an otherwise read-only filesystem
+	// (ProtectSystem=strict).
+	DefaultReadWritePaths = "/var/lib/caddy /var/log/caddy"
+
+	// DefaultMemoryDenyWriteExecute is the default value for the systemd
+	// MemoryDenyWriteExecute directive in the Harden override. "true" blocks
+	// W^X memory mappings — a hardening measure that very rarely conflicts
+	// with Caddy plugins.
+	DefaultMemoryDenyWriteExecute = "true"
+
+	// DefaultProtectSystem is the default value for the systemd ProtectSystem
+	// directive in the Harden override. "strict" makes the entire filesystem
+	// read-only except for ReadWritePaths. Use "full" if Caddy needs to write
+	// to /etc (e.g. ACME certificate storage under /etc/letsencrypt).
+	DefaultProtectSystem = "strict"
 )

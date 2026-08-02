@@ -79,6 +79,7 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		apt.NewAptUpdate(),
 		apt.NewAptUpgrade(),
 		caddy.NewInstall(),
+		caddy.NewHarden(),
 		caddy.NewRestart(),
 		caddy.NewStatus(),
 		fail2ban.NewFail2banInstall(),

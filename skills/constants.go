@@ -252,4 +252,9 @@ const (
 
 	// IDCaddyStatus shows the Caddy systemd service status (read-only)
 	IDCaddyStatus = "caddy-status"
+
+	// IDCaddyHarden applies a systemd drop-in override with sandboxing
+	// directives to the Caddy unit (configurable via protect-home,
+	// read-write-paths, memory-deny-write-execute, override-dir args)
+	IDCaddyHarden = "caddy-harden"
 )
