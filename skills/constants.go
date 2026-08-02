@@ -241,4 +241,15 @@ const (
 	// IDSystemctlDisable disables a systemd unit, optionally stopping it
 	// (requires "service" arg, optional "stop" arg)
 	IDSystemctlDisable = "systemctl-disable"
+
+	// Caddy skills (Caddy web server, apt-installed)
+	// IDCaddyInstall installs Caddy via apt from the official repository
+	IDCaddyInstall = "caddy-install"
+
+	// IDCaddyRestart uploads a local Caddyfile and restarts Caddy via systemd
+	// (requires "caddyfile-path" arg for the local Caddyfile path)
+	IDCaddyRestart = "caddy-restart"
+
+	// IDCaddyStatus shows the Caddy systemd service status (read-only)
+	IDCaddyStatus = "caddy-status"
 )

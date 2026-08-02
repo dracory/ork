@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/dracory/ork/skills/apt"
+	"github.com/dracory/ork/skills/caddy"
 	"github.com/dracory/ork/skills/fail2ban"
 	"github.com/dracory/ork/skills/fs"
 	"github.com/dracory/ork/skills/mariadb"
@@ -77,6 +78,9 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		apt.NewAptStatus(),
 		apt.NewAptUpdate(),
 		apt.NewAptUpgrade(),
+		caddy.NewInstall(),
+		caddy.NewRestart(),
+		caddy.NewStatus(),
 		fail2ban.NewFail2banInstall(),
 		fail2ban.NewFail2banStatus(),
 		mariadb.NewBackup(),
