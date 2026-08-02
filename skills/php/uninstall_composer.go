@@ -46,10 +46,11 @@ func (s *UninstallComposer) Check() (bool, error) {
 	}
 
 	// Check if Composer binary exists.
+	// Required: true so that non-zero exit (file not found) propagates as error.
 	cmdCheck := types.Command{
 		Command:     fmt.Sprintf("test -f %s", skills.ShellEscapeArg(ComposerBinaryPath)),
 		Description: "Check if Composer is installed",
-		Required:    false,
+		Required:    true,
 	}
 	_, err := ssh.Run(cfg, cmdCheck)
 	if err != nil {

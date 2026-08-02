@@ -80,10 +80,13 @@ func (s *Install) Check() (bool, error) {
 	}
 
 	// Check if the php<version> binary exists.
+	// Required: true so that non-zero exit codes (binary not found) propagate
+	// as errors. With Required: false, ssh.Run suppresses exit errors and
+	// Check() would incorrectly conclude the binary is installed.
 	cmdCheckBinary := types.Command{
 		Command:     fmt.Sprintf("command -v php%s", skills.ShellEscapeArg(version)),
 		Description: "Check if php" + version + " binary exists",
-		Required:    false,
+		Required:    true,
 	}
 	_, err := ssh.Run(cfg, cmdCheckBinary)
 	if err != nil {
@@ -92,11 +95,12 @@ func (s *Install) Check() (bool, error) {
 	}
 
 	// Check if the FPM pool is configured for the requested user.
+	// Required: true for the same reason as above.
 	poolPath := fmt.Sprintf(DefaultFpmPoolPath, version)
 	cmdCheckUser := types.Command{
 		Command:     fmt.Sprintf("grep -q '^user = %s' %s", skills.ShellEscapeArg(user), skills.ShellEscapeArg(poolPath)),
 		Description: "Check if FPM pool is configured for user " + user,
-		Required:    false,
+		Required:    true,
 	}
 	_, err = ssh.Run(cfg, cmdCheckUser)
 	if err != nil {
