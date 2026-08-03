@@ -29,5 +29,20 @@ jobs:
         docker pull linuxserver/openssh-server:latest
         docker pull geerlingguy/docker-ubuntu2404-ansible:latest
 
+    - name: Debug systemd container
+      continue-on-error: true
+      run: |
+        echo "=== Running geerlingguy/docker-ubuntu2404-ansible manually ==="
+        docker run -d --privileged --volume=/sys/fs/cgroup:/sys/fs/cgroup:rw --cgroupns=host --name systemd-debug geerlingguy/docker-ubuntu2404-ansible:latest
+        sleep 5
+        echo "=== Container state ==="
+        docker inspect systemd-debug --format '{{.State.Status}} exit={{.State.ExitCode}} err={{.State.Error}}' || true
+        echo "=== Container logs ==="
+        docker logs systemd-debug 2>&1 || true
+        echo "=== Host cgroup info ==="
+        stat /sys/fs/cgroup 2>&1 || true
+        mount | grep cgroup || true
+        docker rm -f systemd-debug || true
+
     - name: Test
       run: go test -timeout 30m -v ./...
