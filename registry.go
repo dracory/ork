@@ -86,6 +86,7 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		fail2ban.NewFail2banStatus(),
 		mariadb.NewBackup(),
 		mariadb.NewBackupEncrypt(),
+		mariadb.NewBackupSchedule(),
 		mariadb.NewChangePort(),
 		mariadb.NewCreateDB(),
 		mariadb.NewCreateUser(),

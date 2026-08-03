@@ -52,6 +52,22 @@ const (
 
 	// ArgKeyFilePath specifies the encryption key file path
 	ArgKeyFilePath = "keyfile-path"
+
+	// ArgSchedule specifies the systemd OnCalendar expression for the backup
+	// timer (default: *-*-* 02:00:00, i.e. daily at 02:00)
+	ArgSchedule = "schedule"
+
+	// ArgRetentionDays specifies how many days to keep backups before pruning
+	// (default: 7)
+	ArgRetentionDays = "retention-days"
+
+	// ArgScriptPath specifies the path to the backup script
+	// (default: /usr/local/bin/mariadb-backup.sh)
+	ArgScriptPath = "script-path"
+
+	// ArgServiceName specifies the systemd unit basename (without .service or
+	// .timer suffix) for the backup units (default: mariadb-backup)
+	ArgServiceName = "service-name"
 )
 
 // Default values.
@@ -76,4 +92,22 @@ const (
 
 	// DefaultKeyFilePath is the default encryption key file path
 	DefaultKeyFilePath = "/var/lib/mysql-keyfile/keyfile.enc"
+
+	// DefaultBackupScheduleDir is the default directory used by the
+	// backup-schedule skill to store automated backups
+	DefaultBackupScheduleDir = "/var/backups/mariadb"
+
+	// DefaultBackupSchedule is the default systemd OnCalendar expression for
+	// the backup timer (daily at 02:00)
+	DefaultBackupSchedule = "*-*-* 02:00:00"
+
+	// DefaultBackupRetentionDays is the default number of days to keep backups
+	DefaultBackupRetentionDays = "7"
+
+	// DefaultBackupScriptPath is the default path to the backup script
+	DefaultBackupScriptPath = "/usr/local/bin/mariadb-backup.sh"
+
+	// DefaultBackupServiceName is the default systemd unit basename (without
+	// .service/.timer suffix) for the backup units
+	DefaultBackupServiceName = "mariadb-backup"
 )

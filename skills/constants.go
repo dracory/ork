@@ -169,6 +169,10 @@ const (
 	// IDMariadbBackupEncrypt creates an encrypted backup
 	IDMariadbBackupEncrypt = "mariadb-backup-encrypt"
 
+	// IDMariadbBackupSchedule installs an automated daily MariaDB backup with
+	// a systemd timer
+	IDMariadbBackupSchedule = "mariadb-backup-schedule"
+
 	// Filesystem skills (general-purpose primitives)
 	// IDFSDirCreate creates a directory with ownership and permissions
 	IDFSDirCreate = "fs-dir-create"
