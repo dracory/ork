@@ -25,11 +25,13 @@ import (
 //
 // Execution Flow:
 //  1. Reads the Caddyfile from the local path (ArgCaddyfilePath, default "Caddyfile")
-//  2. Uploads it to the remote path (ArgCaddyfileRemotePath, default
+//  2. Ensures the Caddy log directory exists and fixes ownership of any existing
+//     access.log that may have been created by a pre-hardening Caddy run as root
+//  3. Uploads it to the remote path (ArgCaddyfileRemotePath, default
 //     "/etc/caddy/Caddyfile") owned by root:caddy with mode 644
-//  3. Validates the Caddyfile syntax with `caddy validate`
-//  4. Reloads the caddy systemd unit (graceful, zero-downtime, with restart fallback)
-//  5. Verifies the caddy service is active via `systemctl is-active`
+//  4. Validates the Caddyfile syntax with `caddy validate`
+//  5. Reloads the caddy systemd unit (graceful, zero-downtime, with restart fallback)
+//  6. Verifies the caddy service is active via `systemctl is-active`
 //
 // Args:
 //   - caddyfile-path: Local path to the Caddyfile to upload (default: "Caddyfile")
@@ -90,7 +92,36 @@ func (r *Restart) Run() types.Result {
 		}
 	}
 
-	// Step 2: Upload Caddyfile to the remote path (owned by root:caddy,
+	// Step 2: Ensure the Caddy log directory exists. If caddy-harden sets
+	// ProtectSystem=strict, Caddy cannot create /var/log/caddy inside the
+	// sandbox — it must already exist with the right ownership.
+	// Also fix ownership of an existing access.log that may have been created
+	// by a pre-hardening Caddy run as root (mode 600, owned by root).
+	logDirResult := runSub(fs.NewDirCreate().
+		SetPath(DefaultCaddyLogDir).
+		SetOwner(DefaultCaddyUser+":"+DefaultCaddyUser).
+		SetMode("755"), cfg)
+	if logDirResult.Error != nil {
+		return types.Result{
+			Changed: false,
+			Message: "Failed to create Caddy log directory",
+			Error:   logDirResult.Error,
+		}
+	}
+
+	cmdFixLogOwner := types.Command{
+		Command: fmt.Sprintf("chown %s:%s %s/access.log 2>/dev/null || true",
+			skills.ShellEscapeArg(DefaultCaddyUser),
+			skills.ShellEscapeArg(DefaultCaddyUser),
+			skills.ShellEscapeArg(DefaultCaddyLogDir)),
+		Description: "Fix ownership of existing Caddy access.log",
+		Required:    false,
+	}
+	if _, chownErr := ssh.Run(cfg, cmdFixLogOwner); chownErr != nil {
+		cfg.GetLoggerOrDefault().Warn("Failed to fix Caddy access.log ownership (non-fatal)", "error", chownErr)
+	}
+
+	// Step 3: Upload Caddyfile to the remote path (owned by root:caddy,
 	// group-readable so the caddy process can read it).
 	fileResult := runSub(fs.NewFileCreate().
 		SetPath(remotePath).
@@ -106,7 +137,7 @@ func (r *Restart) Run() types.Result {
 		}
 	}
 
-	// Step 3: Validate Caddyfile before applying.
+	// Step 4: Validate Caddyfile before applying.
 	cmdValidate := types.Command{
 		Command:     "caddy validate --config " + skills.ShellEscapeArg(remotePath),
 		Description: "Validate Caddyfile syntax",
@@ -125,7 +156,7 @@ func (r *Restart) Run() types.Result {
 		}
 	}
 
-	// Step 4: Reload Caddy via systemd (graceful, zero-downtime, with restart
+	// Step 5: Reload Caddy via systemd (graceful, zero-downtime, with restart
 	// fallback handled by the systemctl.Reload skill).
 	reloadResult := runSub(systemctl.NewReload().SetService(DefaultCaddyService), cfg)
 	if reloadResult.Error != nil {
@@ -136,7 +167,7 @@ func (r *Restart) Run() types.Result {
 		}
 	}
 
-	// Step 5: Verify Caddy is running.
+	// Step 6: Verify Caddy is running.
 	activeResult := runSub(systemctl.NewIsActive().SetService(DefaultCaddyService), cfg)
 	if activeResult.Error != nil {
 		return types.Result{
@@ -146,6 +177,13 @@ func (r *Restart) Run() types.Result {
 		}
 	}
 	state := activeResult.Details["state"]
+	if state != "active" {
+		return types.Result{
+			Changed: true,
+			Message: "Caddy restart failed — service state is: " + state,
+			Error:   fmt.Errorf("caddy service is not active after restart (state: %s)", state),
+		}
+	}
 
 	return types.Result{
 		Changed: true,
