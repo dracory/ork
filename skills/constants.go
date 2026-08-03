@@ -226,6 +226,11 @@ const (
 	// IDPhpUpdateComposer updates Composer to the latest version
 	IDPhpUpdateComposer = "php-update-composer"
 
+	// IDPhpFpmHarden applies security hardening to PHP-FPM (FPM-only, CLI
+	// unaffected) via a conf.d drop-in plus a blockinfile-style edit of the FPM
+	// pool, validated with `php-fpm<version> -t` before restart.
+	IDPhpFpmHarden = "php-fpm-harden"
+
 	// Systemctl skills (systemd unit management)
 	// IDSystemctlDaemonReload reloads the systemd manager configuration
 	IDSystemctlDaemonReload = "systemctl-daemon-reload"
