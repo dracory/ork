@@ -126,6 +126,9 @@ const (
 	// IDSshChangePort changes the SSH port to reduce automated scanning
 	IDSshChangePort = "ssh-change-port"
 
+	// IDSshKeyGen generates a server-side SSH keypair for a user (idempotent)
+	IDSshKeyGen = "ssh-key-gen"
+
 	// MariaDB skills
 	// IDMariadbInstall installs and configures MariaDB database server
 	IDMariadbInstall = "mariadb-install"

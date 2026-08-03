@@ -25,6 +25,18 @@ const (
 
 	// ArgSysctlDropInPath specifies the sysctl drop-in file path
 	ArgSysctlDropInPath = "sysctl-dropin-path"
+
+	// ArgUsername specifies the user account to generate the SSH keypair for
+	ArgUsername = "username"
+
+	// ArgKeyType specifies the SSH key type (ed25519, rsa, ecdsa)
+	ArgKeyType = "key-type"
+
+	// ArgComment specifies the comment embedded in the public key (-C)
+	ArgComment = "comment"
+
+	// ArgKeyPath specifies the private key file path
+	ArgKeyPath = "key-path"
 )
 
 // Default configuration constants for security playbooks.
@@ -49,4 +61,10 @@ const (
 
 	// DefaultSysctlDropInPath is the default sysctl drop-in directory path
 	DefaultSysctlDropInPath = "/etc/sysctl.d/99-security-hardening.conf"
+
+	// DefaultKeyType is the default SSH key type
+	DefaultKeyType = "ed25519"
+
+	// DefaultKeyPath is empty — derived from username + key type when not set
+	DefaultKeyPath = ""
 )

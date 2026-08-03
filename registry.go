@@ -105,6 +105,7 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		security.NewAuditdInstall(),
 		security.NewUnattendedUpgradesInstall(),
 		security.NewSshChangePort(),
+		security.NewSshKeyGen(),
 		swap.NewSwapCreate(),
 		swap.NewSwapDelete(),
 		swap.NewSwapStatus(),
