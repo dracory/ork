@@ -21,12 +21,14 @@ import (
 //
 // Args:
 //   - path: File or directory path (required, must be absolute)
-//   - mode: Permissions in octal (required, e.g. "755", "600")
+//   - mode: Permissions in octal (e.g. "755", "600") or symbolic (e.g. "g+rwX", "u+x")
 //   - recursive: Apply recursively (optional, default "false")
 //
 // Idempotency:
 //   - Check() returns false if current mode already matches desired mode
 //   - Check() returns true if mode mismatch
+//   - For symbolic modes (e.g. "g+rwX"), Check() always returns true because
+//     symbolic modes can't be compared against the numeric mode returned by stat
 type ChangeMode struct {
 	*types.BaseSkill
 }
@@ -51,6 +53,12 @@ func (c *ChangeMode) Check() (bool, error) {
 	// In dry-run mode, assume changes are needed without running SSH commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would check if mode change is needed")
+		return true, nil
+	}
+
+	// Symbolic modes (e.g. "g+rwX") can't be compared against the numeric
+	// mode returned by stat, so always apply them.
+	if isSymbolicMode(mode) {
 		return true, nil
 	}
 
@@ -129,7 +137,7 @@ func (c *ChangeMode) SetPath(path string) *ChangeMode {
 	return c
 }
 
-// SetMode sets the permissions (octal, e.g. "755") and returns ChangeMode for chaining.
+// SetMode sets the permissions (octal e.g. "755" or symbolic e.g. "g+rwX") and returns ChangeMode for chaining.
 func (c *ChangeMode) SetMode(mode string) *ChangeMode {
 	c.BaseSkill.SetArg(ArgMode, mode)
 	return c

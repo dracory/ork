@@ -281,3 +281,148 @@ func TestChangeMode_TypedSetters_Chaining(t *testing.T) {
 		t.Errorf("Expected recursive 'true', got '%s'", skill.GetArg(ArgRecursive))
 	}
 }
+
+// --- Symbolic mode tests ---
+
+func TestIsSymbolicMode(t *testing.T) {
+	tests := []struct {
+		mode string
+		want bool
+	}{
+		{"u+x", true},
+		{"g-w", true},
+		{"o=rwx", true},
+		{"a+rw", true},
+		{"ug+rw", true},
+		{"+x", true},
+		{"=rw", true},
+		{"u+x,g-w", true},
+		{"g+rwX", true},
+		{"755", false},
+		{"0600", false},
+		{"", false},
+		{"abc", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.mode, func(t *testing.T) {
+			if got := isSymbolicMode(tt.mode); got != tt.want {
+				t.Errorf("isSymbolicMode(%q) = %v, want %v", tt.mode, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestValidateSymbolicMode(t *testing.T) {
+	valid := []string{
+		"u+x", "g-w", "o=rwx", "a+rw", "ug+rw", "+x", "=rw",
+		"u+x,g-w", "g+rwX", "go-rwx", "u=s", "a+t",
+		"u+", "+", // valid chmod no-ops
+	}
+	for _, mode := range valid {
+		t.Run("valid/"+mode, func(t *testing.T) {
+			if err := validateSymbolicMode(mode); err != nil {
+				t.Errorf("validateSymbolicMode(%q) returned unexpected error: %v", mode, err)
+			}
+		})
+	}
+	invalid := []string{
+		"u+xyz",   // invalid permission char
+		"x+rw",    // invalid who char
+		"u+x,",    // trailing comma = empty clause
+		",u+x",    // leading comma = empty clause
+		"u+x g-w", // space instead of comma
+		"u",       // no operator
+	}
+	for _, mode := range invalid {
+		t.Run("invalid/"+mode, func(t *testing.T) {
+			if err := validateSymbolicMode(mode); err == nil {
+				t.Errorf("validateSymbolicMode(%q) expected error, got nil", mode)
+			}
+		})
+	}
+}
+
+func TestValidateMode_Symbolic(t *testing.T) {
+	// Symbolic modes should pass validateMode
+	valid := []string{"u+x", "g+rwX", "a-w", "+x", "u+x,g-w"}
+	for _, mode := range valid {
+		t.Run("valid/"+mode, func(t *testing.T) {
+			if err := validateMode(mode); err != nil {
+				t.Errorf("validateMode(%q) returned unexpected error: %v", mode, err)
+			}
+		})
+	}
+	// Invalid symbolic modes should fail validateMode
+	invalid := []string{"u+xyz", "x+rw", "u+x,"}
+	for _, mode := range invalid {
+		t.Run("invalid/"+mode, func(t *testing.T) {
+			if err := validateMode(mode); err == nil {
+				t.Errorf("validateMode(%q) expected error, got nil", mode)
+			}
+		})
+	}
+}
+
+func TestChangeMode_Check_SymbolicMode_AlwaysTrue(t *testing.T) {
+	pb := NewChangeMode()
+	cfg := types.NodeConfig{
+		IsDryRunMode: false,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/var/www/myapp")
+	pb.SetArg(ArgMode, "g+rwX")
+
+	needsChange, err := pb.Check()
+	if err != nil {
+		t.Fatalf("Check() returned unexpected error: %v", err)
+	}
+	if !needsChange {
+		t.Error("Check() should return true for symbolic modes (can't compare against stat output)")
+	}
+}
+
+func TestChangeMode_Run_DryRun_SymbolicMode(t *testing.T) {
+	pb := NewChangeMode()
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/var/www/myapp")
+	pb.SetArg(ArgMode, "g+rwX")
+
+	result := pb.Run()
+	if !result.Changed {
+		t.Error("Expected Changed to be true in dry-run mode with symbolic mode")
+	}
+	expectedMessage := "Would change mode to g+rwX on /var/www/myapp"
+	if result.Message != expectedMessage {
+		t.Errorf("Expected message '%s', got '%s'", expectedMessage, result.Message)
+	}
+	if result.Error != nil {
+		t.Errorf("Expected no error in dry-run mode, got: %v", result.Error)
+	}
+}
+
+func TestChangeMode_Run_InvalidSymbolicMode(t *testing.T) {
+	pb := NewChangeMode()
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/var/www/myapp")
+	pb.SetArg(ArgMode, "u+xyz")
+
+	result := pb.Run()
+	if result.Changed {
+		t.Error("Expected Changed to be false for invalid symbolic mode")
+	}
+	if result.Error == nil {
+		t.Error("Expected an error for invalid symbolic mode 'u+xyz'")
+	}
+}

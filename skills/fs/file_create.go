@@ -26,7 +26,7 @@ import (
 //   - path: File path to create (required, must be absolute)
 //   - content: Content to write (optional, empty creates empty file)
 //   - owner: Owner in user:group format (optional)
-//   - mode: Permissions in octal (optional, default "644")
+//   - mode: Permissions in octal (e.g. "644") or symbolic (e.g. "g+rwX") (optional, default "644")
 //   - overwrite: Overwrite if file exists (optional, default "false")
 //
 // Idempotency:
@@ -82,6 +82,10 @@ func (f *FileCreate) Check() (bool, error) {
 	}
 	if err := validateMode(mode); err != nil {
 		return false, err
+	}
+	// Symbolic modes can't be compared against the numeric mode returned by stat
+	if isSymbolicMode(mode) {
+		return true, nil
 	}
 	currentMode := getMode(cfg, path)
 	if currentMode != mode {
@@ -249,7 +253,7 @@ func (f *FileCreate) SetOwner(owner string) *FileCreate {
 	return f
 }
 
-// SetMode sets the permissions (octal, e.g. "644") and returns FileCreate for chaining.
+// SetMode sets the permissions (octal e.g. "644" or symbolic e.g. "g+rwX") and returns FileCreate for chaining.
 func (f *FileCreate) SetMode(mode string) *FileCreate {
 	f.BaseSkill.SetArg(ArgMode, mode)
 	return f

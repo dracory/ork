@@ -23,7 +23,7 @@ import (
 // Args:
 //   - path: Directory path to create (required, must be absolute)
 //   - owner: Owner in user:group format (optional, e.g. "www-data:www-data")
-//   - mode: Permissions in octal (optional, default "755")
+//   - mode: Permissions in octal (e.g. "755") or symbolic (e.g. "g+rwX") (optional, default "755")
 //   - parents: Create parent directories if needed (optional, default "true")
 //
 // Idempotency:
@@ -77,6 +77,10 @@ func (d *DirCreate) Check() (bool, error) {
 
 	if err := validateMode(mode); err != nil {
 		return false, err
+	}
+	// Symbolic modes can't be compared against the numeric mode returned by stat
+	if isSymbolicMode(mode) {
+		return true, nil
 	}
 	currentMode := getMode(cfg, path)
 	if currentMode != mode {
@@ -241,7 +245,7 @@ func (d *DirCreate) SetOwner(owner string) *DirCreate {
 	return d
 }
 
-// SetMode sets the permissions (octal, e.g. "755") and returns DirCreate for chaining.
+// SetMode sets the permissions (octal e.g. "755" or symbolic e.g. "g+rwX") and returns DirCreate for chaining.
 func (d *DirCreate) SetMode(mode string) *DirCreate {
 	d.BaseSkill.SetArg(ArgMode, mode)
 	return d

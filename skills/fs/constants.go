@@ -50,7 +50,7 @@ const (
 	// ArgOwner is the owner (user:group) argument key.
 	ArgOwner = "owner"
 
-	// ArgMode is the permissions (octal, e.g. "755") argument key.
+	// ArgMode is the permissions argument key (octal e.g. "755" or symbolic e.g. "g+rwX").
 	ArgMode = "mode"
 
 	// ArgOverwrite is the overwrite-if-exists flag argument key ("true"/"false").
@@ -168,10 +168,14 @@ func isSafeOwnerRune(r rune) bool {
 }
 
 // validateMode validates that a mode string is a valid octal string of 3 or 4
-// digits (e.g. "755", "644", "0600").
+// digits (e.g. "755", "644", "0600") or a symbolic chmod mode (e.g. "g+rwX",
+// "u+x", "a-w", "o-rwx", "+x", "u+x,g-w").
 func validateMode(mode string) error {
 	if mode == "" {
 		return fmt.Errorf("mode cannot be empty")
+	}
+	if isSymbolicMode(mode) {
+		return validateSymbolicMode(mode)
 	}
 	if len(mode) < 3 || len(mode) > 4 {
 		return fmt.Errorf("mode must be 3 or 4 octal digits, got %q", mode)
@@ -179,6 +183,47 @@ func validateMode(mode string) error {
 	for _, r := range mode {
 		if r < '0' || r > '7' {
 			return fmt.Errorf("mode must be octal (0-7), got %q", mode)
+		}
+	}
+	return nil
+}
+
+// isSymbolicMode returns true if the mode string is a symbolic chmod mode
+// (e.g. "g+rwX", "u+x", "a-w", "o-rwx", "ug+rw", "+x").
+// Any mode containing an operator character (+/-/=) is symbolic; octal modes
+// only contain digits 0-7.
+func isSymbolicMode(mode string) bool {
+	return strings.ContainsAny(mode, "+-=")
+}
+
+// validateSymbolicMode validates the structure of a symbolic chmod mode string.
+// Each comma-separated clause must match: [ugoa]*([-+=])([rwxXst]*).
+func validateSymbolicMode(mode string) error {
+	for _, clause := range strings.Split(mode, ",") {
+		if clause == "" {
+			return fmt.Errorf("symbolic mode contains empty clause in %q", mode)
+		}
+		opIdx := -1
+		for i, r := range clause {
+			if r == '+' || r == '-' || r == '=' {
+				opIdx = i
+				break
+			}
+		}
+		if opIdx == -1 {
+			return fmt.Errorf("symbolic mode clause missing operator in %q", clause)
+		}
+		whoPart := clause[:opIdx]
+		permPart := clause[opIdx+1:]
+		for _, r := range whoPart {
+			if r != 'u' && r != 'g' && r != 'o' && r != 'a' {
+				return fmt.Errorf("symbolic mode has invalid who character %q in %q (allowed: u, g, o, a)", r, clause)
+			}
+		}
+		for _, r := range permPart {
+			if r != 'r' && r != 'w' && r != 'x' && r != 'X' && r != 's' && r != 't' {
+				return fmt.Errorf("symbolic mode has invalid permission character %q in %q (allowed: r, w, x, X, s, t)", r, clause)
+			}
 		}
 	}
 	return nil
