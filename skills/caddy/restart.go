@@ -109,16 +109,12 @@ func (r *Restart) Run() types.Result {
 		}
 	}
 
-	cmdFixLogOwner := types.Command{
-		Command: fmt.Sprintf("chown %s:%s %s/access.log 2>/dev/null || true",
-			skills.ShellEscapeArg(DefaultCaddyUser),
-			skills.ShellEscapeArg(DefaultCaddyUser),
-			skills.ShellEscapeArg(DefaultCaddyLogDir)),
-		Description: "Fix ownership of existing Caddy access.log",
-		Required:    false,
-	}
-	if _, chownErr := ssh.Run(cfg, cmdFixLogOwner); chownErr != nil {
-		cfg.GetLoggerOrDefault().Warn("Failed to fix Caddy access.log ownership (non-fatal)", "error", chownErr)
+	logOwnerResult := runSub(fs.NewChangeOwner().
+		SetPath(DefaultCaddyLogDir+"/access.log").
+		SetOwner(DefaultCaddyUser+":"+DefaultCaddyUser), cfg)
+	if logOwnerResult.Error != nil {
+		cfg.GetLoggerOrDefault().Warn("Failed to fix Caddy access.log ownership (non-fatal)",
+			"error", logOwnerResult.Error)
 	}
 
 	// Step 3: Upload Caddyfile to the remote path (owned by root:caddy,
