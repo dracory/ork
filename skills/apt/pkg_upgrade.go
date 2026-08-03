@@ -1,6 +1,6 @@
 ﻿package apt
 
-// Package apt documentation is in status.go
+// Package apt documentation is in pkg_status.go
 
 import (
 	"fmt"
@@ -12,14 +12,14 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// AptUpgrade installs available package updates.
+// PkgUpgrade installs available package updates.
 // This skill runs apt-get upgrade to install all available package updates.
 // It first checks if updates are available by querying the package database,
 // then installs them only if needed.
 //
 // Usage:
 //
-//	node.Run(apt.NewAptUpgrade())
+//	node.Run(apt.NewPkgUpgrade())
 //
 // Execution Flow:
 //  1. Runs apt-get update to refresh package lists
@@ -43,20 +43,21 @@ import (
 // Idempotency:
 //   - Reports Changed=false when no packages need upgrading
 //   - Reports Changed=true when packages are actually upgraded
-type AptUpgrade struct {
+type PkgUpgrade struct {
 	*types.BaseSkill
 }
 
-// Compile-time assertion that AptUpgrade implements types.RunnableInterface.
-var _ types.RunnableInterface = (*AptUpgrade)(nil)
+// Compile-time assertion that PkgUpgrade implements types.RunnableInterface.
+var _ types.RunnableInterface = (*PkgUpgrade)(nil)
 
 // Check determines if there are packages that need upgrading.
 // Per the skill interface convention, returns true if upgrades are available
 // (meaning Run would modify the system), false if system is already up to date.
 //
-// This method first runs apt-get update to ensure package lists are current,
-// then counts upgradable packages using apt list --upgradable.
-func (a *AptUpgrade) Check() (bool, error) {
+// This method counts upgradable packages using apt list --upgradable.
+// It does not run apt-get update; callers who need fresh package lists should
+// run PkgUpdate first or use Run() which updates before upgrading.
+func (a *PkgUpgrade) Check() (bool, error) {
 	cfg := a.GetNodeConfig()
 
 	// In dry-run mode, assume upgrades are needed so Run() reaches its dry-run guard
@@ -64,15 +65,8 @@ func (a *AptUpgrade) Check() (bool, error) {
 		return true, nil
 	}
 
-	// First ensure package lists are updated
-	cmdUpdate := types.Command{Command: "apt-get update -qq", Description: "Update package lists", Required: true}
-	_, err := ssh.Run(cfg, cmdUpdate)
-	if err != nil {
-		return false, fmt.Errorf("failed to update package lists: %w", err)
-	}
-
 	// Check for upgradable packages
-	cmdCheck := types.Command{Command: "apt list --upgradable 2>/dev/null | grep -c '\\[upgradable from:' || echo 0", Description: "Check for upgradable packages"}
+	cmdCheck := types.Command{Command: "apt list --upgradable 2>/dev/null | grep -c '\\[upgradable from:' || echo 0", Description: "Check for upgradable packages", Required: true}
 	output, err := ssh.Run(cfg, cmdCheck)
 	if err != nil {
 		return false, fmt.Errorf("failed to check for upgrades: %w", err)
@@ -87,7 +81,22 @@ func (a *AptUpgrade) Check() (bool, error) {
 //
 // Result.Details contains:
 //   - output: Full output from apt-get upgrade command (when upgrades occur)
-func (a *AptUpgrade) Run() types.Result {
+func (a *PkgUpgrade) Run() types.Result {
+	cfg := a.GetNodeConfig()
+
+	// Update package lists before checking for upgrades
+	if !cfg.IsDryRunMode {
+		cmdUpdate := types.Command{Command: "apt-get update -qq", Description: "Update package lists", Required: true}
+		_, err := ssh.Run(cfg, cmdUpdate)
+		if err != nil {
+			return types.Result{
+				Changed: false,
+				Message: "Failed to update package lists",
+				Error:   fmt.Errorf("failed to update package lists: %w", err),
+			}
+		}
+	}
+
 	// Check if upgrades are needed
 	needsUpgrade, err := a.Check()
 	if err != nil {
@@ -105,7 +114,6 @@ func (a *AptUpgrade) Run() types.Result {
 		}
 	}
 
-	cfg := a.GetNodeConfig()
 	// See skills.DebianNonInteractive and skills.DpkgConfOptions for details
 	cmdUpgradeStr := ""
 	cmdUpgradeStr += skills.DebianNonInteractive // prevent interactive prompts
@@ -148,49 +156,59 @@ func (a *AptUpgrade) Run() types.Result {
 }
 
 // SetArgs sets the arguments for apt upgrade.
-// Returns AptUpgrade for fluent method chaining.
-func (a *AptUpgrade) SetArgs(args map[string]string) types.RunnableInterface {
+// Returns PkgUpgrade for fluent method chaining.
+func (a *PkgUpgrade) SetArgs(args map[string]string) types.RunnableInterface {
 	a.BaseSkill.SetArgs(args)
 	return a
 }
 
 // SetArg sets a single argument for apt upgrade.
-// Returns AptUpgrade for fluent method chaining.
-func (a *AptUpgrade) SetArg(key, value string) types.RunnableInterface {
+// Returns PkgUpgrade for fluent method chaining.
+func (a *PkgUpgrade) SetArg(key, value string) types.RunnableInterface {
 	a.BaseSkill.SetArg(key, value)
 	return a
 }
 
 // SetID sets the ID for apt upgrade.
-// Returns AptUpgrade for fluent method chaining.
-func (a *AptUpgrade) SetID(id string) types.RunnableInterface {
+// Returns PkgUpgrade for fluent method chaining.
+func (a *PkgUpgrade) SetID(id string) types.RunnableInterface {
 	a.BaseSkill.SetID(id)
 	return a
 }
 
 // SetDescription sets the description for apt upgrade.
-// Returns AptUpgrade for fluent method chaining.
-func (a *AptUpgrade) SetDescription(description string) types.RunnableInterface {
+// Returns PkgUpgrade for fluent method chaining.
+func (a *PkgUpgrade) SetDescription(description string) types.RunnableInterface {
 	a.BaseSkill.SetDescription(description)
 	return a
 }
 
 // SetTimeout sets the timeout for apt upgrade.
-// Returns AptUpgrade for fluent method chaining.
-func (a *AptUpgrade) SetTimeout(timeout time.Duration) types.RunnableInterface {
+// Returns PkgUpgrade for fluent method chaining.
+func (a *PkgUpgrade) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	a.BaseSkill.SetTimeout(timeout)
 	return a
 }
 
-// NewAptUpgrade creates a new apt-upgrade skill.
+// WithNodeConfig sets the node config and returns PkgUpgrade for chaining.
+// Shortcut alias to SetNodeConfig for fluent interface convenience.
+func (a *PkgUpgrade) WithNodeConfig(cfg types.NodeConfig) *PkgUpgrade {
+	a.BaseSkill.SetNodeConfig(cfg)
+	return a
+}
+
+// NewPkgUpgrade creates a new apt-upgrade skill.
 //
 // Returns:
 //
-//	A PlaybookInterface implementation configured with IDAptUpgrade identifier
+//	A PlaybookInterface implementation configured with IDPkgUpgrade identifier
 //	and description "Install available package updates (apt-get upgrade)".
-func NewAptUpgrade() *AptUpgrade {
+func NewPkgUpgrade() *PkgUpgrade {
 	pb := types.NewBaseSkill()
-	pb.SetID(skills.IDAptUpgrade)
+	pb.SetID(skills.IDPkgUpgrade)
 	pb.SetDescription("Install available package updates (apt-get upgrade)")
-	return &AptUpgrade{BaseSkill: pb}
+	return &PkgUpgrade{BaseSkill: pb}
 }
+
+// Deprecated: Use NewPkgUpgrade instead. NewAptUpgrade will be removed in a future version.
+func NewAptUpgrade() *PkgUpgrade { return NewPkgUpgrade() }

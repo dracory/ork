@@ -5,9 +5,11 @@ import (
 
 	"github.com/dracory/ork/skills/apt"
 	"github.com/dracory/ork/skills/caddy"
+	"github.com/dracory/ork/skills/dpkg"
 	"github.com/dracory/ork/skills/fail2ban"
 	"github.com/dracory/ork/skills/fs"
 	"github.com/dracory/ork/skills/mariadb"
+	"github.com/dracory/ork/skills/ncdu"
 	"github.com/dracory/ork/skills/php"
 	"github.com/dracory/ork/skills/ping"
 	"github.com/dracory/ork/skills/reboot"
@@ -74,10 +76,13 @@ func NewDefaultRegistry() (*types.Registry, error) {
 
 	skills := []types.RunnableInterface{
 		ping.NewPing(),
-		apt.NewAptInstall(),
-		apt.NewAptStatus(),
-		apt.NewAptUpdate(),
-		apt.NewAptUpgrade(),
+		apt.NewPkgInstall(),
+		apt.NewIsPkgInstalled(),
+		apt.NewPkgList(),
+		dpkg.NewIsPkgInstalled(),
+		apt.NewPkgStatus(),
+		apt.NewPkgUpdate(),
+		apt.NewPkgUpgrade(),
 		caddy.NewInstall(),
 		caddy.NewHarden(),
 		caddy.NewRestart(),
@@ -99,6 +104,8 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		mariadb.NewSecure(),
 		mariadb.NewStatus(),
 		mariadb.NewSecurityAudit(),
+		ncdu.NewInstall(),
+		ncdu.NewUninstall(),
 		reboot.NewReboot(),
 		security.NewSshHarden(),
 		security.NewKernelHarden(),

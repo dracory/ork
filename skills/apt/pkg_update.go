@@ -1,6 +1,6 @@
 ﻿package apt
 
-// Package apt documentation is in status.go
+// Package apt documentation is in pkg_status.go
 
 import (
 	"fmt"
@@ -11,14 +11,14 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// AptUpdate refreshes the package database.
+// PkgUpdate refreshes the package database.
 // This skill runs apt-get update to download the latest package lists
 // from configured repositories. This is a mutating operation that changes
 // the local package cache.
 //
 // Usage:
 //
-//	node.Run(apt.NewAptUpdate())
+//	node.Run(apt.NewPkgUpdate())
 //
 // Execution Flow:
 //  1. Connects to remote server via SSH
@@ -40,12 +40,12 @@ import (
 // Idempotency:
 //   - Always reports Changed=true because the cache modification time is updated
 //   - The cost of checking if update is needed is similar to running it
-type AptUpdate struct {
+type PkgUpdate struct {
 	*types.BaseSkill
 }
 
-// Compile-time assertion that AptUpdate implements types.RunnableInterface.
-var _ types.RunnableInterface = (*AptUpdate)(nil)
+// Compile-time assertion that PkgUpdate implements types.RunnableInterface.
+var _ types.RunnableInterface = (*PkgUpdate)(nil)
 
 // Check always returns true for apt-update since cache refresh is always beneficial.
 // Per the skill interface convention, the bool return indicates whether
@@ -54,7 +54,7 @@ var _ types.RunnableInterface = (*AptUpdate)(nil)
 //
 // Note: The cost of checking if update is needed is similar to just running it,
 // so we skip the check and always execute.
-func (a *AptUpdate) Check() (bool, error) {
+func (a *PkgUpdate) Check() (bool, error) {
 	cfg := a.GetNodeConfig()
 
 	// Check for dry-run mode
@@ -71,7 +71,7 @@ func (a *AptUpdate) Check() (bool, error) {
 //
 // Result.Details contains:
 //   - output: Full output from apt-get update command
-func (a *AptUpdate) Run() types.Result {
+func (a *PkgUpdate) Run() types.Result {
 	cfg := a.GetNodeConfig()
 	cmdUpdate := types.Command{Command: "apt-get update -y", Description: "Update package database", Required: true}
 
@@ -105,56 +105,59 @@ func (a *AptUpdate) Run() types.Result {
 }
 
 // SetArgs sets the arguments for apt update.
-// Returns AptUpdate for fluent method chaining.
-func (a *AptUpdate) SetArgs(args map[string]string) types.RunnableInterface {
+// Returns PkgUpdate for fluent method chaining.
+func (a *PkgUpdate) SetArgs(args map[string]string) types.RunnableInterface {
 	a.BaseSkill.SetArgs(args)
 	return a
 }
 
-// WithNodeConfig sets the node config and returns AptUpdate for chaining.
+// WithNodeConfig sets the node config and returns PkgUpdate for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
-func (a *AptUpdate) WithNodeConfig(cfg types.NodeConfig) *AptUpdate {
+func (a *PkgUpdate) WithNodeConfig(cfg types.NodeConfig) *PkgUpdate {
 	a.BaseSkill.SetNodeConfig(cfg)
 	return a
 }
 
 // SetArg sets a single argument for apt update.
-// Returns AptUpdate for fluent method chaining.
-func (a *AptUpdate) SetArg(key, value string) types.RunnableInterface {
+// Returns PkgUpdate for fluent method chaining.
+func (a *PkgUpdate) SetArg(key, value string) types.RunnableInterface {
 	a.BaseSkill.SetArg(key, value)
 	return a
 }
 
 // SetID sets the ID for apt update.
-// Returns AptUpdate for fluent method chaining.
-func (a *AptUpdate) SetID(id string) types.RunnableInterface {
+// Returns PkgUpdate for fluent method chaining.
+func (a *PkgUpdate) SetID(id string) types.RunnableInterface {
 	a.BaseSkill.SetID(id)
 	return a
 }
 
 // SetDescription sets the description for apt update.
-// Returns AptUpdate for fluent method chaining.
-func (a *AptUpdate) SetDescription(description string) types.RunnableInterface {
+// Returns PkgUpdate for fluent method chaining.
+func (a *PkgUpdate) SetDescription(description string) types.RunnableInterface {
 	a.BaseSkill.SetDescription(description)
 	return a
 }
 
 // SetTimeout sets the timeout for apt update.
-// Returns AptUpdate for fluent method chaining.
-func (a *AptUpdate) SetTimeout(timeout time.Duration) types.RunnableInterface {
+// Returns PkgUpdate for fluent method chaining.
+func (a *PkgUpdate) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	a.BaseSkill.SetTimeout(timeout)
 	return a
 }
 
-// NewAptUpdate creates a new apt-update skill.
+// NewPkgUpdate creates a new apt-update skill.
 //
 // Returns:
 //
-//	A AptUpdate skill configured with IDAptUpdate identifier
+//	A PkgUpdate skill configured with IDPkgUpdate identifier
 //	and description "Refresh package database (apt-get update)".
-func NewAptUpdate() *AptUpdate {
+func NewPkgUpdate() *PkgUpdate {
 	pb := types.NewBaseSkill()
-	pb.SetID(skills.IDAptUpdate)
+	pb.SetID(skills.IDPkgUpdate)
 	pb.SetDescription("Refresh package database (apt-get update)")
-	return &AptUpdate{BaseSkill: pb}
+	return &PkgUpdate{BaseSkill: pb}
 }
+
+// Deprecated: Use NewPkgUpdate instead. NewAptUpdate will be removed in a future version.
+func NewAptUpdate() *PkgUpdate { return NewPkgUpdate() }

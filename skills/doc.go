@@ -19,11 +19,11 @@
 // Example usage:
 //
 //	node := ork.NewNodeForHost("server.example.com")
-//	result := node.Skill(skills.IDAptUpdate)
+//	result := node.Skill(skills.IDPkgUpdate)
 //
 // Or with explicit skill creation:
 //
-//	skill := apt.NewAptUpdate()
+//	skill := apt.NewPkgUpdate()
 //	skill.SetNodeConfig(node.GetNodeConfig())
 //	result := skill.Run()
 //

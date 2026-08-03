@@ -8,9 +8,9 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// TestAptInstall_Run_DryRun verifies that dry-run mode correctly handles apt install.
-func TestAptInstall_Run_DryRun(t *testing.T) {
-	pb := NewAptInstall()
+// TestPkgInstall_Run_DryRun verifies that dry-run mode correctly handles apt install.
+func TestPkgInstall_Run_DryRun(t *testing.T) {
+	pb := NewPkgInstall()
 
 	cfg := types.NodeConfig{
 		IsDryRunMode: true,
@@ -37,9 +37,9 @@ func TestAptInstall_Run_DryRun(t *testing.T) {
 	}
 }
 
-// TestAptInstall_Run_NoPackages verifies that missing ArgPackages returns an error.
-func TestAptInstall_Run_NoPackages(t *testing.T) {
-	pb := NewAptInstall()
+// TestPkgInstall_Run_NoPackages verifies that missing ArgPackages returns an error.
+func TestPkgInstall_Run_NoPackages(t *testing.T) {
+	pb := NewPkgInstall()
 
 	cfg := types.NodeConfig{
 		IsDryRunMode: false,
@@ -60,9 +60,9 @@ func TestAptInstall_Run_NoPackages(t *testing.T) {
 	}
 }
 
-// TestAptInstall_Run_NotDryRun verifies that non-dry-run mode does not return the dry-run message.
-func TestAptInstall_Run_NotDryRun(t *testing.T) {
-	pb := NewAptInstall()
+// TestPkgInstall_Run_NotDryRun verifies that non-dry-run mode does not return the dry-run message.
+func TestPkgInstall_Run_NotDryRun(t *testing.T) {
+	pb := NewPkgInstall()
 
 	cfg := types.NodeConfig{
 		IsDryRunMode: false,
@@ -82,9 +82,9 @@ func TestAptInstall_Run_NotDryRun(t *testing.T) {
 	}
 }
 
-// TestAptInstall_Check_DryRun verifies that Check returns true in dry-run mode.
-func TestAptInstall_Check_DryRun(t *testing.T) {
-	pb := NewAptInstall()
+// TestPkgInstall_Check_DryRun verifies that Check returns true in dry-run mode.
+func TestPkgInstall_Check_DryRun(t *testing.T) {
+	pb := NewPkgInstall()
 
 	cfg := types.NodeConfig{
 		IsDryRunMode: true,
@@ -105,9 +105,9 @@ func TestAptInstall_Check_DryRun(t *testing.T) {
 	}
 }
 
-// TestAptInstall_Check_NoPackages verifies that Check returns an error when no packages are set.
-func TestAptInstall_Check_NoPackages(t *testing.T) {
-	pb := NewAptInstall()
+// TestPkgInstall_Check_NoPackages verifies that Check returns an error when no packages are set.
+func TestPkgInstall_Check_NoPackages(t *testing.T) {
+	pb := NewPkgInstall()
 
 	cfg := types.NodeConfig{
 		IsDryRunMode: false,
@@ -123,9 +123,9 @@ func TestAptInstall_Check_NoPackages(t *testing.T) {
 	}
 }
 
-// TestAptInstall_NewAptInstall verifies that NewAptInstall creates a properly configured skill.
-func TestAptInstall_NewAptInstall(t *testing.T) {
-	pb := NewAptInstall()
+// TestPkgInstall_NewPkgInstall verifies that NewPkgInstall creates a properly configured skill.
+func TestPkgInstall_NewPkgInstall(t *testing.T) {
+	pb := NewPkgInstall()
 
 	if pb.GetID() != "apt-install" {
 		t.Errorf("Expected ID to be 'apt-install', got '%s'", pb.GetID())
@@ -137,37 +137,37 @@ func TestAptInstall_NewAptInstall(t *testing.T) {
 	}
 }
 
-// TestAptInstall_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete AptInstall type.
-func TestAptInstall_SetArgs_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptInstall()
+// TestPkgInstall_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete PkgInstall type.
+func TestPkgInstall_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgInstall()
 	args := map[string]string{ArgPackages: "curl"}
 
 	result := skill.SetArgs(args)
 
-	if _, ok := result.(*AptInstall); !ok {
-		t.Error("SetArgs should return *AptInstall, not just RunnableInterface")
+	if _, ok := result.(*PkgInstall); !ok {
+		t.Error("SetArgs should return *PkgInstall, not just RunnableInterface")
 	}
 }
 
-// TestAptInstall_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete AptInstall type.
-func TestAptInstall_SetArg_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptInstall()
+// TestPkgInstall_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete PkgInstall type.
+func TestPkgInstall_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgInstall()
 
 	result := skill.SetArg(ArgPackages, "curl")
 
-	if _, ok := result.(*AptInstall); !ok {
-		t.Error("SetArg should return *AptInstall, not just RunnableInterface")
+	if _, ok := result.(*PkgInstall); !ok {
+		t.Error("SetArg should return *PkgInstall, not just RunnableInterface")
 	}
 }
 
-// TestAptInstall_SetID_ReturnsConcreteType verifies that SetID returns the concrete AptInstall type.
-func TestAptInstall_SetID_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptInstall()
+// TestPkgInstall_SetID_ReturnsConcreteType verifies that SetID returns the concrete PkgInstall type.
+func TestPkgInstall_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgInstall()
 
 	result := skill.SetID("custom-id")
 
-	if _, ok := result.(*AptInstall); !ok {
-		t.Error("SetID should return *AptInstall, not just RunnableInterface")
+	if _, ok := result.(*PkgInstall); !ok {
+		t.Error("SetID should return *PkgInstall, not just RunnableInterface")
 	}
 
 	if skill.GetID() != "custom-id" {
@@ -175,14 +175,14 @@ func TestAptInstall_SetID_ReturnsConcreteType(t *testing.T) {
 	}
 }
 
-// TestAptInstall_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete AptInstall type.
-func TestAptInstall_SetDescription_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptInstall()
+// TestPkgInstall_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete PkgInstall type.
+func TestPkgInstall_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgInstall()
 
 	result := skill.SetDescription("custom description")
 
-	if _, ok := result.(*AptInstall); !ok {
-		t.Error("SetDescription should return *AptInstall, not just RunnableInterface")
+	if _, ok := result.(*PkgInstall); !ok {
+		t.Error("SetDescription should return *PkgInstall, not just RunnableInterface")
 	}
 
 	if skill.GetDescription() != "custom description" {
@@ -190,28 +190,28 @@ func TestAptInstall_SetDescription_ReturnsConcreteType(t *testing.T) {
 	}
 }
 
-// TestAptInstall_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete AptInstall type.
-func TestAptInstall_SetTimeout_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptInstall()
+// TestPkgInstall_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete PkgInstall type.
+func TestPkgInstall_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgInstall()
 
 	result := skill.SetTimeout(30 * time.Second)
 
-	if _, ok := result.(*AptInstall); !ok {
-		t.Error("SetTimeout should return *AptInstall, not just RunnableInterface")
+	if _, ok := result.(*PkgInstall); !ok {
+		t.Error("SetTimeout should return *PkgInstall, not just RunnableInterface")
 	}
 }
 
-// TestAptInstall_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
-func TestAptInstall_MethodChaining_PreservesType(t *testing.T) {
-	skill := NewAptInstall().
+// TestPkgInstall_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestPkgInstall_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewPkgInstall().
 		SetID("custom-id").
 		SetDescription("custom description").
 		SetArg(ArgPackages, "nodejs npm").
 		SetArgs(map[string]string{ArgPackages: "curl"}).
 		SetTimeout(30 * time.Second)
 
-	if _, ok := skill.(*AptInstall); !ok {
-		t.Error("Method chaining should preserve *AptInstall type")
+	if _, ok := skill.(*PkgInstall); !ok {
+		t.Error("Method chaining should preserve *PkgInstall type")
 	}
 
 	if skill.GetID() != "custom-id" {
@@ -223,27 +223,27 @@ func TestAptInstall_MethodChaining_PreservesType(t *testing.T) {
 	}
 }
 
-// TestAptInstall_SetPackages verifies that SetPackages sets the packages arg (variadic, joined with spaces).
-func TestAptInstall_SetPackages(t *testing.T) {
-	skill := NewAptInstall().SetPackages("nodejs", "npm")
+// TestPkgInstall_SetPackages verifies that SetPackages sets the packages arg (variadic, joined with spaces).
+func TestPkgInstall_SetPackages(t *testing.T) {
+	skill := NewPkgInstall().SetPackages("nodejs", "npm")
 
 	if skill.GetArg(ArgPackages) != "nodejs npm" {
 		t.Errorf("Expected packages 'nodejs npm', got '%s'", skill.GetArg(ArgPackages))
 	}
 }
 
-// TestAptInstall_SetPackages_Single verifies that SetPackages works with a single package.
-func TestAptInstall_SetPackages_Single(t *testing.T) {
-	skill := NewAptInstall().SetPackages("curl")
+// TestPkgInstall_SetPackages_Single verifies that SetPackages works with a single package.
+func TestPkgInstall_SetPackages_Single(t *testing.T) {
+	skill := NewPkgInstall().SetPackages("curl")
 
 	if skill.GetArg(ArgPackages) != "curl" {
 		t.Errorf("Expected packages 'curl', got '%s'", skill.GetArg(ArgPackages))
 	}
 }
 
-// TestAptInstall_SetPackages_Chaining verifies that SetPackages chains with other setters.
-func TestAptInstall_SetPackages_Chaining(t *testing.T) {
-	skill := NewAptInstall().
+// TestPkgInstall_SetPackages_Chaining verifies that SetPackages chains with other setters.
+func TestPkgInstall_SetPackages_Chaining(t *testing.T) {
+	skill := NewPkgInstall().
 		SetPackages("nodejs", "npm", "curl").
 		SetID("custom-id").
 		SetDescription("custom description")

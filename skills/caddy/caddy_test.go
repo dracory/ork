@@ -146,7 +146,7 @@ func TestInstall_Run_NotInstalled(t *testing.T) {
 
 	// apt update check: dpkg-query for apt itself (apt-update's Check) — it doesn't use dpkg-query,
 	// but apt-update's Check runs `apt-get update --dry-run` or similar. We just expect it to succeed.
-	// Actually apt.NewAptUpdate().Check() runs `apt-get update` in dry-run check mode.
+	// Actually apt.NewPkgUpdate().Check() runs `apt-get update` in dry-run check mode.
 	// Let's just expect the apt-get update command to succeed.
 	test.ExpectCommand("apt-get update", "")
 

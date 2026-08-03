@@ -1,6 +1,6 @@
 ﻿package apt
 
-// Package apt documentation is in status.go
+// Package apt documentation is in pkg_status.go
 
 import (
 	"fmt"
@@ -12,14 +12,14 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// AptInstall installs one or more packages using apt-get.
+// PkgInstall installs one or more packages using apt-get.
 // Packages are specified via the SetPackages method (variadic) or ArgPackages argument (space-separated string).
 //
 // Usage:
 //
-//	node.Run(apt.NewAptInstall().SetPackages("nodejs", "npm"))
+//	node.Run(apt.NewPkgInstall().SetPackages("nodejs", "npm"))
 //	// or equivalently:
-//	node.Run(apt.NewAptInstall().SetArg(apt.ArgPackages, "nodejs npm"))
+//	node.Run(apt.NewPkgInstall().SetArg(apt.ArgPackages, "nodejs npm"))
 //
 // Execution Flow:
 //  1. Checks if the packages are already installed via dpkg-query
@@ -44,12 +44,12 @@ import (
 // Idempotency:
 //   - Check() uses dpkg-query to skip installation if all packages are present
 //   - apt-get install is itself idempotent; already-installed packages are left untouched
-type AptInstall struct {
+type PkgInstall struct {
 	*types.BaseSkill
 }
 
-// Compile-time assertion that AptInstall implements types.RunnableInterface.
-var _ types.RunnableInterface = (*AptInstall)(nil)
+// Compile-time assertion that PkgInstall implements types.RunnableInterface.
+var _ types.RunnableInterface = (*PkgInstall)(nil)
 
 // shellEscapePackages splits a space-separated package list, escapes each
 // name with skills.ShellEscapeArg, and rejoins them. This prevents shell
@@ -64,7 +64,7 @@ func shellEscapePackages(packages string) string {
 
 // Check determines if any of the specified packages need to be installed.
 // Returns true if at least one package is not currently installed, false if all are present.
-func (a *AptInstall) Check() (bool, error) {
+func (a *PkgInstall) Check() (bool, error) {
 	packages := a.GetArg(ArgPackages)
 	if packages == "" {
 		return false, fmt.Errorf("no packages specified: set the %q argument", ArgPackages)
@@ -103,7 +103,7 @@ func (a *AptInstall) Check() (bool, error) {
 // Result.Details contains:
 //   - output: Full output from apt-get install command
 //   - packages: The packages that were installed
-func (a *AptInstall) Run() types.Result {
+func (a *PkgInstall) Run() types.Result {
 	packages := a.GetArg(ArgPackages)
 	if packages == "" {
 		return types.Result{
@@ -177,69 +177,72 @@ func (a *AptInstall) Run() types.Result {
 }
 
 // SetArgs sets the arguments for apt install.
-// Returns AptInstall for fluent method chaining.
-func (a *AptInstall) SetArgs(args map[string]string) types.RunnableInterface {
+// Returns PkgInstall for fluent method chaining.
+func (a *PkgInstall) SetArgs(args map[string]string) types.RunnableInterface {
 	a.BaseSkill.SetArgs(args)
 	return a
 }
 
-// SetPackages sets the packages to install and returns AptInstall for chaining.
+// SetPackages sets the packages to install and returns PkgInstall for chaining.
 // Packages are joined with spaces internally to match the ArgPackages format.
 // Example: SetPackages("nodejs", "npm", "curl")
-func (a *AptInstall) SetPackages(packages ...string) *AptInstall {
+func (a *PkgInstall) SetPackages(packages ...string) *PkgInstall {
 	a.BaseSkill.SetArg(ArgPackages, strings.Join(packages, " "))
 	return a
 }
 
-// WithNodeConfig sets the node config and returns AptInstall for chaining.
+// WithNodeConfig sets the node config and returns PkgInstall for chaining.
 // Shortcut alias to SetNodeConfig for fluent interface convenience.
-func (a *AptInstall) WithNodeConfig(cfg types.NodeConfig) *AptInstall {
+func (a *PkgInstall) WithNodeConfig(cfg types.NodeConfig) *PkgInstall {
 	a.BaseSkill.SetNodeConfig(cfg)
 	return a
 }
 
 // SetArg sets a single argument for apt install.
-// Returns AptInstall for fluent method chaining.
-func (a *AptInstall) SetArg(key, value string) types.RunnableInterface {
+// Returns PkgInstall for fluent method chaining.
+func (a *PkgInstall) SetArg(key, value string) types.RunnableInterface {
 	a.BaseSkill.SetArg(key, value)
 	return a
 }
 
 // SetID sets the ID for apt install.
-// Returns AptInstall for fluent method chaining.
-func (a *AptInstall) SetID(id string) types.RunnableInterface {
+// Returns PkgInstall for fluent method chaining.
+func (a *PkgInstall) SetID(id string) types.RunnableInterface {
 	a.BaseSkill.SetID(id)
 	return a
 }
 
 // SetDescription sets the description for apt install.
-// Returns AptInstall for fluent method chaining.
-func (a *AptInstall) SetDescription(description string) types.RunnableInterface {
+// Returns PkgInstall for fluent method chaining.
+func (a *PkgInstall) SetDescription(description string) types.RunnableInterface {
 	a.BaseSkill.SetDescription(description)
 	return a
 }
 
 // SetTimeout sets the timeout for apt install.
-// Returns AptInstall for fluent method chaining.
-func (a *AptInstall) SetTimeout(timeout time.Duration) types.RunnableInterface {
+// Returns PkgInstall for fluent method chaining.
+func (a *PkgInstall) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	a.BaseSkill.SetTimeout(timeout)
 	return a
 }
 
-// NewAptInstall creates a new apt-install skill.
+// NewPkgInstall creates a new apt-install skill.
 // Set the packages to install via SetPackages("pkg1", "pkg2").
 //
 // Returns:
 //
-//	A AptInstall skill configured with IDAptInstall identifier
+//	A PkgInstall skill configured with IDPkgInstall identifier
 //	and description "Install packages (apt-get install)".
 //
 // Example:
 //
-//	node.Run(apt.NewAptInstall().SetPackages("nodejs", "npm"))
-func NewAptInstall() *AptInstall {
+//	node.Run(apt.NewPkgInstall().SetPackages("nodejs", "npm"))
+func NewPkgInstall() *PkgInstall {
 	pb := types.NewBaseSkill()
-	pb.SetID(skills.IDAptInstall)
+	pb.SetID(skills.IDPkgInstall)
 	pb.SetDescription("Install packages (apt-get install)")
-	return &AptInstall{BaseSkill: pb}
+	return &PkgInstall{BaseSkill: pb}
 }
+
+// Deprecated: Use NewPkgInstall instead. NewAptInstall will be removed in a future version.
+func NewAptInstall() *PkgInstall { return NewPkgInstall() }

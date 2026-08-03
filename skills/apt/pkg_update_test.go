@@ -7,9 +7,9 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// TestAptUpdate_Run_DryRun verifies that dry-run mode correctly handles apt update.
-func TestAptUpdate_Run_DryRun(t *testing.T) {
-	pb := NewAptUpdate()
+// TestPkgUpdate_Run_DryRun verifies that dry-run mode correctly handles apt update.
+func TestPkgUpdate_Run_DryRun(t *testing.T) {
+	pb := NewPkgUpdate()
 
 	cfg := types.NodeConfig{
 		IsDryRunMode: true,
@@ -35,9 +35,9 @@ func TestAptUpdate_Run_DryRun(t *testing.T) {
 	}
 }
 
-// TestAptUpdate_Run_NotDryRun verifies that non-dry-run mode returns different result structure.
-func TestAptUpdate_Run_NotDryRun(t *testing.T) {
-	pb := NewAptUpdate()
+// TestPkgUpdate_Run_NotDryRun verifies that non-dry-run mode returns different result structure.
+func TestPkgUpdate_Run_NotDryRun(t *testing.T) {
+	pb := NewPkgUpdate()
 
 	cfg := types.NodeConfig{
 		IsDryRunMode: false,
@@ -56,9 +56,9 @@ func TestAptUpdate_Run_NotDryRun(t *testing.T) {
 	}
 }
 
-// TestAptUpdate_Check verifies that Check always returns true.
-func TestAptUpdate_Check(t *testing.T) {
-	pb := NewAptUpdate()
+// TestPkgUpdate_Check verifies that Check always returns true.
+func TestPkgUpdate_Check(t *testing.T) {
+	pb := NewPkgUpdate()
 
 	cfg := types.NodeConfig{
 		Logger: slog.Default(),
@@ -77,9 +77,9 @@ func TestAptUpdate_Check(t *testing.T) {
 	}
 }
 
-// TestAptUpdate_NewAptUpdate verifies that NewAptUpdate creates a properly configured skill.
-func TestAptUpdate_NewAptUpdate(t *testing.T) {
-	pb := NewAptUpdate()
+// TestPkgUpdate_NewPkgUpdate verifies that NewPkgUpdate creates a properly configured skill.
+func TestPkgUpdate_NewPkgUpdate(t *testing.T) {
+	pb := NewPkgUpdate()
 
 	if pb.GetID() != "apt-update" {
 		t.Errorf("Expected ID to be 'apt-update', got '%s'", pb.GetID())
@@ -91,37 +91,37 @@ func TestAptUpdate_NewAptUpdate(t *testing.T) {
 	}
 }
 
-// TestAptUpdate_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete AptUpdate type.
-func TestAptUpdate_SetArgs_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptUpdate()
+// TestPkgUpdate_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete PkgUpdate type.
+func TestPkgUpdate_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgUpdate()
 	args := map[string]string{"test": "value"}
 
 	result := skill.SetArgs(args)
 
-	if _, ok := result.(*AptUpdate); !ok {
-		t.Error("SetArgs should return *AptUpdate, not just RunnableInterface")
+	if _, ok := result.(*PkgUpdate); !ok {
+		t.Error("SetArgs should return *PkgUpdate, not just RunnableInterface")
 	}
 }
 
-// TestAptUpdate_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete AptUpdate type.
-func TestAptUpdate_SetArg_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptUpdate()
+// TestPkgUpdate_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete PkgUpdate type.
+func TestPkgUpdate_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgUpdate()
 
 	result := skill.SetArg("test", "value")
 
-	if _, ok := result.(*AptUpdate); !ok {
-		t.Error("SetArg should return *AptUpdate, not just RunnableInterface")
+	if _, ok := result.(*PkgUpdate); !ok {
+		t.Error("SetArg should return *PkgUpdate, not just RunnableInterface")
 	}
 }
 
-// TestAptUpdate_SetID_ReturnsConcreteType verifies that SetID returns the concrete AptUpdate type.
-func TestAptUpdate_SetID_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptUpdate()
+// TestPkgUpdate_SetID_ReturnsConcreteType verifies that SetID returns the concrete PkgUpdate type.
+func TestPkgUpdate_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgUpdate()
 
 	result := skill.SetID("custom-id")
 
-	if _, ok := result.(*AptUpdate); !ok {
-		t.Error("SetID should return *AptUpdate, not just RunnableInterface")
+	if _, ok := result.(*PkgUpdate); !ok {
+		t.Error("SetID should return *PkgUpdate, not just RunnableInterface")
 	}
 
 	if skill.GetID() != "custom-id" {
@@ -129,14 +129,14 @@ func TestAptUpdate_SetID_ReturnsConcreteType(t *testing.T) {
 	}
 }
 
-// TestAptUpdate_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete AptUpdate type.
-func TestAptUpdate_SetDescription_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptUpdate()
+// TestPkgUpdate_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete PkgUpdate type.
+func TestPkgUpdate_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgUpdate()
 
 	result := skill.SetDescription("custom description")
 
-	if _, ok := result.(*AptUpdate); !ok {
-		t.Error("SetDescription should return *AptUpdate, not just RunnableInterface")
+	if _, ok := result.(*PkgUpdate); !ok {
+		t.Error("SetDescription should return *PkgUpdate, not just RunnableInterface")
 	}
 
 	if skill.GetDescription() != "custom description" {
@@ -144,28 +144,28 @@ func TestAptUpdate_SetDescription_ReturnsConcreteType(t *testing.T) {
 	}
 }
 
-// TestAptUpdate_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete AptUpdate type.
-func TestAptUpdate_SetTimeout_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptUpdate()
+// TestPkgUpdate_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete PkgUpdate type.
+func TestPkgUpdate_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgUpdate()
 
 	result := skill.SetTimeout(30 * 1000000000)
 
-	if _, ok := result.(*AptUpdate); !ok {
-		t.Error("SetTimeout should return *AptUpdate, not just RunnableInterface")
+	if _, ok := result.(*PkgUpdate); !ok {
+		t.Error("SetTimeout should return *PkgUpdate, not just RunnableInterface")
 	}
 }
 
-// TestAptUpdate_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
-func TestAptUpdate_MethodChaining_PreservesType(t *testing.T) {
-	skill := NewAptUpdate().
+// TestPkgUpdate_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestPkgUpdate_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewPkgUpdate().
 		SetID("custom-id").
 		SetDescription("custom description").
 		SetArg("test", "value").
 		SetArgs(map[string]string{"another": "arg"}).
 		SetTimeout(30 * 1000000000)
 
-	if _, ok := skill.(*AptUpdate); !ok {
-		t.Error("Method chaining should preserve *AptUpdate type")
+	if _, ok := skill.(*PkgUpdate); !ok {
+		t.Error("Method chaining should preserve *PkgUpdate type")
 	}
 
 	if skill.GetID() != "custom-id" {

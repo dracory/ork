@@ -32,17 +32,43 @@ const (
 	// IDPing checks SSH connectivity
 	IDPing = "ping"
 
-	// IDAptUpdate refreshes the package database
-	IDAptUpdate = "apt-update"
+	// IDPkgUpdate refreshes the package database
+	IDPkgUpdate = "apt-update"
 
-	// IDAptUpgrade installs available updates
-	IDAptUpgrade = "apt-upgrade"
+	// Deprecated: Use IDPkgUpdate instead.
+	IDAptUpdate = IDPkgUpdate
 
-	// IDAptInstall installs one or more packages (requires "packages" arg)
-	IDAptInstall = "apt-install"
+	// IDPkgUpgrade installs available updates
+	IDPkgUpgrade = "apt-upgrade"
 
-	// IDAptStatus shows available updates
-	IDAptStatus = "apt-status"
+	// Deprecated: Use IDPkgUpgrade instead.
+	IDAptUpgrade = IDPkgUpgrade
+
+	// IDPkgInstall installs one or more packages (requires "packages" arg)
+	IDPkgInstall = "apt-install"
+
+	// Deprecated: Use IDPkgInstall instead.
+	IDAptInstall = IDPkgInstall
+
+	// IDPkgStatus shows available updates
+	IDPkgStatus = "apt-status"
+
+	// Deprecated: Use IDPkgStatus instead.
+	IDAptStatus = IDPkgStatus
+
+	// IDPkgList lists installed packages (read-only)
+	IDPkgList = "apt-list"
+
+	// Deprecated: Use IDPkgList instead.
+	IDAptList = IDPkgList
+
+	// IDIsPkgInstalled checks whether a specific package is installed (read-only,
+	// requires "package" arg)
+	IDIsPkgInstalled = "apt-is-installed"
+
+	// IDDpkgIsPkgInstalled checks whether a specific package is installed via
+	// dpkg-query (read-only, requires "package" arg). Lighter than apt-is-installed.
+	IDDpkgIsPkgInstalled = "dpkg-is-installed"
 
 	// IDReboot reboots the server
 	IDReboot = "reboot"
@@ -273,4 +299,11 @@ const (
 	// directives to the Caddy unit (configurable via protect-home,
 	// read-write-paths, memory-deny-write-execute, override-dir args)
 	IDCaddyHarden = "caddy-harden"
+
+	// Ncdu skills (disk usage analyzer)
+	// IDNcduInstall installs ncdu (NCurses Disk Usage) via apt
+	IDNcduInstall = "ncdu-install"
+
+	// IDNcduUninstall removes ncdu via apt
+	IDNcduUninstall = "ncdu-uninstall"
 )

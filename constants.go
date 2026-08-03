@@ -14,13 +14,22 @@ const (
 	// SkillPing checks SSH connectivity
 	SkillPing = skills.IDPing
 
-	// SkillAptUpdate refreshes the package database
+	// SkillPkgUpdate refreshes the package database
+	SkillPkgUpdate = skills.IDPkgUpdate
+
+	// Deprecated: Use SkillPkgUpdate instead.
 	SkillAptUpdate = skills.IDAptUpdate
 
-	// SkillAptUpgrade installs available updates
+	// SkillPkgUpgrade installs available updates
+	SkillPkgUpgrade = skills.IDPkgUpgrade
+
+	// Deprecated: Use SkillPkgUpgrade instead.
 	SkillAptUpgrade = skills.IDAptUpgrade
 
-	// SkillAptStatus shows available updates
+	// SkillPkgStatus shows available updates
+	SkillPkgStatus = skills.IDPkgStatus
+
+	// Deprecated: Use SkillPkgStatus instead.
 	SkillAptStatus = skills.IDAptStatus
 
 	// SkillReboot reboots the server

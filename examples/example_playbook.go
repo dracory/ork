@@ -43,7 +43,7 @@ func (e *ExamplePlaybook) Run() types.Result {
 	}
 
 	// Step 2: Check for package updates
-	updateSkill := apt.NewAptUpdate().
+	updateSkill := apt.NewPkgUpdate().
 		WithNodeConfig(cfg)
 
 	updateResult := updateSkill.Run()

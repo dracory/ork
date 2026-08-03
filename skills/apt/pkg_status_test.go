@@ -9,9 +9,9 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// TestAptStatus_Run_DryRun verifies that dry-run mode correctly handles apt status.
-func TestAptStatus_Run_DryRun(t *testing.T) {
-	pb := NewAptStatus()
+// TestPkgStatus_Run_DryRun verifies that dry-run mode correctly handles apt status.
+func TestPkgStatus_Run_DryRun(t *testing.T) {
+	pb := NewPkgStatus()
 
 	cfg := types.NodeConfig{
 		IsDryRunMode: true,
@@ -38,9 +38,9 @@ func TestAptStatus_Run_DryRun(t *testing.T) {
 	}
 }
 
-// TestAptStatus_Run_NotDryRun verifies that non-dry-run mode returns different result structure.
-func TestAptStatus_Run_NotDryRun(t *testing.T) {
-	pb := NewAptStatus()
+// TestPkgStatus_Run_NotDryRun verifies that non-dry-run mode returns different result structure.
+func TestPkgStatus_Run_NotDryRun(t *testing.T) {
+	pb := NewPkgStatus()
 
 	cfg := types.NodeConfig{
 		IsDryRunMode: false,
@@ -64,9 +64,9 @@ func TestAptStatus_Run_NotDryRun(t *testing.T) {
 	}
 }
 
-// TestAptStatus_Check verifies that Check returns false for read-only operation.
-func TestAptStatus_Check(t *testing.T) {
-	pb := NewAptStatus()
+// TestPkgStatus_Check verifies that Check returns false for read-only operation.
+func TestPkgStatus_Check(t *testing.T) {
+	pb := NewPkgStatus()
 
 	cfg := types.NodeConfig{
 		Logger: slog.Default(),
@@ -85,9 +85,9 @@ func TestAptStatus_Check(t *testing.T) {
 	}
 }
 
-// TestAptStatus_NewAptStatus verifies that NewAptStatus creates a properly configured skill.
-func TestAptStatus_NewAptStatus(t *testing.T) {
-	pb := NewAptStatus()
+// TestPkgStatus_NewPkgStatus verifies that NewPkgStatus creates a properly configured skill.
+func TestPkgStatus_NewPkgStatus(t *testing.T) {
+	pb := NewPkgStatus()
 
 	if pb.GetID() != "apt-status" {
 		t.Errorf("Expected ID to be 'apt-status', got '%s'", pb.GetID())
@@ -99,37 +99,34 @@ func TestAptStatus_NewAptStatus(t *testing.T) {
 	}
 }
 
-// TestAptStatus_Run_WithMock demonstrates using the mock SSH client for testing.
+// TestPkgStatus_Run_WithMock demonstrates using the mock SSH client for testing.
 // This test verifies the actual command execution without requiring a real SSH server.
-func TestAptStatus_Run_WithMock(t *testing.T) {
+func TestPkgStatus_Run_WithMock(t *testing.T) {
 	test := skilltest.New(t)
 	defer test.Cleanup()
 
 	test.Setup()
-	test.ExpectCommand("apt-get update -qq", "")
 	test.ExpectCommand("apt list --upgradable 2>/dev/null | tail -n +2", "nginx/stable 1.18.0-0ubuntu1 amd64 [upgradable from 1.17.0-0ubuntu1]")
 
-	pb := NewAptStatus()
+	pb := NewPkgStatus()
 	pb.SetNodeConfig(test.Config())
 	result := pb.Run()
 
 	test.AssertResultNoError(result)
 	test.AssertResultUnchanged(result)
-	test.AssertCommandRun("apt-get update -qq")
 	test.AssertCommandRun("apt list --upgradable 2>/dev/null | tail -n +2")
 	test.AssertResultMessageContains(result, "1 packages available for upgrade")
 }
 
-// TestAptStatus_Run_WithMockNoUpdates demonstrates testing when no updates are available.
-func TestAptStatus_Run_WithMockNoUpdates(t *testing.T) {
+// TestPkgStatus_Run_WithMockNoUpdates demonstrates testing when no updates are available.
+func TestPkgStatus_Run_WithMockNoUpdates(t *testing.T) {
 	test := skilltest.New(t)
 	defer test.Cleanup()
 
 	test.Setup()
-	test.ExpectCommand("apt-get update -qq", "")
 	test.ExpectCommand("apt list --upgradable 2>/dev/null | tail -n +2", "")
 
-	pb := NewAptStatus()
+	pb := NewPkgStatus()
 	pb.SetNodeConfig(test.Config())
 	result := pb.Run()
 
@@ -138,53 +135,53 @@ func TestAptStatus_Run_WithMockNoUpdates(t *testing.T) {
 	test.AssertResultMessageContains(result, "All packages are up to date")
 }
 
-// TestAptStatus_Run_WithMockError demonstrates testing error scenarios.
-func TestAptStatus_Run_WithMockError(t *testing.T) {
+// TestPkgStatus_Run_WithMockError demonstrates testing error scenarios.
+func TestPkgStatus_Run_WithMockError(t *testing.T) {
 	test := skilltest.New(t)
 	defer test.Cleanup()
 
 	test.Setup()
-	test.ExpectError("apt-get update -qq", fmt.Errorf("failed to lock apt directory"))
+	test.ExpectError("apt list --upgradable 2>/dev/null | tail -n +2", fmt.Errorf("failed to list packages"))
 
-	pb := NewAptStatus()
+	pb := NewPkgStatus()
 	pb.SetNodeConfig(test.Config())
 	result := pb.Run()
 
 	test.AssertResultError(result)
-	test.AssertErrorContains(result.Error, "failed to update package lists")
+	test.AssertErrorContains(result.Error, "failed to list upgradable packages")
 }
 
-// TestAptStatus_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete AptStatus type.
-func TestAptStatus_SetArgs_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptStatus()
+// TestPkgStatus_SetArgs_ReturnsConcreteType verifies that SetArgs returns the concrete PkgStatus type.
+func TestPkgStatus_SetArgs_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgStatus()
 	args := map[string]string{"test": "value"}
 
 	result := skill.SetArgs(args)
 
-	if _, ok := result.(*AptStatus); !ok {
-		t.Error("SetArgs should return *AptStatus, not just RunnableInterface")
+	if _, ok := result.(*PkgStatus); !ok {
+		t.Error("SetArgs should return *PkgStatus, not just RunnableInterface")
 	}
 }
 
-// TestAptStatus_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete AptStatus type.
-func TestAptStatus_SetArg_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptStatus()
+// TestPkgStatus_SetArg_ReturnsConcreteType verifies that SetArg returns the concrete PkgStatus type.
+func TestPkgStatus_SetArg_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgStatus()
 
 	result := skill.SetArg("test", "value")
 
-	if _, ok := result.(*AptStatus); !ok {
-		t.Error("SetArg should return *AptStatus, not just RunnableInterface")
+	if _, ok := result.(*PkgStatus); !ok {
+		t.Error("SetArg should return *PkgStatus, not just RunnableInterface")
 	}
 }
 
-// TestAptStatus_SetID_ReturnsConcreteType verifies that SetID returns the concrete AptStatus type.
-func TestAptStatus_SetID_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptStatus()
+// TestPkgStatus_SetID_ReturnsConcreteType verifies that SetID returns the concrete PkgStatus type.
+func TestPkgStatus_SetID_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgStatus()
 
 	result := skill.SetID("custom-id")
 
-	if _, ok := result.(*AptStatus); !ok {
-		t.Error("SetID should return *AptStatus, not just RunnableInterface")
+	if _, ok := result.(*PkgStatus); !ok {
+		t.Error("SetID should return *PkgStatus, not just RunnableInterface")
 	}
 
 	if skill.GetID() != "custom-id" {
@@ -192,14 +189,14 @@ func TestAptStatus_SetID_ReturnsConcreteType(t *testing.T) {
 	}
 }
 
-// TestAptStatus_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete AptStatus type.
-func TestAptStatus_SetDescription_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptStatus()
+// TestPkgStatus_SetDescription_ReturnsConcreteType verifies that SetDescription returns the concrete PkgStatus type.
+func TestPkgStatus_SetDescription_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgStatus()
 
 	result := skill.SetDescription("custom description")
 
-	if _, ok := result.(*AptStatus); !ok {
-		t.Error("SetDescription should return *AptStatus, not just RunnableInterface")
+	if _, ok := result.(*PkgStatus); !ok {
+		t.Error("SetDescription should return *PkgStatus, not just RunnableInterface")
 	}
 
 	if skill.GetDescription() != "custom description" {
@@ -207,28 +204,28 @@ func TestAptStatus_SetDescription_ReturnsConcreteType(t *testing.T) {
 	}
 }
 
-// TestAptStatus_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete AptStatus type.
-func TestAptStatus_SetTimeout_ReturnsConcreteType(t *testing.T) {
-	skill := NewAptStatus()
+// TestPkgStatus_SetTimeout_ReturnsConcreteType verifies that SetTimeout returns the concrete PkgStatus type.
+func TestPkgStatus_SetTimeout_ReturnsConcreteType(t *testing.T) {
+	skill := NewPkgStatus()
 
 	result := skill.SetTimeout(30 * 1000000000)
 
-	if _, ok := result.(*AptStatus); !ok {
-		t.Error("SetTimeout should return *AptStatus, not just RunnableInterface")
+	if _, ok := result.(*PkgStatus); !ok {
+		t.Error("SetTimeout should return *PkgStatus, not just RunnableInterface")
 	}
 }
 
-// TestAptStatus_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
-func TestAptStatus_MethodChaining_PreservesType(t *testing.T) {
-	skill := NewAptStatus().
+// TestPkgStatus_MethodChaining_PreservesType verifies that method chaining preserves the concrete type.
+func TestPkgStatus_MethodChaining_PreservesType(t *testing.T) {
+	skill := NewPkgStatus().
 		SetID("custom-id").
 		SetDescription("custom description").
 		SetArg("test", "value").
 		SetArgs(map[string]string{"another": "arg"}).
 		SetTimeout(30 * 1000000000)
 
-	if _, ok := skill.(*AptStatus); !ok {
-		t.Error("Method chaining should preserve *AptStatus type")
+	if _, ok := skill.(*PkgStatus); !ok {
+		t.Error("Method chaining should preserve *PkgStatus type")
 	}
 
 	if skill.GetID() != "custom-id" {

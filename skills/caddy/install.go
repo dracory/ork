@@ -92,7 +92,7 @@ func (i *Install) Run() types.Result {
 	}
 
 	// Step 1: Install prerequisite packages for adding apt repositories.
-	prereqResult := runSub(apt.NewAptInstall().SetPackages(
+	prereqResult := runSub(apt.NewPkgInstall().SetPackages(
 		"debian-keyring",
 		"debian-archive-keyring",
 		"apt-transport-https",
@@ -170,7 +170,7 @@ func (i *Install) Run() types.Result {
 	}
 
 	// Step 4: Update apt cache to pick up the new repository.
-	updateResult := runSub(apt.NewAptUpdate(), cfg)
+	updateResult := runSub(apt.NewPkgUpdate(), cfg)
 	if updateResult.Error != nil {
 		return types.Result{
 			Changed: false,
@@ -180,7 +180,7 @@ func (i *Install) Run() types.Result {
 	}
 
 	// Step 5: Install Caddy via apt.
-	installResult := runSub(apt.NewAptInstall().SetPackages("caddy"), cfg)
+	installResult := runSub(apt.NewPkgInstall().SetPackages("caddy"), cfg)
 	if installResult.Error != nil {
 		return types.Result{
 			Changed: false,

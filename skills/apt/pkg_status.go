@@ -13,18 +13,17 @@ import (
 	"github.com/dracory/ork/types"
 )
 
-// AptStatus shows available package updates without installing them.
-// This is a read-only skill that refreshes the package database and reports
-// how many packages are available for upgrade without modifying the system.
+// PkgStatus shows available package updates without installing them.
+// This is a read-only skill that reports how many packages are available
+// for upgrade without modifying the system.
 //
 // Usage:
 //
-//	node.Run(apt.NewAptStatus())
+//	node.Run(apt.NewPkgStatus())
 //
 // Execution Flow:
-//  1. Runs apt-get update to refresh package lists
-//  2. Lists upgradable packages with apt list --upgradable
-//  3. Reports count and details of available updates
+//  1. Lists upgradable packages with apt list --upgradable
+//  2. Reports count and details of available updates
 //
 // Expected Output:
 //   - Success: Message indicating number of packages available for upgrade (or "up to date")
@@ -38,18 +37,18 @@ import (
 //   - Monitor available security updates without installing them
 //   - Pre-flight check before maintenance windows
 //   - Reporting and compliance auditing
-type AptStatus struct {
+type PkgStatus struct {
 	*types.BaseSkill
 }
 
-// Compile-time assertion that AptStatus implements types.RunnableInterface.
-var _ types.RunnableInterface = (*AptStatus)(nil)
+// Compile-time assertion that PkgStatus implements types.RunnableInterface.
+var _ types.RunnableInterface = (*PkgStatus)(nil)
 
-// Check always returns false since AptStatus is read-only.
+// Check always returns false since PkgStatus is read-only.
 // Per the skill interface convention, the bool return indicates whether
 // the operation would modify system state. Since apt-status only queries
 // package information, this always returns false.
-func (a *AptStatus) Check() (bool, error) {
+func (a *PkgStatus) Check() (bool, error) {
 	return false, nil
 }
 
@@ -59,15 +58,13 @@ func (a *AptStatus) Check() (bool, error) {
 // Result.Details contains:
 //   - upgradable_count: Number of packages available for upgrade
 //   - packages: Full output from apt list --upgradable (when packages exist)
-func (a *AptStatus) Run() types.Result {
+func (a *PkgStatus) Run() types.Result {
 	cfg := a.GetNodeConfig()
 
-	cmdUpdate := types.Command{Command: "apt-get update -qq", Description: "Update package lists"}
 	cmdList := types.Command{Command: "apt list --upgradable 2>/dev/null | tail -n +2", Description: "List upgradable packages"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdUpdate.Command)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdList.Command)
 		return types.Result{
 			Changed: false,
@@ -76,15 +73,6 @@ func (a *AptStatus) Run() types.Result {
 	}
 
 	cfg.GetLoggerOrDefault().Info("checking for available updates")
-	_, err := ssh.Run(cfg, cmdUpdate)
-	if err != nil {
-		return types.Result{
-			Changed: false,
-			Message: "Failed to update package lists",
-			Error:   fmt.Errorf("failed to update package lists: %w", err),
-		}
-	}
-
 	output, err := ssh.Run(cfg, cmdList)
 	if err != nil {
 		return types.Result{
@@ -94,8 +82,8 @@ func (a *AptStatus) Run() types.Result {
 		}
 	}
 
-	count := strings.TrimSpace(output)
-	if count == "" || count == "0" {
+	trimmed := strings.TrimSpace(output)
+	if trimmed == "" || trimmed == "0" {
 		cfg.GetLoggerOrDefault().Info("all packages are up to date")
 		return types.Result{
 			Changed: false,
@@ -106,61 +94,77 @@ func (a *AptStatus) Run() types.Result {
 		}
 	}
 
-	cfg.GetLoggerOrDefault().Info("available upgrades", "packages", output)
+	lineCount := 0
+	for _, line := range strings.Split(trimmed, "\n") {
+		if strings.TrimSpace(line) != "" {
+			lineCount++
+		}
+	}
+	cfg.GetLoggerOrDefault().Info("available upgrades", "packages", trimmed)
 	return types.Result{
 		Changed: false,
-		Message: fmt.Sprintf("%d packages available for upgrade", strings.Count(output, "\n")+1),
+		Message: fmt.Sprintf("%d packages available for upgrade", lineCount),
 		Details: map[string]string{
-			"upgradable_count": fmt.Sprintf("%d", strings.Count(output, "\n")+1),
-			"packages":         output,
+			"upgradable_count": fmt.Sprintf("%d", lineCount),
+			"packages":         trimmed,
 		},
 	}
 }
 
 // SetArgs sets the arguments for apt status.
-// Returns AptStatus for fluent method chaining.
-func (a *AptStatus) SetArgs(args map[string]string) types.RunnableInterface {
+// Returns PkgStatus for fluent method chaining.
+func (a *PkgStatus) SetArgs(args map[string]string) types.RunnableInterface {
 	a.BaseSkill.SetArgs(args)
 	return a
 }
 
 // SetArg sets a single argument for apt status.
-// Returns AptStatus for fluent method chaining.
-func (a *AptStatus) SetArg(key, value string) types.RunnableInterface {
+// Returns PkgStatus for fluent method chaining.
+func (a *PkgStatus) SetArg(key, value string) types.RunnableInterface {
 	a.BaseSkill.SetArg(key, value)
 	return a
 }
 
 // SetID sets the ID for apt status.
-// Returns AptStatus for fluent method chaining.
-func (a *AptStatus) SetID(id string) types.RunnableInterface {
+// Returns PkgStatus for fluent method chaining.
+func (a *PkgStatus) SetID(id string) types.RunnableInterface {
 	a.BaseSkill.SetID(id)
 	return a
 }
 
 // SetDescription sets the description for apt status.
-// Returns AptStatus for fluent method chaining.
-func (a *AptStatus) SetDescription(description string) types.RunnableInterface {
+// Returns PkgStatus for fluent method chaining.
+func (a *PkgStatus) SetDescription(description string) types.RunnableInterface {
 	a.BaseSkill.SetDescription(description)
 	return a
 }
 
 // SetTimeout sets the timeout for apt status.
-// Returns AptStatus for fluent method chaining.
-func (a *AptStatus) SetTimeout(timeout time.Duration) types.RunnableInterface {
+// Returns PkgStatus for fluent method chaining.
+func (a *PkgStatus) SetTimeout(timeout time.Duration) types.RunnableInterface {
 	a.BaseSkill.SetTimeout(timeout)
 	return a
 }
 
-// NewAptStatus creates a new apt-status skill.
+// WithNodeConfig sets the node config and returns PkgStatus for chaining.
+// Shortcut alias to SetNodeConfig for fluent interface convenience.
+func (a *PkgStatus) WithNodeConfig(cfg types.NodeConfig) *PkgStatus {
+	a.BaseSkill.SetNodeConfig(cfg)
+	return a
+}
+
+// NewPkgStatus creates a new apt-status skill.
 //
 // Returns:
 //
-//	A PlaybookInterface implementation configured with IDAptStatus identifier
+//	A PlaybookInterface implementation configured with IDPkgStatus identifier
 //	and description "Show available package updates (read-only)".
-func NewAptStatus() *AptStatus {
+func NewPkgStatus() *PkgStatus {
 	pb := types.NewBaseSkill()
-	pb.SetID(skills.IDAptStatus)
+	pb.SetID(skills.IDPkgStatus)
 	pb.SetDescription("Show available package updates (read-only)")
-	return &AptStatus{BaseSkill: pb}
+	return &PkgStatus{BaseSkill: pb}
 }
+
+// Deprecated: Use NewPkgStatus instead. NewAptStatus will be removed in a future version.
+func NewAptStatus() *PkgStatus { return NewPkgStatus() }
