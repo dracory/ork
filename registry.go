@@ -103,6 +103,7 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		security.NewKernelHarden(),
 		security.NewAideInstall(),
 		security.NewAuditdInstall(),
+		security.NewUnattendedUpgradesInstall(),
 		security.NewSshChangePort(),
 		swap.NewSwapCreate(),
 		swap.NewSwapDelete(),

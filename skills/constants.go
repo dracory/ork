@@ -119,6 +119,10 @@ const (
 	// IDAuditdInstall installs and configures the Linux Audit Framework
 	IDAuditdInstall = "auditd-install"
 
+	// IDUnattendedUpgradesInstall installs and configures unattended-upgrades
+	// for automatic security updates
+	IDUnattendedUpgradesInstall = "unattended-upgrades-install"
+
 	// IDSshChangePort changes the SSH port to reduce automated scanning
 	IDSshChangePort = "ssh-change-port"
 
