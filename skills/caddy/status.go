@@ -39,7 +39,7 @@ func (s *Status) Check() (bool, error) {
 // Changed is always false since this is a read-only operation.
 func (s *Status) Run() types.Result {
 	cfg := s.GetNodeConfig()
-	statusResult := runSub(systemctl.NewStatus().SetService(DefaultCaddyService), cfg)
+	statusResult := types.RunSub(systemctl.NewStatus().SetService(DefaultCaddyService), cfg)
 
 	return types.Result{
 		Changed: false,

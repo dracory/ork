@@ -703,15 +703,15 @@ func TestStatus_MethodChaining_PreservesType(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// runSub — dry-run propagation regression test
+// types.RunSub — dry-run propagation regression test
 // ---------------------------------------------------------------------------
 
-// TestRunSub_PropagatesDryRun verifies that runSub sets dry-run mode on
-// sub-skills. This is a regression test for the bug where runSub only
+// TestRunSub_PropagatesDryRun verifies that types.RunSub sets dry-run mode on
+// sub-skills. This is a regression test for the bug where types.RunSub only
 // called SetNodeConfig but not SetDryRun, causing sub-skills to execute
 // real SSH commands in dry-run mode.
 func TestRunSub_PropagatesDryRun(t *testing.T) {
-	// Use a Status skill as a proxy — it delegates to systemctl.Status via runSub.
+	// Use a Status skill as a proxy — it delegates to systemctl.Status via types.RunSub.
 	// In dry-run mode, the sub-skill should return a dry-run message, not execute SSH.
 	pb := NewStatus()
 	pb.SetNodeConfig(dryRunCfg())
@@ -787,7 +787,7 @@ func TestHarden_Run_DryRun(t *testing.T) {
 		t.Error("Expected Changed=true in dry-run")
 	}
 	// In dry-run mode, sub-skills (DirCreate, FileCreate, DaemonReload, Restart)
-	// each handle dry-run individually via runSub. Harden.Run() itself does not
+	// each handle dry-run individually via types.RunSub. Harden.Run() itself does not
 	// short-circuit, so the final message is the standard success message.
 }
 

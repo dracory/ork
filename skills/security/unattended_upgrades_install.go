@@ -186,7 +186,7 @@ func (u *UnattendedUpgradesInstall) Run() types.Result {
 	// existing file, compares content, and skips the write if they match
 	// (same behavior as Ansible's template module).
 	cfg.GetLoggerOrDefault().Info("writing 20auto-upgrades config")
-	autoResult := runSub(fs.NewFileCreate().
+	autoResult := types.RunSub(fs.NewFileCreate().
 		SetPath(pathAutoUpgrades).
 		SetContent(autoUpgradesContent).
 		SetMode("644").
@@ -197,7 +197,7 @@ func (u *UnattendedUpgradesInstall) Run() types.Result {
 
 	// Step 3: Write 50unattended-upgrades config.
 	cfg.GetLoggerOrDefault().Info("writing 50unattended-upgrades config")
-	unattendedResult := runSub(fs.NewFileCreate().
+	unattendedResult := types.RunSub(fs.NewFileCreate().
 		SetPath(pathUnattendedUpgrades).
 		SetContent(unattendedUpgradesContent).
 		SetMode("644").

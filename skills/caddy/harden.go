@@ -99,7 +99,7 @@ func (h *Harden) Run() types.Result {
 	}
 
 	// Step 1: Create the systemd override directory.
-	dirResult := runSub(fs.NewDirCreate().
+	dirResult := types.RunSub(fs.NewDirCreate().
 		SetPath(overrideDir).
 		SetMode("755"), cfg)
 	if dirResult.Error != nil {
@@ -117,7 +117,7 @@ func (h *Harden) Run() types.Result {
 	overrideContent := buildOverrideContent(protectSystem, protectHome, readWritePaths, memoryDenyWriteExecute)
 
 	overridePath := strings.TrimRight(overrideDir, "/") + "/override.conf"
-	fileResult := runSub(fs.NewFileCreate().
+	fileResult := types.RunSub(fs.NewFileCreate().
 		SetPath(overridePath).
 		SetContent(overrideContent).
 		SetMode("644").
@@ -131,7 +131,7 @@ func (h *Harden) Run() types.Result {
 	}
 
 	// Step 3: Reload systemd to pick up the override.
-	daemonResult := runSub(systemctl.NewDaemonReload(), cfg)
+	daemonResult := types.RunSub(systemctl.NewDaemonReload(), cfg)
 	if daemonResult.Error != nil {
 		return types.Result{
 			Changed: false,
@@ -143,7 +143,7 @@ func (h *Harden) Run() types.Result {
 	// Step 4: Restart Caddy so the sandboxing directives (ProtectSystem,
 	// ProtectHome, etc.) take effect. daemon-reload alone does not apply
 	// them to the currently running process.
-	restartResult := runSub(systemctl.NewRestart().SetService(DefaultCaddyService), cfg)
+	restartResult := types.RunSub(systemctl.NewRestart().SetService(DefaultCaddyService), cfg)
 	if restartResult.Error != nil {
 		return types.Result{
 			Changed: false,

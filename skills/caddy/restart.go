@@ -97,7 +97,7 @@ func (r *Restart) Run() types.Result {
 	// sandbox — it must already exist with the right ownership.
 	// Also fix ownership of an existing access.log that may have been created
 	// by a pre-hardening Caddy run as root (mode 600, owned by root).
-	logDirResult := runSub(fs.NewDirCreate().
+	logDirResult := types.RunSub(fs.NewDirCreate().
 		SetPath(DefaultCaddyLogDir).
 		SetOwner(DefaultCaddyUser+":"+DefaultCaddyUser).
 		SetMode("755"), cfg)
@@ -109,7 +109,7 @@ func (r *Restart) Run() types.Result {
 		}
 	}
 
-	logOwnerResult := runSub(fs.NewChangeOwner().
+	logOwnerResult := types.RunSub(fs.NewChangeOwner().
 		SetPath(DefaultCaddyLogDir+"/access.log").
 		SetOwner(DefaultCaddyUser+":"+DefaultCaddyUser), cfg)
 	if logOwnerResult.Error != nil {
@@ -119,7 +119,7 @@ func (r *Restart) Run() types.Result {
 
 	// Step 3: Upload Caddyfile to the remote path (owned by root:caddy,
 	// group-readable so the caddy process can read it).
-	fileResult := runSub(fs.NewFileCreate().
+	fileResult := types.RunSub(fs.NewFileCreate().
 		SetPath(remotePath).
 		SetContent(string(caddyfileContent)).
 		SetOwner("root:"+DefaultCaddyUser).
@@ -154,7 +154,7 @@ func (r *Restart) Run() types.Result {
 
 	// Step 5: Reload Caddy via systemd (graceful, zero-downtime, with restart
 	// fallback handled by the systemctl.Reload skill).
-	reloadResult := runSub(systemctl.NewReload().SetService(DefaultCaddyService), cfg)
+	reloadResult := types.RunSub(systemctl.NewReload().SetService(DefaultCaddyService), cfg)
 	if reloadResult.Error != nil {
 		return types.Result{
 			Changed: false,
@@ -164,7 +164,7 @@ func (r *Restart) Run() types.Result {
 	}
 
 	// Step 6: Verify Caddy is running.
-	activeResult := runSub(systemctl.NewIsActive().SetService(DefaultCaddyService), cfg)
+	activeResult := types.RunSub(systemctl.NewIsActive().SetService(DefaultCaddyService), cfg)
 	if activeResult.Error != nil {
 		return types.Result{
 			Changed: true,

@@ -190,7 +190,7 @@ func (p *PhpFpmHarden) Run() types.Result {
 		uploadMaxFilesize, postMaxSize, maxExecutionTime, maxInputTime, opcacheMemory, opcacheMaxFiles)
 
 	cfg.GetLoggerOrDefault().Info("writing conf.d drop-in", "path", confDPath)
-	confDResult := runSub(fs.NewFileCreate().
+	confDResult := types.RunSub(fs.NewFileCreate().
 		SetPath(confDPath).
 		SetContent(confDContent).
 		SetOwner("root:root").
@@ -255,7 +255,7 @@ func (p *PhpFpmHarden) Run() types.Result {
 
 	// Step 5: Restart PHP-FPM so the hardened settings take effect.
 	cfg.GetLoggerOrDefault().Info("restarting PHP-FPM", "service", phpFpmService)
-	restartResult := runSub(systemctl.NewRestart().SetService(phpFpmService), cfg)
+	restartResult := types.RunSub(systemctl.NewRestart().SetService(phpFpmService), cfg)
 	if restartResult.Error != nil {
 		return types.Result{
 			Changed: false,

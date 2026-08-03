@@ -92,7 +92,7 @@ func (i *Install) Run() types.Result {
 	}
 
 	// Step 1: Install prerequisite packages for adding apt repositories.
-	prereqResult := runSub(apt.NewPkgInstall().SetPackages(
+	prereqResult := types.RunSub(apt.NewPkgInstall().SetPackages(
 		"debian-keyring",
 		"debian-archive-keyring",
 		"apt-transport-https",
@@ -170,7 +170,7 @@ func (i *Install) Run() types.Result {
 	}
 
 	// Step 4: Update apt cache to pick up the new repository.
-	updateResult := runSub(apt.NewPkgUpdate(), cfg)
+	updateResult := types.RunSub(apt.NewPkgUpdate(), cfg)
 	if updateResult.Error != nil {
 		return types.Result{
 			Changed: false,
@@ -180,7 +180,7 @@ func (i *Install) Run() types.Result {
 	}
 
 	// Step 5: Install Caddy via apt.
-	installResult := runSub(apt.NewPkgInstall().SetPackages("caddy"), cfg)
+	installResult := types.RunSub(apt.NewPkgInstall().SetPackages("caddy"), cfg)
 	if installResult.Error != nil {
 		return types.Result{
 			Changed: false,
@@ -190,7 +190,7 @@ func (i *Install) Run() types.Result {
 	}
 
 	// Step 6: Create Caddy log directory for structured JSON access logs.
-	logDirResult := runSub(fs.NewDirCreate().
+	logDirResult := types.RunSub(fs.NewDirCreate().
 		SetPath(DefaultCaddyLogDir).
 		SetOwner(DefaultCaddyUser+":"+DefaultCaddyUser).
 		SetMode("755"), cfg)
@@ -205,7 +205,7 @@ func (i *Install) Run() types.Result {
 	// Step 7: Ensure Caddy service is enabled and started.
 	// The apt package postinst should do this, but we make it explicit to
 	// match Ansible community roles (paultibbetts.caddy, maxhoesel.caddy).
-	enableResult := runSub(systemctl.NewEnable().
+	enableResult := types.RunSub(systemctl.NewEnable().
 		SetService(DefaultCaddyService).
 		SetStart(true), cfg)
 	if enableResult.Error != nil {
