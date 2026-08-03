@@ -64,9 +64,19 @@ type RunnableInterface interface {
 	// GetArgs returns the entire arguments map.
 	GetArgs() map[string]string
 
-	// SetArgs replaces the entire arguments map.
+	// SetArgs replaces the entire arguments map — all existing args are
+	// discarded, including those set by typed setters (SetVersion, SetPath,
+	// SetKeyFilePath, etc.). This is a destructive operation.
+	// For adding runtime args without destroying registration-time args,
+	// use MergeArgs.
 	// Returns the RunnableInterface for fluent method chaining.
 	SetArgs(args map[string]string) RunnableInterface
+
+	// MergeArgs merges the given args into the existing args map, overwriting
+	// only the keys provided. Existing args (e.g. those set by typed setters
+	// like SetVersion, SetPath, SetKeyFilePath) are preserved.
+	// Returns the RunnableInterface for fluent method chaining.
+	MergeArgs(args map[string]string) RunnableInterface
 
 	// IsDryRun returns true if this is a dry-run execution.
 	IsDryRun() bool

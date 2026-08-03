@@ -65,6 +65,17 @@ func (r *Remove) Run() types.Result {
 		return types.Result{Changed: false, Message: "Invalid path", Error: err}
 	}
 
+	// Guard against rm -r on root-level paths like /, /var, /usr, etc.
+	if isTrue(recursive) {
+		if err := validateDestructivePath(path); err != nil {
+			return types.Result{
+				Changed: false,
+				Message: "Unsafe path for recursive removal: " + path,
+				Error:   err,
+			}
+		}
+	}
+
 	cfg := r.GetNodeConfig()
 
 	needsRemove, err := r.Check()

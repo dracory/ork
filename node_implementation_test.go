@@ -966,6 +966,16 @@ func (m *mockPlaybook) SetArgs(args map[string]string) types.RunnableInterface {
 	return m
 }
 
+func (m *mockPlaybook) MergeArgs(args map[string]string) types.RunnableInterface {
+	if m.args == nil {
+		m.args = map[string]string{}
+	}
+	for k, v := range args {
+		m.args[k] = v
+	}
+	return m
+}
+
 func (m *mockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }

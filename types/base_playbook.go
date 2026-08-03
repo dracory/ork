@@ -115,7 +115,10 @@ func (b *BasePlaybook) GetArgs() map[string]string {
 	return args
 }
 
-// SetArgs replaces the entire arguments map.
+// SetArgs replaces the entire arguments map — all existing args are
+// discarded, including those set by typed setters (SetVersion, SetPath,
+// SetKeyFilePath, etc.). This is a destructive operation.
+// For adding runtime args without destroying registration-time args, use MergeArgs.
 // Returns RunnableInterface for fluent method chaining.
 func (b *BasePlaybook) SetArgs(args map[string]string) RunnableInterface {
 	// Remove existing args
@@ -126,6 +129,17 @@ func (b *BasePlaybook) SetArgs(args map[string]string) RunnableInterface {
 		}
 	}
 	// Set new args
+	for k, v := range args {
+		b.atom.Set(argPrefix+k, v)
+	}
+	return b
+}
+
+// MergeArgs merges the given args into the existing args map, overwriting
+// only the keys provided. Existing args (e.g. those set by typed setters
+// like SetVersion, SetPath, SetKeyFilePath) are preserved.
+// Returns RunnableInterface for fluent method chaining.
+func (b *BasePlaybook) MergeArgs(args map[string]string) RunnableInterface {
 	for k, v := range args {
 		b.atom.Set(argPrefix+k, v)
 	}

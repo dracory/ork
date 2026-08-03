@@ -13,6 +13,7 @@
 //   - FileCreate: Create file with content, ownership, and permissions
 //   - FileExists: Check if file exists (read-only)
 //   - FileDelete: Delete a single file
+//   - DirCopy: Copy a directory recursively on the remote server
 //   - FileCopy: Copy a file on the remote server
 //   - ChangeOwner: Change file/directory ownership (chown)
 //   - ChangeMode: Change file/directory permissions (chmod)
@@ -87,10 +88,10 @@ const (
 )
 
 // validatePath validates that a path is a sane absolute path with no shell
-// metacharacters. This prevents shell injection when the path is interpolated
-// into commands like mkdir, chmod, chown, rm, etc.
-// Returns an error if the path is empty, not absolute, or contains any
-// character outside [A-Za-z0-9._\-/].
+// metacharacters or directory traversal. This prevents shell injection when
+// the path is interpolated into commands like mkdir, chmod, chown, rm, etc.
+// Returns an error if the path is empty, not absolute, contains any character
+// outside [A-Za-z0-9._\-/], or contains a ".." component.
 func validatePath(path string) error {
 	if path == "" {
 		return fmt.Errorf("path cannot be empty")
@@ -101,6 +102,12 @@ func validatePath(path string) error {
 	for _, r := range path {
 		if !isSafePathRune(r) {
 			return fmt.Errorf("path contains disallowed character %q (allowed: letters, digits, '.', '_', '-', '/')", r)
+		}
+	}
+	// Reject ".." components to prevent directory traversal
+	for _, part := range strings.Split(path, "/") {
+		if part == ".." {
+			return fmt.Errorf("path contains '..' traversal, not allowed: %q", path)
 		}
 	}
 	return nil

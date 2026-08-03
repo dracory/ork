@@ -260,3 +260,100 @@ func TestRemove_TypedSetters_Chaining(t *testing.T) {
 		t.Errorf("Expected force 'true', got '%s'", skill.GetArg(ArgForce))
 	}
 }
+
+// TestRemove_Run_DestructivePath_RejectsRoot verifies that rm -rf on "/" is rejected.
+func TestRemove_Run_DestructivePath_RejectsRoot(t *testing.T) {
+	pb := NewRemove()
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/")
+	pb.SetArg(ArgRecursive, "true")
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed to be false for destructive path '/'")
+	}
+
+	if result.Error == nil {
+		t.Error("Expected an error for destructive path '/'")
+	}
+}
+
+// TestRemove_Run_DestructivePath_RejectsSingleComponent verifies that rm -rf on "/var" is rejected.
+func TestRemove_Run_DestructivePath_RejectsSingleComponent(t *testing.T) {
+	pb := NewRemove()
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/var")
+	pb.SetArg(ArgRecursive, "true")
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed to be false for destructive path '/var'")
+	}
+
+	if result.Error == nil {
+		t.Error("Expected an error for destructive path '/var'")
+	}
+}
+
+// TestRemove_Run_NonRecursive_AllowsSingleComponent verifies that non-recursive rm on "/var" is allowed.
+func TestRemove_Run_NonRecursive_AllowsSingleComponent(t *testing.T) {
+	pb := NewRemove()
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/var")
+	pb.SetArg(ArgRecursive, "false")
+
+	result := pb.Run()
+
+	// Non-recursive rm should not trigger the destructive path guard
+	if result.Error != nil {
+		t.Errorf("Expected no error for non-recursive rm on '/var', got: %v", result.Error)
+	}
+}
+
+// TestRemove_Run_DotDotTraversal_Rejects verifies that '..' in path is rejected.
+func TestRemove_Run_DotDotTraversal_Rejects(t *testing.T) {
+	pb := NewRemove()
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/var/../etc")
+	pb.SetArg(ArgRecursive, "true")
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed to be false for '..' traversal")
+	}
+
+	if result.Error == nil {
+		t.Error("Expected an error for '..' traversal")
+	}
+}

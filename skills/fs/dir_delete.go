@@ -73,6 +73,18 @@ func (d *DirDelete) Run() types.Result {
 		force = "true"
 	}
 
+	// Guard against rm -rf on root-level paths like /, /var, /usr, etc.
+	// Only needed for recursive mode; rmdir (non-recursive) is safe on non-empty dirs.
+	if isTrue(recursive) {
+		if err := validateDestructivePath(path); err != nil {
+			return types.Result{
+				Changed: false,
+				Message: "Unsafe path for deletion: " + path,
+				Error:   err,
+			}
+		}
+	}
+
 	cfg := d.GetNodeConfig()
 
 	needsDelete, err := d.Check()

@@ -221,6 +221,9 @@ const (
 	// IDFSFileCopy copies a file on the remote server
 	IDFSFileCopy = "fs-file-copy"
 
+	// IDFSDirCopy copies a directory recursively on the remote server (cp -Rp)
+	IDFSDirCopy = "fs-dir-copy"
+
 	// IDFSChangeOwner changes file/directory ownership (chown)
 	IDFSChangeOwner = "fs-change-owner"
 

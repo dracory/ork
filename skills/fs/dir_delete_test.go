@@ -241,6 +241,100 @@ func TestDirDelete_SetForce(t *testing.T) {
 	}
 }
 
+// TestDirDelete_Run_DestructivePath_RejectsRoot verifies that rm -rf on "/" is rejected.
+func TestDirDelete_Run_DestructivePath_RejectsRoot(t *testing.T) {
+	pb := NewDirDelete()
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/")
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed to be false for destructive path '/'")
+	}
+
+	if result.Error == nil {
+		t.Error("Expected an error for destructive path '/'")
+	}
+}
+
+// TestDirDelete_Run_DestructivePath_RejectsSingleComponent verifies that rm -rf on "/var" is rejected.
+func TestDirDelete_Run_DestructivePath_RejectsSingleComponent(t *testing.T) {
+	pb := NewDirDelete()
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/var")
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed to be false for destructive path '/var'")
+	}
+
+	if result.Error == nil {
+		t.Error("Expected an error for destructive path '/var'")
+	}
+}
+
+// TestDirDelete_Run_NonRecursive_AllowsSingleComponent verifies that rmdir (non-recursive) on "/var" is allowed.
+func TestDirDelete_Run_NonRecursive_AllowsSingleComponent(t *testing.T) {
+	pb := NewDirDelete()
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/var")
+	pb.SetArg(ArgRecursive, "false")
+
+	result := pb.Run()
+
+	// Non-recursive rmdir should not trigger the destructive path guard
+	if result.Error != nil {
+		t.Errorf("Expected no error for non-recursive rmdir on '/var', got: %v", result.Error)
+	}
+}
+
+// TestDirDelete_Run_DotDotTraversal_Rejects verifies that '..' in path is rejected.
+func TestDirDelete_Run_DotDotTraversal_Rejects(t *testing.T) {
+	pb := NewDirDelete()
+
+	cfg := types.NodeConfig{
+		IsDryRunMode: true,
+		Logger:       slog.Default(),
+		Args:         map[string]string{},
+	}
+
+	pb.SetNodeConfig(cfg)
+	pb.SetArg(ArgPath, "/var/../etc")
+
+	result := pb.Run()
+
+	if result.Changed {
+		t.Error("Expected Changed to be false for '..' traversal")
+	}
+
+	if result.Error == nil {
+		t.Error("Expected an error for '..' traversal")
+	}
+}
+
 // TestDirDelete_TypedSetters_Chaining verifies that all typed setters chain correctly.
 func TestDirDelete_TypedSetters_Chaining(t *testing.T) {
 	skill := NewDirDelete().

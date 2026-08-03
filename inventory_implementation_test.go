@@ -730,6 +730,16 @@ func (m *invTestMockPlaybook) SetArgs(args map[string]string) types.RunnableInte
 	return m
 }
 
+func (m *invTestMockPlaybook) MergeArgs(args map[string]string) types.RunnableInterface {
+	if m.args == nil {
+		m.args = map[string]string{}
+	}
+	for k, v := range args {
+		m.args[k] = v
+	}
+	return m
+}
+
 func (m *invTestMockPlaybook) IsDryRun() bool {
 	return m.dryRun
 }

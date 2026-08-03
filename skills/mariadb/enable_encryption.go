@@ -2,10 +2,11 @@
 
 import (
 	"fmt"
-	"path/filepath"
+	"path"
 	"time"
 
 	"github.com/dracory/ork/skills"
+	"github.com/dracory/ork/skills/fs"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
@@ -77,17 +78,24 @@ func (m *EnableEncryption) Run() types.Result {
 	cfg.GetLoggerOrDefault().Info("enabling MariaDB encryption at rest")
 
 	// Define commands
-	keyDir := filepath.Dir(keyFilePath)
+	// Use path.Dir (not filepath.Dir) because the target is always Linux —
+	// filepath.Dir uses OS-native separators (backslashes on Windows), which
+	// would produce a broken path like \etc\mysql\encryption on the remote.
+	keyDir := path.Dir(keyFilePath)
 	shellEscapedConfigPath := mariadbEscapeShellQuote(configPath)
 	shellEscapedKeyFilePath := mariadbEscapeShellQuote(keyFilePath)
-	shellEscapedKeyDir := mariadbEscapeShellQuote(keyDir)
 	cmdBackup := types.Command{
 		Command:     fmt.Sprintf(`sh -c 'cp %s %s.backup.$(date +%%Y%%m%%d_%%H%%M%%S)'`, shellEscapedConfigPath, shellEscapedConfigPath),
 		Description: "Backup MariaDB config",
 	}
-	cmdMkdir := types.Command{
-		Command:     fmt.Sprintf(`mkdir -p '%s'`, shellEscapedKeyDir),
-		Description: "Create key directory",
+	cmdCheckOpenSSLStr := ""
+	cmdCheckOpenSSLStr += "which openssl"                      // check if openssl exists
+	cmdCheckOpenSSLStr += " || " + skills.DebianNonInteractive // if not, prevent interactive prompts
+	cmdCheckOpenSSLStr += " apt-get install -y openssl"        // install openssl, auto-confirm
+	cmdCheckOpenSSLStr += skills.DpkgConfOptions               // keep local config, use maintainer default if unmodified
+	cmdCheckOpenSSL := types.Command{
+		Command:     cmdCheckOpenSSLStr,
+		Description: "Ensure openssl is installed",
 		Required:    true,
 	}
 	cmdGenKey := types.Command{
@@ -123,7 +131,8 @@ EOF`, shellEscapedConfigPath, shellEscapedConfigPath, keyFilePath),
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdBackup.Command, "description", cmdBackup.Description)
-		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdMkdir.Command, "description", cmdMkdir.Description)
+		cfg.GetLoggerOrDefault().Info("dry-run: would create directory", "path", keyDir, "owner", "mysql:mysql", "mode", "700")
+		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdCheckOpenSSL.Command, "description", cmdCheckOpenSSL.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdGenKey.Command, "description", cmdGenKey.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdPerms.Command, "description", cmdPerms.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdConfigure.Command, "description", cmdConfigure.Description)
@@ -134,41 +143,58 @@ EOF`, shellEscapedConfigPath, shellEscapedConfigPath, keyFilePath),
 		}
 	}
 
-	// Backup config
+	// Backup config — if this fails, abort before modifying the config file
+	// (continuing without a backup risks losing the original config on a bad edit).
 	cfg.GetLoggerOrDefault().Info("backing up MariaDB configuration")
-	_, _ = ssh.Run(cfg, cmdBackup)
+	backupOutput, backupErr := ssh.Run(cfg, cmdBackup)
+	if backupErr != nil {
+		return types.Result{Changed: false, Message: "Failed to backup MariaDB config: " + backupOutput, Error: backupErr}
+	}
 
-	// Create key directory
-	_, err := ssh.Run(cfg, cmdMkdir)
+	// Create key directory using the fs.DirCreate skill (idempotent, handles
+	// path escaping correctly, sets owner and mode in one step).
+	dirResult := fs.NewDirCreate().
+		SetPath(keyDir).
+		SetOwner("mysql:mysql").
+		SetMode("700").
+		WithNodeConfig(cfg).
+		Run()
+	if dirResult.Error != nil {
+		return types.Result{Changed: false, Message: "Failed to create key directory: " + dirResult.Message, Error: dirResult.Error}
+	}
+
+	// Ensure openssl is installed (needed for key generation)
+	cfg.GetLoggerOrDefault().Info("ensuring openssl is installed")
+	output, err := ssh.Run(cfg, cmdCheckOpenSSL)
 	if err != nil {
-		return types.Result{Changed: false, Message: "Failed to create key directory", Error: err}
+		return types.Result{Changed: false, Message: "Failed to ensure openssl is installed: " + output, Error: err}
 	}
 
 	// Generate encryption key
 	cfg.GetLoggerOrDefault().Info("generating encryption key file")
-	_, err = ssh.Run(cfg, cmdGenKey)
+	output, err = ssh.Run(cfg, cmdGenKey)
 	if err != nil {
-		return types.Result{Changed: false, Message: "Failed to generate encryption key", Error: err}
+		return types.Result{Changed: false, Message: "Failed to generate encryption key: " + output, Error: err}
 	}
 
 	// Set permissions
-	_, err = ssh.Run(cfg, cmdPerms)
+	output, err = ssh.Run(cfg, cmdPerms)
 	if err != nil {
-		return types.Result{Changed: false, Message: "Failed to set key file permissions", Error: err}
+		return types.Result{Changed: false, Message: "Failed to set key file permissions: " + output, Error: err}
 	}
 
 	// Configure encryption
 	cfg.GetLoggerOrDefault().Info("configuring encryption in MariaDB")
-	_, err = ssh.Run(cfg, cmdConfigure)
+	output, err = ssh.Run(cfg, cmdConfigure)
 	if err != nil {
-		return types.Result{Changed: false, Message: "Failed to configure encryption", Error: err}
+		return types.Result{Changed: false, Message: "Failed to configure encryption: " + output, Error: err}
 	}
 
 	// Restart MariaDB
 	cfg.GetLoggerOrDefault().Info("restarting MariaDB")
-	_, err = ssh.Run(cfg, cmdRestart)
+	output, err = ssh.Run(cfg, cmdRestart)
 	if err != nil {
-		return types.Result{Changed: false, Message: "Failed to restart MariaDB", Error: err}
+		return types.Result{Changed: false, Message: "Failed to restart MariaDB: " + output, Error: err}
 	}
 
 	// Optional post-restart verification: when a root password is provided,

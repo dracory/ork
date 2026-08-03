@@ -109,6 +109,28 @@ func fileContent(cfg types.NodeConfig, path string) string {
 	return output
 }
 
+// validateDestructivePath validates that a path is safe for destructive
+// operations (rm -rf, etc.). It calls validatePath first, then additionally
+// rejects paths with fewer than 2 path components after the root slash.
+// This prevents catastrophic operations on root-level directories like
+// "/", "/var", "/usr", "/etc", "/home", etc.
+//
+// Examples:
+//   - "/"        → rejected (0 components)
+//   - "/var"     → rejected (1 component)
+//   - "/var/www" → allowed   (2 components)
+func validateDestructivePath(path string) error {
+	if err := validatePath(path); err != nil {
+		return err
+	}
+	trimmed := strings.Trim(path, "/")
+	components := strings.Split(trimmed, "/")
+	if len(components) < 2 {
+		return fmt.Errorf("path %q is too short for destructive operations: need at least 2 path components (e.g. /var/www), got %d", path, len(components))
+	}
+	return nil
+}
+
 // filesIdentical reports whether two files have identical content using cmp -s.
 // Returns false if either file doesn't exist or if the SSH command fails.
 func filesIdentical(cfg types.NodeConfig, src, dst string) bool {
