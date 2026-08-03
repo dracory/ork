@@ -66,7 +66,7 @@ func (a *PkgUpgrade) Check() (bool, error) {
 	}
 
 	// Check for upgradable packages
-	cmdCheck := types.Command{Command: "apt list --upgradable 2>/dev/null | grep -c '\\[upgradable from:' || echo 0", Description: "Check for upgradable packages", Required: true}
+	cmdCheck := types.Command{Command: "apt list --upgradable 2>/dev/null | grep -c '\\[upgradable from:' || true", Description: "Check for upgradable packages", Required: true}
 	output, err := ssh.Run(cfg, cmdCheck)
 	if err != nil {
 		return false, fmt.Errorf("failed to check for upgrades: %w", err)
