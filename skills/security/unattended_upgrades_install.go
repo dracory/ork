@@ -2,15 +2,18 @@ package security
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/dracory/ork/skills"
+	"github.com/dracory/ork/skills/fs"
 	"github.com/dracory/ork/ssh"
 	"github.com/dracory/ork/types"
 )
 
-// Paths written by this skill. Kept as constants so the printf and chmod
-// commands reference the same value, avoiding drift between the two.
+// Paths written by this skill. Kept as constants so they are referenced from a
+// single place, avoiding drift between the install, write, and validation
+// commands.
 const (
 	pathAutoUpgrades       = "/etc/apt/apt.conf.d/20auto-upgrades"
 	pathUnattendedUpgrades = "/etc/apt/apt.conf.d/50unattended-upgrades"
@@ -30,6 +33,11 @@ APT::Periodic::Verbose "0";
 // Only security origins are allowed. Automatic reboots are intentionally
 // disabled — reboots stay under a separate reboot playbook's control to
 // avoid unattended downtime.
+//
+// Allowed-Origins (rather than Origins-Pattern) is used because it is the
+// syntax that works identically on both Debian and Ubuntu via the
+// ${distro_id} and ${distro_codename} macros, without requiring OS-specific
+// origin patterns.
 //
 // Automatic-Reboot-Time and Automatic-Reboot-WithUsers are kept despite
 // Automatic-Reboot being "false": they are inert today but self-document
@@ -66,8 +74,11 @@ Unattended-Upgrade::MailOnlyOnError "true";
 //     (apt-listchanges surfaces changelogs during upgrades; its Debian
 //     default config is reasonable so no custom config is written)
 //  2. Writes /etc/apt/apt.conf.d/20auto-upgrades to enable automatic updates
+//     (skipped if the file already has the correct content — idempotent)
 //  3. Writes /etc/apt/apt.conf.d/50unattended-upgrades to restrict upgrades
-//     to security origins only
+//     to security origins only (skipped if content already matches)
+//  4. Validates the configuration with `apt-config dump` to catch syntax
+//     errors that would silently break security updates
 //
 // Configuration:
 //   - Only security origins are allowed (no full distro upgrades)
@@ -139,7 +150,7 @@ func (u *UnattendedUpgradesInstall) Run() types.Result {
 		}
 	}
 
-	// Define commands.
+	// Define the install command.
 	// apt-listchanges is installed alongside unattended-upgrades because it is
 	// the recommended companion that surfaces changelogs during upgrades; its
 	// Debian default config is reasonable so no custom config is written for it.
@@ -149,24 +160,13 @@ func (u *UnattendedUpgradesInstall) Run() types.Result {
 	cmdInstallStr += skills.DpkgConfOptions                                    // keep local config, use maintainer default if unmodified
 
 	cmdInstall := types.Command{Command: cmdInstallStr, Description: "Install unattended-upgrades package", Required: true}
-	cmdAutoUpgrades := types.Command{
-		Command:     fmt.Sprintf("printf '%%s' %s > %s", skills.ShellEscapeContent(autoUpgradesContent), skills.ShellEscapeArg(pathAutoUpgrades)),
-		Description: "Write 20auto-upgrades config",
-		Required:    true,
-	}
-	cmdUnattended := types.Command{
-		Command:     fmt.Sprintf("printf '%%s' %s > %s", skills.ShellEscapeContent(unattendedUpgradesContent), skills.ShellEscapeArg(pathUnattendedUpgrades)),
-		Description: "Write 50unattended-upgrades config",
-		Required:    true,
-	}
-	cmdChmodAuto := types.Command{Command: "chmod 644 " + skills.ShellEscapeArg(pathAutoUpgrades), Description: "Set 20auto-upgrades permissions"}
-	cmdChmodUnattended := types.Command{Command: "chmod 644 " + skills.ShellEscapeArg(pathUnattendedUpgrades), Description: "Set 50unattended-upgrades permissions"}
 
 	// Check for dry-run mode - display actual commands
 	if cfg.IsDryRunMode {
 		cfg.GetLoggerOrDefault().Info("dry-run: would run command", "cmd", cmdInstall.Command, "description", cmdInstall.Description)
 		cfg.GetLoggerOrDefault().Info("dry-run: would write 20auto-upgrades config")
 		cfg.GetLoggerOrDefault().Info("dry-run: would write 50unattended-upgrades config")
+		cfg.GetLoggerOrDefault().Info("dry-run: would validate config with apt-config dump")
 		return types.Result{
 			Changed: true,
 			Message: "Would install and configure unattended-upgrades",
@@ -175,28 +175,44 @@ func (u *UnattendedUpgradesInstall) Run() types.Result {
 
 	cfg.GetLoggerOrDefault().Info("installing unattended-upgrades")
 
-	// Install unattended-upgrades
+	// Step 1: Install unattended-upgrades package.
 	cfg.GetLoggerOrDefault().Info("installing unattended-upgrades package")
 	if _, err := ssh.Run(cfg, cmdInstall); err != nil {
 		return types.Result{Changed: false, Message: "Failed to install unattended-upgrades", Error: err}
 	}
 
-	// Write 20auto-upgrades config
+	// Step 2: Write 20auto-upgrades config.
+	// fs.FileCreate gives content-based idempotency for free: it reads the
+	// existing file, compares content, and skips the write if they match
+	// (same behavior as Ansible's template module).
 	cfg.GetLoggerOrDefault().Info("writing 20auto-upgrades config")
-	if _, err := ssh.Run(cfg, cmdAutoUpgrades); err != nil {
-		return types.Result{Changed: false, Message: "Failed to write 20auto-upgrades config", Error: err}
-	}
-	if _, err := ssh.Run(cfg, cmdChmodAuto); err != nil {
-		cfg.GetLoggerOrDefault().Warn("failed to set 20auto-upgrades permissions", "error", err)
+	autoResult := runSub(fs.NewFileCreate().
+		SetPath(pathAutoUpgrades).
+		SetContent(autoUpgradesContent).
+		SetMode("644").
+		SetOverwrite(true), cfg)
+	if autoResult.Error != nil {
+		return types.Result{Changed: false, Message: "Failed to write 20auto-upgrades config", Error: autoResult.Error}
 	}
 
-	// Write 50unattended-upgrades config
+	// Step 3: Write 50unattended-upgrades config.
 	cfg.GetLoggerOrDefault().Info("writing 50unattended-upgrades config")
-	if _, err := ssh.Run(cfg, cmdUnattended); err != nil {
-		return types.Result{Changed: false, Message: "Failed to write 50unattended-upgrades config", Error: err}
+	unattendedResult := runSub(fs.NewFileCreate().
+		SetPath(pathUnattendedUpgrades).
+		SetContent(unattendedUpgradesContent).
+		SetMode("644").
+		SetOverwrite(true), cfg)
+	if unattendedResult.Error != nil {
+		return types.Result{Changed: false, Message: "Failed to write 50unattended-upgrades config", Error: unattendedResult.Error}
 	}
-	if _, err := ssh.Run(cfg, cmdChmodUnattended); err != nil {
-		cfg.GetLoggerOrDefault().Warn("failed to set 50unattended-upgrades permissions", "error", err)
+
+	// Step 4: Validate the configuration with apt-config dump.
+	// This catches syntax errors in the apt.conf.d files that would silently
+	// break security updates. No Ansible role does this — it's a defensive
+	// improvement.
+	cfg.GetLoggerOrDefault().Info("validating unattended-upgrades configuration")
+	if err := validateConfig(cfg); err != nil {
+		return types.Result{Changed: true, Message: "Unattended-upgrades installed but config validation failed", Error: err}
 	}
 
 	cfg.GetLoggerOrDefault().Info("unattended-upgrades installation complete")
@@ -204,6 +220,28 @@ func (u *UnattendedUpgradesInstall) Run() types.Result {
 		Changed: true,
 		Message: "Unattended-upgrades installed and configured (security updates only, no auto-reboot)",
 	}
+}
+
+// validateConfig runs `apt-config dump` to verify that apt recognizes the
+// unattended-upgrades configuration. This catches syntax errors in the
+// apt.conf.d files that would silently break security updates.
+func validateConfig(cfg types.NodeConfig) error {
+	cmdValidate := types.Command{
+		Command:     "apt-config dump APT::Periodic::Unattended-Upgrade",
+		Description: "Validate unattended-upgrades config",
+		Required:    true,
+	}
+	output, err := ssh.Run(cfg, cmdValidate)
+	if err != nil {
+		return fmt.Errorf("apt-config dump failed: %w", err)
+	}
+	// apt-config dump prints the configured value, e.g.:
+	//   APT::Periodic::Unattended-Upgrade "1";
+	// If the line is absent or the value is "0", the config is not active.
+	if !strings.Contains(output, `APT::Periodic::Unattended-Upgrade "1"`) {
+		return fmt.Errorf("apt-config dump did not confirm Unattended-Upgrade is enabled, got: %q", strings.TrimSpace(output))
+	}
+	return nil
 }
 
 // SetArgs sets the arguments for unattended-upgrades installation.
