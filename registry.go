@@ -149,6 +149,7 @@ func NewDefaultRegistry() (*types.Registry, error) {
 		php.NewInstallComposer(),
 		php.NewUninstallComposer(),
 		php.NewUpdateComposer(),
+		php.NewRestart(),
 		systemctl.NewDaemonReload(),
 		systemctl.NewRestart(),
 		systemctl.NewReload(),

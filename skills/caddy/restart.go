@@ -181,6 +181,14 @@ func (r *Restart) Run() types.Result {
 		}
 	}
 
+	method := reloadResult.Details["method"]
+	if method == "restart" {
+		return types.Result{
+			Changed: true,
+			Message: "Caddy reload failed, applied via restart fallback (service: " + state + ")",
+		}
+	}
+
 	return types.Result{
 		Changed: true,
 		Message: "Caddy restarted successfully via systemd: " + state,

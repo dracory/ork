@@ -260,6 +260,9 @@ const (
 	// pool, validated with `php-fpm<version> -t` before restart.
 	IDPhpFpmHarden = "php-fpm-harden"
 
+	// IDPhpFpmRestart restarts the PHP-FPM systemd service (requires "version" arg)
+	IDPhpFpmRestart = "php-fpm-restart"
+
 	// Systemctl skills (systemd unit management)
 	// IDSystemctlDaemonReload reloads the systemd manager configuration
 	IDSystemctlDaemonReload = "systemctl-daemon-reload"

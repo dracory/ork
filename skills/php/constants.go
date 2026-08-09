@@ -23,6 +23,10 @@ const (
 
 // Default configuration constants.
 const (
+	// DefaultVersion is the default PHP version used by Restart when no
+	// version arg is set.
+	DefaultVersion = "8.5"
+
 	// DefaultExtensions is a convenience set of common PHP extensions.
 	// It is NOT auto-applied by Install; pass it explicitly via
 	// SetExtensions(php.DefaultExtensions) when you want the bundled set.
