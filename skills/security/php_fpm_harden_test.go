@@ -360,7 +360,7 @@ func TestPhpFpmHarden_BuildConfDContent(t *testing.T) {
 		"/var/log/php8.5-fpm.log",
 		"/var/www/app:/tmp",
 		"exec, shell_exec",
-		"256M", "10M", "12M", "60", "60", "128", "10000",
+		"256M", "10M", "12M", "60", "60", "128", "10000", "Off",
 	)
 
 	checks := []string{

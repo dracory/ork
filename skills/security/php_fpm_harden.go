@@ -144,6 +144,10 @@ func (p *PhpFpmHarden) Run() types.Result {
 	if opcacheMaxFiles == "" {
 		opcacheMaxFiles = DefaultOpcacheMaxFiles
 	}
+	opcacheValidateTimestamps := p.GetArg(ArgOpcacheValidateTimestamps)
+	if opcacheValidateTimestamps == "" {
+		opcacheValidateTimestamps = DefaultOpcacheValidateTimestamps
+	}
 	confDPath := p.GetArg(ArgConfDPath)
 	if confDPath == "" {
 		confDPath = fmt.Sprintf(DefaultConfDPathPattern, version)
@@ -187,7 +191,7 @@ func (p *PhpFpmHarden) Run() types.Result {
 
 	// Step 2: Write the conf.d drop-in (template equivalent: replace-on-change).
 	confDContent := buildConfDContent(errorLog, openBasedir, disableFunctions, memoryLimit,
-		uploadMaxFilesize, postMaxSize, maxExecutionTime, maxInputTime, opcacheMemory, opcacheMaxFiles)
+		uploadMaxFilesize, postMaxSize, maxExecutionTime, maxInputTime, opcacheMemory, opcacheMaxFiles, opcacheValidateTimestamps)
 
 	cfg.GetLoggerOrDefault().Info("writing conf.d drop-in", "path", confDPath)
 	confDResult := types.RunSub(fs.NewFileCreate().
@@ -302,7 +306,7 @@ func (p *PhpFpmHarden) validateArgs() error {
 // buildConfDContent renders the conf.d drop-in (regular php.ini directives).
 // These apply FPM-wide; the CLI php.ini is not affected.
 func buildConfDContent(errorLog, openBasedir, disableFunctions, memoryLimit,
-	uploadMaxFilesize, postMaxSize, maxExecutionTime, maxInputTime, opcacheMemory, opcacheMaxFiles string) string {
+	uploadMaxFilesize, postMaxSize, maxExecutionTime, maxInputTime, opcacheMemory, opcacheMaxFiles, opcacheValidateTimestamps string) string {
 	var b strings.Builder
 	b.WriteString("; PHP-FPM hardening for production\n")
 	b.WriteString("; Managed by ork security.PhpFpmHarden — do not edit by hand\n\n")
@@ -330,7 +334,7 @@ func buildConfDContent(errorLog, openBasedir, disableFunctions, memoryLimit,
 
 	b.WriteString("; OPcache for production performance\n")
 	b.WriteString("opcache.enable = On\n")
-	b.WriteString("opcache.validate_timestamps = Off\n")
+	b.WriteString(fmt.Sprintf("opcache.validate_timestamps = %s\n", opcacheValidateTimestamps))
 	b.WriteString(fmt.Sprintf("opcache.memory_consumption = %s\n", opcacheMemory))
 	b.WriteString(fmt.Sprintf("opcache.max_accelerated_files = %s\n", opcacheMaxFiles))
 	b.WriteString("opcache.revalidate_freq = 2\n")
@@ -446,6 +450,15 @@ func (p *PhpFpmHarden) SetOpcacheMemory(mb string) *PhpFpmHarden {
 // PhpFpmHarden for chaining.
 func (p *PhpFpmHarden) SetOpcacheMaxFiles(count string) *PhpFpmHarden {
 	p.BaseSkill.SetArg(ArgOpcacheMaxFiles, count)
+	return p
+}
+
+// SetOpcacheValidateTimestamps sets opcache.validate_timestamps ("On" or "Off")
+// and returns PhpFpmHarden for chaining. Default is "Off" (production best
+// practice). Set to "On" for low-traffic or dev sites where git pull should be
+// visible without an FPM restart.
+func (p *PhpFpmHarden) SetOpcacheValidateTimestamps(value string) *PhpFpmHarden {
+	p.BaseSkill.SetArg(ArgOpcacheValidateTimestamps, value)
 	return p
 }
 

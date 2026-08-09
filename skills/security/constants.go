@@ -74,6 +74,11 @@ const (
 	// ArgOpcacheMaxFiles specifies the opcache.max_accelerated_files value.
 	ArgOpcacheMaxFiles = "opcache-max-accelerated-files"
 
+	// ArgOpcacheValidateTimestamps specifies whether OPcache checks file
+	// mtimes for changes ("On" = dev-friendly auto-reload, "Off" = max
+	// production performance, requires FPM restart after deploys).
+	ArgOpcacheValidateTimestamps = "opcache-validate-timestamps"
+
 	// ArgConfDPath overrides the conf.d drop-in path (default derived from
 	// php-version via DefaultConfDPathPattern).
 	ArgConfDPath = "conf-d-path"
@@ -144,6 +149,13 @@ const (
 
 	// DefaultOpcacheMaxFiles is the default opcache.max_accelerated_files.
 	DefaultOpcacheMaxFiles = "10000"
+
+	// DefaultOpcacheValidateTimestamps is the default for
+	// opcache.validate_timestamps. "Off" is the production best practice
+	// (max performance, requires FPM restart after deploys). Set to "On"
+	// for low-traffic or dev sites where git pull should be visible without
+	// a restart.
+	DefaultOpcacheValidateTimestamps = "Off"
 
 	// DefaultConfDPathPattern is the conf.d drop-in path pattern (%s = version).
 	DefaultConfDPathPattern = "/etc/php/%s/fpm/conf.d/99-hardening.ini"
