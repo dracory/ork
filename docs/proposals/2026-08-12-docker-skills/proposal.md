@@ -3,7 +3,7 @@
 **Date:** 2026-08-12
 **Status:** Draft
 **Author:** Devin (assisted)
-**Research:** See `research/` subdirectory (10 source files, including Ansible `community.docker` analysis)
+**Research:** See `research/` subdirectory (11 source files, including Ansible `community.docker` and Pulumi `pulumi/docker` analysis)
 **Related:** [OCI Image Factory proposal](../2026-08-12-oci-image-factory/proposal.md) — Part 3 (local OCI factory) depends on this proposal's `docker-import` skill
 
 ## Problem Statement
@@ -138,6 +138,8 @@ const (
     ArgAddDockerGroup = "add-docker-group" // Add user to docker group (install)
     ArgAlwaysPull  = "always-pull"  // Force pull even if image exists (pull)
     ArgPull        = "pull"         // Pull policy for docker-run: missing|always|never (borrowed from Ansible)
+    ArgWait        = "wait"         // Wait for healthy state after start (borrowed from Pulumi, Phase 2)
+    ArgWaitTimeout = "wait-timeout" // Timeout in seconds for wait (borrowed from Pulumi, Phase 2)
 )
 
 // Defaults
@@ -308,6 +310,7 @@ func (d *DockerRun) Check() (bool, error) {
     cfg := d.GetNodeConfig()
     name := d.GetArg(ArgName)
     image := d.GetArg(ArgImage)
+    force := d.GetArg(ArgForce)
 
     if name == "" {
         return false, fmt.Errorf("no container name specified: set the %q argument", ArgName)
@@ -319,6 +322,11 @@ func (d *DockerRun) Check() (bool, error) {
     if cfg.IsDryRunMode {
         cfg.GetLoggerOrDefault().Info("dry-run: would check if container is running",
             "name", name)
+        return true, nil
+    }
+
+    // If force=true, always recreate (matches Ansible's recreate=true)
+    if isTrue(force) {
         return true, nil
     }
 
@@ -342,9 +350,14 @@ func (d *DockerRun) Run() types.Result {
     user := d.GetArg(ArgUser)
     workdir := d.GetArg(ArgWorkdir)
     command := d.GetArg(ArgCommand)
+    force := d.GetArg(ArgForce)
+    pull := d.GetArg(ArgPull)
 
     if restart == "" {
         restart = DefaultRestart
+    }
+    if pull == "" {
+        pull = DefaultPull // "missing"
     }
 
     // ... validation ...
@@ -359,8 +372,65 @@ func (d *DockerRun) Run() types.Result {
         return types.Result{Changed: false, Message: "Container already running: " + name}
     }
 
-    // If container exists but is stopped, start it
-    if containerExists(cfg, name) && !containerRunning(cfg, name) {
+    // If force=true, stop and remove existing container first (matches Ansible's recreate=true)
+    if isTrue(force) && containerExists(cfg, name) {
+        cmdStop := types.Command{
+            Command:     fmt.Sprintf("docker stop %s", skills.ShellEscapeArg(name)),
+            Description: "Stop container for recreation: " + name,
+            BecomeUser:  "root",
+        }
+        cmdRm := types.Command{
+            Command:     fmt.Sprintf("docker rm -f %s", skills.ShellEscapeArg(name)),
+            Description: "Remove container for recreation: " + name,
+            BecomeUser:  "root",
+        }
+        if cfg.IsDryRunMode {
+            cfg.GetLoggerOrDefault().Info("dry-run: would stop and remove container for recreation",
+                "name", name)
+        } else {
+            ssh.Run(cfg, cmdStop)
+            ssh.Run(cfg, cmdRm)
+        }
+    }
+
+    // Handle pull policy (matches Ansible's pull parameter + Docker CLI's --pull flag)
+    switch pull {
+    case "always":
+        cmdPull := types.Command{
+            Command:     fmt.Sprintf("docker pull %s", skills.ShellEscapeArg(image)),
+            Description: "Pull image (always): " + image,
+            BecomeUser:  "root",
+        }
+        if cfg.IsDryRunMode {
+            cfg.GetLoggerOrDefault().Info("dry-run: would pull image", "image", image)
+        } else {
+            if _, err := ssh.Run(cfg, cmdPull); err != nil {
+                return types.Result{Changed: false, Message: "Failed to pull image", Error: err}
+            }
+        }
+    case "never":
+        if !imageExists(cfg, image) {
+            return types.Result{Changed: false, Error: fmt.Errorf("image %s not present and pull=never", image)}
+        }
+    case "missing", "":
+        if !imageExists(cfg, image) {
+            cmdPull := types.Command{
+                Command:     fmt.Sprintf("docker pull %s", skills.ShellEscapeArg(image)),
+                Description: "Pull image (missing): " + image,
+                BecomeUser:  "root",
+            }
+            if cfg.IsDryRunMode {
+                cfg.GetLoggerOrDefault().Info("dry-run: would pull missing image", "image", image)
+            } else {
+                if _, err := ssh.Run(cfg, cmdPull); err != nil {
+                    return types.Result{Changed: false, Message: "Failed to pull image", Error: err}
+                }
+            }
+        }
+    }
+
+    // If container exists but is stopped (and not force), start it
+    if !isTrue(force) && containerExists(cfg, name) && !containerRunning(cfg, name) {
         cmdStart := types.Command{
             Command:     fmt.Sprintf("docker start %s", skills.ShellEscapeArg(name)),
             Description: "Start existing container: " + name,
@@ -377,7 +447,7 @@ func (d *DockerRun) Run() types.Result {
         return types.Result{Changed: true, Message: "Container started: " + name}
     }
 
-    // Container doesn't exist — create and run
+    // Container doesn't exist (or was removed by force) — create and run
     var cmdParts []string
     cmdParts = append(cmdParts, "docker", "run", "--name", skills.ShellEscapeArg(name), "-d")
 
@@ -549,6 +619,92 @@ func NewDefaultRegistry() (*types.Registry, error) {
 }
 ```
 
+## Comparison with Ansible's `community.docker`
+
+Ansible's `community.docker` collection is the most mature idempotent Docker management interface. This proposal borrows key design patterns from it while adapting to Ork's SSH-based, imperative architecture. See `research/10-ansible-docker-modules.md` for the full analysis.
+
+### What We Borrowed
+
+| Ansible Pattern | Ork Adaptation |
+|----------------|----------------|
+| `pull` parameter (`missing`/`always`/`never`) | `docker-run` `pull` arg (maps to Docker CLI's `--pull` flag) |
+| `recreate` parameter (force container re-creation) | `docker-run` `force` arg (stop + rm + run) |
+| `docker_image_pull` `pull` parameter (`always`/`not_present`) | `docker-pull` `always-pull` arg |
+| Separation of info modules from management modules | `docker-ps` / `docker-images` as read-only skills (`Check()` returns `false`) |
+| `docker_container_exec` non-idempotency | `docker-exec` `Check()` always returns `true` |
+| `docker_container_exec` `stdin` parameter | `docker-exec` supports `types.Command.Stdin` |
+| `docker_container` `state` parameter (absent/present/started/stopped) | Separate skills: `docker-run` (started), `docker-stop` (stopped), `docker-rm` (absent) |
+
+### What We Skipped (and Why)
+
+| Ansible Pattern | Why Skipped |
+|----------------|-------------|
+| `comparisons` dictionary (per-property drift detection) | Too complex for Phase 1; requires parsing `docker inspect` JSON. Deferred to Phase 2+. |
+| Docker Engine API (HTTP over Unix socket/TCP) | Ork uses CLI over SSH (its core competency). No Python or Docker SDK needed on target. |
+| `state` parameter (declarative) | Ork uses imperative separate skills (matches all existing Ork skills like `caddy.Restart`, `mariadb.Install`). |
+| `docker_image_build` (buildx) | Build-time operation, not deployment. Covered by OCI factory proposal (Part 3). |
+| `docker_compose_v2` | Multi-container orchestration. Separate future proposal. |
+| Swarm modules (`docker_swarm`, `docker_node`, etc.) | Different orchestration model. Out of scope. |
+| `docker_network`, `docker_volume`, `docker_plugin` | Out of scope for Phase 1. Track as future skills. |
+| `docker_login` | Involves credentials (sensitive). Track as future skill with careful handling. |
+| `docker_prune` | Useful but not essential. Track as future skill. |
+
+### Architectural Difference
+
+| Aspect | Ansible | Ork |
+|--------|---------|-----|
+| Execution | Docker Engine API (HTTP) | `docker` CLI over SSH |
+| Target dependency | Python + Docker SDK | `docker` CLI only |
+| Config access | Full API (structured) | `docker inspect` JSON (must parse) |
+| Drift detection | Sophisticated (`comparisons`) | Limited (Phase 1: none; Phase 2: `force` arg) |
+| Remote daemon | TCP + TLS | SSH (Ork's core) |
+| Complexity | High (API versioning, Python SDK) | Low (shell commands) |
+| Idempotency model | Declarative (`state` parameter) | Imperative (`Check()` + `Run()`) |
+
+**Conclusion:** Ork should use the CLI-over-SSH approach. It's simpler, matches all existing Ork skills, and doesn't require Python on the target. The trade-off is that sophisticated drift detection is harder — but that's a Phase 2+ enhancement, not a Phase 1 requirement.
+
+## Comparison with Pulumi's `pulumi/docker` Provider
+
+Pulumi's Docker provider (`pulumi/docker` v5.1.0) is a Terraform-derived declarative IaC provider that manages Docker resources from real programming languages (TypeScript, Python, Go, C#, Java). It uses the Docker Engine API (like Ansible) but adds a **state file** for drift detection. See `research/11-pulumi-docker-provider.md` for the full analysis.
+
+### What We Borrowed
+
+| Pulumi Pattern | Ork Adaptation |
+|----------------|----------------|
+| `wait` + `wait_timeout` (health-check-aware container start) | Phase 2 enhancement: `docker-run` `wait` arg to poll health status after start |
+| `destroy_grace_seconds` (graceful stop before destroy) | `docker-rm --force` should stop gracefully first (with `timeout` arg) |
+| `repoDigest` output (immutable image identifier) | `docker-pull` and `docker-run` should return image digest in `Result.Details` |
+| `pullTriggers` concept (digest-based pull decisions) | Simplified to `always-pull` arg on `docker-pull` (Phase 1); full digest-based pulling deferred to Phase 2 |
+| `keep_locally` (image retention on destroy) | N/A — Ork is imperative; `docker-rmi` is explicit |
+
+### What We Skipped (and Why)
+
+| Pulumi Pattern | Why Skipped |
+|----------------|-------------|
+| State file / declarative model | Ork is imperative (no state file). `Check()` + `Run()` achieves idempotency without state. |
+| `must_run` parameter | Ork uses skill choice (`docker-run` vs `docker-stop`) instead of a boolean parameter. |
+| Docker Engine API (HTTP) | Ork uses `docker` CLI over SSH (simpler, no daemon TCP config needed). |
+| `docker.Image` (build + push from local context) | Build-time operation. Covered by OCI factory proposal (Part 3). |
+| `docker.RegistryImage` (push to registry) | Future skill, not Phase 1. |
+| Provider configuration (TCP/TLS/SSH tunnel) | Ork uses SSH directly (already configured). |
+| `pullTriggers` full digest-based pulling | Too complex for Phase 1. `always-pull` arg is sufficient. |
+| Build context digest tracking | Out of scope (Ork doesn't build images). |
+
+### Three-Way Architecture Comparison
+
+| Aspect | Pulumi | Ansible | Ork |
+|--------|--------|---------|-----|
+| Paradigm | Declarative IaC (state file) | Declarative tasks | Imperative skills |
+| Docker access | Docker Engine API | Docker Engine API | `docker` CLI over SSH |
+| Idempotency | State file diff (drift detection) | `state` + `comparisons` | `Check()` + skill choice |
+| Image pulling | `pullTriggers` (digest-based) | `pull` parameter | `always-pull` arg |
+| Container lifecycle | `must_run` + `start` + destroy | `state` parameter | Separate skills |
+| Config drift | State file comparison | `comparisons` dictionary | `force` arg (Phase 2) |
+| Complexity | High | Medium | Low |
+| Fit with Ork | N/A | N/A | Perfect |
+
+**Conclusion:** Pulumi is the most sophisticated (state file, drift detection, digest-based pulling) but also the most complex. Ork's imperative CLI-over-SSH approach is the simplest, and `Check()` + `Run()` achieves the core idempotency without a state file. The key lesson from Pulumi is the `wait`/`wait_timeout` pattern for health-check-aware starts (Phase 2 enhancement) and the `repoDigest` concept (return image digest in results).
+
 ## Benefits
 
 1. **Fills a conspicuous gap** — Ork manages web servers, databases, PHP, firewalls, but not Docker, the dominant container runtime
@@ -646,8 +802,10 @@ func NewDefaultRegistry() (*types.Registry, error) {
 1. **Should `docker-run` support config drift detection?**
    - If a container is running with different ports/env/image than specified, should `Check()` return `true` and `Run()` recreate it?
    - Option A: No — if container is running, leave it alone (safe, simple)
-   - Option B: Yes, with `--force` arg — detect drift and recreate if `force=true`
-   - Recommendation: Option A for Phase 1 (safe default), Option B as a future enhancement
+   - Option B: Yes, with `force` arg — recreate if `force=true` (borrowed from Ansible's `recreate` parameter)
+   - Option C: Full per-property drift detection (like Ansible's `comparisons` dictionary)
+   - **Decision:** Option B adopted in this proposal (see `ArgForce` and the `force` arg in `docker-run`). Option C deferred to Phase 2+.
+   - Ansible's `comparisons` dictionary (per-property strict/ignore/allow_more_present) is powerful but complex — it requires parsing `docker inspect` JSON and comparing each property. See `research/10-ansible-docker-modules.md` for the full analysis.
 
 2. **Should `docker-install` support non-Debian distributions?**
    - The current scope is Ubuntu/Debian (apt-based), matching Ork's existing apt-focused skills
@@ -681,6 +839,8 @@ See `research/` subdirectory:
 - `07-docker-install-ubuntu.md` — Docker Engine installation on Ubuntu
 - `08-docker-import-load.md` — `docker import` and `docker load` (cross-referenced from OCI factory proposal)
 - `09-ork-skill-conventions.md` — Ork's skill patterns derived from codebase analysis
+- `10-ansible-docker-modules.md` — Ansible `community.docker` collection analysis (idempotency patterns, `state`/`comparisons`/`pull`/`recreate` parameters, API-vs-CLI architecture comparison)
+- `11-pulumi-docker-provider.md` — Pulumi `pulumi/docker` provider analysis (declarative IaC with state file, `must_run`/`pullTriggers`/`wait`/`repoDigest` patterns, three-way architecture comparison Pulumi vs Ansible vs Ork)
 
 ## Related Proposals
 
