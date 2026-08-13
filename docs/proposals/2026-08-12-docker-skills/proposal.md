@@ -3,7 +3,7 @@
 **Date:** 2026-08-12
 **Status:** Draft
 **Author:** Devin (assisted)
-**Research:** See `research/` subdirectory (11 source files, including Ansible `community.docker` and Pulumi `pulumi/docker` analysis)
+**Research:** See `research/` subdirectory (12 source files, including Ansible `community.docker`, Pulumi `pulumi/docker`, and Terraform `kreuzwerker/terraform-provider-docker` analysis)
 **Related:** [OCI Image Factory proposal](../2026-08-12-oci-image-factory/proposal.md) — Part 3 (local OCI factory) depends on this proposal's `docker-import` skill
 
 ## Problem Statement
@@ -705,6 +705,50 @@ Pulumi's Docker provider (`pulumi/docker` v5.1.0) is a Terraform-derived declara
 
 **Conclusion:** Pulumi is the most sophisticated (state file, drift detection, digest-based pulling) but also the most complex. Ork's imperative CLI-over-SSH approach is the simplest, and `Check()` + `Run()` achieves the core idempotency without a state file. The key lesson from Pulumi is the `wait`/`wait_timeout` pattern for health-check-aware starts (Phase 2 enhancement) and the `repoDigest` concept (return image digest in results).
 
+## Comparison with Terraform's `kreuzwerker/terraform-provider-docker`
+
+Terraform's Docker provider (`kreuzwerker/terraform-provider-docker` v4.5.0+) is the **upstream** of Pulumi's Docker provider — Pulumi wraps this Terraform provider under the hood. The resource schemas and parameters (`must_run`, `start`, `restart`, `wait`, `wait_timeout`, `destroy_grace_seconds`, `pull_triggers`, `keep_locally`) are identical. See `research/12-terraform-docker-provider.md` for the full analysis.
+
+### What's the Same as Pulumi (Inherited)
+
+All the patterns documented in the Pulumi section above originate from Terraform:
+- `must_run` + `start` (declarative container lifecycle)
+- `pull_triggers` (digest-based image pulling)
+- `keep_locally` (image retention on destroy)
+- `destroy_grace_seconds` (graceful stop before destroy)
+- `wait` + `wait_timeout` (health-check-aware container start)
+- Docker Engine API (not CLI)
+- State file for drift detection
+
+### What's New (Terraform-Specific)
+
+| Terraform Pattern | Ork Adaptation |
+|-------------------|----------------|
+| `triggers` argument (general-purpose force-rebuild/repull) | Phase 2: `trigger` arg on `docker-pull` that forces re-pull when changed |
+| Actions / ephemeral resources (`docker_exec`, `docker_image_import`, etc.) | Validates Ork's separate-skills design for one-off operations |
+| Data sources (`docker_image`, `docker_container`, `docker_logs`) | Validates read-only skills; suggests future `docker-logs` and `docker-registry-info` skills |
+
+### Known Bugs (Cautionary Tales)
+
+| Bug | Lesson for Ork |
+|-----|----------------|
+| `destroy_grace_seconds` not adhered to (Issue #174) — random timeout instead of full wait | Ork's `docker-stop` must use the timeout directly (matching `docker stop -t <seconds>`) |
+| `must_run = false` replacement fails every other run (Issue #542) — state desync | Ork's imperative approach (separate `docker-stop`/`docker-rm` skills) avoids this entirely |
+
+### Four-Way Architecture Comparison
+
+| Aspect | Terraform | Pulumi | Ansible | Ork |
+|--------|-----------|--------|---------|-----|
+| Paradigm | Declarative (state file) | Declarative (state file) | Declarative tasks | Imperative skills |
+| Origin | **Original** | Wraps Terraform provider | Independent | Independent |
+| Docker access | Docker Engine API | Docker Engine API (inherited) | Docker Engine API | `docker` CLI over SSH |
+| Idempotency | State file diff | State file diff (inherited) | `state` + `comparisons` | `Check()` + skill choice |
+| One-off ops | Actions (ephemeral) | Not available | Modules (tasks) | Separate skills |
+| Complexity | High | High | Medium | Low |
+| Known bugs | `destroy_grace_seconds`, `must_run` | Same (inherited) | `comparisons` complexity | None (simpler model) |
+
+**Conclusion:** Terraform is the origin of the declarative Docker management pattern that Pulumi inherits. The key new insight from Terraform is the `triggers` argument (a general-purpose force-rebuild mechanism) and the "actions" pattern (ephemeral resources for one-off operations, validating Ork's separate-skills design). The known bugs (`destroy_grace_seconds` random timeout, `must_run = false` state desync) are cautionary tales that show declarative state management for containers is error-prone — Ork's imperative approach avoids these entirely.
+
 ## Benefits
 
 1. **Fills a conspicuous gap** — Ork manages web servers, databases, PHP, firewalls, but not Docker, the dominant container runtime
@@ -841,6 +885,7 @@ See `research/` subdirectory:
 - `09-ork-skill-conventions.md` — Ork's skill patterns derived from codebase analysis
 - `10-ansible-docker-modules.md` — Ansible `community.docker` collection analysis (idempotency patterns, `state`/`comparisons`/`pull`/`recreate` parameters, API-vs-CLI architecture comparison)
 - `11-pulumi-docker-provider.md` — Pulumi `pulumi/docker` provider analysis (declarative IaC with state file, `must_run`/`pullTriggers`/`wait`/`repoDigest` patterns, three-way architecture comparison Pulumi vs Ansible vs Ork)
+- `12-terraform-docker-provider.md` — Terraform `kreuzwerker/terraform-provider-docker` analysis (the upstream of Pulumi's provider; `triggers` argument, actions/ephemeral resources, known bugs `destroy_grace_seconds` and `must_run=false`, four-way comparison Terraform vs Pulumi vs Ansible vs Ork)
 
 ## Related Proposals
 

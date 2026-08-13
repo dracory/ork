@@ -3,10 +3,12 @@
 **Date:** 2026-08-12
 **Status:** Draft
 **Author:** Devin (assisted)
-**Research:** See `research/` subdirectory (10 source files)
+**Research:** See `research/` subdirectory (12 source files, including Ansible/Pulumi/Terraform image-building analysis)
 **Related:** [Docker Management Skills proposal](../2026-08-12-docker-skills/proposal.md) — Part 1 (Docker skills) has been extracted into its own standalone proposal with dedicated research
 
-> **Note:** Part 1 (Docker skills) has been extracted into a standalone proposal at [`../2026-08-12-docker-skills/proposal.md`](../2026-08-12-docker-skills/proposal.md) with its own 9-file research directory. This proposal focuses on Parts 2 (SFTP) and 3 (OCI factory), and references the standalone Docker skills proposal where relevant.
+> **Note:** Part 1 (Docker skills) has been extracted into a standalone proposal at [`../2026-08-12-docker-skills/proposal.md`](../2026-08-12-docker-skills/proposal.md) with its own 12-file research directory. This proposal focuses on Parts 2 (SFTP) and 3 (OCI factory), and references the standalone Docker skills proposal where relevant.
+>
+> **Ansible/Pulumi/Terraform comparison:** Research files `research/11-ansible-pulumi-image-building.md` and `research/12-terraform-image-building.md` document that none of Ansible, Pulumi, or Terraform have an OCI factory equivalent — all require a Docker daemon and Dockerfile for image building. The true peers to the proposed OCI factory are `buildah`, `ko`, `jib`, `apko`, `tko`, `ocibuild`, and especially `google/go-containerregistry`.
 
 ## Problem Statement
 
@@ -75,6 +77,8 @@ Ork already has `golang.org/x/crypto` and `golang.org/x/sys` — the only truly 
 
 Add a local OCI image factory as `pkg/oci` (or `internal/oci`) + `ork oci build` CLI subcommand. This is the gocker pattern, adapted and fixed for spec compliance. This is a **local build tool**, not an SSH skill — it runs on the control machine, not on remote servers.
 
+> **Ecosystem context:** None of Ansible, Pulumi, or Terraform have an equivalent to this — all require a Docker daemon and Dockerfile for image building (see `research/11-ansible-pulumi-image-building.md` and `research/12-terraform-image-building.md`). The true peers are `buildah` (daemonless, scriptable), `ko` (Go binaries → OCI), `jib` (Java → OCI), `apko` (APK packages → OCI), `tko` (base image + artifacts, rootless), `ocibuild` (Erlang/Elixir, programmatic), and especially `google/go-containerregistry` (Go library for programmatic OCI image construction). The gocker pattern is the minimal stdlib-only approach; `go-containerregistry` is the production-grade alternative.
+
 **Scope:**
 - `pkg/oci/builder.go` — OCI image layout builder (stdlib only)
 - `pkg/oci/tarball.go` — flat tarball creator for `docker import`
@@ -89,11 +93,20 @@ Add a local OCI image factory as `pkg/oci` (or `internal/oci`) + `ork oci build`
 - Streaming SHA-256 (avoid loading entire layers into memory)
 - Optional gzip compression for layers
 
+**Lessons from Pulumi and Terraform (adopted from `research/11` and `research/12`):**
+- Build context digest tracking — only rebuild when input files change (content hash) (Pulumi)
+- `triggers` argument — general-purpose force-rebuild when arbitrary values change (Terraform, more flexible than Pulumi's automatic digest)
+- Return image digest (SHA256) as output — for tracking and pinning (like Pulumi's `repoDigest`)
+- Support dry-run mode — log what would be built without creating the image (like Pulumi's `buildOnPreview`)
+- Non-idempotent builds — building is inherently non-idempotent (like Ansible's `docker_image_build` and Terraform's `docker_image` with `triggers`)
+- Consider "from base image" mode — `tko` and `ocibuild` show that pulling a base image and appending layers is valuable (Phase 2)
+
 **This part is explicitly marked as future/optional** because:
 1. It doesn't fill an urgent gap (Ork's core mission is SSH automation, not image building)
-2. Users can build images with `docker build`, `buildah`, `ko`, or any existing tool
-3. The value is ownership/control (tiny images, no daemon) — nice but not essential
+2. Users can build images with `docker build`, `buildah`, `ko`, `jib`, `apko`, `tko`, `ocibuild`, or any existing tool
+3. The value is ownership/control (tiny images, no daemon, no external dependencies) — nice but not essential
 4. It's a separate concern from Ork's skill system
+5. `google/go-containerregistry` already provides a production-grade Go library for this — the stdlib-only approach is mainly educational
 
 ## Implementation
 
@@ -421,7 +434,8 @@ type Descriptor struct {
 2. **Should the OCI factory (Part 3) use stdlib-only or `google/go-containerregistry`?**
    - Stdlib: zero deps, but not spec-compliant without significant work, no registry push
    - go-containerregistry: full compliance + registry push, but adds a large dependency tree
-   - Recommendation: Start with stdlib (aligns with Ork's philosophy), add go-containerregistry only if registry push is needed
+   - **Ecosystem context (from `research/11` and `research/12`):** None of Ansible, Pulumi, or Terraform offer a daemonless image factory — all require Docker. The true peers are `buildah` (CLI, daemonless), `ko` (Go-specific), `jib` (Java-specific), `apko` (APK-based), `tko` (base + artifacts, rootless), `ocibuild` (Erlang, programmatic), and `go-containerregistry` (Go library). The gocker stdlib pattern is the most minimal but least production-ready; `go-containerregistry` is the production-grade Go library.
+   - Recommendation: Start with stdlib (aligns with Ork's philosophy), add go-containerregistry only if registry push is needed. Consider `buildah` as an alternative if a CLI approach is preferred over a Go library.
 
 3. **Should Docker skills support Docker-in-Docker (DinD) or assume Docker is installed natively?**
    - DinD: works in more environments (CI, testcontainers) but has security implications
@@ -450,6 +464,8 @@ See `research/` subdirectory:
 - `08-existing-go-oci-libraries.md` — `google/go-containerregistry` and other Go OCI libraries
 - `09-sftp-file-transfer.md` — `github.com/pkg/sftp` for SFTP file transfer
 - `10-go-cross-compilation.md` — Go cross-compilation (`GOOS`/`GOARCH`)
+- `11-ansible-pulumi-image-building.md` — Ansible & Pulumi image-building analysis (neither has an OCI factory equivalent; surveys daemonless peers: `buildah`, `ko`, `jib`, `apko`, `go-containerregistry`)
+- `12-terraform-image-building.md` — Terraform image-building analysis (Terraform has no OCI factory equivalent either; surveys `terraform-provider-buildkit`, `tko`, `ocibuild`; updated comparison matrix of all 17 image-building approaches)
 
 ## Comparison with Existing Proposals
 
